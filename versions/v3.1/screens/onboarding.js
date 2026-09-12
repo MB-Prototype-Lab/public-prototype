@@ -141,10 +141,7 @@ const ONB_GOALS = [
   "Just understand where it goes",
   "Spend less on eating out",
   "Cancel what I don't use",
-  "Be ready for a surprise bill",
-  "Save for something big",
-  "Stop worrying about money",
-  "Put money aside for a trip"
+  "Be ready for a surprise bill"
 ];
 const ONB_GOALS_MAX = 3;
 
