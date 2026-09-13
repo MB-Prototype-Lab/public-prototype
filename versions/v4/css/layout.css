@@ -1,0 +1,356 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Display face for headings, figures and the buddy's voice (09-design-system).
+   Numbers are display face, heavier than their label, and always larger —
+   financial figures are the thing people look for. */
+h1, h2, h3, .title, .section-title, .journal-total, .budget-row-amt,
+.journal-amount, .obs-figure, .cmp-val, .topbar-status {
+  font-family: var(--font-display);
+}
+
+.page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 420px 390px;
+  gap: 26px;
+  align-items: start;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Phone frame */
+.phone {
+  width: 390px;
+  height: 820px;
+  max-height: calc(100vh - 48px);
+  background: var(--phone);
+  border-radius: 38px;
+  padding: 14px;
+  box-shadow: 0 24px 70px rgba(43, 39, 35, .22);
+  position: sticky;
+  top: 24px;
+}
+
+.screen {
+  height: 100%;
+  background: var(--screen);
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+  color: var(--text);
+}
+
+.screen-scroll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--topbar-h);
+  bottom: var(--nav-h);
+  overflow-y: auto;
+  padding: 18px;
+}
+
+/* Chrome-absent variants. render() toggles these; nothing sets inline px. */
+.screen-scroll.no-topbar { top: 0; }
+.screen-scroll.no-nav    { bottom: 0; }
+
+/* ─── Shared top bar (L5) ────────────────────────────────────────────────────
+   Fixed to the top of the phone screen, above the scrolling content. */
+.topbar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px;
+  background: var(--screen);
+  border-bottom: 1px solid var(--line);
+  z-index: 5;
+}
+
+/* Full-bleed screens get the back control only — no status strip competing
+   with a focused flow. Transparent so the scene shows through. */
+.topbar-bare {
+  background: transparent;
+  border-bottom: 0;
+}
+
+.topbar-btn {
+  width: 44px;              /* design-system tap-target floor */
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 12px;
+}
+.topbar-btn:hover { background: var(--soft); }
+
+/* Keeps the status strip centred when a side has no button. */
+.topbar-slot { width: 44px; height: 44px; flex-shrink: 0; }
+
+.topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 850;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.topbar-stat { display: inline-flex; align-items: center; gap: 3px; }
+.topbar-ico  { font-size: 12px; }
+.topbar-dot  { color: var(--muted); font-weight: 400; }
+
+/* Half-screen overlay for system info (03-home-daily-loop). */
+.topbar-menu-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(16, 24, 40, .34);
+  z-index: 8;
+}
+.topbar-menu {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  min-height: 46%;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0 0 22px 22px;
+  padding: 18px;
+  z-index: 9;
+  box-shadow: 0 12px 40px rgba(16, 24, 40, .18);
+}
+
+.screen-scroll.lesson-mode {
+  padding: 0;
+  overflow: hidden;
+  bottom: 0;
+  top: 0;       /* extend past tab bar — nav is hidden when lesson is active */
+}
+
+.screen-scroll.streak-mode {
+  padding: 0;
+  overflow: hidden;
+  bottom: 0;
+  top: 0;       /* full-bleed branded splash — nav is hidden on the streak screen */
+}
+
+.screen-scroll.chat-mode {
+  padding: 0;
+  overflow: hidden;
+  bottom: 0;
+  top: 0;       /* nav is hidden on chat — the input bar sits on the bottom edge */
+  /* The chat shell owns its own scrolling: the thread scrolls, the chips and
+     input bar stay pinned. See .chat-shell in components.css. */
+}
+
+/* Bottom nav */
+.bottom-tabs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--nav-h);
+  padding: 10px 10px 14px;
+  background: var(--screen);
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.tab {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.tab.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Admin panel */
+.admin {
+  /* Chrome, not product — see the two scopes in variables.css */
+  height: 820px;
+  max-height: calc(100vh - 48px);
+  background: rgba(255, 255, 255, .82);
+  border: 1px solid var(--chrome-line);
+  border-radius: 24px;
+  box-shadow: 0 12px 40px rgba(16, 24, 40, .08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 24px;
+}
+
+.admin-header {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--chrome-line);
+  background: var(--chrome-card);
+  color: var(--chrome-text);
+}
+
+.admin-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.admin-subtitle {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: var(--chrome-muted);
+  line-height: 1.35;
+}
+
+.admin-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* Admin collapse */
+.page.admin-collapsed {
+  grid-template-columns: 420px;
+}
+.page.admin-collapsed .admin {
+  /* Chrome, not product — see the two scopes in variables.css */
+  display: none;
+}
+
+.admin-collapse-btn {
+  border: 0;
+  background: transparent;
+  color: var(--chrome-muted);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.admin-collapse-btn:hover {
+  color: var(--chrome-text);
+}
+
+.admin-expand-tab {
+  display: none; /* shown via JS when collapsed */
+  position: fixed;
+  right: 16px;
+  top: 24px;
+  width: 28px;
+  height: 48px;
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid var(--chrome-line);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, .1);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--chrome-muted);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+.admin-expand-tab:hover {
+  color: var(--chrome-text);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .page {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .admin {
+    width: 390px;
+    max-width: 100%;
+    position: relative;
+    top: auto;
+  }
+  .phone {
+    position: relative;
+    top: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin {
+    display: none !important;
+  }
+  #adminExpandTab {
+    display: none !important;
+  }
+}
+
+/* ─── Responsive grid utility ────────────────────────────────────────────────
+   .summary-grid: 3-col by default, collapses to 2-col on very narrow screens */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 400px) {
+  .summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ─── Scroll indicators ───────────────────────────────────────────────────────
+   Mobile-app-style overlay look: thin rounded thumb, no track, no arrow
+   buttons. Applies to every scrollable container (phone screen, chat thread,
+   admin panel). Chromium/WebKit takes the pseudo-element rules; Firefox
+   (no ::-webkit-scrollbar support) gets the standard thin-scrollbar props
+   via @supports so the two rule sets never fight in one engine. */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 99px;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) transparent;
+  }
+}
+
+/* Money Journal — full-bleed, one question at a time. Zeroes both offsets. */
+.screen-scroll.journal-mode {
+  padding: 0;
+  top: var(--topbar-h);   /* keeps the bare back bar; nav is hidden */
+  bottom: 0;
+}
+
+/* Login is a full-bleed scene — the bare top bar floats over it. */
+.screen-scroll.login-mode { padding: 0; bottom: 0; }
+
+/* Daily update — full-bleed, the one place motion is orchestrated. */
+.screen-scroll.du-mode { padding: 0; bottom: 0; }

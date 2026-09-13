@@ -1,0 +1,340 @@
+{
+  "_note": "Fills the gap v2 does not cover: pre-lesson framing questions and answer-driven script selection (D38). v2's lesson player and audio pipeline are inherited unchanged.",
+
+  "config": {
+    "maxFramingQuestions": 5,
+    "minFramingQuestions": 1,
+    "dontKnowIsValid": true,
+    "_note": "'I don't know' is a first-class answer and routes to its own script variant. It is never treated as a wrong answer or a skip."
+  },
+
+  "lessons": [
+    {
+      "id": "apr",
+      "title": "What APR actually costs you",
+      "courses": ["interest-rates", "credit-cards", "mortgages"],
+      "linkedObservation": null,
+      "bucketDimension": {
+        "kind": "apr",
+        "reference": "market_average",
+        "_note": "Framing infers the user's APR (card lookup in CARD_APR, an entered %, or the market average). lessonInferFigure + lessonBucketFor compare it to CARD_APR.marketAverage and pick the bucket variant; no-info paths play the fallback."
+      },
+      "visualTemplate": {
+        "kind": "hyperframes",
+        "_note": "Storyboard for the staging-area video (components/hyperframes.js). Beats are FRACTIONS of the lesson runtime, so the whole thing re-fits any duration. One shared spine; the `bucket` beat resolves to bucketSegments[bucket] so each outcome differs, but every segment renders from the user's own figures rather than baked art. Coordinates are in a 100 x 72 viewBox. Tokens ({userApr}, {marketAvg}, {bandLow}, {bandHigh}, {gapPhrase}, {cardName}) resolve at render time.",
+
+        "_spineNote": "Beat boundaries are the SCRIPT's line boundaries, derived from word count at DU_WPM (screens/lesson.js lpCuesFromWords) over apr_about_average's ten lines. 'what' spans lines 1-2; every other beat is one line. Education runs first, then the card, then where the rate sits, then what the gap is worth in money. The `cost` beat exists because a difference in percentage points is not a felt quantity and the narration is deliberately figure-free: the script says the gap is worth turning into money, and this is where the money appears. It states its own condition - only on a balance carried past the due date - because without that it is just a scare figure. Recut these fractions whenever a script line changes.",
+        "spine": [
+          {
+            "id": "what", "from": 0.0, "to": 0.158,
+            "elements": [
+              { "type": "icon",  "name": "coin", "x": 50, "y": 22, "size": 18, "anim": "pop" },
+              { "type": "label", "text": "APR", "x": 50, "y": 48, "size": 12, "anim": "rise" },
+              { "type": "label", "text": "the yearly price of borrowing", "x": 50, "y": 60, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          {
+            "id": "monthly", "from": 0.158, "to": 0.283,
+            "elements": [
+              { "type": "label", "text": "applied every month", "x": 50, "y": 12, "size": 4.6, "anim": "fade" },
+              { "type": "stack", "count": 4, "x": 50, "y": 32, "anim": "accumulate" },
+              { "type": "label", "text": "on whatever is still owed", "x": 50, "y": 62, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          {
+            "id": "paid_off", "from": 0.283, "to": 0.386,
+            "elements": [
+              { "type": "icon",  "name": "shield", "x": 50, "y": 24, "size": 16, "anim": "pop" },
+              { "type": "label", "text": "cleared in time", "x": 50, "y": 50, "size": 5.6, "anim": "rise" },
+              { "type": "label", "text": "costs nothing on most cards", "x": 50, "y": 60, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          {
+            "id": "compounding", "from": 0.386, "to": 0.516,
+            "elements": [
+              { "type": "label", "text": "leave some behind", "x": 50, "y": 10, "size": 4.2, "tone": "muted", "anim": "fade" },
+              { "type": "stack", "count": 6, "x": 50, "y": 28, "anim": "accumulate" },
+              { "type": "label", "text": "interest on interest", "x": 50, "y": 64, "size": 5.4, "anim": "rise" }
+            ]
+          },
+          {
+            "id": "card", "from": 0.516, "to": 0.581,
+            "elements": [
+              { "type": "icon",  "name": "card", "x": 50, "y": 18, "size": 16, "anim": "rise" },
+              { "type": "label", "text": "{cardName}", "x": 50, "y": 40, "size": 4.6, "anim": "fade" },
+              { "type": "label", "text": "{userApr}%", "x": 50, "y": 58, "size": 12, "anim": "rise" }
+            ]
+          },
+          {
+            "id": "compare", "from": 0.581, "to": 0.679,
+            "elements": [
+              { "type": "label", "text": "where your rate sits", "x": 50, "y": 12, "size": 4.6, "anim": "fade" },
+              { "type": "scale", "x": 12, "y": 40, "w": 76, "anim": "draw" }
+            ]
+          },
+          {
+            "id": "cost", "from": 0.679, "to": 0.826,
+            "elements": [
+              { "type": "label", "text": "on every {perBalance} you carry for a year", "x": 50, "y": 10, "size": 3.6, "tone": "muted", "anim": "fade" },
+              { "type": "label", "text": "{dollarsAvg}", "x": 27, "y": 32, "size": 7.4, "anim": "rise" },
+              { "type": "label", "text": "typical", "x": 27, "y": 40, "size": 3.2, "tone": "muted", "anim": "fade" },
+              { "type": "label", "text": "{dollarsUser}", "x": 73, "y": 32, "size": 7.4, "anim": "rise" },
+              { "type": "label", "text": "{cardName}", "x": 73, "y": 40, "size": 3.2, "tone": "muted", "anim": "fade" },
+              { "type": "label", "text": "{dollarsGap} {dollarsWord} a year", "x": 50, "y": 57, "size": 6.0, "anim": "rise" },
+              { "type": "label", "text": "and only on what you carry past the due date", "x": 50, "y": 66, "size": 3.2, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          { "id": "bucket", "from": 0.826, "to": 0.886, "slot": "bucket" },
+          {
+            "id": "settle", "from": 0.886, "to": 1.0, "hold": true,
+            "elements": [
+              { "type": "icon",  "name": "spark", "x": 50, "y": 16, "size": 12, "anim": "pop" },
+              { "type": "label", "text": "{userApr}% vs {marketAvg}% typical", "x": 50, "y": 40, "size": 5.2, "anim": "fade" },
+              { "type": "label", "text": "{gapPhrase}", "x": 50, "y": 54, "size": 6.4, "anim": "rise" }
+            ]
+          }
+        ],
+        "bucketSegments": {
+          "deeply_below": {
+            "elements": [
+              { "type": "icon",  "name": "shield", "x": 50, "y": 20, "size": 16, "anim": "pop" },
+              { "type": "label", "text": "well below typical", "x": 50, "y": 44, "size": 6.2, "anim": "rise" },
+              { "type": "label", "text": "interest builds slowly at this rate", "x": 50, "y": 56, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          "slightly_below": {
+            "elements": [
+              { "type": "icon",  "name": "shield", "x": 50, "y": 20, "size": 15, "anim": "pop" },
+              { "type": "label", "text": "a little below typical", "x": 50, "y": 44, "size": 6.2, "anim": "rise" },
+              { "type": "label", "text": "interest builds a touch slower", "x": 50, "y": 56, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          "about_average": {
+            "elements": [
+              { "type": "icon",  "name": "spark", "x": 50, "y": 20, "size": 15, "anim": "pop" },
+              { "type": "label", "text": "right about typical", "x": 50, "y": 44, "size": 6.2, "anim": "rise" },
+              { "type": "label", "text": "the middle of the pack", "x": 50, "y": 56, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          "slightly_above": {
+            "elements": [
+              { "type": "stack", "count": 5, "x": 50, "y": 30, "anim": "accumulate" },
+              { "type": "label", "text": "a little above typical", "x": 50, "y": 48, "size": 6.2, "anim": "rise" },
+              { "type": "label", "text": "a carried balance grows a bit faster", "x": 50, "y": 59, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          },
+          "deeply_above": {
+            "elements": [
+              { "type": "stack", "count": 8, "x": 50, "y": 30, "anim": "accumulate" },
+              { "type": "label", "text": "well above typical", "x": 50, "y": 48, "size": 6.2, "anim": "rise" },
+              { "type": "label", "text": "a carried balance grows faster here", "x": 50, "y": 59, "size": 3.6, "tone": "muted", "anim": "fade" }
+            ]
+          }
+        }
+      },
+      "framing": [
+        {
+          "id": "f_issuer",
+          "prompt": "Which card do you use most?",
+          "type": "single_select",
+          "options": [
+            { "label": "Chase",              "issuer": "Chase",             "next": "f_card" },
+            { "label": "American Express",    "issuer": "American Express",  "next": "f_card" },
+            { "label": "Capital One",         "issuer": "Capital One",       "next": "f_card" },
+            { "label": "Citi",                "issuer": "Citi",              "next": "f_card" },
+            { "label": "Discover",            "issuer": "Discover",          "next": "f_card" },
+            { "label": "Wells Fargo",         "issuer": "Wells Fargo",       "next": "f_card" },
+            { "label": "Bank of America",     "issuer": "Bank of America",   "next": "f_card" },
+            { "label": "A store or retail card", "directRate": "store_retail" },
+            { "label": "A credit union card",    "directRate": "credit_union" },
+            { "label": "Another card",        "next": "f_know" },
+            { "label": "I don't have a credit card", "next": "f_nocard" }
+          ]
+        },
+        {
+          "id": "f_card",
+          "prompt": "Which one?",
+          "type": "card_select",
+          "_note": "Options are generated at render time from CARD_APR.issuers[chosen issuer]. Terminal — the card sets the inferred APR."
+        },
+        {
+          "id": "f_know",
+          "prompt": "Do you know its APR, roughly?",
+          "options": [
+            { "label": "Yes", "next": "f_enter" },
+            { "label": "No", "useAverage": true }
+          ]
+        },
+        {
+          "id": "f_enter",
+          "prompt": "Roughly what is it?",
+          "type": "fill_number",
+          "placeholder": "e.g. 24",
+          "suffix": "%"
+        },
+        {
+          "id": "f_nocard",
+          "prompt": "Any other borrowing — car loan, student loan, buy now pay later?",
+          "options": [
+            { "label": "Yes", "tag": "other_debt" },
+            { "label": "No", "tag": "no_debt" },
+            { "label": "I'd rather not say", "tag": "unknown_debt" }
+          ]
+        }
+      ],
+      "scriptVariants": [
+        { "id": "apr_deeply_below",   "bucket": "deeply_below",   "audioId": "apr_deeply_below",   "emphasis": "well_below_typical" },
+        { "id": "apr_slightly_below", "bucket": "slightly_below", "audioId": "apr_slightly_below", "emphasis": "a_little_below" },
+        { "id": "apr_about_average",  "bucket": "about_average",  "audioId": "apr_about_average",  "emphasis": "right_around_typical" },
+        { "id": "apr_slightly_above", "bucket": "slightly_above", "audioId": "apr_slightly_above", "emphasis": "a_little_above" },
+        { "id": "apr_deeply_above",   "bucket": "deeply_above",   "audioId": "apr_deeply_above",   "emphasis": "well_above_typical" },
+        { "id": "apr_default", "bucket": null, "isFallback": true, "audioId": "apr_default", "emphasis": "before_you_borrow", "_note": "No card / don't know / no info — the fallback, doubling as the 'before you borrow' framing." }
+      ],
+      "quiz": [
+        {
+          "prompt": "You owe $1,000 at 24% APR and pay only the minimum. Roughly what does that cost you over a year?",
+          "options": ["About $24", "About $120", "About $240", "Nothing if I make minimums"],
+          "correct": 2
+        }
+      ],
+      "simulation": {
+        "type": "balance_calculator",
+        "_note": "Bias toward simulation over quiz. Sandbox for the BALANCE — never the user's real debt. The APR is the one exception: it is seeded from their own card, because a rate is the subject of the lesson and public information about a product rather than a fact about them. It stays draggable. See lrSimDefaults in js/lesson-rewards.js.",
+        "inputs": ["balance", "apr", "monthlyPayment"],
+        "outputs": ["monthsToPayoff", "totalInterest"],
+        "defaults": { "balance": 1000, "apr": 24, "monthlyPayment": 40 }
+      }
+    },
+    {
+      "id": "emergency-fund",
+      "title": "How much is enough",
+      "courses": ["savings", "getting-started"],
+      "linkedObservation": "obs_emergency_behind",
+      "framing": [
+        {
+          "id": "f1",
+          "prompt": "Do you have money set aside for something unexpected?",
+          "options": [
+            { "label": "Yes", "tag": "has_fund", "next": "f2_amount" },
+            { "label": "A little", "tag": "partial_fund", "next": "f2_amount" },
+            { "label": "No", "tag": "no_fund", "next": "f3" },
+            { "label": "I don't know", "tag": "unknown_fund", "next": "f3" }
+          ]
+        },
+        {
+          "id": "f2_amount",
+          "prompt": "Roughly how long would it cover you?",
+          "options": [
+            { "label": "Under a month", "tag": "under_1m" },
+            { "label": "One to three months", "tag": "1_3m" },
+            { "label": "More than three months", "tag": "over_3m" },
+            { "label": "I don't know", "tag": "unknown_duration" }
+          ],
+          "next": "f3"
+        },
+        {
+          "id": "f3",
+          "prompt": "If your car broke down tomorrow, what would happen?",
+          "options": [
+            { "label": "I'd pay from savings", "tag": "resilient" },
+            { "label": "I'd put it on a card", "tag": "card_reliant" },
+            { "label": "I'd have to borrow or delay it", "tag": "stretched" }
+          ]
+        }
+      ],
+      "scriptVariants": [
+        { "id": "ef_v1", "matchTags": ["no_fund", "stretched"], "audioId": "ef_v1", "emphasis": "first_hundred" },
+        { "id": "ef_v2", "matchTags": ["under_1m", "card_reliant"], "audioId": "ef_v2", "emphasis": "building_from_partial" },
+        { "id": "ef_v3", "matchTags": ["1_3m"], "audioId": "ef_v3", "emphasis": "where_to_keep_it" },
+        { "id": "ef_v4", "matchTags": ["over_3m", "resilient"], "audioId": "ef_v4", "emphasis": "what_next" },
+        { "id": "ef_default", "matchTags": [], "isFallback": true, "audioId": "ef_v2", "emphasis": "building_from_partial" }
+      ],
+      "quiz": [
+        {
+          "prompt": "What's the most common first target people are given for an emergency fund?",
+          "options": ["One month of income", "$1,000", "Six months of expenses", "Whatever's left over"],
+          "correct": 1
+        }
+      ],
+      "simulation": {
+        "type": "savings_pace_calculator",
+        "inputs": ["target", "current", "monthlyContribution"],
+        "outputs": ["monthsToTarget", "targetDate"],
+        "defaults": { "target": 3000, "current": 620, "monthlyContribution": 120 }
+      }
+    },
+    {
+      "id": "subscription-audit",
+      "title": "What you're actually using",
+      "courses": ["spending", "getting-started"],
+      "linkedObservation": "obs_hulu_unused",
+      "framing": [
+        {
+          "id": "f1",
+          "prompt": "How many subscriptions do you think you're paying for?",
+          "options": [
+            { "label": "Under three", "tag": "few_subs", "next": "f2" },
+            { "label": "Three to six", "tag": "some_subs", "next": "f2" },
+            { "label": "More than six", "tag": "many_subs", "next": "f2" },
+            { "label": "No idea", "tag": "unknown_subs", "next": "f2" }
+          ]
+        },
+        {
+          "id": "f2",
+          "prompt": "When did you last check what's billing you?",
+          "options": [
+            { "label": "This month", "tag": "recent_check" },
+            { "label": "Sometime this year", "tag": "stale_check" },
+            { "label": "Never", "tag": "no_check" }
+          ],
+          "next": "f3"
+        },
+        {
+          "id": "f3",
+          "prompt": "Ever found something you forgot you were paying for?",
+          "options": [
+            { "label": "Yes", "tag": "has_found" },
+            { "label": "No", "tag": "not_found" },
+            { "label": "Probably, if I looked", "tag": "suspects" }
+          ]
+        }
+      ],
+      "scriptVariants": [
+        { "id": "sa_v1", "matchTags": ["many_subs", "no_check"], "audioId": "sa_v1", "emphasis": "the_pile_up" },
+        { "id": "sa_v2", "matchTags": ["some_subs", "stale_check", "suspects"], "audioId": "sa_v2", "emphasis": "how_to_audit" },
+        { "id": "sa_v3", "matchTags": ["few_subs", "recent_check"], "audioId": "sa_v3", "emphasis": "staying_on_top" },
+        { "id": "sa_default", "matchTags": [], "isFallback": true, "audioId": "sa_v2", "emphasis": "how_to_audit" }
+      ],
+      "quiz": [
+        {
+          "prompt": "What's the usual reason a subscription goes unnoticed?",
+          "options": ["The price goes up", "It's small enough not to stand out", "The company hides it", "It bills annually"],
+          "correct": 1
+        }
+      ],
+      "simulation": {
+        "type": "subscription_tally",
+        "_note": "User toggles subscriptions on and off, sees monthly and annual totals move.",
+        "inputs": ["subscriptionList"],
+        "outputs": ["monthlyTotal", "annualTotal", "savingsIfCancelled"],
+        "seedFrom": "persona.subscriptions.known"
+      }
+    }
+  ],
+
+  "matching": {
+    "_note": "Script selection: collect tags from all framing answers, score each variant by tag overlap, play the highest. Ties break by variant order. Zero matches plays the fallback.",
+    "strategy": "highest_tag_overlap",
+    "tieBreak": "first_listed"
+  },
+
+  "badges": {
+    "_note": "Metal tier plus level number, Overwatch-style. Vanity only — unlocks nothing.",
+    "tiers": ["bronze", "silver", "gold", "platinum", "diamond"],
+    "xpPerTier": 500,
+    "xpCorrectAnswer": 50,
+    "xpLessonComplete": 100,
+    "xpBonusFromDailyTask": 50,
+    "_note_shared": "A lesson belongs to several courses. Progress is on the lesson, so cross-cutting lessons level faster."
+  }
+}

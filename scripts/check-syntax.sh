@@ -45,9 +45,10 @@ fi
 # Collect targets: explicit args, or the default set.
 files=()
 if [ "$#" -eq 0 ]; then
-  # Every live version, not just one. v3 and v3.1 are an A/B pair and both
-  # ship; checking only one lets a syntax error reach the gate in the other.
-  while IFS= read -r f; do files+=("$f"); done < <(find versions/v3 versions/v3.1 gate -name '*.js' 2>/dev/null | sort)
+  # Every live version, not just one. v3 and v3.1 are an A/B pair and v4 is the
+  # copy new work goes into; all three ship, and checking only one lets a syntax
+  # error reach the gate in the others.
+  while IFS= read -r f; do files+=("$f"); done < <(find versions/v3 versions/v3.1 versions/v4 gate -name '*.js' 2>/dev/null | sort)
 else
   for arg in "$@"; do
     if [ -d "$arg" ]; then

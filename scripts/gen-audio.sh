@@ -39,7 +39,7 @@
 set -euo pipefail
 
 VOICE="${VOICE:-Samantha}"
-V="${MB_VERSION:-v3.1}"          # same switch as sweep.sh / wrap-data.sh
+V="${MB_VERSION:-v4}"            # same switch as sweep.sh / wrap-data.sh
 SRC="versions/$V/data/daily-scripts.json"
 OUTDIR="versions/$V/assets/audio/daily"
 TIMINGS="versions/$V/data/daily-timings.js"

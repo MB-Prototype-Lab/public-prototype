@@ -1060,6 +1060,303 @@ if (!__FILM_MANIFEST) {
   } catch (e) {}
   chk(listed.length === 0, "the app's film index matches what was rendered",
       "listed but absent: " + listed.slice(0, 6).join(", "));
+
+  // ── ONB_FILM_ANY_LOOK: one render serves every theme ──────────────────────
+  // v4 only. While a look is unrendered its themes used to drop to the SVG
+  // engine, so the same onboarding step showed two different pieces of work
+  // depending on a colour setting. The fallback plays whatever WAS rendered.
+  //
+  // Two things to hold, and the second is the one that rots quietly: a theme
+  // with its own render must still get its OWN look. If the fallback ever wins
+  // over an exact match, rendering the dark film would change nothing a dark
+  // tester sees and nothing here would say so.
+  if (typeof ONB_FILM_ANY_LOOK !== "undefined" && ONB_FILM_ANY_LOOK &&
+      typeof THEMES !== "undefined" && Object.keys(mf.films).length) {
+    // Restore unconditionally. Reading it into a local and putting it back only
+    // "if it was set" leaves colorMode pinned to the last theme walked when the
+    // app had none, which quietly re-themes every check that runs after this.
+    var hadSettings = !!state.settings;
+    var saved = hadSettings ? state.settings.colorMode : undefined;
+    var noFilm = [], wrongLook = [];
+    // The look each theme WOULD be served by if it had been rendered.
+    var wants = mf.lookForTheme || {};
+    THEMES.forEach(function (t) {
+      state.settings = state.settings || {};
+      state.settings.colorMode = t.id;
+      onbFilmResetArt();
+      var e = onbFilmEntry();
+      if (!e) { noFilm.push(t.id); return; }
+      // Own-look-wins: only assert it where that look actually has a render.
+      var mine = wants[t.id];
+      var rendered = Object.keys(mf.films).some(function (id) {
+        return mf.films[id].look === mine;
+      });
+      if (rendered && e.look !== mine) wrongLook.push(t.id + ": got " + e.look + ", own is " + mine);
+    });
+    if (hadSettings) state.settings.colorMode = saved; else delete state.settings;
+    onbFilmResetArt();
+
+    chk(noFilm.length === 0, "every theme resolves to a rendered film",
+        "still falling through to the SVG engine: " + noFilm.join(", "));
+    chk(wrongLook.length === 0, "a theme with its own render still gets its own look",
+        wrongLook.join("\n          "));
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v4 only — guarded so v3 and v3.1 skip the whole block.
+if (typeof screenSlug !== "undefined") {
+section("7d. One URL per screen — what a usability tracker can see");
+
+// A Useberry round recorded the gate, the first onboarding screen, and nothing
+// else: their tracker compares document.location.href on each DOM change, and
+// pushState(snapshot, '') never moves it. These gates exist so that cannot come
+// back silently — the failure mode is a study that runs, completes, and reports
+// one screen.
+
+// ── the slug is well-formed for every routed screen ────────────────────────
+var badSlug = [];
+SCREENS.forEach(function (id) {
+  var sl = screenSlug(id);
+  if (!sl || !/^[a-z0-9-]+$/.test(sl)) badSlug.push(id + " -> " + JSON.stringify(sl));
+});
+chk(badSlug.length === 0, "every routed screen yields a URL-safe slug",
+    badSlug.slice(0, 6).join(", "));
+
+// ── a stepped screen is several views, and they must not collide ───────────
+// This is the whole point: onboarding is ONE screen id and seven pages to a
+// tester. If these collapse, the flow report shows "onboarding" once and the
+// six steps after it vanish — which is exactly the reported defect, one level in.
+var views = [], savedScreen = state.screen;
+state.screen = "onboarding";
+state.onboarding = state.onboarding || {};
+var savedOnbStep = state.onboarding.step;
+for (var i = 0; i < ONB_STEPS.length; i++) { state.onboarding.step = i; views.push(screenSlug(scrollKey())); }
+state.onboarding.step = savedOnbStep;
+
+state.screen = "budgetBuild";
+if (typeof bbSessionInit === "function") bbSessionInit();
+for (var j = 0; j < BB_STEPS.length; j++) { state.budgetBuild.step = j; views.push(screenSlug(scrollKey())); }
+state.budgetBuild = null;
+
+state.screen = "helpMeOut";
+["Transport", "Debt payments"].forEach(function (c) {
+  ["ask", "confirm"].forEach(function (st) {
+    state.helpMeOut = { category: c, stage: st };
+    views.push(screenSlug(scrollKey()));
+  });
+});
+state.helpMeOut = null;
+state.screen = savedScreen;
+
+var uniq = {}, dupes = [];
+views.forEach(function (v) { if (uniq[v]) dupes.push(v); uniq[v] = true; });
+chk(dupes.length === 0,
+    "every step of a stepped screen is its own URL (" + views.length + " views)",
+    "collapsed: " + dupes.join(", "));
+
+// ── render() actually writes it ────────────────────────────────────────────
+// The gates above test the module. THIS tests the wiring, and the wiring is
+// what broke: a module that computes a perfect slug nobody calls is the same
+// defect with extra steps.
+if (typeof URL !== "undefined") {
+  var _loc = location, _hist = history, _painted = lastPaintedScreen, _scr = state.screen;
+  var _href = "https://example.github.io/versions/v4/index.html?PROLIFIC_PID=abc123";
+  location = { get href() { return _href; }, set href(v) { _href = v; },
+               protocol: "https:", pathname: "/versions/v4/index.html", replace: function () {} };
+  history = { state: null,
+              pushState: function (st) { this.state = st; },
+              replaceState: function (st, t, u) {
+                this.state = st;
+                if (u) _href = new URL(u, "https://example.github.io").href;
+              },
+              back: function () {} };
+  var painted = [];
+  try {
+    lastPaintedScreen = null;
+    ["home", "aboutMe", "myProgress"].forEach(function (id) {
+      state.screen = id; render(); painted.push(_href);
+    });
+  } catch (e) {
+    painted = ["threw: " + e.message];
+  }
+  var got = _href;
+  location = _loc; history = _hist; lastPaintedScreen = _painted; state.screen = _scr;
+
+  var distinct = {}; painted.forEach(function (u) { distinct[u] = true; });
+  chk(Object.keys(distinct).length === painted.length && painted.length === 3,
+      "render() moves the URL when the view changes",
+      painted.join("\n          "));
+  chk(/PROLIFIC_PID=abc123/.test(got),
+      "a query param we do not own survives the rewrite",
+      "Useberry passes participant ids this way — losing it breaks a paid " +
+      "Prolific round with nothing to signal it\n          got: " + got);
+} else {
+  warn("render()'s URL write not checked — no URL implementation in this engine");
+}
+
+// ── deep links ─────────────────────────────────────────────────────────────
+var linkKeys = Object.keys(SCREEN_LINKS);
+var notSlug = linkKeys.filter(function (k) { return screenSlug(k) !== k; });
+chk(notSlug.length === 0, "every deep-link key is already a valid slug", notSlug.join(", "));
+
+// Screens that need something chosen earlier must NOT be linkable: a cold link
+// lands on the D19 placeholder, which is right for an admin jump and reads as
+// broken to a tester who was sent there deliberately.
+var mustNotLink = ["budget-category", "lesson", "help-me-out", "marketplace-detail", "lesson-quiz"];
+var leaked = mustNotLink.filter(function (k) { return !!SCREEN_LINKS[k]; });
+chk(leaked.length === 0, "context-dependent screens stay out of the allowlist", leaked.join(", "));
+
+var linkTargets = linkKeys.map(function (k) { return SCREEN_LINKS[k]; });
+chk(linkTargets.every(function (f) { return typeof f === "function"; }),
+    "every deep-link entry is an opener function");
+
+// ── the title carries a human name ─────────────────────────────────────────
+var _t = state.screen;
+var titles = {};
+["home", "aboutMe", "learn", "myProgress"].forEach(function (id) {
+  state.screen = id; titles[id] = screenTitle();
+});
+state.screen = _t;
+var emptyTitle = Object.keys(titles).filter(function (k) {
+  return !titles[k] || titles[k] === "MoneyBuddy — " + k;
+});
+chk(emptyTitle.length === 0,
+    "every screen's <title> names it in words, not an id",
+    emptyTitle.join(", ") + "\n          Useberry sends the title beside the URL — it is what a " +
+    "researcher reads in the report");
+
+// ── tracking is off unless somebody turned it on ───────────────────────────
+chk(typeof USEBERRY_TRACKING !== "undefined" && USEBERRY_TRACKING === false,
+    "USEBERRY_TRACKING ships off",
+    "it is the one sanctioned exception to D02 and must never be on by default");
+chk(typeof useberryActive === "function" && useberryActive() === false,
+    "...so no third-party script is injected");
+
+// ── the gate's copy agrees with the real flag ──────────────────────────────
+// The gate cannot read USEBERRY_TRACKING (it never loads a version's scripts),
+// so it keeps a duplicate. A build observed while the gate says it is not is
+// the one outcome nobody could see from either file alone.
+if (typeof __GATE_JS === "string" && typeof APP_VERSION !== "undefined") {
+  var esc = APP_VERSION.replace(/\./g, "\\.");
+  var row = new RegExp('id:\\s*"' + esc + '"[^}]*tracking:\\s*(true|false)');
+  var m = __GATE_JS.match(row);
+  chk(!!m, "the gate lists " + APP_VERSION + " with a tracking flag",
+      "add tracking: true|false to its VERSIONS entry in gate/gate.js");
+  if (m) {
+    chk((m[1] === "true") === (USEBERRY_TRACKING === true),
+        "the gate's tracking flag matches this build's",
+        "gate says " + m[1] + ", js/config.js says " + USEBERRY_TRACKING);
+  }
+}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v4 only — Phase 2 of the tracking work.
+if (typeof ubActionName !== "undefined") {
+section("7e. What a tester clicked, and what they set");
+
+// ── control names are derived, so they must survive the real handler shapes ──
+// Sampled from the actual screen files. If the parser regresses, a click report
+// full of "unnamed" is the symptom, and nothing else would report it.
+var nameCases = [
+  ["navBack()", "navBack"],
+  ["goToCategory('Groceries')", "goToCategory:Groceries"],
+  ["bbToggleHelp('Debt payments')", "bbToggleHelp:Debt-payments"],
+  ["topbarToggleMenu();navAdminJump('settings')", "topbarToggleMenu+navAdminJump:settings"],
+  ["state.onboarding.householdSize=2;render()", "householdSize=2"],
+  ["render()", ""]
+];
+var nameBad = [];
+nameCases.forEach(function (c) {
+  var got = ubActionName(c[0]);
+  if (got !== c[1]) nameBad.push(c[0] + " -> " + JSON.stringify(got) + " want " + JSON.stringify(c[1]));
+});
+chk(nameBad.length === 0, "handlers resolve to stable control names",
+    nameBad.join("\n          "));
+
+// A NAME THAT MOVES WITH THE VALUE IS A NEW CONTROL ON EVERY KEYSTROKE, which
+// makes a heatmap a list of one-click entries. `this.value` must never land in
+// one, in any of the shapes it is written in across the screens.
+var valueShapes = [
+  "bbSet('Groceries', this.value, true)",
+  "hmoAdjust(this.value)",
+  "state.preferences=this.value.split(',').map(x=>x.trim()).filter(Boolean);render()",
+  "state.rememberDailyChoice=this.checked;render()"
+];
+var leaked = valueShapes.filter(function (h) { return /this[-.]?value|this[-.]?checked/i.test(ubActionName(h)); });
+chk(leaked.length === 0, "a tester's input never enters a control's name",
+    leaked.map(function (h) { return h + " -> " + ubActionName(h); }).join("\n          "));
+
+// ── the stamping pass is actually wired into render() ───────────────────────
+// The parser above can be perfect and the reports still empty if nothing calls
+// it. That is the failure Phase 1 was, repeated one layer in.
+var stamped = 0, _origStamp = ubStampControls;
+try {
+  ubStampControls = function () { stamped++; return 0; };
+  render();
+} catch (e) {
+} finally { ubStampControls = _origStamp; }
+chk(stamped > 0, "render() names the controls it just painted",
+    "js/ub-names.js computes names nothing asks for");
+
+// ── the value trail ─────────────────────────────────────────────────────────
+if (typeof ubTrailRecord === "function") {
+  // Category keys are derived from the category name, so a thirteenth category
+  // could silently share a key with an existing one and merge two lines in a
+  // report. Cheap to assert, invisible otherwise.
+  var tkeys = CATEGORIES.map(ubTrailCatKey), tseen = {}, tdupe = [];
+  tkeys.forEach(function (k) { if (tseen[k]) tdupe.push(k); tseen[k] = true; });
+  chk(tdupe.length === 0, "every category has its own trail key",
+      "collides: " + tdupe.join(", ") + "\n          keys: " + tkeys.join(","));
+
+  // ⚠ THE ONE THAT MATTERS. The trail travels in a URL a third party records
+  // and a researcher reads. Testers type their name in onboarding and prose in
+  // the Money Journal; Useberry's own policy is that testers stay pseudonymous.
+  ubTrailReset();
+  var pii = [];
+  if (ubTrailRecord("name", "A Real Person") !== false) pii.push("name");
+  if (ubTrailRecord("note", "spent too much on coffee") !== false) pii.push("note");
+  if (ubTrailRecord("text", "free typing") !== false) pii.push("text");
+  chk(pii.length === 0, "free text cannot reach the trail",
+      "accepted: " + pii.join(", ") +
+      "\n          only numbers, plus strings under a key declared in UB_TRAIL_ENUMS");
+  chk(ubTrailRecord("zip", 95054) === true && ubTrailRecord("goal", "Build savings") === true,
+      "...while numbers and declared enums still record");
+
+  // A slider on oninput fires per pixel. Keeping every tick would fill the URL
+  // ceiling with one category; what a researcher wants is where it came to rest.
+  ubTrailReset();
+  ubTrailBudget("Groceries", 500);
+  ubTrailBudget("Groceries", 640);
+  ubTrailHelped("Groceries", 585);
+  var prev = ubTrailPreview();
+  chk(/gro-640/.test(prev) && !/gro-500/.test(prev),
+      "a drag records where it came to rest, not every tick", prev);
+  chk(/groH-585/.test(prev),
+      "a Help-me-out figure keeps its own key beside the tester's guess",
+      "guessed-vs-computed is the comparison the trail exists for\n          " + prev);
+
+  // The whole budget has to fit, with room to spare under the ~2000 ceiling.
+  ubTrailReset();
+  CATEGORIES.forEach(function (c) { ubTrailBudget(c, 9999); });
+  CATEGORIES.forEach(function (c) { ubTrailHelped(c, 9999); });
+  var full = ubTrailEncode("budget");
+  chk(full.length < 1000, "a full budget encodes well inside the URL ceiling",
+      full.length + " chars");
+  chk(/^[A-Za-z0-9._-]+$/.test(full),
+      "every character survives form encoding unescaped", full.slice(0, 80));
+
+  // A reset has to clear it. The trail is user-entered data that LEAVES the
+  // browser in a URL, so one tester's figures surviving into the next session
+  // on a shared machine is a leak, not untidiness.
+  ubTrailBudget("Housing", 4321);
+  if (typeof resetUserData === "function") resetUserData();
+  chk(ubTrailPreview().indexOf("hou-4321") === -1,
+      "resetUserData() clears the value trail",
+      "left behind: " + ubTrailPreview());
+  ubTrailReset();
+}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

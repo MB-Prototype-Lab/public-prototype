@@ -1,0 +1,39 @@
+{
+  "_note": "Credit-card purchase-APR reference for the APR lesson's inference step and its hyperframes visual. Each entry carries a `typical` (used to infer the user's rate) and the card's real `low`/`high` variable-APR range (used as the peer band in the video). Figures are representative and prototype-grade (D19) — editable, not a live feed, not advice. Sources (WebSearch, Aug 2026): Forbes Advisor / Federal Reserve for the national average; WalletHub, FinanceBuzz, NerdWallet for per-card ranges — Chase Freedom Unlimited 18.24-27.74%, Sapphire Preferred 19.24-27.49%, Amex Blue Cash Everyday 19.49-28.49%, Amex Pay Over Time ~21.24-29.99%, Capital One Quicksilver/Venture 18.49-28.49%, Citi Double Cash 17.49-27.49%, Discover it ~18.24-27.24%, Wells Fargo Active Cash ~19.24-29.24%, BofA Customized Cash up to 29.99%. Store/retail and credit-union entries represent those segments rather than one product.",
+
+  "marketAverage": 22.15,
+  "typicalBand": { "low": 18.0, "high": 28.0 },
+
+  "issuers": {
+    "Chase": {
+      "Sapphire Preferred": { "typical": 23.4, "low": 19.24, "high": 27.49 },
+      "Freedom Unlimited":  { "typical": 23.0, "low": 18.24, "high": 27.74 }
+    },
+    "American Express": {
+      "Platinum (Pay Over Time)": { "typical": 25.5, "low": 21.24, "high": 29.99 },
+      "Gold (Pay Over Time)":     { "typical": 25.0, "low": 21.24, "high": 29.99 },
+      "Blue Cash Everyday":       { "typical": 24.0, "low": 19.49, "high": 28.49 }
+    },
+    "Capital One": {
+      "Venture":     { "typical": 23.5, "low": 18.49, "high": 28.49 },
+      "Quicksilver": { "typical": 23.5, "low": 18.49, "high": 28.49 }
+    },
+    "Citi": {
+      "Double Cash": { "typical": 22.5, "low": 17.49, "high": 27.49 }
+    },
+    "Discover": {
+      "it Cash Back": { "typical": 22.7, "low": 18.24, "high": 27.24 }
+    },
+    "Wells Fargo": {
+      "Active Cash": { "typical": 24.0, "low": 19.24, "high": 29.24 }
+    },
+    "Bank of America": {
+      "Customized Cash Rewards": { "typical": 23.0, "low": 18.24, "high": 28.99 }
+    }
+  },
+
+  "directRates": {
+    "store_retail": { "typical": 28.5, "low": 26.0, "high": 32.0 },
+    "credit_union": { "typical": 15.0, "low": 12.0, "high": 18.0 }
+  }
+}

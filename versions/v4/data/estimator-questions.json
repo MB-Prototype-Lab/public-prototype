@@ -1,0 +1,171 @@
+{
+  "_note": "Behavioral spend estimator (extends the Money Journal). Questions ask HOW OFTEN and WHAT TYPE, never a dollar figure — people remember their habits, not their totals. Each option carries a full-rate `monthly` estimate; the engine multiplies by how far into the month we are (unless `fullMonth`, for bills already incurred). Plausible prototype figures (D19), not researched costs. Widen freely — this is data.",
+
+  "config": { "cooldownDays": 1 },
+
+  "categories": {
+    "Dining out": [
+      { "id": "est_din_coffee", "prompt": "Coffee or café runs — how often, and where?",
+        "options": [
+          { "label": "Rarely — I make it at home", "monthly": 0 },
+          { "label": "A couple times a week — chain or donut shop", "monthly": 40 },
+          { "label": "Most days — a regular chain", "monthly": 95 },
+          { "label": "Most days — specialty café", "monthly": 155 }
+        ] },
+      { "id": "est_din_lunch", "prompt": "Lunches out?",
+        "options": [
+          { "label": "Rarely — I bring it", "monthly": 0 },
+          { "label": "Once or twice a week — quick spots", "monthly": 70 },
+          { "label": "Most workdays — quick spots", "monthly": 190 },
+          { "label": "Often, and often sit-down", "monthly": 300 }
+        ] },
+      { "id": "est_din_dinner", "prompt": "Dinners out or takeout?",
+        "options": [
+          { "label": "Rarely — we cook", "monthly": 0 },
+          { "label": "About once a week", "monthly": 150 },
+          { "label": "Two or three times a week", "monthly": 320 },
+          { "label": "Most nights", "monthly": 540 }
+        ] }
+    ],
+
+    "Groceries": [
+      { "id": "est_gro_size", "prompt": "What does a normal grocery run look like?",
+        "options": [
+          { "label": "Light — mostly just me", "monthly": 240 },
+          { "label": "A couple of us", "monthly": 440 },
+          { "label": "A family shop", "monthly": 680 },
+          { "label": "A big household", "monthly": 880 }
+        ] },
+      { "id": "est_gro_quality", "prompt": "What do you tend to buy?",
+        "options": [
+          { "label": "Mostly store-brand and basics", "monthly": 0 },
+          { "label": "A mix", "monthly": 70 },
+          { "label": "Mostly organic or premium", "monthly": 150 }
+        ] }
+    ],
+
+    "Transport": [
+      { "id": "est_tr_fuel", "prompt": "Driving and fuel?",
+        "options": [
+          { "label": "No car, or barely drive", "monthly": 0 },
+          { "label": "Light local driving", "monthly": 85 },
+          { "label": "A daily commute", "monthly": 190 },
+          { "label": "A long daily commute", "monthly": 320 }
+        ] },
+      { "id": "est_tr_transit", "prompt": "Rideshare or transit?",
+        "options": [
+          { "label": "Rarely", "monthly": 0 },
+          { "label": "Now and then", "monthly": 55 },
+          { "label": "Most days", "monthly": 150 }
+        ] },
+      { "id": "est_tr_parking", "prompt": "Parking or tolls?",
+        "options": [
+          { "label": "None", "monthly": 0 },
+          { "label": "Occasionally", "monthly": 35 },
+          { "label": "Daily", "monthly": 130 }
+        ] }
+    ],
+
+    "Entertainment": [
+      { "id": "est_ent_out", "prompt": "Going out — bars, events, shows?",
+        "options": [
+          { "label": "Rarely", "monthly": 0 },
+          { "label": "About once a month", "monthly": 60 },
+          { "label": "Most weekends", "monthly": 190 },
+          { "label": "Several times a week", "monthly": 360 }
+        ] },
+      { "id": "est_ent_hobby", "prompt": "Hobbies and gear?",
+        "options": [
+          { "label": "Minimal", "monthly": 0 },
+          { "label": "A bit here and there", "monthly": 55 },
+          { "label": "Really into it", "monthly": 170 }
+        ] }
+    ],
+
+    "Shopping": [
+      { "id": "est_shop_goods", "prompt": "Clothes and personal goods?",
+        "options": [
+          { "label": "Rarely", "monthly": 0 },
+          { "label": "Occasionally", "monthly": 65 },
+          { "label": "Regularly", "monthly": 190 },
+          { "label": "Often", "monthly": 370 }
+        ] },
+      { "id": "est_shop_online", "prompt": "Online orders and impulse buys?",
+        "options": [
+          { "label": "Rarely", "monthly": 0 },
+          { "label": "Sometimes", "monthly": 75 },
+          { "label": "Often", "monthly": 210 }
+        ] }
+    ],
+
+    "Personal care": [
+      { "id": "est_pc_grooming", "prompt": "Haircuts and grooming?",
+        "options": [
+          { "label": "DIY or rarely", "monthly": 0 },
+          { "label": "Roughly monthly", "monthly": 45 },
+          { "label": "A regular salon or barber", "monthly": 130 }
+        ] },
+      { "id": "est_pc_wellness", "prompt": "Gym or wellness?",
+        "options": [
+          { "label": "None", "monthly": 0 },
+          { "label": "A basic gym", "monthly": 40 },
+          { "label": "Classes or a boutique studio", "monthly": 165 }
+        ] }
+    ],
+
+    "Health": [
+      { "id": "est_hl_oop", "prompt": "Out-of-pocket health — meds, copays, extras?",
+        "options": [
+          { "label": "Rarely anything", "monthly": 0 },
+          { "label": "A little most months", "monthly": 45 },
+          { "label": "A regular ongoing cost", "monthly": 150 }
+        ] }
+    ],
+
+    "Housing": [
+      { "id": "est_ho_rent", "fullMonth": true, "prompt": "Your rent or mortgage?",
+        "options": [
+          { "label": "None — I live with family", "monthly": 0 },
+          { "label": "Modest", "monthly": 1100 },
+          { "label": "Typical for my area", "monthly": 1850 },
+          { "label": "High-cost area", "monthly": 2800 }
+        ] }
+    ],
+
+    "Utilities": [
+      { "id": "est_ut_bills", "fullMonth": true, "prompt": "Monthly utilities — power, water, internet, phone?",
+        "options": [
+          { "label": "Minimal", "monthly": 120 },
+          { "label": "Typical", "monthly": 230 },
+          { "label": "On the high side", "monthly": 360 }
+        ] }
+    ],
+
+    "Subscriptions": [
+      { "id": "est_sub_count", "fullMonth": true, "prompt": "Streaming and app subscriptions?",
+        "options": [
+          { "label": "Just one or two", "monthly": 25 },
+          { "label": "A handful", "monthly": 55 },
+          { "label": "Quite a few", "monthly": 110 }
+        ] }
+    ],
+
+    "Debt payments": [
+      { "id": "est_debt_min", "fullMonth": true, "prompt": "Monthly payments on cards or loans?",
+        "options": [
+          { "label": "None right now", "monthly": 0 },
+          { "label": "Some", "monthly": 160 },
+          { "label": "A significant chunk", "monthly": 460 }
+        ] }
+    ],
+
+    "Other": [
+      { "id": "est_other_misc", "prompt": "Anything else — one-offs, gifts, odds and ends?",
+        "options": [
+          { "label": "Very little", "monthly": 40 },
+          { "label": "Some months", "monthly": 120 },
+          { "label": "A fair amount", "monthly": 300 }
+        ] }
+    ]
+  }
+}

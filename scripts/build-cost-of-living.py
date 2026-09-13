@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generates versions/<MB_VERSION>/data/zip-cost-of-living.json (default v3.1).
+Generates versions/<MB_VERSION>/data/zip-cost-of-living.json (default v4).
 
 WHY THIS EXISTS
 ---------------
@@ -60,7 +60,7 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
-OUT = os.path.join(REPO, "versions", os.environ.get("MB_VERSION", "v3.1"),
+OUT = os.path.join(REPO, "versions", os.environ.get("MB_VERSION", "v4"),
                    "data", "zip-cost-of-living.json")
 CACHE = os.environ.get("COL_CACHE", os.path.join(tempfile.gettempdir(), "moneybuddy-col-cache"))
 

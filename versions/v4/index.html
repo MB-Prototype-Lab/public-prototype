@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    // On browser refresh, return to the version gate (chooser) with a fresh app.
+    // Only fires for reloads — first navigation in from the gate and back/forward
+    // are left alone. App state is in-memory, so the gate round-trip clears inputs.
+    (function () {
+      var t = "";
+      try {
+        var nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+        t = nav ? nav.type : (performance.navigation && performance.navigation.type === 1 ? "reload" : "");
+      } catch (e) {}
+      if (t === "reload") location.replace("../../index.html");
+    })();
+  </script>
+  <title>MoneyBuddy Prototype</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/keyboard.css">
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Phone frame -->
+  <main class="phone" aria-label="Phone frame">
+    <div class="screen">
+      <div id="topbarRoot"></div>
+      <div id="screenRoot" class="screen-scroll"></div>
+      <div id="navRoot"></div>
+      <!-- The simulated keyboard paints here. Deliberately a SIBLING of
+           screenRoot, not a child: render() reassigns screenRoot.innerHTML on
+           every state change, and a keyboard rebuilt mid-keystroke would take
+           the caret with it. See components/keyboard.js. -->
+      <div id="keyboardRoot"></div>
+    </div>
+  </main>
+
+  <!-- Admin panel -->
+  <aside class="admin" aria-label="Admin Tools">
+    <div class="admin-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <p class="admin-title" style="margin:0;">Admin Tools</p>
+        <button class="admin-collapse-btn" type="button" onclick="state.adminCollapsed=true;render()" title="Collapse admin">‹</button>
+      </div>
+      <p class="admin-subtitle" id="adminSubtitle">Manual controls for the active screen.</p>
+      <button class="button secondary" style="margin-top:10px;width:100%;font-size:11px;" onclick="resetUserData()">Reset User Data</button>
+      <!-- Theme picker (L21). Filled by render(); the four options live in
+           THEMES (js/theme.js), not here. -->
+      <p style="margin:10px 0 4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--chrome-muted);">Theme</p>
+      <div id="themePicker" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;"></div>
+      <button class="button secondary" style="margin-top:6px;width:100%;font-size:11px;" onclick="copyAppState()">Copy State</button>
+    </div>
+    <div id="adminRoot" class="admin-scroll"></div>
+    <div id="adminFooter" style="padding:10px 14px;border-top:1px solid var(--chrome-line);font-size:10px;color:var(--chrome-muted);flex-shrink:0;">
+      <div id="adminNavLog" style="margin-bottom:4px;"></div>
+      <!-- What the value trail would write at the next checkpoint. Visible
+           during a moderated run so you can see it filling, rather than
+           discovering at the end that it was empty (js/value-trail.js). -->
+      <div id="adminTrailLog" style="margin-bottom:4px;word-break:break-all;"></div>
+      <div id="adminErrorLog"></div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- Admin expand tab — visible only when admin is collapsed -->
+<button id="adminExpandTab" class="admin-expand-tab" type="button" onclick="state.adminCollapsed=false;render()" title="Expand admin">›</button>
+
+<!-- 0. Developer tooling: error catcher + nav log updater -->
+<script>
+window.__lastError = null;
+window.__navLog = [];
+window.onerror = function(msg, src, line, col) {
+  window.__lastError = { msg: String(msg), src: String(src).split('/').pop(), line: line, col: col, screen: (typeof state !== 'undefined') ? state.screen : '?' };
+  var el = document.getElementById('adminErrorLog');
+  if (el) el.innerHTML = '<span style="color:var(--chrome-danger)">⚠ ' + window.__lastError.screen + ' · ' + window.__lastError.src + ':' + line + ' · ' + String(msg).slice(0,80) + '</span>';
+};
+window.onunhandledrejection = function(e) {
+  window.__lastError = { msg: String(e.reason), screen: (typeof state !== 'undefined') ? state.screen : '?' };
+  var el = document.getElementById('adminErrorLog');
+  if (el) el.innerHTML = '<span style="color:var(--chrome-danger)">⚠ unhandled · ' + window.__lastError.screen + ' · ' + String(e.reason).slice(0,80) + '</span>';
+};
+</script>
+
+<!-- 1. Config + seed data — must load BEFORE anything that reads them.
+     The app runs on file://, where fetch() is blocked and there is no dev
+     server, so spec JSON ships as script-loadable assignments (L13).
+     The .js files are GENERATED — run scripts/wrap-data.sh, never hand-edit. -->
+<script src="js/config.js"></script>
+<script src="data/persona.js"></script>
+<script src="data/seed-state.js"></script>
+<script src="data/journal-questions.js"></script>
+<script src="data/estimator-questions.js"></script>
+<!-- Help-me-out estimation trees: figures + their sources. The arithmetic
+     that consumes them lives in js/help-me-out.js. -->
+<script src="data/help-me-out.js"></script>
+<!-- Nine starting profiles: the picker's options and the sweep's test matrix -->
+<script src="data/test-profiles.js"></script>
+<script src="data/card-apr.js"></script>
+<script src="data/peer-benchmarks.js"></script>
+<script src="data/zip-cost-of-living.js"></script>
+<script src="data/daily-scripts.js"></script>
+<script src="data/onboarding-script.js"></script>
+    <script src="data/onboarding-films.js"></script>
+<script src="data/onboarding-storyboard.js"></script>
+<!-- GENERATED by scripts/gen-audio.sh — measured narration timings (L10) -->
+<script src="data/daily-timings.js"></script>
+<script src="data/buddy-responses.js"></script>
+<script src="data/lessons.js"></script>
+<!-- AUTHORED in 5c — lessons.json ships no script bodies (L8) -->
+<script src="data/lesson-scripts.js"></script>
+
+<!-- 2. Data -->
+<script src="js/state.js"></script>
+<!-- The 12-category taxonomy and the peer model read the data above; boot()
+     reads both, so all three load in this order. -->
+<script src="js/taxonomy.js"></script>
+<script src="js/benchmarks.js"></script>
+<script src="js/observations.js"></script>
+<script src="js/journal.js"></script>
+<script src="js/goals.js"></script>
+<script src="js/lessons-v3.js"></script>
+<script src="js/lesson-rewards.js"></script>
+<!-- Seeds state from the data globals above; called from navigation.js at boot -->
+<script src="js/boot.js"></script>
+<script src="js/utils.js"></script>
+<!-- The four themes + the class applied to .screen. Read by render() (L21) -->
+<script src="js/theme.js"></script>
+<script src="js/narration.js"></script>
+<!-- Chat keyword matcher — data/logic only (no DOM); screens/chat.js renders it -->
+<script src="js/chat-router.js"></script>
+<!-- Builder seam: the normalized baseline every budget builder writes through.
+     Phase 2's lifestyle wizard becomes its only adapter (L6). -->
+<script src="js/budget-baseline.js"></script>
+<!-- Reads the trees above plus the peer model; screens/help-me-out.js renders it -->
+<script src="js/help-me-out.js"></script>
+<!-- Reads the profile table above plus benchIncomeBand; profile-picker.js renders it -->
+<script src="js/profiles.js"></script>
+
+<!-- 3. Shared components (before screens that use them) -->
+<script src="components/thermometer.js"></script>
+<script src="components/streak-counter.js"></script>
+<script src="components/hyperframes.js"></script>
+<!-- The box-and-whiskers budget track. Reads catLabel() from taxonomy.js
+     and budgetFmt() from utils.js, both loaded above. -->
+<script src="components/budget-band.js"></script>
+
+
+<!-- 4. Screen renderers -->
+<script src="screens/streak.js"></script>
+<script src="screens/login.js"></script>
+<script src="screens/daily-update.js"></script>
+<script src="screens/daily-summary.js"></script>
+<script src="screens/daily-share.js"></script>
+<script src="screens/onboarding.js"></script>
+<script src="screens/profile-picker.js"></script>
+<script src="screens/journal-entry.js"></script>
+<script src="screens/journal-confirm.js"></script>
+<script src="screens/home.js"></script>
+<script src="screens/budget-utils.js"></script>
+<script src="screens/budget-v3.js"></script>
+<!-- v3.1: three steps + a Help me out toggle per line. Replaces the twelve
+     sliders of spendingProfile and the six questions that followed it. -->
+<script src="screens/budget-build.js"></script>
+<!-- The estimation trees, asked one category at a time -->
+<script src="screens/help-me-out.js"></script>
+<script src="screens/budget-category.js"></script>
+<script src="screens/spend-estimator.js"></script>
+<script src="screens/lifestyle-wizard.js"></script>
+<script src="screens/budget-compare.js"></script>
+<script src="screens/budget-update-confirm.js"></script>
+<script src="screens/account-balances.js"></script>
+<script src="screens/debt-balances.js"></script>
+<script src="screens/my-progress.js"></script>
+<script src="screens/comparison.js"></script>
+<script src="screens/post-result.js"></script>
+<script src="screens/next-action.js"></script>
+<script src="screens/commitment.js"></script>
+<script src="screens/finish.js"></script>
+<script src="screens/goals-v3.js"></script>
+<script src="screens/learn.js"></script>
+<script src="screens/topic.js"></script>
+<script src="screens/reward-preview.js"></script>
+<script src="screens/lesson-framing.js"></script>
+<script src="screens/lesson.js"></script>
+<script src="screens/lesson-outcome.js"></script>
+<script src="screens/quiz.js"></script>
+<script src="screens/simulation.js"></script>
+<script src="screens/marketplace.js"></script>
+<script src="screens/marketplace-detail.js"></script>
+<script src="screens/reward.js"></script>
+<script src="screens/settings.js"></script>
+<script src="screens/chat.js"></script>
+<script src="screens/my-debts.js"></script>
+<script src="screens/debt-analyzer.js"></script>
+
+<!-- 5. Shared UI components -->
+<script src="components/badge-ring.js"></script>
+<script src="components/buddy.js"></script>
+<script src="components/topbar.js"></script>
+<script src="components/nav.js"></script>
+<script src="components/keyboard.js"></script>
+
+<!-- 6. Core engine -->
+<!-- One URL and one <title> per screen, so a usability tracker can see the
+     prototype at all, plus the per-task start URLs that rest on it. Loads
+     before render.js, which calls into it. -->
+<script src="js/screen-url.js"></script>
+<!-- Phase 2 of the same work: data-ub names on every control so a click report
+     says what was pressed, and the value trail that carries what a tester set
+     out of an unmoderated session without a backend. Both are inert unless a
+     tracker is reading the page. -->
+<script src="js/ub-names.js"></script>
+<script src="js/value-trail.js"></script>
+<!-- Usability tracking. Injects nothing unless USEBERRY_TRACKING is on in
+     js/config.js — the one sanctioned exception to D02, documented there. -->
+<script src="js/useberry.js"></script>
+<script src="js/render.js"></script>
+<script src="js/navigation.js"></script>
+
+</body>
+</html>

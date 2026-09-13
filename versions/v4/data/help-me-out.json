@@ -1,0 +1,516 @@
+{
+  "_note": "Help-me-out estimation trees. FIGURES live here with the source they came from; the ARITHMETIC lives in HMO_MODELS (js/help-me-out.js), because a rate table is data and multiplying it by a slider is logic. Questions ask about HABITS and never about dollars — people know how far they drive, not what they spend on petrol. Every figure is NATIONAL; hmoCompute applies the category's own cost-of-living multiplier on the way out, except where a tree is anchored on a peer figure that already carries it (col: included). Widen freely — this is data.",
+
+  "trees": {
+
+    "Transport": {
+      "model": "transport",
+      "col": "apply",
+      "intro": "A car costs money before it moves, so this asks about both.",
+      "questions": [
+        { "id": "car", "type": "choice", "prompt": "Do you have a car?",
+          "options": [
+            { "id": "own",    "label": "Yes — I own or lease one" },
+            { "id": "shared", "label": "I share one with someone" },
+            { "id": "none",   "label": "No car" }
+          ],
+          "lifestyle": { "dim": "commute", "map": { "own": "car", "shared": "car", "none": "none" } } },
+
+        { "id": "miles", "type": "slider", "prompt": "Roughly how far do you drive in a week?",
+          "help": "A 20-minute local trip is about 8 miles. Guess high rather than low.",
+          "showIf": { "q": "car", "is": ["own", "shared"] },
+          "min": 0, "max": 500, "step": 10, "default": 100, "unit": "miles a week" },
+
+        { "id": "vehicle", "type": "choice", "prompt": "What kind of car is it?",
+          "showIf": { "q": "car", "is": ["own", "shared"] },
+          "options": [
+            { "id": "small",  "label": "Small car" },
+            { "id": "midsize","label": "Midsize car" },
+            { "id": "suv",    "label": "SUV or crossover" },
+            { "id": "truck",  "label": "Truck or large SUV" },
+            { "id": "hybrid", "label": "Hybrid" },
+            { "id": "ev",     "label": "Electric" }
+          ] },
+
+        { "id": "transit", "type": "choice", "prompt": "Transit or rideshare on top of that?",
+          "options": [
+            { "id": "rarely",    "label": "Rarely" },
+            { "id": "sometimes", "label": "Now and then" },
+            { "id": "most",      "label": "Most days" }
+          ] }
+      ],
+      "rates": {
+        "_source": "AAA Your Driving Costs 2025. Operating cost = fuel + maintenance/tires per mile; insurance is annual full coverage / 12. EV and hybrid operating costs from the same report's alternative-powertrain rows.",
+        "opCostPerMile":     { "small": 0.201, "midsize": 0.230, "suv": 0.235, "truck": 0.264, "hybrid": 0.170, "ev": 0.130 },
+        "insuranceMonthly":  { "small": 126, "midsize": 131, "suv": 144, "truck": 153, "hybrid": 132, "ev": 150 },
+        "_insuranceNote": "The line the old question set missed entirely. It is most of the category for a light driver — about $130 a month against roughly $19 of fuel and maintenance — which is how 'light local driving' came out at $10.",
+        "transitMonthly":    { "rarely": 0, "sometimes": 55, "most": 130 },
+        "sharedShare": 0.6
+      }
+    },
+
+    "Subscriptions": {
+      "model": "subscriptions",
+      "col": "apply",
+      "intro": "Tick what you pay for. The total is at the top as you go.",
+      "questions": [
+        { "id": "services", "type": "checklist", "prompt": "Which of these do you pay for?",
+          "help": "Prices are the common plan for each. Adjust at the end if yours differs.",
+          "options": [
+            { "id": "netflix",   "label": "Netflix" },
+            { "id": "hulu",      "label": "Hulu" },
+            { "id": "disney",    "label": "Disney+" },
+            { "id": "max",       "label": "HBO Max" },
+            { "id": "prime",     "label": "Amazon Prime" },
+            { "id": "appletv",   "label": "Apple TV+" },
+            { "id": "paramount", "label": "Paramount+" },
+            { "id": "peacock",   "label": "Peacock" },
+            { "id": "youtubetv", "label": "YouTube TV" },
+            { "id": "ytpremium", "label": "YouTube Premium" },
+            { "id": "spotify",   "label": "Spotify" },
+            { "id": "applemusic","label": "Apple Music" },
+            { "id": "icloud",    "label": "iCloud or Google storage" },
+            { "id": "news",      "label": "A news subscription" }
+          ] },
+
+        { "id": "others", "type": "slider", "prompt": "How many others do you have?",
+          "help": "Apps, games, software, anything that bills monthly.",
+          "min": 0, "max": 12, "step": 1, "default": 0, "unit": "more" }
+      ],
+      "rates": {
+        "_source": "Published US list prices, September 2026. Ad-supported tier where one exists, since that is the commonly-held plan.",
+        "services": {
+          "netflix": 8.99, "hulu": 9.99, "disney": 9.99, "max": 9.99,
+          "prime": 14.99, "appletv": 12.99, "paramount": 7.99, "peacock": 7.99,
+          "youtubetv": 82.99, "ytpremium": 13.99, "spotify": 11.99,
+          "applemusic": 10.99, "icloud": 2.99, "news": 25.00
+        },
+        "fallbackAverage": 12.00,
+        "_flatNote": "Subscriptions are categoryBucket 'flat' in zip-cost-of-living.json, so the multiplier is 1.0 everywhere. A streaming plan costs the same in Palo Alto as in Helena."
+      }
+    },
+
+    "Housing": {
+      "model": "housing",
+      "col": "included",
+      "intro": "I know roughly what housing costs around your ZIP — this is about your place.",
+      "questions": [
+        { "id": "arrangement", "type": "choice", "prompt": "What's your setup?",
+          "options": [
+            { "id": "rent",   "label": "I rent" },
+            { "id": "own",    "label": "I own — mortgage, tax and insurance" },
+            { "id": "shared", "label": "I split it with someone" },
+            { "id": "family", "label": "I live with family" }
+          ],
+          "lifestyle": { "dim": "paysRent",
+                         "map": { "rent": "rent", "own": "mortgage", "shared": "other", "family": "family" } } },
+
+        { "id": "bedrooms", "type": "choice", "prompt": "How big is the place?",
+          "showIf": { "q": "arrangement", "is": ["rent", "own", "shared"] },
+          "options": [
+            { "id": "studio", "label": "Studio" },
+            { "id": "one",    "label": "1 bedroom" },
+            { "id": "two",    "label": "2 bedrooms" },
+            { "id": "three",  "label": "3 bedrooms" },
+            { "id": "four",   "label": "4 or more" }
+          ] },
+
+        { "id": "utilitiesIncluded", "type": "choice", "prompt": "Are any utilities included in what you pay?",
+          "showIf": { "q": "arrangement", "is": ["rent", "shared"] },
+          "options": [
+            { "id": "no",  "label": "No — I pay them separately" },
+            { "id": "yes", "label": "Yes — some or all are included" }
+          ] }
+      ],
+      "rates": {
+        "_source": "Anchored on benchPeerValue('Housing'), which already carries BEA Regional Price Parities for housing and the county's own rent ratio from Zillow ZORI. These are adjustments to that, so col is 'included' — applying the multiplier again would square it.",
+        "arrangement": { "rent": 1.0, "own": 1.05, "shared": 0.6, "family": 0.22 },
+        "_arrangementNote": "Matches PEER_BENCHMARKS.lifestyleModifiers.paysRent, which is the same claim made in the same units. Owning is a little above rent parity for tax and insurance.",
+        "bedrooms": { "studio": 0.72, "one": 0.85, "two": 1.0, "three": 1.22, "four": 1.45 },
+        "_bedroomsNote": "HUD Fair Market Rent ratios, normalised so a 2-bedroom is 1.0 — the size the peer base is built around.",
+        "utilitiesIncluded": 1.12
+      }
+    },
+
+    "Groceries": {
+      "model": "groceries",
+      "col": "apply",
+      "intro": "I already know your household size, so this is about where and how you shop.",
+      "questions": [
+        { "id": "store", "type": "choice", "prompt": "Where do you do most of your shopping?",
+          "options": [
+            { "id": "warehouse", "label": "Warehouse club or discount grocer" },
+            { "id": "standard",  "label": "A standard supermarket" },
+            { "id": "premium",   "label": "Organic or specialty" }
+          ],
+          "lifestyle": { "dim": "foodie", "map": { "warehouse": "low", "standard": "moderate", "premium": "high" } } },
+
+        { "id": "cooks", "type": "choice", "prompt": "How much of your eating happens at home?",
+          "options": [
+            { "id": "rarely",    "label": "Not much — most meals come from somewhere else" },
+            { "id": "sometimes", "label": "About half and half" },
+            { "id": "usually",   "label": "Most of it — I cook" }
+          ],
+          "lifestyle": { "dim": "cooksAtHome", "map": { "rarely": "rarely", "sometimes": "sometimes", "usually": "usually" } } }
+      ],
+      "rates": {
+        "_source": "USDA Cost of Food at Home, 2026 monthly plans. Arrays are household size 1 / 2 / 3 / 4+. Warehouse maps to the Thrifty plan, standard to Low-Cost/Moderate, premium to Liberal.",
+        "usdaMonthly": {
+          "warehouse": [278, 610, 810, 1013],
+          "standard":  [371, 700, 930, 1180],
+          "premium":   [530, 980, 1310, 1668]
+        },
+        "cooks": { "rarely": 0.72, "sometimes": 1.0, "usually": 1.15 },
+        "_cooksNote": "Cooking moves money BETWEEN groceries and dining out rather than creating it. The mirrored factors live in the Dining out tree."
+      }
+    },
+
+    "Utilities": {
+      "model": "utilities",
+      "col": "included",
+      "intro": "Power is the part that varies most by where you live, and I have your state's rate.",
+      "questions": [
+        { "id": "home", "type": "choice", "prompt": "What are you heating and cooling?",
+          "options": [
+            { "id": "studio", "label": "A studio" },
+            { "id": "apt1",   "label": "A 1-bedroom" },
+            { "id": "apt2",   "label": "A 2-bedroom" },
+            { "id": "house2", "label": "A small house" },
+            { "id": "house3", "label": "A 3-bedroom house" },
+            { "id": "house4", "label": "A larger house" }
+          ] },
+
+        { "id": "included", "type": "choice", "prompt": "Is anything already covered in your rent?",
+          "options": [
+            { "id": "none", "label": "No — I pay for everything" },
+            { "id": "some", "label": "Water or trash is covered" },
+            { "id": "all",  "label": "Most of it is covered" }
+          ] }
+      ],
+      "rates": {
+        "_source": "EIA average US residential electricity price and typical consumption by dwelling size; published broadband and mobile averages. The rate here is NATIONAL on purpose: benchColLocalModifier already returns the state electricity ratio for Utilities, so hmoCompute's multiplier carries the local price. Applying it here as well squared it \u2014 Los Angeles was overstated by 65%.",
+        "nationalCentsPerKwh": 16.5,
+        "kwhByHome":   { "studio": 300, "apt1": 450, "apt2": 600, "house2": 850, "house3": 1050, "house4": 1300 },
+        "waterByHome": { "studio": 30, "apt1": 40, "apt2": 55, "house2": 75, "house3": 90, "house4": 105 },
+        "internet": 75,
+        "phonePerLine": 40,
+        "maxLines": 4
+      }
+    },
+
+    "Health": {
+      "model": "medical",
+      "col": "apply",
+      "intro": "Whether you pay a premium yourself changes this more than anything else.",
+      "questions": [
+        { "id": "premium", "type": "choice", "prompt": "How do you get your health cover?",
+          "options": [
+            { "id": "employer", "label": "Through work — it comes out of my pay" },
+            { "id": "self",     "label": "I buy it myself" },
+            { "id": "other",    "label": "Medicare, Medicaid, or I'm on someone else's" }
+          ] },
+
+        { "id": "visits", "type": "choice", "prompt": "How often do you see a doctor?",
+          "options": [
+            { "id": "rarely",   "label": "Almost never" },
+            { "id": "few",      "label": "A couple of times a year" },
+            { "id": "regular",  "label": "Every month or two" },
+            { "id": "frequent", "label": "Regularly — something ongoing" }
+          ] },
+
+        { "id": "prescriptions", "type": "choice", "prompt": "Prescriptions?",
+          "options": [
+            { "id": "none",       "label": "None" },
+            { "id": "occasional", "label": "Now and then" },
+            { "id": "regular",    "label": "Something every month" },
+            { "id": "several",    "label": "Several, every month" }
+          ] },
+
+        { "id": "dental", "type": "choice", "prompt": "Dental and eyes?",
+          "options": [
+            { "id": "none",      "label": "I don't go" },
+            { "id": "cleanings", "label": "Cleanings and check-ups" },
+            { "id": "work",      "label": "Ongoing work — braces, implants, glasses" }
+          ] }
+      ],
+      "rates": {
+        "_source": "KFF Employer Health Benefits Survey and Peterson-KFF: $869 a year average out-of-pocket for employer-covered adults, about $72 a month. Marketplace premium is the unsubsidised benchmark silver plan. MEPS for the prescription split.",
+        "marketplacePremium": 480,
+        "_premiumNote": "The branch the old three-bucket question could not express. Somebody buying their own cover is a different order of magnitude from somebody whose employer takes it from a paycheck, and averaging the two describes nobody.",
+        "visitsMonthly":        { "rarely": 12, "few": 32, "regular": 85, "frequent": 175 },
+        "prescriptionsMonthly": { "none": 0, "occasional": 14, "regular": 42, "several": 115 },
+        "dentalMonthly":        { "none": 0, "cleanings": 22, "work": 68 }
+      }
+    },
+
+    "Dining out": {
+      "model": "dining",
+      "col": "apply",
+      "intro": "Meal by meal — how often, and what kind of place.",
+      "questions": [
+        { "id": "coffee", "type": "choice", "prompt": "Coffee or café runs?",
+          "options": [
+            { "id": "never", "label": "I make it at home" },
+            { "id": "few",   "label": "A couple of times a week" },
+            { "id": "most",  "label": "Most weekdays" },
+            { "id": "daily", "label": "Every day" }
+          ] },
+
+        { "id": "coffeeTier", "type": "choice", "prompt": "From where, usually?",
+          "showIf": { "q": "coffee", "is": ["few", "most", "daily"] },
+          "options": [
+            { "id": "donut",     "label": "Donut shop or gas station" },
+            { "id": "chain",     "label": "A regular chain" },
+            { "id": "specialty", "label": "A specialty café" }
+          ] },
+
+        { "id": "lunch", "type": "choice", "prompt": "Lunches out?",
+          "options": [
+            { "id": "never",      "label": "I bring it" },
+            { "id": "occasional", "label": "Once or twice a week" },
+            { "id": "few",        "label": "Three or four days" },
+            { "id": "most",       "label": "Most days" }
+          ] },
+
+        { "id": "dinner", "type": "choice", "prompt": "Dinners out or delivered?",
+          "options": [
+            { "id": "never",      "label": "We cook" },
+            { "id": "occasional", "label": "About once a week" },
+            { "id": "few",        "label": "Two or three times a week" },
+            { "id": "most",       "label": "Most nights" }
+          ],
+          "lifestyle": { "dim": "foodie",
+                         "map": { "never": "low", "occasional": "moderate", "few": "moderate", "most": "high" } } },
+
+        { "id": "dinnerTier", "type": "choice", "prompt": "What kind of place, usually?",
+          "showIf": { "q": "dinner", "is": ["occasional", "few", "most"] },
+          "options": [
+            { "id": "casual",   "label": "Casual — takeout, delivery, a pub" },
+            { "id": "midrange", "label": "Mid-range sit-down" },
+            { "id": "nice",     "label": "Somewhere nice" }
+          ] }
+      ],
+      "rates": {
+        "_source": "BLS Consumer Expenditure Survey food-away-from-home, plus published average checks by service type (quick-serve, fast-casual, full-service). Per-week counts are converted at 52/12 weeks a month, not 4.",
+        "coffeePerWeek": { "never": 0, "few": 2, "most": 4.5, "daily": 7 },
+        "coffeePrice":   { "donut": 3.25, "chain": 5.50, "specialty": 6.75 },
+        "lunchPerWeek":  { "never": 0, "occasional": 1.5, "few": 3.5, "most": 5 },
+        "lunchPrice": 15.50,
+        "dinnerPerWeek": { "never": 0, "occasional": 1, "few": 2.5, "most": 5 },
+        "dinnerPrice":   { "casual": 22, "midrange": 35, "nice": 60 }
+      }
+    },
+
+    "Personal care": {
+      "model": "personalCare",
+      "col": "apply",
+      "intro": "Haircuts, the gym, and everything in the bathroom cabinet.",
+      "questions": [
+        { "id": "haircut", "type": "choice", "prompt": "How often do you get your hair cut?",
+          "options": [
+            { "id": "rarely",     "label": "Rarely, or I do it myself" },
+            { "id": "occasional", "label": "Every few months" },
+            { "id": "regular",    "label": "Every six weeks or so" },
+            { "id": "frequent",   "label": "Monthly or more" }
+          ] },
+
+        { "id": "haircutTier", "type": "choice", "prompt": "Where?",
+          "showIf": { "q": "haircut", "is": ["occasional", "regular", "frequent"] },
+          "options": [
+            { "id": "barber",  "label": "Barber or budget salon" },
+            { "id": "salon",   "label": "A regular salon" },
+            { "id": "premium", "label": "Somewhere pricier — colour, treatments" }
+          ] },
+
+        { "id": "gym", "type": "choice", "prompt": "Gym or fitness?",
+          "options": [
+            { "id": "none",     "label": "None" },
+            { "id": "basic",    "label": "A budget gym" },
+            { "id": "midrange", "label": "A full gym" },
+            { "id": "boutique", "label": "Classes or a studio" }
+          ] },
+
+        { "id": "other", "type": "choice", "prompt": "Everything else — skincare, products, nails?",
+          "options": [
+            { "id": "minimal", "label": "The basics" },
+            { "id": "some",    "label": "A bit more than that" },
+            { "id": "lots",    "label": "It's a whole routine" }
+          ] }
+      ],
+      "rates": {
+        "_source": "BLS Consumer Expenditure Survey personal care services; published salon and gym membership pricing surveys.",
+        "cutsPerYear": { "rarely": 2, "occasional": 4, "regular": 8, "frequent": 14 },
+        "cutPrice":    { "barber": 28, "salon": 65, "premium": 120 },
+        "gymMonthly":  { "none": 0, "basic": 25, "midrange": 55, "boutique": 165 },
+        "everythingElse": { "minimal": 15, "some": 38, "lots": 85 },
+        "maxPeople": 2
+      }
+    },
+
+    "Debt payments": {
+      "model": "debt",
+      "col": "apply",
+      "intro": "What leaves your account each month, not what you owe in total.",
+      "questions": [
+        { "id": "kinds", "type": "choice", "prompt": "What are you paying down?",
+          "options": [
+            { "id": "none",  "label": "Nothing right now" },
+            { "id": "cards", "label": "Credit cards" },
+            { "id": "loans", "label": "A loan — car, student, personal" },
+            { "id": "both",  "label": "Both" }
+          ] },
+
+        { "id": "balance", "type": "choice", "prompt": "Roughly what's on the cards?",
+          "showIf": { "q": "kinds", "is": ["cards", "both"] },
+          "options": [
+            { "id": "small",  "label": "A couple of thousand" },
+            { "id": "medium", "label": "Five to ten thousand" },
+            { "id": "large",  "label": "More than that" }
+          ] },
+
+        { "id": "approach", "type": "choice", "prompt": "How much do you pay each month?",
+          "showIf": { "q": "kinds", "is": ["cards", "both"] },
+          "options": [
+            { "id": "minimum",    "label": "About the minimum" },
+            { "id": "more",       "label": "A bit more than the minimum" },
+            { "id": "aggressive", "label": "As much as I can" }
+          ] },
+
+        { "id": "loans", "type": "choice", "prompt": "And the loans?",
+          "showIf": { "q": "kinds", "is": ["loans", "both"] },
+          "options": [
+            { "id": "student", "label": "Student loans" },
+            { "id": "car",     "label": "A car payment" },
+            { "id": "both",    "label": "Both" },
+            { "id": "other",   "label": "Something else" }
+          ] }
+      ],
+      "rates": {
+        "_source": "New York Fed Household Debt and Credit and Experian State of Credit for balances; issuer minimum-payment formula is interest plus about 1% of principal, floored near $25. Average auto payment and student loan payment from the same reports.",
+        "balanceBand":  { "small": 2500, "medium": 7500, "large": 18000 },
+        "minimumRate":  { "minimum": 0.025, "more": 0.05, "aggressive": 0.10 },
+        "minimumFloor": 25,
+        "loanMonthly":  { "student": 290, "car": 560, "both": 850, "other": 340 },
+        "_flatNote": "Debt payments is categoryBucket 'flat' — a loan repayment is the same number wherever you live."
+      }
+    },
+
+    "Entertainment": {
+      "model": "entertainment",
+      "col": "apply",
+      "intro": "Going out, going to things, and the stuff you do for fun.",
+      "questions": [
+        { "id": "going", "type": "choice", "prompt": "Nights out — bars, friends, going somewhere?",
+          "options": [
+            { "id": "rarely",  "label": "Rarely" },
+            { "id": "monthly", "label": "About once a month" },
+            { "id": "weekly",  "label": "Most weekends" },
+            { "id": "often",   "label": "A couple of times a week" }
+          ],
+          "lifestyle": { "dim": "hobbySpend",
+                         "map": { "rarely": "low", "monthly": "moderate", "weekly": "moderate", "often": "high" } } },
+
+        { "id": "events", "type": "choice", "prompt": "Gigs, games, shows — how many a year?",
+          "options": [
+            { "id": "none",    "label": "None" },
+            { "id": "few",     "label": "One or two" },
+            { "id": "several", "label": "Every couple of months" },
+            { "id": "many",    "label": "Monthly or more" }
+          ] },
+
+        { "id": "hobby", "type": "choice", "prompt": "Hobbies and the gear that goes with them?",
+          "options": [
+            { "id": "minimal", "label": "Nothing much" },
+            { "id": "some",    "label": "A bit here and there" },
+            { "id": "serious", "label": "I'm properly into something" }
+          ] }
+      ],
+      "rates": {
+        "_source": "BLS Consumer Expenditure Survey entertainment, by income quintile; published average ticket prices for live music and sport.",
+        "nightsPerMonth": { "rarely": 0.5, "monthly": 1, "weekly": 4, "often": 8 },
+        "nightPrice": 55,
+        "eventsPerYear": { "none": 0, "few": 2, "several": 6, "many": 14 },
+        "eventPrice": 95,
+        "hobbyMonthly": { "minimal": 10, "some": 45, "serious": 130 }
+      }
+    },
+
+    "Shopping": {
+      "model": "shopping",
+      "col": "apply",
+      "intro": "Clothes, orders that turn up, and the things a home eats through.",
+      "questions": [
+        { "id": "clothes", "type": "choice", "prompt": "Clothes and shoes?",
+          "options": [
+            { "id": "minimal",    "label": "Only when something wears out" },
+            { "id": "occasional", "label": "A few times a year" },
+            { "id": "regular",    "label": "Every month or two" },
+            { "id": "often",      "label": "Often" }
+          ],
+          "lifestyle": { "dim": "hobbySpend",
+                         "map": { "minimal": "low", "occasional": "moderate", "regular": "moderate", "often": "high" } } },
+
+        { "id": "online", "type": "choice", "prompt": "Online orders — the ones that just arrive?",
+          "options": [
+            { "id": "rarely",    "label": "Rarely" },
+            { "id": "sometimes", "label": "A few a month" },
+            { "id": "often",     "label": "Something most weeks" }
+          ] },
+
+        { "id": "household", "type": "choice", "prompt": "Household things — cleaning, kitchen, replacing stuff?",
+          "options": [
+            { "id": "minimal", "label": "Not much" },
+            { "id": "typical", "label": "The usual" },
+            { "id": "lots",    "label": "Quite a bit" }
+          ] }
+      ],
+      "rates": {
+        "_source": "BLS Consumer Expenditure Survey apparel and household supplies, by income quintile.",
+        "clothingPerYear": { "minimal": 250, "occasional": 600, "regular": 1400, "often": 2800 },
+        "onlineMonthly":   { "rarely": 15, "sometimes": 60, "often": 160 },
+        "householdGoods":  { "minimal": 25, "typical": 60, "lots": 130 },
+        "maxPeople": 3
+      }
+    },
+
+    "Other": {
+      "model": "other",
+      "col": "apply",
+      "intro": "Trips are lumpy rather than monthly, so this works out what they come to across a year.",
+      "questions": [
+        { "id": "trips", "type": "slider", "prompt": "How many trips away do you take in a year?",
+          "min": 0, "max": 12, "step": 1, "default": 2, "unit": "trips a year" },
+
+        { "id": "tripStyle", "type": "choice", "prompt": "What does a typical one look like?",
+          "showIf": { "q": "trips", "gt": 0 },
+          "options": [
+            { "id": "budget",      "label": "Cheap and cheerful" },
+            { "id": "typical",     "label": "A normal holiday" },
+            { "id": "comfortable", "label": "Comfortable — flights, decent hotels" }
+          ],
+          "lifestyle": { "dim": "travelFrequency",
+                         "map": { "budget": "rare", "typical": "moderate", "comfortable": "frequent" } } },
+
+        { "id": "gifts", "type": "choice", "prompt": "Presents and occasions?",
+          "options": [
+            { "id": "minimal",  "label": "Not many" },
+            { "id": "typical",  "label": "Birthdays and holidays" },
+            { "id": "generous", "label": "I give a lot" }
+          ] },
+
+        { "id": "misc", "type": "choice", "prompt": "Everything that fits nowhere else?",
+          "options": [
+            { "id": "minimal", "label": "Very little" },
+            { "id": "typical", "label": "Some months" },
+            { "id": "lots",    "label": "A fair amount" }
+          ] }
+      ],
+      "rates": {
+        "_source": "BLS Consumer Expenditure Survey cash contributions and miscellaneous, by income quintile; published average US leisure-trip cost.",
+        "tripCost":     { "budget": 550, "typical": 1100, "comfortable": 2200 },
+        "giftsMonthly": { "minimal": 15, "typical": 45, "generous": 110 },
+        "miscMonthly":  { "minimal": 20, "typical": 50, "lots": 110 }
+      }
+    }
+  }
+}

@@ -108,6 +108,24 @@ body {
   color: var(--gate-text);
 }
 
+/* "recording" on a version whose build loads a usability tracker. The gate is
+   the last screen before a tester is inside the app, so it is the last honest
+   place to say so — and they cannot switch it off, which is exactly why it has
+   to be stated rather than assumed. */
+.gate-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  background: var(--gate-accent);
+  color: #fff;
+}
+
 .gate-btn:hover { filter: brightness(0.97); }
 .gate-btn:active { filter: brightness(0.93); }
 

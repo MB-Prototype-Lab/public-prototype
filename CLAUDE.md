@@ -9,48 +9,54 @@ over abstraction, but keep the file structure clean (see Architecture).
 The repo root is a **passcode + version-selector gate** (`index.html`, `gate/`),
 not the app itself. Each major iteration is a fully self-contained, independently
 runnable copy of the app under `versions/<name>/` (currently `versions/v1/`,
-`versions/v2/`, `versions/v3/`, and `versions/v3.1/`). **New work happens in
-`versions/v3.1/`** unless told otherwise.
+`versions/v2/`, `versions/v3/`, `versions/v3.1/`, and `versions/v4/`). **New
+work happens in `versions/v4/`** unless told otherwise.
 
-### v3 and v3.1 are an A/B PAIR
+### v4 is the current version; v3 and v3.1 are an A/B PAIR behind it
 
-v3.1 started as a byte-for-byte copy of v3. The differences between them are
-the thing being tested, so **v3 is the control and does not get feature work** —
-changing it changes what v3.1 is being compared against. The gate labels them
-`v3 (A)` and `v3.1 (B)` rather than implying one supersedes the other.
+**`versions/v4/` started as a byte-for-byte copy of `versions/v3.1/`** and is
+where work now happens. It is **not** a third arm of the A/B test — that
+comparison is between v3 and v3.1 only, and v4 sits outside it.
 
-**Every bug fix gets a question first.** Feature work goes to v3.1 only — that
-is what makes it the B side. A *fix* is the ambiguous case: backporting keeps
-the comparison honest on a shared defect, not backporting keeps the control
-frozen. That is the owner's call, per defect, and it is not inferable from the
-code. So before applying any fix, **ask with a multiple-choice question**:
+v3.1 in turn started as a byte-for-byte copy of v3, and the differences between
+*those two* are the thing being tested, so **v3 is the control and does not get
+feature work** — changing it changes what v3.1 is being compared against. The
+gate labels them `v3 (A)` and `v3.1 (B)`, with v4 labelled `v4 (current)`.
 
-> Does this fix apply to **both v3 and v3.1**, or **v3.1 only**?
+**Every bug fix gets a question first, and it now has three possible answers.**
+Feature work goes to v4. A *fix* is the ambiguous case: backporting keeps the
+comparison honest on a shared defect, not backporting keeps the control frozen.
+That is the owner's call, per defect, and it is not inferable from the code. So
+before applying any fix, **ask with a multiple-choice question**:
+
+> Does this fix apply to **v4 only**, to **v4 and v3.1**, or to **all three**?
 
 Never assume one and mention it afterwards. A control that quietly drifted is
 worse than no control, and a defect fixed on one side only can look like the
 variation being tested.
 
-**The tooling is version-aware, and its default is v3.1.** `sweep.sh`,
+**The tooling is version-aware, and its default is v4.** `sweep.sh`,
 `wrap-data.sh`, `gen-audio.sh` and `build-cost-of-living.py` all read
-`MB_VERSION` and default to `v3.1`; `check-syntax.sh` covers every live version
-at once. Without this a hardcoded path reports 60 checks green having examined
+`MB_VERSION` and default to `v4`; `check-syntax.sh` covers every live version
+at once. Without this a hardcoded path reports 109 checks green having examined
 the folder you did not edit.
 
-    bash scripts/sweep.sh                   # v3.1, the default
-    MB_VERSION=v3 bash scripts/sweep.sh     # the control side
+    bash scripts/sweep.sh                     # v4, the default
+    MB_VERSION=v3.1 bash scripts/sweep.sh     # the B side of the pair
+    MB_VERSION=v3   bash scripts/sweep.sh     # the control
 
 **Versions are test variants, not a migration path.** Each is a separate thing a
 tester can pick at the gate; none supersedes another. `versions/v1/` and
-`versions/v2/` are **frozen — don't edit them**, and `versions/v3/` is now the
-A/B control (see above). Nothing in v3.1 needs to stay backward-compatible with
-any of them.
+`versions/v2/` are **frozen — don't edit them**, and `versions/v3/` is the A/B
+control (see above). Nothing in v4 needs to stay backward-compatible with any of
+them.
 
-### ⚠ v3 and v3.1 differ from v1/v2 in ways that matter
+### ⚠ v3, v3.1 and v4 differ from v1/v2 in ways that matter
 
-Everything in this section applies to **both** — v3.1 is a copy of v3, so its
-contracts, traps and decisions are identical until you deliberately change one.
-Paths below say `versions/v3/`; read them as "whichever of the two you are in".
+Everything in this section applies to **all three** — v3.1 is a copy of v3 and
+v4 is a copy of v3.1, so their contracts, traps and decisions are identical
+until you deliberately change one. Paths below say `versions/v3/`; read them as
+"whichever of the three you are in".
 
 **Read these three before touching code:**
 
@@ -59,6 +65,7 @@ Paths below say `versions/v3/`; read them as "whichever of the two you are in".
 | `plan.md` (repo root) | **Locked decisions L1–L22** in §0 — do not re-litigate them. Plus the rationale, spec contradictions, and review logs |
 | `versions/<ver>/docs/architecture.md` | Cross-cutting contracts: data loading, the 12-category taxonomy, nav/back-stack, top bar, audio pipeline, standing rules |
 | `versions/<ver>/PROGRESS.md` | The build checklist. Start at `Current state:`, work the first unchecked item |
+| `versions/v4/docs/useberry.md` | Running a usability study against v4 — the two tracking flags, start URLs, task-completion setup |
 | `versions/<ver>/CLAUDE.md` | Auto-loads in that folder. Carries the silent-failure trap list |
 
 The v3 spec is at `v3 Files/spec/` (unpacked, read-only). Its
@@ -103,6 +110,15 @@ they conflict — several spec decisions are deliberately overridden.
   preview" below — it names specific folders and goes stale otherwise. (If the
   target folder already exists, use `cp -R versions/<name>/. versions/<next>/`
   — the trailing dot copies *contents*; without it you get a nested folder.)
+  Four more things the copy does not do for you, all found doing v3.1 → v4:
+  the **tooling defaults** (`MB_VERSION` in `sweep.sh`, `wrap-data.sh`,
+  `gen-audio.sh`, `build-cost-of-living.py`) and the **find list** in
+  `check-syntax.sh`; the new folder's own **`CLAUDE.md`, `PROGRESS.md` and
+  `docs/architecture.md` headers**, which still name the folder they were
+  written in; and any **admin-panel string that names a version** — those read
+  `APP_VERSION` from `js/config.js`, so set it and they follow. Historical
+  comments in the source keep naming the older version on purpose: that is
+  where the design came from, and rewriting them destroys the record.
 - Everything below this section (Architecture, hard conventions, Goals V2,
   Testing) describes the structure **inside a single version folder** — paths
   like `css/variables.css` or `js/state.js` are relative to whichever
@@ -114,16 +130,16 @@ they conflict — several spec decisions are deliberately overridden.
 - Preview the gate: open the repo-root `index.html` (passcode `1337`), then pick
   a version.
 - Preview a specific version directly (skip the gate): open
-  `versions/v1/index.html`, `versions/v2/index.html`, or
-  `versions/v3/index.html`. The app renders into a phone frame on the left and an
-  **Admin Tools** panel on the right (manual controls + time travel + state
-  inspector for the active screen).
+  `versions/v1/index.html`, `versions/v2/index.html`, `versions/v3/index.html`,
+  `versions/v3.1/index.html`, or `versions/v4/index.html`. The app renders into
+  a phone frame on the left and an **Admin Tools** panel on the right (manual
+  controls + time travel + state inspector for the active screen).
 - **The app is opened as a `file://` page — there is no dev server.** `fetch()`
   and `XMLHttpRequest` are blocked against local files. Any data a version needs
   at runtime must load via a `<script>` tag, not a network call.
 - In a headless environment with no browser, you cannot visually QA. Instead:
   - Syntax-check any file you touch: `bash scripts/check-syntax.sh <path>`
-    (no args = all v3 + gate JS). **Which JS engine exists depends on the
+    (no args = all live versions + gate JS). **Which JS engine exists depends on the
     machine** — the Mac has no `node` but ships JavaScriptCore (`jsc`), the
     Linux/WSL box has `node` (often only under `~/.nvm`, off PATH for
     non-interactive shells) and no `jsc`. The script detects whichever is

@@ -18,9 +18,10 @@
 
 set -euo pipefail
 
-# Same MB_VERSION switch as sweep.sh -- v3 and v3.1 each have their own data/,
-# and wrapping the wrong one leaves the edited JSON with a stale .js beside it.
-DIR="versions/${MB_VERSION:-v3.1}/data"
+# Same MB_VERSION switch as sweep.sh -- v3, v3.1 and v4 each have their own
+# data/, and wrapping the wrong one leaves the edited JSON with a stale .js
+# beside it.
+DIR="versions/${MB_VERSION:-v4}/data"
 [ -d "$DIR" ] || { echo "error: $DIR not found (run from repo root)" >&2; exit 1; }
 
 # json basename -> global const name. Keep in sync with architecture.md §1.
