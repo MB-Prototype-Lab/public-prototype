@@ -76,6 +76,7 @@ function scrollKey() {
     return s;
   }
   if (s === "budgetBuild" && state.budgetBuild) return s + ":" + state.budgetBuild.step;
+  if (s === "esfBuild" && state.esf) return s + ":" + state.esf.step;
   // Category AND stage, but never the answers: revealing the next question is
   // the same view growing, and holding position is what keeps it readable.
   if (s === "helpMeOut" && state.helpMeOut) {
@@ -217,6 +218,9 @@ function activeTabFor(screen) {
   if (screen === "goals")             return "goals";    // v3: Goals is its own tab (D34)
   if (["profilePicker"].includes(screen)) return "home";
   if (["budgetBuild", "helpMeOut", "spendingProfile", "budgetCompare", "lifestyleWizard","budgetDone"].includes(screen)) return "aboutMe";
+  // The emergency fund lives under Goals — it ends in one, even though it seeds
+  // the budget on the way through.
+  if (["esfBuild", "esfPlan"].includes(screen)) return "goals";
   if (screen === "myDebts")           return "aboutMe";
   if (screen === "debtAnalyzer")      return "aboutMe";
   if (screen === "comparison")        return "aboutMe";

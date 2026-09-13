@@ -59,8 +59,19 @@ function renderGoalCardV3(goal) {
   // savings goal fills toward its target, a spend limit fills toward its ceiling.
   const fill = goal.target ? Math.min(100, Math.round((cur / goal.target) * 100)) : 0;
 
+  // The emergency fund's own goal reopens the tool that made it. Card-level
+  // click rather than a button, so the whole card is the target — with
+  // role/tabindex and a keydown, because a bare onclick on a div is unreachable
+  // by keyboard and this codebase requires visible focus.
+  const opensEsf = typeof esfIsEsfGoal === "function" && esfIsEsfGoal(goal);
+  const openAttrs = opensEsf
+    ? ` role="button" tabindex="0" class="card goal-card goal-card-open"` +
+      ` onclick="esfReopen()"` +
+      ` onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();esfReopen();}"`
+    : ` class="card goal-card"`;
+
   return `
-    <div class="card goal-card">
+    <div${openAttrs}>
       <div class="row" style="align-items:baseline;margin-bottom:2px;">
         <p class="task-title" style="margin:0;">${h(goal.label)}</p>
         <span class="pill ${poor ? "pill-warn" : "pill-good"}" style="font-size:9px;padding:2px 8px;">
@@ -85,7 +96,8 @@ function renderGoalCardV3(goal) {
           From your last checking balance — I never ask you to update this directly.
         </p>` : ""}
 
-      <button class="goal-remove" type="button" onclick="goalsRemove('${h(goal.id)}')">Remove</button>
+      <button class="goal-remove" type="button"
+              onclick="event.stopPropagation();goalsRemove('${h(goal.id)}')">Remove</button>
     </div>
   `;
 }

@@ -918,6 +918,12 @@ section("7b. Unreferenced functions — inventory, not a verdict");
 // and is kept on purpose. Anything NOT on this list is new, and warns.
 var DEAD_BASELINE = [
   "benchSelfTest",              // documents the benchmark formula by example
+  // The emergency fund's rent-or-own correction. The owner cut the card that
+  // called it, so state.esf.owns is now derived from the persona and never
+  // corrected by the tester — which still GATES the three owner-only bills on
+  // step 4. Kept because putting the correction back (most naturally on step 4,
+  // beside the rows it controls) is a markup change, not a rewrite.
+  "esfToggleOwns",
   // The ZIP-only entry point to the cost-of-living predicate. benchColIndex
   // already holds a resolved lookup and uses benchColSupported, so calling this
   // instead would repeat the lookup. Kept as the module's public

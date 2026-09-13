@@ -477,6 +477,10 @@ function navRouteTask(route) {
 
   // ── Flows from Home ──
   if (name === "money_journal")       { journalStart({}); taskGo("journalEntry"); return; }
+  // The emergency fund starts a session before it routes, the same shape as the
+  // journal above — the screen reads state.esf and there is nothing to render
+  // until esfStart() has built it.
+  if (name === "emergency_fund")      { esfStart(); return; }
   if (name === "subscription_confirm"){ journalStart({ focusQuestionId: "q_watched" }); taskGo("journalEntry"); return; }
 
   // ── Bookmarks into a tab ──

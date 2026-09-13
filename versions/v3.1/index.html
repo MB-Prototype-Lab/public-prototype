@@ -95,6 +95,9 @@ window.onunhandledrejection = function(e) {
 <!-- Help-me-out estimation trees: figures + their sources. The arithmetic
      that consumes them lives in js/help-me-out.js. -->
 <script src="data/help-me-out.js"></script>
+<!-- Emergency fund: irregular-bill figures, the Utilities row split, the crisis
+     rule. Not a spec copy — the ESF spec ships no data file. -->
+<script src="data/emergency-fund.js"></script>
 <!-- Nine starting profiles: the picker's options and the sweep's test matrix -->
 <script src="data/test-profiles.js"></script>
 <script src="data/card-apr.js"></script>
@@ -135,6 +138,10 @@ window.onunhandledrejection = function(e) {
 <script src="js/budget-baseline.js"></script>
 <!-- Reads the trees above plus the peer model; screens/help-me-out.js renders it -->
 <script src="js/help-me-out.js"></script>
+<!-- Emergency fund model: six survival categories as a VIEW over the taxonomy,
+     opening on the same peer figures the budget builder uses. Commits through
+     the baseline seam above, so it seeds the budget. -->
+<script src="js/esf.js"></script>
 <!-- Reads the profile table above plus benchIncomeBand; profile-picker.js renders it -->
 <script src="js/profiles.js"></script>
 
@@ -165,6 +172,10 @@ window.onunhandledrejection = function(e) {
 <script src="screens/budget-build.js"></script>
 <!-- The estimation trees, asked one category at a time -->
 <script src="screens/help-me-out.js"></script>
+<!-- Emergency fund: four capture steps, then the number and the plan. Reads the
+     model in js/esf.js and hands single lines to the trees above. -->
+<script src="screens/esf-build.js"></script>
+<script src="screens/esf-plan.js"></script>
 <script src="screens/budget-category.js"></script>
 <script src="screens/spend-estimator.js"></script>
 <script src="screens/lifestyle-wizard.js"></script>

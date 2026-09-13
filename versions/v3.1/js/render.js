@@ -63,6 +63,11 @@ function adminSubtitle() {
   if (state.screen === "helpMeOut")       return "Help me out — " +
                                                  (state.helpMeOut ? catLabel(state.helpMeOut.category) + ", " + state.helpMeOut.stage : "no session") +
                                                  ". Habits in, a monthly figure out; never pro-rated.";
+  if (state.screen === "esfBuild")        return "Emergency fund — capture step " +
+                                                 ((state.esf && state.esf.step || 0) + 1) +
+                                                 " of " + ESF_STEPS.length + ". Six survival categories, typed figures only.";
+  if (state.screen === "esfPlan")         return "Emergency fund — the number and the plan. One figure, not two: " +
+                                                 "health cover is stated, never chosen.";
   if (state.screen === "budgetBuild")     return "v3.1 builder — " + bbStep().title.toLowerCase() +
                                                  " (step " + ((state.budgetBuild && state.budgetBuild.step || 0) + 1) +
                                                  " of " + BB_STEPS.length + "), Help me out per line.";
@@ -109,6 +114,8 @@ function renderScreen() {
   if (state.screen === "profilePicker")     return renderProfilePicker();
   if (state.screen === "helpMeOut")         return renderHelpMeOut();
   if (state.screen === "budgetBuild")       return renderBudgetBuild();
+  if (state.screen === "esfBuild")          return renderEsfBuild();
+  if (state.screen === "esfPlan")           return renderEsfPlan();
   if (state.screen === "spendingProfile")   return renderSpendingProfile();
   if (state.screen === "budgetCompare")     return renderBudgetCompare();
   if (state.screen === "lifestyleWizard")   return renderLifestyleWizard();
@@ -173,6 +180,8 @@ function renderAdmin() {
   if (state.screen === "profilePicker")   return renderProfilePickerAdmin();
   if (state.screen === "helpMeOut")       return renderHelpMeOutAdmin();
   if (state.screen === "budgetBuild")     return renderBudgetBuildAdmin();
+  if (state.screen === "esfBuild")        return renderEsfBuildAdmin();
+  if (state.screen === "esfPlan")         return renderEsfPlanAdmin();
   if (state.screen === "spendingProfile") return renderLifestyleWizardAdmin();
   if (state.screen === "budgetCompare")   return renderBudgetCompareAdmin();
   if (state.screen === "lifestyleWizard") return renderLifestyleWizardAdmin();
@@ -187,7 +196,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="navAdminJump(this.value)">
-          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetCategory","spendEstimator","budgetBuild","helpMeOut","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","myProgress","comparison",
+          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetCategory","spendEstimator","budgetBuild","helpMeOut","esfBuild","esfPlan","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","myProgress","comparison",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
@@ -238,7 +247,7 @@ function render() {
   // Any new full-bleed screen should join an existing list, not add a call.
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
   screenRoot.classList.toggle("journal-mode",     ["lessonFraming","lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen) || screenRoot.classList.contains("journal-mode"));
-  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","helpMeOut","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","spendEstimator"].includes(state.screen));
+  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","helpMeOut","esfBuild","esfPlan","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","spendEstimator"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("login-mode",       state.screen === "login");
   screenRoot.classList.toggle("du-mode",          state.screen === "dailyUpdate");
