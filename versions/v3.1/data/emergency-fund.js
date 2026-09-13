@@ -1,0 +1,85 @@
+// GENERATED from emergency-fund.json — do not hand-edit.
+// Regenerate: bash scripts/wrap-data.sh
+//
+// The app runs on file://, where fetch() is blocked and there is no dev
+// server, so spec data ships as a script-loadable assignment (L13).
+// The .json beside this file is the byte-identical spec copy.
+const EMERGENCY_FUND =
+{
+  "_note": "Emergency fund tool. Unlike its neighbours this file is NOT a byte-identical copy of anything in 'v3 Files/spec/' — the ESF spec (docs/emergency-fund-spec.md) ships no data file, so these figures were sourced for it. Every figure carries the source it came from; the arithmetic that consumes them lives in js/esf.js.",
+
+  "irregularBills": {
+    "_note": "Screen 4 — bills that do not arrive monthly. Each row is opt-in: the tool ASSUMES the tester already counted the cost inside what they typed earlier, and [Add it] is the correction. So a row left untouched adds nothing, which is the safe direction for a double-count and the wrong direction for an omission. `showIf` gates which rows appear at all; `basis` says how the estimate is built.",
+
+    "bills": [
+      { "id": "propertyTax", "label": "Property tax", "showIf": "owns",
+        "basis": "ratioOfHousing", "value": 0.14, "category": "Housing",
+        "_source": "Census ACS 2023: median real estate taxes paid $3,057/yr against median monthly owner cost with a mortgage of $1,828 — about 14% of the monthly housing figure. Expressed as a ratio so it tracks the ZIP's own housing cost rather than a national flat rate; property tax is the most place-variable bill on this list." },
+
+      { "id": "homeInsurance", "label": "Home insurance", "showIf": "owns",
+        "basis": "monthly", "value": 110, "col": "Housing", "category": "Housing",
+        "qualifier": "Often bundled into a mortgage payment too.",
+        "_source": "NAIC Homeowners Insurance Report: US average annual premium about $1,320, so roughly $110 a month." },
+
+      { "id": "hoa", "label": "HOA or condo fee", "showIf": "owns",
+        "basis": "monthly", "value": 250, "col": "Housing", "category": "Housing",
+        "_source": "Census ACS median monthly HOA fee for units that carry one. The spec's mock shows $0 here; a real median is better, because the row is opt-in — somebody with no HOA simply never taps it, whereas $0 makes the row look broken." },
+
+      { "id": "carInsurance", "label": "Car insurance", "showIf": "hasCar",
+        "basis": "monthly", "value": 145, "col": "Transport", "category": "Transport",
+        "overlaps": "transportRunning",
+        "_source": "AAA Your Driving Costs 2025 full-coverage average, the same table the Transport help-me-out tree prices insurance from.",
+        "_overlapNote": "FLAGGED FOR THE OWNER. The Screen 3 'Gas, insurance, upkeep' estimate ALREADY contains car insurance — it is the largest single part of it. Adding this row on top double-counts about $145 a month, roughly $900 on a six-month target. It is safe only because the row is opt-in and defaults to off. Deleting this entry is the clean fix if the owner agrees." },
+
+      { "id": "plates", "label": "Plates and tags", "showIf": "hasCar",
+        "basis": "monthly", "value": 15, "category": "Transport",
+        "_source": "Average US annual vehicle registration and title cost of roughly $180. Varies more by state than almost anything else here — several states charge a flat $30 a year, several charge a percentage of vehicle value." },
+
+      { "id": "school", "label": "School costs", "showIf": "always",
+        "basis": "monthly", "value": 60, "category": "Other",
+        "_source": "NRF Back-to-School survey: about $720 a year per household on school supplies, fees and clothing. Shown to everyone rather than gated on dependents, because onboarding does not collect dependents and a household of one simply never taps it." }
+    ],
+
+    "_omitted": {
+      "yearlySubscriptions": "The spec's Screen 4 lists a 'Yearly subscriptions' row at about $25 a month. Deliberately NOT built: Subscriptions is one of the six categories the owner excluded from the emergency fund as dispensable, so a row that adds it back contradicts that ruling. Restoring it is one entry in the bills array."
+    }
+  },
+
+  "utilitiesSplit": {
+    "_note": "Utilities is ONE category in the taxonomy but TWO input rows on Screen 2, split by how well a tester recalls them. The peer figure stays authoritative for the total; this table only supplies the PROPORTION, so the two rows always sum back to it.",
+    "_source": "Same EIA and published-average figures the Utilities help-me-out tree uses (data/help-me-out.json). Power and water are the locally-priced part, broadband and mobile the nationally-priced part — the same division that file documents.",
+    "homeByHousehold": { "_note": "Home size is not collected anywhere, so household size proxies for it. Keys are help-me-out's own kwhByHome ids.", "1": "apt1", "2": "apt2", "3": "house2", "4": "house3" }
+  },
+
+  "driving": {
+    "_note": "Backs the three car-related fields. The tester types a dollar figure and the subtext reads it BACK to them in units they can sanity-check — 'about 640 miles a month' means something, '$210 of fuel' does not.",
+
+    "nationalPerGallon": 3.15,
+    "_gallonSource": "EIA US regular all-formulations retail average. National on purpose: fuel is the most locally-variable price on this list, but no per-ZIP feed ships with this prototype, so only the states that diverge far enough to be visibly wrong are listed below and everywhere else takes the national figure. Inventing a per-county gas price would be exactly the plausible-looking fabrication the peer model exists to avoid.",
+    "perGallonByState": {
+      "CA": 4.65, "HI": 4.55, "WA": 4.30, "NV": 3.95, "OR": 3.85, "AK": 3.70
+    },
+
+    "milesPerGallon": 25,
+    "_mpgSource": "EPA/FHWA average on-road fuel economy for the US light-duty fleet. One figure rather than per-vehicle: the tester has not been asked what they drive at this point in the flow, and the Transport help-me-out tree is where that detail belongs.",
+
+    "maintenancePerMile": 0.10,
+    "_maintenanceSource": "AAA Your Driving Costs 2025, maintenance/repair/tyres component — the same table the Transport tree prices operating cost from. Derived from the miles the fuel figure implies rather than asked, because it is the one car cost nobody can state and it scales with distance more than with anything else.",
+
+    "typicalCarPayment": 740,
+    "_paymentSource": "Experian State of the Automotive Finance Market, average new-vehicle monthly payment. Used ONLY as a proxy for what the car is worth when estimating insurance — a bigger payment means a pricier car to replace.",
+    "paymentFactorRange": [0.8, 1.4],
+    "_paymentFactorNote": "Clamped hard. The payment is weak evidence about premium and unclamped it would let a $1,500 truck note triple somebody's insurance estimate.",
+
+    "_demographicsNote": "The owner asked for demographics in the insurance estimate. Age, driving record and claims history are the three things that actually move a premium and NONE of them are collected anywhere in this app. What is available is the ZIP and the car payment, so the estimate uses those and says so. Adding an age question would move this materially."
+  },
+
+  "crisis": {
+    "_note": "What changes if the paycheck stops. The owner's ruling: ONLY health cover moves. Housing, debt, transport, food and utilities are all carried at their stated figures, and the tool states the adjustment rather than offering a choice about it — an emergency fund that assumes you keep your employer's insurance is not covering the emergency.",
+    "replacementPremiumFrom": "helpMeOut:Health.marketplacePremium",
+    "_premiumNote": "Read from data/help-me-out.json rather than restated here, so the marketplace premium has exactly one definition. Copying it would leave two figures free to drift.",
+    "maxCovered": 2,
+    "_maxCoveredNote": "Premium is charged per adult, capped at two, matching the medical help-me-out model's own treatment of the same figure."
+  }
+}
+;
