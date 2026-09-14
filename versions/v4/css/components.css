@@ -2108,7 +2108,16 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
    Scoped to a class rather than applied to .journal-shell, because the journal,
    the wizard and the lesson tail all use that shell and none of them asked. */
-.journal-shell.onb-pinned { height: 100%; min-height: 0; }
+.journal-shell.onb-pinned {
+  height: 100%; min-height: 0;
+  /* The shared shell's 4px top assumes a 52px top bar above it. Onboarding no
+     longer has one (components/topbar.js), and at 4px the step counter sat
+     hard against the bezel. This is the breathing room the bar used to supply,
+     without the 34px of dead strip that came with it.
+     Scoped to onb-pinned, which only onboarding carries -- every other
+     journal-shell screen still has its bar and still wants the 4px. */
+  padding-top: 18px;
+}
 
 /* `overflow-y: auto` is not a one-axis declaration. When one axis is not
    `visible` the other's `visible` COMPUTES to `auto`, so this body is a scroll

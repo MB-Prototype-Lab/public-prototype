@@ -12,13 +12,21 @@ const ONBOARDING_FILMS = {
   "light": {
     "look": "light",
     "scripts": [
-      "onboarding_intro"
+      "onboarding_debt",
+      "onboarding_intro",
+      "onboarding_paycheck",
+      "onboarding_savings",
+      "onboarding_understand"
     ]
   },
   "naturalLight": {
     "look": "light",
     "scripts": [
-      "onboarding_intro"
+      "onboarding_debt",
+      "onboarding_intro",
+      "onboarding_paycheck",
+      "onboarding_savings",
+      "onboarding_understand"
     ]
   }
 };

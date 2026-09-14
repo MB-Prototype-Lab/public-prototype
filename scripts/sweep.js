@@ -1061,6 +1061,21 @@ if (!__FILM_MANIFEST) {
   chk(listed.length === 0, "the app's film index matches what was rendered",
       "listed but absent: " + listed.slice(0, 6).join(", "));
 
+  // ── the render tool writes into the version being swept ───────────────────
+  // Six tools read MB_VERSION and this one was missed when v4 was created, so
+  // `--render` encoded four films into v3.1 -- the A/B CONTROL -- while v4's
+  // sweep kept reporting "1 of 10 rendered". Every log line said "rendered";
+  // they were simply in another version. Nothing else would ever have said so.
+  // Against the DEFAULT version, not the one being swept -- sweeping the control
+  // must not fail because the tool points at where work happens.
+  if (typeof __FILM_TOOL_VERSION === "string" && typeof __DEFAULT_VERSION === "string") {
+    chk(__FILM_TOOL_VERSION === __DEFAULT_VERSION,
+        "tools/film/build-films.mjs renders into the version work happens in",
+        "the tool defaults to " + __FILM_TOOL_VERSION + ", the tooling default is " +
+        __DEFAULT_VERSION + "\n          a render would land in the wrong version " +
+        "and every log line would still say \"rendered\"");
+  }
+
   // ── ONB_FILM_ANY_LOOK: one render serves every theme ──────────────────────
   // v4 only. While a look is unrendered its themes used to drop to the SVG
   // engine, so the same onboarding step showed two different pieces of work

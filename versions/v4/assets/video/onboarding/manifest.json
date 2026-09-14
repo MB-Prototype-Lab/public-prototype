@@ -38,6 +38,90 @@
         10182,
         7273
       ]
+    },
+    "light__onboarding_paycheck": {
+      "look": "light",
+      "script": "onboarding_paycheck",
+      "totalSec": 45.455,
+      "segmentIds": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6"
+      ],
+      "segmentMs": [
+        3273,
+        5818,
+        9818,
+        9091,
+        10182,
+        7273
+      ]
+    },
+    "light__onboarding_savings": {
+      "look": "light",
+      "script": "onboarding_savings",
+      "totalSec": 45.819,
+      "segmentIds": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6"
+      ],
+      "segmentMs": [
+        3273,
+        5818,
+        10182,
+        9091,
+        10182,
+        7273
+      ]
+    },
+    "light__onboarding_debt": {
+      "look": "light",
+      "script": "onboarding_debt",
+      "totalSec": 46.546,
+      "segmentIds": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6"
+      ],
+      "segmentMs": [
+        3273,
+        5818,
+        12364,
+        7636,
+        10182,
+        7273
+      ]
+    },
+    "light__onboarding_understand": {
+      "look": "light",
+      "script": "onboarding_understand",
+      "totalSec": 45.819,
+      "segmentIds": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6"
+      ],
+      "segmentMs": [
+        3273,
+        5818,
+        11273,
+        8000,
+        10182,
+        7273
+      ]
     }
   }
 }

@@ -27,6 +27,8 @@ variation from a bug.
 ### v4's own divergences
 
 1. **The onboarding film plays on all four themes — TEMPORARY.**
+   *(All five LIGHT scripts are now rendered, so this fallback fires only for the
+   two dark themes. Rendering the dark look retires it entirely.)*
    `ONB_FILM_ANY_LOOK` in `screens/onboarding.js`. The film has two looks and
    only `light` is rendered, so `dark` and `naturalDark` found no entry in
    `data/onboarding-films.js` and dropped to the live hyperframes engine — the
@@ -43,6 +45,13 @@ variation from a bug.
      script fallback would play one script's picture under another's narration
      and drift, which is exactly what `sweep.js` §7c's beats check exists to
      catch. The fix is rendering the other four, not another fallback.
+   - **The render tool was pointing at the wrong version.** Six tools read
+     `MB_VERSION`; five were repointed when v4 was created and
+     `tools/film/build-films.mjs` was not. A `--render` therefore encoded four
+     films into `versions/v3.1/` — the A/B **control** — while v4's sweep went
+     on reporting "1 of 10 rendered". Every log line said `rendered`; they were
+     simply in another version, and nothing anywhere would have said so.
+     §7c now asserts the tool's default matches the tooling default.
    - `sweep.js` §7c gates both halves: every theme resolves to a rendered film,
      **and** a theme with its own render still gets its own look. The second is
      the one that would rot quietly — without it, rendering the dark film could
