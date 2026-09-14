@@ -126,6 +126,12 @@ done < <(grep -o 'src="[^"]*\.js"' "$APP/index.html" | sed 's/src="//;s/"//')
 # collide), so it keeps its own copy of which builds carry a usability tracker.
 # Injecting the source lets §7d assert that copy against the real flag instead
 # of trusting anyone to update both.
+# js/render.js as a string. §7f needs the journal-mode class lists, and those
+# are toggle() arguments rather than a named constant -- there is nothing to
+# read at runtime because the DOM stub's classList does not record.
+printf '\nvar __RENDER_JS = ' >> "$OUT"
+python3 -c "import json,sys;print(json.dumps(open(sys.argv[1],encoding='utf-8').read())+';')" "$APP/js/render.js" >> "$OUT"
+
 printf '\nvar __GATE_JS = ' >> "$OUT"
 python3 -c "import json,sys;print(json.dumps(open('gate/gate.js',encoding='utf-8').read())+';')" >> "$OUT"
 

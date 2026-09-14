@@ -101,6 +101,9 @@ window.onunhandledrejection = function(e) {
 <script src="data/help-me-out.js"></script>
 <!-- Nine starting profiles: the picker's options and the sweep's test matrix -->
 <script src="data/test-profiles.js"></script>
+<!-- 380 breeds -> the nine body types, for the creator's breed search. The
+     matching lives in js/breed-search.js; this is only the lookup. -->
+<script src="data/dog-breeds.js"></script>
 <script src="data/card-apr.js"></script>
 <script src="data/peer-benchmarks.js"></script>
 <script src="data/zip-cost-of-living.js"></script>
@@ -210,6 +213,8 @@ window.onunhandledrejection = function(e) {
 <!-- One URL and one <title> per screen, so a usability tracker can see the
      prototype at all, plus the per-task start URLs that rest on it. Loads
      before render.js, which calls into it. -->
+<!-- Breed text -> body types. Pure functions; the screen paints the result. -->
+<script src="js/breed-search.js"></script>
 <script src="js/screen-url.js"></script>
 <!-- Phase 2 of the same work: data-ub names on every control so a click report
      says what was pressed, and the value trail that carries what a tester set

@@ -2003,6 +2003,83 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .buddy-scroll-opt.picked { border-color: var(--accent); background: var(--accent-soft); }
 .buddy-scroll-opt > span:last-child { color: var(--accent); font-weight: 800; }
 
+/* ─── Body type: the 3x3 Mii-style grid ──────────────────────────────────────
+   Label OUTSIDE the rounded square, placeholder circle inside it. Only the
+   prototype has art; the eight others are told apart by circle size alone, so
+   the tile has to give that circle room to read. */
+.buddy-body-grid {
+  display: grid;
+  gap: 10px;
+  /* Two rows and half of the third, so the grid LOOKS scrollable without a
+     scrollbar having to say so. flex:1 lets it shrink on a short frame; the
+     max-height stops it growing past the intended half-row on a tall one.
+
+     A ROW IS NOT A SQUARE. The first version measured 2.5 rows off the tile's
+     width alone and forgot the label sitting under it, so "two and a half rows"
+     was really 2.3 and the third row's labels were sliced mid-word. Build the
+     row out of its parts and it stays honest if any part changes. */
+  --tile-w: 78px;
+  --tile-gap: 10px;
+  --tile-label: 16px;
+  --tile-row: calc(var(--tile-w) + 5px + var(--tile-label));
+  grid-template-columns: repeat(3, var(--tile-w));
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  max-height: calc(var(--tile-row) * 2.5 + var(--tile-gap) * 2);
+  overflow-y: auto;
+  padding: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+.body-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 0; border: none; background: none; cursor: pointer;
+  color: var(--text);
+}
+.body-tile-square {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; aspect-ratio: 1 / 1;
+  border: 2px solid var(--line); border-radius: 16px;
+  background: var(--soft);
+  overflow: hidden;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.body-tile.picked .body-tile-square { border-color: var(--accent); background: var(--accent-soft); }
+.body-tile-dot {
+  display: block; border-radius: 50%;
+  background: var(--progress-bg);
+  border: 1px solid var(--rail);
+}
+.body-tile.picked .body-tile-dot { background: var(--accent-soft); border-color: var(--accent); }
+.body-tile-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.body-tile-label {
+  font-size: 11px; font-weight: 700; line-height: 1.2; text-align: center;
+  color: var(--muted);
+}
+.body-tile.picked .body-tile-label { color: var(--accent); }
+
+/* ─── Breed search ───────────────────────────────────────────────────────────
+   The clear button hides itself with no JS: :placeholder-shown is true exactly
+   when the field is empty, and the button is its sibling. */
+.body-search { position: relative; margin-bottom: 8px; }
+.screen .body-search-input {
+  width: 100%; min-height: 44px;
+  padding: 10px 40px 10px 14px;
+  border: 1px solid var(--line); border-radius: 14px;
+  background: var(--card); color: var(--text);
+  font-size: 14px;
+}
+.body-search-clear {
+  position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+  width: 36px; height: 36px;
+  border: none; border-radius: 50%; background: none;
+  color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer;
+}
+.body-search-input:placeholder-shown ~ .body-search-clear { display: none; }
+.body-search-match {
+  margin: 0 0 8px; font-size: 11px; min-height: 15px;
+}
+
 /* Circular swatches — fur colour, eye colour. */
 .buddy-swatch-row {
   display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 4px;
@@ -2093,6 +2170,66 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    swatch rows and the name field sat hard against the illustration. */
 .onb-buddy-step .buddy-swatch-row,
 .onb-buddy-step .input-group { margin-top: 4px; }
+
+/* ─── Body-type step: buy the grid its rows ──────────────────────────────────
+   Three claims on one 390px screen -- portrait, search field, 2.5 rows of tiles
+   -- and at the old sizes they need about 145px more than there is. Two levers,
+   both scoped to this sub-step so the other four are untouched:
+
+     1. the TITLE drops to one line. "Now the fun part -- let's give me a look."
+        wrapped to two at 18px.
+     2. the PORTRAIT drops from a full-width square (~330px) to 200px. The owner
+        allowed resizing it; it is still the largest thing on the screen. */
+.onb-buddy-step-body .onb-title { font-size: 15px; line-height: 1.3; }
+.onb-buddy-step-body .onb-buddy-stage {
+  width: 240px;
+  margin: 0 auto 12px;
+  align-self: center;
+  flex-shrink: 0;
+}
+/* The counter sat 4px below a header that already has 14px of its own padding.
+   Closing that gap is the cheapest 18px on the screen. `.onb-skip` KEEPS its
+   44px min-height -- it is a tap target and the quality floor requires it, so
+   that is the floor on how far this can tighten. */
+.onb-buddy-count { margin: 0 0 2px; }
+/* The header's own buffer, trimmed. `.onb-skip` KEEPS its 44px min-height --
+   it is a tap target and the quality floor requires it, so that is the floor on
+   how tight this gets.
+   There used to be a `margin-top: -8px` here too. It was scraping back space
+   that the top bar was sitting on (css/layout.css), and it did not even work:
+   shifting a height:100% block upward does not shorten it, it just hangs 8px
+   out of the bottom of its container. */
+.journal-shell.onb-pinned .journal-head { padding-bottom: 8px; }
+
+/* ─── Search mode ────────────────────────────────────────────────────────────
+   While the search field has focus the step hands the screen over to it: the
+   field rises to the top, the portrait goes away, and the GRID takes the space
+   -- so what rises above the keyboard is the thing you are choosing from, not
+   the dog you are not looking at.
+
+   HIDING is what moves it -- there is no re-ordering. The search already sits
+   directly after the portrait in the DOM, so `display: none` on the portrait,
+   the title and the subtitle lifts it to the top on its own. `order` was the
+   first idea and it was wrong: it would have lifted the field above the step
+   header too.
+
+   Nothing here moves a node, which is the point. The <input> keeps its focus and
+   its caret, both of which it loses the instant anything re-renders around it.
+
+   The shared `.screen-scroll.kbd-open { padding-bottom: 250px }`
+   (css/keyboard.css) is what makes this work rather than something to fight:
+   it shrinks the scroller's content box, the step compresses into what is left
+   above the keyboard, and with the portrait hidden that compression lands on
+   the grid. An earlier attempt here tried to SUPPRESS that rule -- one of the
+   two attempts was inert anyway, setting padding on the step when the padding
+   lives on the scroller. */
+.onb-buddy-step-body.searching .onb-buddy-stage,
+.onb-buddy-step-body.searching .onb-title,
+.onb-buddy-step-body.searching .onb-buddy-sub { display: none; }
+.onb-buddy-step-body.searching .buddy-body-grid {
+  max-height: none;   /* the half-row cue is for the resting state; searching
+                         wants every row it can show */
+}
 
 /* --- The intro film's controls sit at the foot of the screen ---
    Mirrors the lesson player, which is a full-height flex column with

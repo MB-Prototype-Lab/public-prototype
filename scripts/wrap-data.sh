@@ -33,6 +33,7 @@ global_for() {
     estimator-questions) echo "ESTIMATOR_QUESTIONS" ;;
     help-me-out)       echo "HELP_ME_OUT" ;;
     test-profiles)     echo "TEST_PROFILES" ;;
+    dog-breeds)        echo "DOG_BREEDS" ;;
     card-apr)          echo "CARD_APR" ;;
     onboarding-script) echo "ONBOARDING_SCRIPT" ;;
     peer-benchmarks)   echo "PEER_BENCHMARKS" ;;

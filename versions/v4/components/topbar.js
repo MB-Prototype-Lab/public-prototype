@@ -26,7 +26,12 @@
 // lesson: the accent stage has its own boxed back (.lp-back-btn); the top-bar
 // back would stack a second chevron over it (and reads low-contrast on the sage
 // stage in the dark themes). Hide the bar so the boxed icon is the only back.
-const TOPBAR_HIDDEN_SCREENS = ["streak", "chat", "lesson"];
+// onboarding: it has Back pinned in its own footer and Skip in its own header,
+// so the bare bar's chevron was a THIRD escape doing what the first already
+// does. Hiding it also hands back the 52px it was reserving -- but only with
+// the paired rule in css/layout.css; see there, the offset does not follow the
+// bar on its own.
+const TOPBAR_HIDDEN_SCREENS = ["streak", "chat", "lesson", "onboarding"];
 
 function renderTopBar() {
   if (TOPBAR_HIDDEN_SCREENS.includes(state.screen)) return "";

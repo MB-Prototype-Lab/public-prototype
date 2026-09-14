@@ -349,6 +349,18 @@ h1, h2, h3, .title, .section-title, .journal-total, .budget-row-amt,
   bottom: 0;
 }
 
+/* THE HIDDEN BAR STILL RESERVED ITS HEIGHT.
+   `.screen-scroll.no-topbar` (line 61) and `.screen-scroll.journal-mode` above
+   are both (0,2,0), so the later one wins on source order alone -- and the later
+   one is the journal rule. Onboarding is journal-mode, so with its bar hidden it
+   kept a 52px empty strip across the top of every step.
+
+   Needs BOTH classes to outrank the rule above it. Onboarding is currently the
+   only screen that is journal-mode AND has its bar hidden; sweep.js asserts that
+   stays true, so a screen joining both lists is a failure rather than a
+   surprise band of nothing. */
+.screen-scroll.journal-mode.no-topbar { top: 0; }
+
 /* Login is a full-bleed scene — the bare top bar floats over it. */
 .screen-scroll.login-mode { padding: 0; bottom: 0; }
 

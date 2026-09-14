@@ -152,7 +152,13 @@ const ONB_GOALS_MAX = 3;
 // each with a control suited to it). Buddy option lists + colour maps live in
 // components/buddy.js and are read at render time (that file loads AFTER this
 // one, so they must never be touched at top level here).
-const ONB_BUDDY_STEPS = ["breed", "furColor", "furPattern", "eyeColor", "name"];
+// Step 1 is BODY TYPE, not breed. It used to be a vertical list of nine breed
+// NAMES -- a list of words for choosing a shape. The grid shows the shapes and
+// the search turns a breed into them, which is the direction a tester actually
+// thinks in: they know their dog is a husky-corgi, not which silhouette that is.
+// `breed` still exists on the buddy and in the admin dropdowns; it is simply no
+// longer what this step asks for.
+const ONB_BUDDY_STEPS = ["bodyType", "furColor", "furPattern", "eyeColor", "name"];
 
 function onbStart() {
   state.onboarding = {
@@ -181,6 +187,7 @@ function onbStart() {
     // the creator should be showing off. PERSONA.buddy is untouched, so a
     // SKIP_ONBOARDING run still boots to the description frame.
     buddy: Object.assign({}, PERSONA.buddy, {
+      bodyType:   BUDDY_PROTOTYPE,
       breed:      BUDDY_PROTOTYPE,
       furColor:   BUDDY_PROTOTYPE,
       furPattern: BUDDY_PROTOTYPE,
@@ -973,6 +980,7 @@ function onbSetBuddy(key, value) {
 // ─── Character creator (one element per sub-step, Mii/Nintendogs style) ───────
 // Reads the shared option lists from components/buddy.js at render time.
 const ONB_BUDDY_COPY = {
+  bodyType:   ["Now the fun part — let's give me a look.", "Scroll to pick your buddy's body type"],
   breed:      ["Now the fun part — let's give me a look.", "Scroll and pick a breed."],
   furColor:   ["What colour is my coat?",                  "Tap a colour."],
   furPattern: ["Any markings?",                            "Scroll and pick a pattern."],
@@ -986,7 +994,9 @@ function onbBuddyStep(o) {
   const copy = ONB_BUDDY_COPY[sub] || ["Design your buddy", ""];
 
   let control;
-  if (sub === "breed") {
+  if (sub === "bodyType") {
+    control = onbBodyTypeControl(o);
+  } else if (sub === "breed") {
     control = onbBuddyScrollList("breed", BUDDY_BREEDS, b.breed);
   } else if (sub === "furPattern") {
     control = onbBuddyScrollList("furPattern", BUDDY_FUR_PATTERNS, b.furPattern);
@@ -1007,13 +1017,165 @@ function onbBuddyStep(o) {
   // header and stage leave, rather than sitting at a fixed height with a gap
   // under it. See .onb-buddy-step in css/components.css.
   return `
-    <div class="onb-buddy-step">
-      <p class="helper" style="margin:0 0 4px;">Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})</p>
+    <div class="onb-buddy-step${sub === "bodyType" ? " onb-buddy-step-body" : ""}">
+      <p class="helper onb-buddy-count">Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})</p>
       <h1 class="title onb-title" style="margin:0 0 6px;">${h(copy[0])}</h1>
-      <p class="helper" style="margin:0 0 12px;">${h(copy[1])}</p>
+      <p class="helper onb-buddy-sub" style="margin:0 0 12px;">${h(copy[1])}</p>
       ${renderBuddyStage({ square: true, cls: "onb-buddy-stage" })}
       ${control}
     </div>`;
+}
+
+// ─── Body type: a 3x3 grid, and a breed search that filters it ───────────────
+// Nine rounded tiles, Mii-style. The label sits OUTSIDE the tile; inside is a
+// placeholder circle whose size is the only thing telling the eight unbuilt
+// types apart (BUDDY_BODY_TYPES in components/buddy.js). The prototype tile
+// carries the real illustration, because it is the one that exists.
+//
+// The grid shows two rows and half of the third, so it reads as scrollable
+// without a scrollbar having to say so.
+
+function onbBodyTypeControl(o) {
+  const q = (o && o.bodySearch) || "";
+  return `
+    <div class="body-search">
+      <input class="body-search-input" type="text" inputmode="search"
+             placeholder="Search a breed — try &quot;husky corgi mix&quot;"
+             value="${h(q)}"
+             oninput="onbBodySearch(this.value)"
+             onfocus="onbBodySearchOpen()"
+             onkeydown="onbBodySearchKey(event)"
+             aria-label="Search a dog breed to filter body types">
+      <button class="body-search-clear" type="button" aria-label="Clear search"
+              onclick="onbBodySearchClear()">&times;</button>
+    </div>
+    <p class="helper body-search-match" id="onbBodyMatch">${onbBodyMatchLine(o)}</p>
+    <div class="buddy-body-grid" id="onbBodyGrid">${onbBodyGrid(o)}</div>`;
+}
+
+/** The tiles themselves — patched on its own, so typing never rebuilds the input. */
+function onbBodyGrid(o) {
+  const b = (o && o.buddy) || {};
+  const visible = (typeof breedVisibleBodies === "function")
+    ? breedVisibleBodies((o && o.bodySearch) || "")
+    : BUDDY_BODY_TYPES.map(t => t.id);
+
+  return BUDDY_BODY_TYPES.filter(t => visible.indexOf(t.id) !== -1).map(t => {
+    const picked = b.bodyType === t.id;
+    // The prototype is the one with art. Everything else gets its circle.
+    const inner = t.id === BUDDY_PROTOTYPE
+      ? `<img class="body-tile-img" src="${BUDDY_PROTOTYPE_IMG}" alt=""
+              onerror="this.style.display='none'">`
+      : `<span class="body-tile-dot" style="width:${t.dot}px;height:${t.dot}px;"></span>`;
+    return `
+      <button class="body-tile ${picked ? "picked" : ""}" type="button"
+              aria-pressed="${picked}"
+              onclick="onbSetBuddy('bodyType','${h(t.id)}')">
+        <span class="body-tile-square">${inner}</span>
+        <span class="body-tile-label">${h(t.label)}</span>
+      </button>`;
+  }).join("");
+}
+
+/** What the search found, in words. Patched alongside the grid. */
+function onbBodyMatchLine(o) {
+  const q = (o && o.bodySearch) || "";
+  if (!q.trim() || typeof breedMatch !== "function") {
+    return "Nine shapes. Pick whichever looks most like your dog.";
+  }
+  const m = breedMatch(q);
+  if (m.generic) return "A bit of everything — all nine still showing.";
+  if (!m.breeds.length) return "No breed by that name. All nine still showing.";
+
+  const names = m.breeds.slice(0, 3).map(n => h(n)).join(" + ") +
+                (m.breeds.length > 3 ? " +" + (m.breeds.length - 3) + " more" : "");
+  const shapes = m.bodies.length === 1 ? "one shape" : m.bodies.length + " shapes";
+  // Saying WHY a third shape appeared: a cross throws builds neither parent has,
+  // and a tester who sees an unexplained extra tile reads it as a bug.
+  const because = m.crossAdded.length
+    ? ", including what the cross itself can throw"
+    : "";
+  return names + " — " + shapes + because + ".";
+}
+
+// ─── Search mode ─────────────────────────────────────────────────────────────
+// Focusing the field hands it the screen: the portrait, title and subtitle go
+// away, the search rises to the top and the grid takes everything left. What
+// rises above the keyboard is the thing being chosen from, not the dog.
+//
+// ⚠ IT IS A DOM CLASS, NOT STATE, and that is deliberate twice over.
+//
+// First, it cannot re-render. render() reassigns the screen's innerHTML, which
+// destroys the focused <input>, drops the caret and closes the keyboard — a
+// focus handler that re-rendered would shut the mode it had just opened.
+// Toggling a class touches no node.
+//
+// Second, nothing has to remember to clear it. Picking a tile goes through
+// onbSetBuddy() → render(), and the rebuilt markup simply has no class, so the
+// mode ends by construction rather than by someone maintaining a flag. The
+// FILTER is the thing that is state (o.bodySearch), and it survives both
+// transitions on purpose: a grid that silently refilled would be the app
+// undoing the tester's work behind their back.
+
+function onbBodyStepEl() {
+  return document.querySelector(".onb-buddy-step-body");
+}
+
+function onbBodySearchOpen() {
+  const el = onbBodyStepEl();
+  if (el && el.classList) el.classList.add("searching");
+}
+
+/** Leave search mode. The blur is what closes the simulated keyboard. */
+function onbBodySearchClose() {
+  const el = onbBodyStepEl();
+  if (el && el.classList) el.classList.remove("searching");
+  const inp = document.querySelector(".body-search-input");
+  if (inp && inp.blur) inp.blur();
+}
+
+/**
+ * Enter means "done searching", not "submit".
+ *
+ * There is no form here and nothing to post — the grid has been filtering on
+ * every keystroke already, so the only thing left for Enter to do is give the
+ * screen back with the filter intact.
+ */
+function onbBodySearchKey(e) {
+  if (!e) return;
+  if (e.key === "Enter" || e.keyCode === 13) {
+    if (e.preventDefault) e.preventDefault();
+    onbBodySearchClose();
+  }
+}
+
+/**
+ * Filter as they type, WITHOUT re-rendering.
+ *
+ * render() reassigns the screen's innerHTML, which destroys the focused input
+ * and takes the caret with it — the reason this app's inputs commit on
+ * `onchange`. A search box cannot wait for blur, so it uses the same escape
+ * hatch onbLiveInput does: patch the two fragments that changed and leave the
+ * <input> itself alone (uiPatchHTML, js/utils.js).
+ */
+function onbBodySearch(value) {
+  const o = state.onboarding;
+  if (!o) return;
+  o.bodySearch = value;
+  uiPatchHTML("onbBodyGrid", onbBodyGrid(o));
+  uiPatchHTML("onbBodyMatch", onbBodyMatchLine(o));
+}
+
+/** The × inside the field. Clears the filter and hands focus back. */
+function onbBodySearchClear() {
+  const o = state.onboarding;
+  if (!o) return;
+  o.bodySearch = "";
+  const el = document.querySelector(".body-search-input");
+  if (el) { el.value = ""; }
+  uiPatchHTML("onbBodyGrid", onbBodyGrid(o));
+  uiPatchHTML("onbBodyMatch", onbBodyMatchLine(o));
+  if (el && el.focus) el.focus();
 }
 
 // Vertical scrollable list — breed, fur pattern.

@@ -61,6 +61,53 @@ const BUDDY_BREEDS = [
   "golden_retriever", "corgi", "beagle", "labrador",
   "poodle", "dachshund", "husky", "shiba_inu"
 ];
+// ─── Body type — the creator's first step ────────────────────────────────────
+// Nine tiles: the prototype, plus eight silhouettes that between them cover the
+// recognised breeds. `data/dog-breeds.json` maps every breed onto these ids.
+//
+// THE BUDDY IS ALWAYS A PUPPY, so each of these means the puppy build of that
+// group, not the adult. A Great Dane pup and a Chihuahua pup are still
+// different shapes; that difference is what the tiles are for.
+//
+// ── ONLY THE PROTOTYPE IS REAL ──────────────────────────────────────────────
+// There is one illustration (buddy-prototype.png). The other eight are
+// placeholders and picking one deliberately does nothing yet, so `dot` — the
+// diameter of the placeholder circle inside the tile — is the ONLY thing
+// telling them apart. The sizes are spread on purpose rather than decorative:
+// nine identical circles would be nine tiles with no reason to prefer any.
+//
+// ⚠ A body type must NEVER be written into `breed`, and the reason is NOT what
+// it first looks like. buddyIsPrototype() returns true if ANY attribute is
+// still `prototype` (it is an indexOf, not an every), so the portrait would in
+// fact survive — the damage is quieter than that:
+//
+//   · renderBuddyDescription() prints `b.breed` as the breed, so a tester who
+//     later picks a real coat would read "mastiff" where a breed name belongs
+//   · the admin dropdown for `breed` offers BUDDY_BREEDS, which does not
+//     contain a body-type id, so the control would show a value it cannot set
+//   · onbSetBuddy's cascade keys on `key === "breed"` and would fire on a
+//     body-type pick, filling in five attributes nobody chose
+//
+// It lives in its own field. scripts/sweep.js §7f asserts `breed` never holds
+// one, through a repaint.
+const BUDDY_BODY_TYPES = [
+  { id: BUDDY_PROTOTYPE, label: "Prototype",  dot: 62 },
+  { id: "toy",           label: "Toy",        dot: 32 },
+  { id: "low_set",       label: "Low-set",    dot: 42 },
+  { id: "terrier",       label: "Terrier",    dot: 46 },
+  { id: "sighthound",    label: "Sighthound", dot: 50 },
+  { id: "spitz",         label: "Spitz",      dot: 54 },
+  { id: "herding",       label: "Herding",    dot: 58 },
+  { id: "sporting",      label: "Sporting",   dot: 66 },
+  { id: "mastiff",       label: "Mastiff",    dot: 74 }
+];
+
+/** The label for a body-type id, for copy and the admin readout. */
+function buddyBodyLabel(id) {
+  const t = BUDDY_BODY_TYPES.filter(function (x) { return x.id === id; })[0];
+  return t ? t.label : String(id || "");
+}
+
 const BUDDY_FUR_PATTERNS = [BUDDY_PROTOTYPE, "solid", "patches", "spots", "brindle", "merle", "tuxedo"];
 const BUDDY_FUR_COLORS = [BUDDY_PROTOTYPE, "cream", "golden", "chocolate", "grey", "tan and white", "tricolor"];
 const BUDDY_EYE_COLORS = [BUDDY_PROTOTYPE, "brown", "amber", "blue", "green"];
@@ -254,6 +301,7 @@ function renderBuddyAdmin() {
   const b = state.buddy || {};
   const fields = [
     ["breed", BUDDY_BREEDS],
+    ["bodyType", BUDDY_BODY_TYPES.map(t => t.id)],
     ["furColor", BUDDY_FUR_COLORS],
     ["furPattern", BUDDY_FUR_PATTERNS],
     ["eyeColor", BUDDY_EYE_COLORS],
@@ -267,6 +315,14 @@ function renderBuddyAdmin() {
         All attributes are live — D40 dropped eyes/nose only because raster
         sheets cannot recolour, and there are no sheets. The creator sets breed,
         fur colour, pattern, eyes and name; nose and size live here.
+      </p>
+      <p class="helper" style="margin-bottom:10px;">
+        <strong>Body type:</strong> ${h(buddyBodyLabel(b.bodyType || BUDDY_PROTOTYPE))}.
+        The creator's first step sets it. It is deliberately INERT — eight of the
+        nine have no art, so picking one changes nothing on the stage. It is also
+        kept out of <code>breed</code> on purpose: buddyIsPrototype() turns false
+        on any non-prototype attribute, so storing it there would swap the
+        illustration for the description frame the moment a tester tapped a tile.
       </p>
       <div class="input-group">
         <label>Name</label>

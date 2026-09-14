@@ -150,6 +150,100 @@ variation from a bug.
      user-entered data that *leaves*, and one tester's figures surviving into
      the next session on a shared browser is a leak.
 
+5. **The buddy creator opens on a body-type grid, with a breed search.**
+   `ONB_BUDDY_STEPS[0]` is `bodyType`; `BUDDY_BODY_TYPES` in
+   `components/buddy.js`, `data/dog-breeds.json`, `js/breed-search.js`.
+   - **Nine tiles, 3×3, two-and-a-half rows.** It replaced a vertical list of
+     nine breed NAMES — words, for choosing a shape. The label sits outside the
+     rounded square; inside is a placeholder circle whose **size is the only
+     thing telling the eight unbuilt types apart**, so the sizes are gated as
+     distinct. The prototype tile carries the real PNG, because it is the one
+     that exists.
+   - **`breed` must never hold a body-type id**, and the reason is not the
+     obvious one. `buddyIsPrototype()` is an `indexOf`, so it stays true while
+     *any* attribute is still prototype — the portrait would survive. An earlier
+     version of the sweep gate asserted that consequence and **caught nothing**.
+     The real damage is quieter: `renderBuddyDescription()` prints `breed` as the
+     breed name, the admin dropdown offers `BUDDY_BREEDS` which has no body-type
+     id in it, and `onbSetBuddy`'s cascade keys on `breed` and would fill five
+     attributes nobody picked. §7f asserts it through a repaint.
+   - **380 breeds, ~1,130 search terms**, mapped by GROUP with per-breed
+     overrides rather than 380 separate judgement calls — twelve authoring groups
+     collapse onto eight body types, and a breed carries an explicit `body` only
+     where it breaks its group (a Pit Bull is a terrier by registry and a mastiff
+     by build). Every override carries a `why`, so the file is reviewable.
+   - **A mix is additive.** "half husky half corgi", "husky x corgi",
+     "husky/corgi mix" all resolve to both parents, plus whatever the cross
+     itself throws that neither parent shows — short legs are dominant, so
+     low-set crossed with anything tends to produce low-set pups.
+   - **Two matching traps, both found by running it.** A bare substring test let
+     `asdfgh` match the Australian Shepherd, because the alias `asd` sits inside
+     it — with ~1,130 terms, three-letter aliases turn any typo into a confident
+     wrong answer; matching is word-bounded now. And hunting each token
+     separately pulled the Mountain Cur into "bernese mountain dog" and the Blue
+     Lacy into "blue heeler"; a token already inside a matched breed's own name
+     is not a second breed.
+   - **An unmatched or generic search shows all nine**, never an empty grid
+     (D19), and the prototype survives every filter — a tester must always be
+     able to pick the buddy that has art.
+   - **The search filters on `oninput` without re-rendering.** The house rule is
+     `onchange`, because `render()` reassigns the screen's innerHTML and takes
+     the caret with it. This uses the same escape hatch `onbLiveInput` does:
+     `uiPatchHTML()` on the grid and the match line, leaving the `<input>`
+     alone. §7f fails if it ever becomes an `onchange`, or if either patch
+     target is renamed — a renamed id stops the filtering silently.
+   - **Room came from the portrait**, 330px → 200px on this sub-step only, plus
+     a one-line title. The keyboard covers the grid rather than reflowing it;
+     below 700px of viewport the shared scroll padding comes back, because
+     otherwise the field would sit under the keyboard.
+
+6. **Onboarding has no top bar, and gets its 52px back.**
+   `TOPBAR_HIDDEN_SCREENS` in `components/topbar.js`, plus one rule in
+   `css/layout.css`.
+   - The bare bar's `‹` was a **third** escape on a screen that already has Back
+     in its footer and Skip in its header — `renderTopBar()` falls through to a
+     back button on any full-bleed screen.
+   - **Hiding it was only half the fix.** `.screen-scroll.no-topbar { top: 0 }`
+     and `.screen-scroll.journal-mode { top: var(--topbar-h) }` are both (0,2,0),
+     and the journal rule is declared 285 lines later — so it won on source
+     order and onboarding kept a **52px empty strip** where the bar had been.
+     `.screen-scroll.journal-mode.no-topbar { top: 0 }` carries both classes and
+     outranks it.
+   - **That rule is only correct while onboarding is the only screen that is
+     both.** `sweep.js` §7f parses the `journal-mode` toggle lists out of
+     `render.js` and fails if a second screen joins both — otherwise it would
+     silently take its own strip back.
+
+7. **The body-type step has a search mode.**
+   `onbBodySearchOpen` / `onbBodySearchKey` / `onbBodySearchClose` in
+   `screens/onboarding.js`, `.onb-buddy-step-body.searching` in
+   `css/components.css`.
+   - Focusing the search hands it the screen: portrait, title and subtitle hide,
+     the field rises to the top, the grid takes the rest. Enter or picking a tile
+     hands it back. **The filter persists across both**, and the search text
+     stays in the box so it is obvious why only three tiles show.
+   - **It is a DOM class, never state**, for two reasons. It cannot re-render —
+     `render()` reassigns the screen's innerHTML, so a focus handler that
+     re-rendered would destroy the focused input and close the keyboard it had
+     just opened. And picking a tile already goes through `render()`, so the
+     rebuilt markup simply has no class and the mode ends by construction rather
+     than by anyone remembering to clear a flag. §7f spies on `render` and fails
+     if either transition calls it.
+   - **Hiding is what moves the field, not `order`.** The search already sits
+     after the portrait in the DOM. `order: -1` was the first idea and would have
+     lifted it above the step header.
+   - **The shared keyboard rule is the mechanism, not the obstacle.**
+     `.screen-scroll.kbd-open { padding-bottom: 250px }` shrinks the scroller's
+     content box, the step compresses into what is left above the keyboard, and
+     with the portrait hidden that compression lands on the grid — the grid
+     rises, not the dog. Two rules written earlier to *suppress* that reflow are
+     gone; one was inert anyway, setting padding on the step when the padding
+     lives on the scroller.
+   - Tiles are **78px** (−25%) in a centred 3-up grid, the portrait is
+     **240px**, and a grid row is measured as **square + gap + label**. Measuring
+     it off the square alone made "two and a half rows" 2.3 and sliced the third
+     row's labels; §7f asserts the row is built from its parts.
+
 ### Inherited from v3.1 — how these differ from v3
 
 Everything in this list arrived with the copy. It is v4's behaviour now; it is
