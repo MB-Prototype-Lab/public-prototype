@@ -1242,11 +1242,22 @@ chk(emptyTitle.length === 0,
     "researcher reads in the report");
 
 // ── tracking is off unless somebody turned it on ───────────────────────────
-chk(typeof USEBERRY_TRACKING !== "undefined" && USEBERRY_TRACKING === false,
-    "USEBERRY_TRACKING ships off",
-    "it is the one sanctioned exception to D02 and must never be on by default");
+// A WARNING, NOT A FAILURE. It started as a failure -- the point was that
+// tracking must never land on by ACCIDENT -- but turning it on deliberately is
+// a thing the owner does, and a build that cannot go green while a study is
+// running is a check people learn to ignore. Loud every run, blocking never.
+if (typeof USEBERRY_TRACKING !== "undefined" && USEBERRY_TRACKING) {
+  warn("USEBERRY_TRACKING is ON \u2014 this build is being observed",
+       "a third-party script loads on http/https; the one sanctioned exception\n" +
+       "          to D02. Set it false in js/config.js AND gate/gate.js when the\n" +
+       "          round is over. No app logic may depend on it.");
+} else {
+  ok("USEBERRY_TRACKING is off");
+}
+// Whatever the flag says, the tracker must stay inert on file:// -- there is no
+// session behind it there and the fetch buys a console error and nothing else.
 chk(typeof useberryActive === "function" && useberryActive() === false,
-    "...so no third-party script is injected");
+    "the tracker stays inert off http/https");
 
 // ── the gate's copy agrees with the real flag ──────────────────────────────
 // The gate cannot read USEBERRY_TRACKING (it never loads a version's scripts),

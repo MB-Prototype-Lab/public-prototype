@@ -5,7 +5,7 @@ under "v4's own divergences"; this is what to actually do.
 
 ## 1. Turn tracking on
 
-Two flags, both set by hand, both committed:
+Two flags, both set by hand, both committed. **They are currently ON.**
 
 ```js
 // versions/v4/js/config.js
@@ -15,13 +15,18 @@ const USEBERRY_TRACKING = true;
 { id: "v4", label: "v4 (current)", path: "versions/v4/index.html", tracking: true }
 ```
 
+v4 only: `js/useberry.js` does not exist in v3 or v3.1, so those two cannot be
+tracked whatever their gate row says.
+
 The gate cannot read the first one — it never loads a version's scripts, because
 two versions' globals in one document would collide — so it keeps its own copy
 and shows a **recording** badge next to any version that has it. `sweep.sh`
 fails if the two disagree, so you cannot observe a build the gate says is clean.
 
-Turn both back to `false` when the round is over. `sweep.sh` also fails if
-`true` is committed, which is the reminder.
+Turn both back to `false` when the round is over. `sweep.sh` prints a **warning
+on every run** while they are on — it used to fail, but a build that cannot go
+green during a study is a check people learn to ignore, so it is loud rather
+than blocking. A *mismatch* between the two flags still fails.
 
 ## 2. Point Useberry at it
 

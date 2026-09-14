@@ -31,7 +31,7 @@ var VERSIONS = [
   { id: "v2", label: "v2 (beta)", path: "versions/v2/index.html", tracking: false },
   { id: "v3", label: "v3 (A)", path: "versions/v3/index.html", tracking: false },
   { id: "v3.1", label: "v3.1 (B)", path: "versions/v3.1/index.html", tracking: false },
-  { id: "v4", label: "v4 (current)", path: "versions/v4/index.html", tracking: false }
+  { id: "v4", label: "v4 (current)", path: "versions/v4/index.html", tracking: true }
 ];
 
 function gateShowSelector() {

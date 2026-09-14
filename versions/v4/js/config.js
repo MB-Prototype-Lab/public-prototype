@@ -59,4 +59,4 @@ const APP_VERSION = "v4";
 // loads a version's scripts (it would collide two versions' globals), so it
 // cannot read this value and keeps its own copy; scripts/sweep.js asserts the
 // two agree rather than trusting anyone to remember.
-const USEBERRY_TRACKING = false;
+const USEBERRY_TRACKING = true;
