@@ -893,7 +893,7 @@ function onbColChart(zip) {
   if (!col.supported) {
     return `
     <div class="note" style="margin-top:16px;">
-      I don't recognise that one, so I'll use the national average for now. Your peer numbers still work — they're just not tuned to local costs.
+      I don't know that one, so I'll use the national average for now. You'll still get peer numbers — they just won't be tuned to your area.
     </div>`;
   }
 
@@ -908,11 +908,11 @@ function onbColChart(zip) {
 
   let text;
   if (col.pct > 0) {
-    text = `Compared to the national average, the cost of living in ${where} is <strong>${col.pct}% higher</strong>. This helps put your spending in context next to your peers.`;
+    text = `Your peers in ${where} live with costs <strong>${col.pct}% higher</strong> than the national average. Every number I show you is adjusted for that first.`;
   } else if (col.pct < 0) {
-    text = `Compared to the national average, the cost of living in ${where} is <strong>${Math.abs(col.pct)}% lower</strong>. This helps put your spending in context next to your peers.`;
+    text = `Your peers in ${where} live with costs <strong>${Math.abs(col.pct)}% lower</strong> than the national average. Every number I show you is adjusted for that first.`;
   } else {
-    text = `The cost of living in ${where} is <strong>about the same</strong> as the national average. This helps put your spending in context next to your peers.`;
+    text = `Your peers in ${where} live with costs <strong>about the same</strong> as the national average. Every number I show you is adjusted for that first.`;
   }
 
   return `
@@ -948,8 +948,8 @@ function onbColHousingLine(col) {
   else                 phrase = `is <strong>close to the national average</strong>`;
   return `
     <p class="helper onb-col-text" style="margin-top:8px;">
-      Housing there ${phrase} — that's where most of the difference sits. The rest
-      of a budget, from groceries to streaming, is priced much the same everywhere.
+      Housing is where most of that gap sits: it ${phrase} there. Groceries,
+      streaming, a phone plan — those cost about the same anywhere.
     </p>`;
 }
 
@@ -959,16 +959,16 @@ function onbColTeaser(typed) {
   if (typed > 0) {
     return `
     <p class="helper onb-col-teaser">
-      ${5 - typed} more digit${5 - typed === 1 ? "" : "s"} and I'll show you the comparison.
+      ${5 - typed} more digit${5 - typed === 1 ? "" : "s"} and I can find your peers.
     </p>`;
   }
   return `
     <div class="note onb-col-teaser-card">
-      <p class="task-title" style="margin:0 0 4px;font-size:13px;">There's a number waiting behind this one</p>
+      <p class="task-title" style="margin:0 0 4px;font-size:13px;">What you get back</p>
       <p class="task-desc" style="margin:0;">
-        Type your ZIP and I'll show you how your corner of the country compares
-        to the rest of it. Some places run a third above the national average,
-        some a fifth below — and housing swings further than that.
+        Once I know where you are, I can show you what your peers spend on rent,
+        food, everything. Then it's your call — move toward their numbers, or
+        keep doing it your way.
       </p>
     </div>`;
 }
@@ -1054,9 +1054,9 @@ function onbStepBody(key, o) {
     </div>`;
 
   if (key === "zip") return `
-    <h1 class="title onb-title" style="margin:0 0 6px;">Where are you these days?</h1>
+    <h1 class="title onb-title" style="margin:0 0 6px;">What's your ZIP code?</h1>
     <p class="helper" style="margin:0 0 14px;">
-      A ZIP is plenty — it just helps me learn what things cost near you. Nothing gets shared.
+      I use it to find your peers — people near you, living on about what you live on. That's the only thing it's for, and it's never shared.
     </p>
     <div class="input-group">
       <input inputmode="numeric" maxlength="5" placeholder="ZIP code" value="${h(o.zip)}"
