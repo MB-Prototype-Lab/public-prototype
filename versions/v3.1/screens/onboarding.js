@@ -893,7 +893,7 @@ function onbColChart(zip) {
   if (!col.supported) {
     return `
     <div class="note" style="margin-top:16px;">
-      I don't know that one, so I'll use the national average for now. You'll still get peer numbers — they just won't be tuned to your area.
+      I don't know that one, so I'll use the national average for now. You'll still see what people like you spend — it just won't be tuned to your area.
     </div>`;
   }
 
@@ -908,11 +908,11 @@ function onbColChart(zip) {
 
   let text;
   if (col.pct > 0) {
-    text = `Your peers in ${where} live with costs <strong>${col.pct}% higher</strong> than the national average. Every number I show you is adjusted for that first.`;
+    text = `People like you in ${where} live with costs <strong>${col.pct}% higher</strong> than the national average. Every number I show you is adjusted for that first, so you're seeing spending, not geography.`;
   } else if (col.pct < 0) {
-    text = `Your peers in ${where} live with costs <strong>${Math.abs(col.pct)}% lower</strong> than the national average. Every number I show you is adjusted for that first.`;
+    text = `People like you in ${where} live with costs <strong>${Math.abs(col.pct)}% lower</strong> than the national average. Every number I show you is adjusted for that first, so you're seeing spending, not geography.`;
   } else {
-    text = `Your peers in ${where} live with costs <strong>about the same</strong> as the national average. Every number I show you is adjusted for that first.`;
+    text = `People like you in ${where} live with costs <strong>about the same</strong> as the national average. Every number I show you is adjusted for that first, so you're seeing spending, not geography.`;
   }
 
   return `
@@ -959,16 +959,17 @@ function onbColTeaser(typed) {
   if (typed > 0) {
     return `
     <p class="helper onb-col-teaser">
-      ${5 - typed} more digit${5 - typed === 1 ? "" : "s"} and I can find your peers.
+      ${5 - typed} more digit${5 - typed === 1 ? "" : "s"} and I can find people like you.
     </p>`;
   }
   return `
     <div class="note onb-col-teaser-card">
-      <p class="task-title" style="margin:0 0 4px;font-size:13px;">What you get back</p>
+      <p class="task-title" style="margin:0 0 4px;font-size:13px;">How this helps</p>
       <p class="task-desc" style="margin:0;">
-        Once I know where you are, I can show you what your peers spend on rent,
-        food, everything. Then it's your call — move toward their numbers, or
-        keep doing it your way.
+        Costs are different depending on where you live. If you enter your ZIP
+        code, I can show you what people like you spend on rent, food, and
+        everything else. Not a score, not a ranking — just your own numbers
+        with something real to sit next to.
       </p>
     </div>`;
 }
@@ -1056,7 +1057,7 @@ function onbStepBody(key, o) {
   if (key === "zip") return `
     <h1 class="title onb-title" style="margin:0 0 6px;">What's your ZIP code?</h1>
     <p class="helper" style="margin:0 0 14px;">
-      I use it to find your peers — people near you, living on about what you live on. That's the only thing it's for, and it's never shared.
+      It's how I find people like you and near you. Seeing how they spend may help you relate to how you spend. That's all I use it for and it's never shared.
     </p>
     <div class="input-group">
       <input inputmode="numeric" maxlength="5" placeholder="ZIP code" value="${h(o.zip)}"
