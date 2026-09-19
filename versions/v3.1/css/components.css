@@ -2049,8 +2049,8 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    attention, so the one thing the step actually wants was the quietest element
    on it. */
 .onb-zip-ask {
-  border: 1px solid var(--line);
-  background: var(--card);
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
   border-radius: 16px;
   padding: 14px 14px 16px;
   margin: 0 0 16px;
@@ -2062,11 +2062,12 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .onb-zip-input { text-align: center; }
 .screen .onb-zip-input {
   border: 2px solid var(--accent);
-  background: var(--accent-soft);
+  /* The field stays --card. The GREEN is the surrounding ask box, so the field
+     has to read as the writable well cut into it — same wash on both would
+     flatten the two into one shape. */
+  background: var(--card);
   /* Capped BELOW .onb-title's 18px. The field was 20px, which made the thing
-     being filled in louder than the question asking for it. --accent-soft is
-     defined in all four themes and is a dark wash in the two dark ones, so
-     the text token has to be --text-strong rather than an ink literal. */
+     being filled in louder than the question asking for it. */
   font-size: 16px;
   font-weight: 800;
   letter-spacing: 2px;
