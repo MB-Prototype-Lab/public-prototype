@@ -7,6 +7,56 @@
 
 ---
 
+## Open items — what's left
+
+**Ask "what's remaining?" and this is the answer.** Updated whenever something
+here is resolved or something new is found.
+
+### Needs a fix before anyone tests on a phone
+
+- **Tap targets are at 29px against the repo's 44px floor** (ESF number boxes;
+  onboarding ZIP field at 40px). The explicit price of the no-scroll rule.
+  Every one of these screens is number entry, which is the worst place to be
+  under the floor.
+- **The simulated keypad can't be verified at phone width.** `kbdIsSimulated()`
+  suppresses it on a coarse pointer and the browser pane emulates touch below
+  768px, so keyboard behaviour has to be checked at desktop width.
+
+### Worth building next
+
+- **Runway line** — *"about 1.2 months covered today"*. Cheap, and the stickiest
+  number on the goal screen.
+- **Income sanity check** — *"That's more than you told us you earn."* Stops a
+  mistyped mortgage from producing a nonsense goal in front of a tester.
+
+### Deferred, not blocked
+
+- Confidence range while rows are untouched
+- Permanent "Your monthly expenses" summary as the return path
+- Edit-time delta note — *"Your goal went up $900."*
+- Resume mid-screen / continuous save (impossible under D03 as written)
+- Plaid offer on step 2
+- Withdrawal and replenishment flows
+
+### Known stubs
+
+- **`valueDispersion: 1.35`** stands in for a real ZHVI source (§6.7), so
+  property tax estimates are directionally right at best.
+- Every rate figure in §6 is an anchor, not a researched constant. Refresh from
+  source at build time.
+
+### Resolved
+
+- **Over-funded state** — not a state that should exist. A user either has an
+  emergency fund or doesn't. Someone who already has one has the goal marked
+  complete in the goal list, and reaches the fund again through the Tools tab.
+  Both are planned. The flat "$0 still to save" outcome is acceptable as-is.
+- **Childcare exclusion** — a decision, not an oversight. Often the
+  second-largest expense for households with young kids, but it largely
+  disappears in a job loss.
+
+---
+
 ## 0. How to read this document
 
 This is a **record of what exists**, not a plan. Every section below describes
@@ -528,10 +578,12 @@ backend and localStorage. The admin panel is the readout.
    real phone.
 2. **`valueDispersion: 1.35`** is a stub standing in for a real ZHVI source
    (§6.7).
-3. **The over-funded state is flat.** Enter more than the fund needs and the
-   goal screen reads "$0 / still to save" and "$0 a month". Correct, and a
-   dead end — arguably the same case as "I already have one" reached by a
-   different door. Undecided.
+3. **The over-funded state is flat — resolved, accepted.** Enter more than the
+   fund needs and the goal screen reads "$0 / still to save" and "$0 a month".
+   Over-funded is not a state that should exist: a user either has an emergency
+   fund or doesn't. Someone who already has one gets the goal marked complete in
+   the goal list and finds the fund again through the Tools tab. Both are
+   planned. Accepted as-is.
 4. **Childcare is deliberately excluded.** Often the second-largest expense for
    households with young kids, but it largely disappears in a job loss.
    A decision, not an oversight.
