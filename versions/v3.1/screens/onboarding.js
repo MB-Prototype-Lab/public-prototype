@@ -917,7 +917,8 @@ function onbColChart(zip) {
   // Lifestyle is left out of the sentence on purpose — nothing has asked about
   // it yet at this point in onboarding, so naming it would promise an input
   // the tester has not given.
-  const text = `People like you in ${where}: I start with what households across the country spend when they earn about what you earn and have about as many people at home, then adjust it to the prices where you live.`;
+  const text = `<span class="onb-line">People like you in ${where}.</span>` +
+    `<span class="onb-line">I start with what households across the country spend when they earn about what you earn and have about as many people at home, then adjust it to the prices where you live.</span>`;
 
   // The two-bar cost-of-living chart that used to sit here is GONE, and the
   // markup is deliberately not left behind commented out — the reasoning is
@@ -942,9 +943,9 @@ function onbColChart(zip) {
 // variation actually lives, so name it.
 function onbColHousingLine(col) {
   return `
-    <p class="onb-col-text onb-col-lead" style="margin-top:14px;">
-      Housing is usually the biggest one, then food, then getting around.
-      Those three are worth getting right.
+    <p class="onb-col-text onb-col-lead" style="margin-top:16px;">
+      <span class="onb-line">Housing is usually the biggest one, then food, then getting around.</span>
+      <span class="onb-line">Those three are worth getting right.</span>
     </p>`;
 }
 
@@ -961,9 +962,10 @@ function onbZipLater(o) {
   if (digits.length >= 5) return "";
   return `
     <div class="onb-zip-later">
-      <button type="button" class="onb-zip-later-btn" onclick="onbZipDecline()">Maybe share later</button>
-      <p class="helper onb-zip-later-note">
-        Use the national average for now. I understand it may not show my area.
+      <button type="button" class="button onb-zip-later-btn" onclick="onbZipDecline()">Maybe share later</button>
+      <p class="onb-zip-later-note">
+        <span class="onb-line">Use the national average for now.</span>
+        <span class="onb-line">I understand it may not show my area.</span>
       </p>
     </div>`;
 }
@@ -990,11 +992,10 @@ function onbColTeaser(typed) {
   // later state may want it.
   return `
     <div class="note onb-col-teaser-card">
-      <p class="task-title" style="margin:0 0 4px;font-size:13px;">How this helps</p>
-      <p class="task-desc" style="margin:0 0 6px;">
-        Costs are different depending on where you live. If you enter your ZIP
-        code, I can show you what people like you spend on rent, food, and
-        everything else.
+      <p class="task-title" style="margin:0 0 6px;font-size:13px;">How this helps</p>
+      <p class="task-desc" style="margin:0 0 8px;">
+        <span class="onb-line">Costs are different depending on where you live.</span>
+        <span class="onb-line">If you enter your ZIP code, I can show you what people like you spend on rent, food, and everything else.</span>
       </p>
       <p class="task-desc" style="margin:0;font-style:italic;">You decide how to use it</p>
     </div>`;
@@ -1080,18 +1081,25 @@ function onbStepBody(key, o) {
              onchange="onbLiveInput('name', this.value)">
     </div>`;
 
+  // Centred, one sentence per line. Each sentence is its own block rather than
+  // a <br>, so a sentence too long for the width wraps under itself instead of
+  // breaking the one-per-line rhythm for every line after it.
   if (key === "zip") return `
-    <h1 class="title onb-title" style="margin:0 0 6px;">What's your ZIP code?</h1>
-    <p class="helper" style="margin:0 0 14px;">
-      It's how I find people like you and near you. Seeing how they spend may help you relate to how you spend. That's all I use it for and it's never shared.
-    </p>
-    <div class="input-group">
-      <input inputmode="numeric" maxlength="5" placeholder="ZIP code" value="${h(o.zip)}"
-             oninput="onbLiveInput('zip', this.value)"
-             onchange="onbLiveInput('zip', this.value)">
-    </div>
-    <div id="onbColChart">${onbColChart(o.zip)}</div>
-    ${onbZipLater(o)}`;
+    <div class="onb-zip-step">
+      <h1 class="title onb-title" style="margin:0 0 8px;">What's your ZIP code?</h1>
+      <p class="helper" style="margin:0 0 14px;">
+        <span class="onb-line">It's how I find people like you and near you.</span>
+        <span class="onb-line">Seeing how they spend may help you relate to how you spend.</span>
+        <span class="onb-line">That's all I use it for and it's never shared.</span>
+      </p>
+      <div class="input-group">
+        <input inputmode="numeric" maxlength="5" placeholder="ZIP code" value="${h(o.zip)}"
+               oninput="onbLiveInput('zip', this.value)"
+               onchange="onbLiveInput('zip', this.value)">
+      </div>
+      <div id="onbColChart">${onbColChart(o.zip)}</div>
+      ${onbZipLater(o)}
+    </div>`;
 
   if (key === "household") return onbHouseholdBody(o);
 
