@@ -230,6 +230,7 @@ function onbStart() {
     skipPrompt: false,     // name-step "skip this / skip all" confirmation
     name: "",
     zip: "",
+    zipDeclined: false,    // "Maybe share later" — national figures, on request
     householdSize: null,   // derived from adults + kids; kept because the peer model reads it
     adultCount: null,
     adultAges: [],         // one ONB_ADULT_AGES id per adult, in order
@@ -677,6 +678,12 @@ function onbFinish() {
 
   state.profile.name = o.name || (fallback ? fallback.name : "Me");
   if (o.zip) state.profile.zip = o.zip;
+  // "Maybe share later" is an ANSWER, not a skip: it asks for national
+  // figures. The default profile applied above carries its own ZIP, so the
+  // request has to be honoured explicitly or it is silently ignored — and an
+  // empty ZIP is exactly what benchColMultipliers() reads as "no local
+  // adjustment".
+  if (o.zipDeclined) state.profile.zip = "";
   if (o.householdSize) state.profile.householdSize = o.householdSize;
 
   // ── What the emergency fund reads ─────────────────────────────────────────
@@ -906,14 +913,18 @@ function onbColChart(zip) {
 
   const where = col.place ? h(col.place) : "your area";
 
-  let text;
-  if (col.pct > 0) {
-    text = `People like you in ${where} live with costs <strong>${col.pct}% higher</strong> than the national average. Every number I show you is adjusted for that first, so you're seeing spending, not geography.`;
-  } else if (col.pct < 0) {
-    text = `People like you in ${where} live with costs <strong>${Math.abs(col.pct)}% lower</strong> than the national average. Every number I show you is adjusted for that first, so you're seeing spending, not geography.`;
-  } else {
-    text = `People like you in ${where} live with costs <strong>about the same</strong> as the national average. Every number I show you is adjusted for that first, so you're seeing spending, not geography.`;
-  }
+  // WHAT THIS SENTENCE IS. The step used to end on "costs here are 26% higher
+  // than the national average", which is a true fact a tester can do nothing
+  // with — the only action it suggests is moving house. What they actually
+  // need to know is where the peer numbers come from, because every figure in
+  // the app rests on it. So the caption states the method, not the gap.
+  //
+  // It tracks benchPeerValue() exactly: a national base picked by income band
+  // and household size, times the local price multiplier, times lifestyle.
+  // Lifestyle is left out of the sentence on purpose — nothing has asked about
+  // it yet at this point in onboarding, so naming it would promise an input
+  // the tester has not given.
+  const text = `People like you in ${where}: I start with what households across the country spend when they earn about what you earn and have about as many people at home, then adjust it to the prices where you live.`;
 
   return `
     <div class="onb-col-chart">
@@ -939,38 +950,62 @@ function onbColChart(zip) {
 // anyone who knows what their own rent is. Housing is where nearly all the
 // variation actually lives, so name it.
 function onbColHousingLine(col) {
-  const h1 = col.housingIndex;
-  if (!h1 || !isFinite(h1)) return "";
-  const mult = Math.round(h1 * 10) / 10;
-  let phrase;
-  if (h1 >= 1.15)      phrase = `runs about <strong>${mult}× the national average</strong>`;
-  else if (h1 <= 0.85) phrase = `runs about <strong>${mult}× the national average</strong>`;
-  else                 phrase = `is <strong>close to the national average</strong>`;
   return `
     <p class="helper onb-col-text" style="margin-top:8px;">
-      Housing is where most of that gap sits: it ${phrase} there. Groceries,
-      streaming, a phone plan — those cost about the same anywhere.
+      Housing is usually the biggest one, then food, then getting around.
+      Those three are worth getting right.
     </p>`;
+}
+
+// The declared way out of the ZIP step. The top-bar Skip already leaves the
+// field empty, but it is a generic control that says nothing about what
+// happens next — so a tester who is simply unsure about handing over a ZIP has
+// only an unlabelled escape hatch. This one names the consequence and says the
+// door stays open, which is the honest version of the same action.
+//
+// Hidden once a full ZIP is in: at that point the answer is on screen and an
+// offer to withhold it is noise.
+function onbZipLater(o) {
+  const digits = String(o.zip == null ? "" : o.zip).replace(/\D/g, "");
+  if (digits.length >= 5) return "";
+  return `
+    <div class="onb-zip-later">
+      <button type="button" class="onb-zip-later-btn" onclick="onbZipDecline()">Maybe share later</button>
+      <p class="helper onb-zip-later-note">
+        Use the national average for now. I understand it may not show my area.
+      </p>
+    </div>`;
+}
+
+// Leaves the field empty AND records the choice, because those are two
+// different things downstream. onbFinish() applies a default profile to any
+// unanswered field — that profile carries a real ZIP, so without this flag
+// "use the national average" would quietly price the tester in Nashville.
+function onbZipDecline() {
+  const o = state.onboarding;
+  o.zip = "";
+  o.zipDeclined = true;
+  onbNext();
 }
 
 // Before there is anything to chart. The step was a bare input with no reason
 // to fill it in; this says what typing it buys.
 function onbColTeaser(typed) {
-  if (typed > 0) {
-    return `
-    <p class="helper onb-col-teaser">
-      ${5 - typed} more digit${5 - typed === 1 ? "" : "s"} and I can find people like you.
-    </p>`;
-  }
+  // A half-typed ZIP used to get a "2 more digits" nudge, which is a progress
+  // bar for a three-second task — and it REPLACED the card explaining why the
+  // field is there, so the reason vanished on the first keystroke and came
+  // back if you deleted a digit. The card now holds until there is a real
+  // answer to show. `typed` is kept in the signature; the caller has it and a
+  // later state may want it.
   return `
     <div class="note onb-col-teaser-card">
       <p class="task-title" style="margin:0 0 4px;font-size:13px;">How this helps</p>
-      <p class="task-desc" style="margin:0;">
+      <p class="task-desc" style="margin:0 0 6px;">
         Costs are different depending on where you live. If you enter your ZIP
         code, I can show you what people like you spend on rent, food, and
-        everything else. Not a score, not a ranking — just your own numbers
-        with something real to sit next to.
+        everything else.
       </p>
+      <p class="task-desc" style="margin:0;font-style:italic;">You decide how to use it</p>
     </div>`;
 }
 
@@ -1064,7 +1099,8 @@ function onbStepBody(key, o) {
              oninput="onbLiveInput('zip', this.value)"
              onchange="onbLiveInput('zip', this.value)">
     </div>
-    <div id="onbColChart">${onbColChart(o.zip)}</div>`;
+    <div id="onbColChart">${onbColChart(o.zip)}</div>
+    ${onbZipLater(o)}`;
 
   if (key === "household") return onbHouseholdBody(o);
 
