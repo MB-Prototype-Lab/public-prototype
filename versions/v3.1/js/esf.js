@@ -1311,10 +1311,22 @@ function esfMonthsToTarget() {
   return Math.max(1, Math.round(months));
 }
 
-function esfMonthlyContribution() {
+/**
+ * What is left to save: the full fund minus what they already have.
+ *
+ * This is the GOAL as the tester experiences it — the number they have to go
+ * and find. esfTarget() is the size of the finished fund and stays the anchor
+ * for everything derived from expenses (coverage months, the buffer), but a
+ * tester with $40,000 banked against a $74,000 fund is being asked for
+ * $34,000, and that is the figure the plan screen leads on.
+ */
+function esfGoalRemaining() {
   const s = esfSession();
-  const gap = esfTarget() - (Number(s.startingBalance) || 0);
-  return esfRound(Math.max(0, gap) / esfMonthsToTarget());
+  return Math.max(0, esfTarget() - (Number(s.startingBalance) || 0));
+}
+
+function esfMonthlyContribution() {
+  return esfRound(esfGoalRemaining() / esfMonthsToTarget());
 }
 
 // ─── Committing ──────────────────────────────────────────────────────────────

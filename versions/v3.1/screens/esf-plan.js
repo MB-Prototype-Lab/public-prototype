@@ -106,7 +106,8 @@ function renderEsfPlan() {
           <img src="${h(ESF_PLAN_IMAGE.src)}" alt="" aria-hidden="true">
         </div>
 
-        <p class="esf-goal-figure">${h(esfMoney(esfTarget()))}</p>
+        <p class="esf-goal-figure">${h(esfMoney(esfGoalRemaining()))}</p>
+        <p class="esf-goal-sub">still to save &middot; full fund ${h(esfMoney(esfTarget()))}</p>
 
         <div class="item-card esf-row">
           <p class="esf-group-label">Months of expenses covered</p>
@@ -144,7 +145,7 @@ function renderEsfPlan() {
                    value="${h(esfMoney(s.startingBalance || 0))}"
                    aria-label="Amount already saved"
                    onchange="esfSetStartingBalance(this.value)">
-            <span class="esf-inline-note">${h(esfMoney(Math.max(0, esfTarget() - (s.startingBalance || 0))))} to go</span>
+            <span class="esf-inline-note">of ${h(esfMoney(esfTarget()))}</span>
           </div>
         </div>
 

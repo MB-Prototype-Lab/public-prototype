@@ -3379,8 +3379,17 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 /* The goal figure is the whole point of the plan screen, so it is the largest
    thing on it. */
 .esf-goal-figure {
-  margin: 12px 0 14px; text-align: center;
+  margin: 12px 0 2px; text-align: center;
   font-size: 34px; font-weight: 700; line-height: 1.1; color: var(--accent);
+}
+
+/* The big figure is what is LEFT to save, so it needs a caption — on its own,
+   a bare number next to a "Months of expenses covered" control reads as the
+   size of the fund, which is a different figure and the one the control moves.
+   Naming both here is what keeps the coverage and buffer rows legible. */
+.esf-goal-sub {
+  margin: 0 0 12px; text-align: center;
+  font-size: 12px; font-weight: 600; color: var(--text-strong);
 }
 
 /* An annual figure and its monthly conversion sit on one line. */
