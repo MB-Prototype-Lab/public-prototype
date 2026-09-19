@@ -2062,12 +2062,16 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .onb-zip-input { text-align: center; }
 .screen .onb-zip-input {
   border: 2px solid var(--accent);
-  background: var(--card);
-  font-size: 20px;
+  background: var(--accent-soft);
+  /* Capped BELOW .onb-title's 18px. The field was 20px, which made the thing
+     being filled in louder than the question asking for it. --accent-soft is
+     defined in all four themes and is a dark wash in the two dark ones, so
+     the text token has to be --text-strong rather than an ink literal. */
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 2px;
   text-align: center;
-  padding: 12px 14px;
+  padding: 8px 14px;
   color: var(--text-strong);
 }
 /* Bold placeholder, because "ZIP code" IS the label — there is no separate
