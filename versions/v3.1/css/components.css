@@ -2032,6 +2032,15 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    after it would read as starting mid-thought. */
 .onb-line { display: block; }
 
+/* The confirmation under the field. Sits inside .onb-zip-ask, so it needs its
+   own top gap and a rule to separate it from the input above it. */
+.onb-zip-result {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+}
+
 /* The ask — the reason and the field it is asking for, boxed together. They
    were two loose blocks with the explanation card below competing for the same
    attention, so the one thing the step actually wants was the quietest element

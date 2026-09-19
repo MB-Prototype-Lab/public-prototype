@@ -338,6 +338,22 @@ function onbBack() {
   if (ONB_STEPS[o.step] === "lifestyle" && o.lwIndex > 0) { o.lwIndex--; render(); return; }
   if (ONB_STEPS[o.step] === "buddy" && o.buddyIndex > 0) { o.buddyIndex--; render(); return; }
   if (o.step > 0) { o.step--; render(); return; }
+  // On the FIRST step there is nowhere back to, and a chevron that does
+  // nothing reads as a broken control — the tester presses it, the screen
+  // holds still, and there is no way to tell that from a hang. So it clears
+  // the step instead: start over, which is the only backwards move left.
+  onbResetStep();
+}
+
+// Wipe whatever the current step collected, leaving the tester on it. Only the
+// first step's chevron uses this today; it is written per-step rather than as
+// "clear the ZIP" so the next step to need it does not have to special-case.
+function onbResetStep() {
+  const o = state.onboarding;
+  const key = ONB_STEPS[o.step];
+  if (key === "zip") { o.zip = ""; o.zipDeclined = false; }
+  if (key === "name") o.name = "";
+  render();
 }
 
 // Top-right Skip. Writes no value, so the persona fallback stands for the
@@ -889,8 +905,11 @@ function onbColChart(zip) {
   // Wait for the whole ZIP. It used to draw at three digits, which was the old
   // prefix model showing through — three digits named a tier. A ZIP now
   // resolves to its county, and four digits of a five-digit code identify
-  // nothing, so a partial chart would be a figure for somewhere else.
-  if (digits.length < 5) return onbColTeaser(digits.length);
+  // nothing, so a partial result would name somewhere else.
+  //
+  // Nothing at all until then: "How this helps" is rendered by the step body
+  // now and stands on its own, so this slot no longer has to fill the gap.
+  if (digits.length < 5) return "";
 
   const col = benchColIndex(zip);
 
@@ -906,35 +925,23 @@ function onbColChart(zip) {
 
   const where = col.place ? h(col.place) : "your area";
 
-  // WHAT THIS SENTENCE IS. The step used to end on "costs here are 26% higher
-  // than the national average", which is a true fact a tester can do nothing
-  // with — the only action it suggests is moving house. What they actually
-  // need to know is where the peer numbers come from, because every figure in
-  // the app rests on it. So the caption states the method, not the gap.
+  // Two lines, and they sit directly under the field rather than below the
+  // card. This slot has now been three different things: a two-bar
+  // cost-of-living chart, then a paragraph explaining the peer method. Both
+  // answered a question the tester had not asked at the moment they finished
+  // typing five digits. What they want to know then is "did that work, and
+  // what happens next" — so it confirms the place and says more is coming.
   //
-  // It tracks benchPeerValue() exactly: a national base picked by income band
-  // and household size, times the local price multiplier, times lifestyle.
-  // Lifestyle is left out of the sentence on purpose — nothing has asked about
-  // it yet at this point in onboarding, so naming it would promise an input
-  // the tester has not given.
-  const text = `<span class="onb-line">People like you in ${where}.</span>` +
-    `<span class="onb-line">I start with what households across the country spend when they earn about what you earn and have about as many people at home, then adjust it to the prices where you live.</span>`;
-
-  // The two-bar cost-of-living chart that used to sit here is GONE, and the
-  // markup is deliberately not left behind commented out — the reasoning is
-  // what matters and it belongs in prose. It plotted the ZIP's price index
-  // against a national 100%, which is the same gap the caption stopped
-  // reporting: a number whose only implied action is moving house. Once the
-  // caption explained the method instead, the chart was the one element on the
-  // screen still arguing the old point, and nothing labelled it.
-  //
+  // The chart markup and the method paragraph are gone rather than commented
+  // out; the reasoning is what is worth keeping and it belongs in prose.
   // `onb-col-chart`, `onb-col-row`, `onb-col-head`, `onb-col-baseline` and
-  // `onb-col-axis` in components.css are now unused by this screen. They stay:
-  // v3 renders the same chart from its own copy of this file, and CSS here is
-  // shared with nothing that would break.
+  // `onb-col-axis` stay in components.css — v3 renders the same chart from its
+  // own copy of this file.
   return `
-    <p class="onb-col-text onb-col-lead">${text}</p>
-    ${onbColHousingLine(col)}`;
+    <p class="onb-col-text onb-col-lead onb-zip-result">
+      <span class="onb-line">Expenses will be shown based on people like you in ${where}.</span>
+      <span class="onb-line">We'll collect a little more info about you to get closer to the right peer.</span>
+    </p>`;
 }
 
 // The composite is a weighted basket, and most of that basket is priced
@@ -1099,8 +1106,9 @@ function onbStepBody(key, o) {
                  oninput="onbLiveInput('zip', this.value)"
                  onchange="onbLiveInput('zip', this.value)">
         </div>
+        <div id="onbColChart">${onbColChart(o.zip)}</div>
       </div>
-      <div id="onbColChart">${onbColChart(o.zip)}</div>
+      ${onbColTeaser(0)}
       ${onbZipLater(o)}
     </div>`;
 
