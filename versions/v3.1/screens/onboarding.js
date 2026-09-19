@@ -441,7 +441,21 @@ function onbLiveInput(field, value, commit) {
   if (commit) { render(); return; }
 
   uiSetEnabled("onbContinue", onbAnswered(ONB_STEPS[o.step], o));
-  if (field === "zip") uiPatchHTML("onbColChart", onbColChart(value));
+  if (field === "zip") {
+    uiPatchHTML("onbColChart", onbColChart(value));
+    // A ZIP is exactly five digits, so the field knows it is finished before
+    // the tester does. Put the keypad away rather than making them dismiss it
+    // to reach a Continue button it is sitting on top of.
+    //
+    // kbdCommit() rather than kbdClose(): close alone leaves the field focused
+    // and fires no `change`, so the value is committed only by this `input`
+    // pass and the field still looks active under a keyboard that has gone.
+    // Commit blurs and dispatches change, which is what a real Done does.
+    if (String(value).replace(/\D/g, "").length >= 5 &&
+        typeof kbdCommit === "function" && state.kbd && state.kbd.open) {
+      kbdCommit();
+    }
+  }
 }
 
 // ── Income: a band, then a slider inside it ──────────────────────────────────
