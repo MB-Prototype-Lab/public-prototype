@@ -1967,6 +1967,17 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 .onb-col-text { text-align: left; margin: 0; }
 
+/* The ZIP step's answer, now that the bar chart is gone. It is the payoff for
+   handing over the field, so it is set as body copy rather than as a caption
+   under something — .helper's 11.5px was sized to sit beneath a chart that no
+   longer exists. Dark, roomy, and the widest measure on the screen. */
+.onb-col-lead {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-strong);
+  font-weight: 400;
+}
+
 /* "Maybe share later" — the named way past the ZIP step. Deliberately quiet:
    it is a real choice, not the one being encouraged, so it reads as a link
    rather than competing with Continue. The note under it states what the

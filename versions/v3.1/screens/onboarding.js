@@ -904,13 +904,6 @@ function onbColChart(zip) {
     </div>`;
   }
 
-  const zipPct    = 100 + col.pct;
-  const nationPct = 100;
-  const scaleMax  = Math.max(nationPct, zipPct);
-  const nationW   = nationPct / scaleMax * 100;
-  const zipW      = zipPct / scaleMax * 100;
-  const markerX   = Math.max(6, Math.min(94, nationPct / scaleMax * 100));
-
   const where = col.place ? h(col.place) : "your area";
 
   // WHAT THIS SENTENCE IS. The step used to end on "costs here are 26% higher
@@ -926,22 +919,20 @@ function onbColChart(zip) {
   // the tester has not given.
   const text = `People like you in ${where}: I start with what households across the country spend when they earn about what you earn and have about as many people at home, then adjust it to the prices where you live.`;
 
+  // The two-bar cost-of-living chart that used to sit here is GONE, and the
+  // markup is deliberately not left behind commented out — the reasoning is
+  // what matters and it belongs in prose. It plotted the ZIP's price index
+  // against a national 100%, which is the same gap the caption stopped
+  // reporting: a number whose only implied action is moving house. Once the
+  // caption explained the method instead, the chart was the one element on the
+  // screen still arguing the old point, and nothing labelled it.
+  //
+  // `onb-col-chart`, `onb-col-row`, `onb-col-head`, `onb-col-baseline` and
+  // `onb-col-axis` in components.css are now unused by this screen. They stay:
+  // v3 renders the same chart from its own copy of this file, and CSS here is
+  // shared with nothing that would break.
   return `
-    <div class="onb-col-chart">
-      <div class="onb-col-row">
-        <div class="onb-col-head"><span>Nation</span><span>${nationPct}%</span></div>
-        <div class="cmp-bar"><span style="width:${nationW}%;background:var(--muted);"></span></div>
-      </div>
-      <div class="onb-col-row">
-        <div class="onb-col-head"><span>Your ZIP</span><span>${zipPct}%</span></div>
-        <div class="cmp-bar"><span style="width:${zipW}%;background:var(--accent);"></span></div>
-      </div>
-      <div class="onb-col-baseline" style="left:${markerX}%;" aria-hidden="true"></div>
-      <!-- No label on the line: the axis caption below already names it, and
-           two "national average" strings a few pixels apart read as a bug. -->
-      <p class="onb-col-axis">Cost of living · national average = 100%</p>
-    </div>
-    <p class="helper onb-col-text">${text}</p>
+    <p class="onb-col-text onb-col-lead">${text}</p>
     ${onbColHousingLine(col)}`;
 }
 
@@ -951,7 +942,7 @@ function onbColChart(zip) {
 // variation actually lives, so name it.
 function onbColHousingLine(col) {
   return `
-    <p class="helper onb-col-text" style="margin-top:8px;">
+    <p class="onb-col-text onb-col-lead" style="margin-top:14px;">
       Housing is usually the biggest one, then food, then getting around.
       Those three are worth getting right.
     </p>`;
