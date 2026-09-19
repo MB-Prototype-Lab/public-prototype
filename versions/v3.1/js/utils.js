@@ -50,6 +50,19 @@ function uiPatchHTML(id, html) {
 }
 
 /**
+ * Write a field's value without a render(), for the same reason as the two
+ * above: when a slider and a number box show the same figure, dragging one has
+ * to move the other, and a repaint mid-drag destroys the element the pointer
+ * is captured on. Skips the element if it is the one being typed in, so this
+ * can never fight a caret.
+ */
+function uiSetValue(id, value) {
+  const el = document.getElementById(id);
+  if (!el || el === document.activeElement) return;
+  el.value = value;
+}
+
+/**
  * What "the same view" means for holding scroll position.
  *
  * render() keeps the scroll offset when this string is unchanged and resets to

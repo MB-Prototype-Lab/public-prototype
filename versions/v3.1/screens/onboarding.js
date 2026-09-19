@@ -181,21 +181,44 @@ function onbLifestyleQuestions() {
 // therefore cannot change — the slider refines the FIGURE inside a band, it
 // does not add bands.
 //
-// b5's data max is 999999999. A slider cannot express that without making the
-// usable part of the track a couple of pixels wide, so it stops at 400k and the
-// top of the track reads as open.
+// THESE IDS ARE UI-LOCAL. They look like the peer model's b1–b5 and are not
+// the same thing: benchIncomeBand() derives the lookup band from the FIGURE,
+// never from this id, so splitting "Over $140,000" into two display bands
+// costs the peer model nothing — both still resolve to its b5. Nothing reads
+// `o.incomeBand` except this screen and the admin panel.
+//
+// The top band is open. Its data max is 999999999, which a slider cannot
+// express without leaving two usable pixels of track, so it stops at a figure
+// the track can draw and reads as open above it.
+//
+// `step` is PER BAND, so the grid is fine where the money is and coarse where
+// dragging $1,000 at a time would be absurd. Every seed below is the band's
+// own midpoint snapped to its own step — see onbIncomeSeed(). A seed that is
+// not a valid stop makes the browser snap the thumb the instant it is touched,
+// so the figure shown before the drag is unreachable after it. Deriving it
+// removes that whole class of bug rather than asking each row to get it right.
 const ONB_INCOME_BANDS = [
-  { id: "b1", label: "Under $35,000",      annual: 25000,  min: 0,      max: 35000 },
-  { id: "b2", label: "$35,000 – $60,000",  annual: 47500,  min: 35000,  max: 60000 },
-  { id: "b3", label: "$60,000 – $90,000",  annual: 75000,  min: 60000,  max: 90000 },
-  { id: "b4", label: "$90,000 – $140,000", annual: 115000, min: 90000,  max: 140000 },
-  { id: "b5", label: "Over $140,000",      annual: 175000, min: 140000, max: 400000, openTop: true }
+  { id: "b1", label: "Under $35,000",        min: 0,      max: 35000,   step: 1000 },
+  { id: "b2", label: "$35,000 – $60,000",    min: 35000,  max: 60000,   step: 1000 },
+  { id: "b3", label: "$60,000 – $90,000",    min: 60000,  max: 90000,   step: 2500 },
+  { id: "b4", label: "$90,000 – $140,000",   min: 90000,  max: 140000,  step: 2500 },
+  { id: "b5", label: "$140,000 – $300,000",  min: 140000, max: 300000,  step: 10000 },
+  { id: "b6", label: "$300,000+",            min: 300000, max: 1000000, step: 50000, openTop: true }
 ];
-// 500, not 1000: b2 seeds at 47,500. On a 1,000 grid that figure is not a valid
-// stop, so the browser would snap the thumb the moment you touched it and the
-// number shown before the drag would not be reachable after it. Every band's
-// min and seed divides by 500.
-const ONB_INCOME_STEP = 500;
+
+/**
+ * The figure a band opens on: its midpoint, snapped to its own step.
+ *
+ * An open-topped band has no midpoint worth using — half of "$300,000+" as
+ * drawn is $650,000, which is not a neutral guess about anyone. It opens on
+ * its floor instead, and the copy says the slider is there to correct it.
+ */
+function onbIncomeSeed(band) {
+  if (!band) return null;
+  if (band.openTop) return band.min;
+  const mid = (band.min + band.max) / 2;
+  return Math.round(mid / band.step) * band.step;
+}
 
 // "If you could improve one thing about your money…" — multi-select, max 3,
 // presets only. Folds into the single state.strategicGoal the app expects.
@@ -473,7 +496,7 @@ function onbIncomeBand(id) {
 function onbIncomeValue(o) {
   const band = onbIncomeBand(o.incomeBand);
   if (!band) return null;
-  return o.incomeExact != null ? o.incomeExact : band.annual;
+  return o.incomeExact != null ? o.incomeExact : onbIncomeSeed(band);
 }
 
 function onbSetIncomeBand(id) {
@@ -483,19 +506,49 @@ function onbSetIncomeBand(id) {
   // Re-seed on every band change. Carrying the old figure over would leave the
   // slider outside its own track, which the browser silently clamps — so the
   // number shown and the number stored would disagree.
-  o.incomeExact = band ? band.annual : null;
+  o.incomeExact = onbIncomeSeed(band);
   render();
 }
 
+/**
+ * Slider. Snaps to the band's own step and patches the label only — a render()
+ * here would replace the <input> the pointer is captured on and the thumb
+ * would stop tracking mid-drag.
+ */
 function onbSetIncomeExact(value) {
   const o = state.onboarding;
   const band = onbIncomeBand(o.incomeBand);
   if (!band) return;
-  const n = Math.round((Number(value) || 0) / ONB_INCOME_STEP) * ONB_INCOME_STEP;
+  const n = Math.round((Number(value) || 0) / band.step) * band.step;
   o.incomeExact = Math.max(band.min, Math.min(band.max, n));
-  // Patch the label only. A render() here would replace the <input> the pointer
-  // is captured on and the thumb would stop tracking mid-drag.
   uiPatchHTML("onbIncomeLabel", onbIncomeLabelText(o));
+  uiSetValue("onbIncomeTyped", onbIncomeTypedText(o.incomeExact));
+}
+
+/** Grouped digits, no currency mark — the box is a field, not a readout. */
+function onbIncomeTypedText(v) {
+  return v == null ? "" : Number(v).toLocaleString("en-US");
+}
+
+/**
+ * Typed figure. Deliberately NOT snapped to the band's step: someone who types
+ * 83,400 means 83,400, and rounding it to the nearest 2,500 would overwrite an
+ * exact answer with a worse one. The slider is the thing with a grid.
+ *
+ * It does move the band when the figure belongs to a different one, rather than
+ * clamping — typing 250,000 under "Under $35,000" is a picked band that is
+ * simply wrong, and silently storing 35,000 would be the screen lying about
+ * what it was told.
+ */
+function onbSetIncomeTyped(value) {
+  const o = state.onboarding;
+  const n = Math.max(0, Math.round(Number(String(value).replace(/[^0-9.]/g, "")) || 0));
+  if (!n) { render(); return; }
+  const band = ONB_INCOME_BANDS.find(b => n >= b.min && n < b.max) ||
+               ONB_INCOME_BANDS[ONB_INCOME_BANDS.length - 1];
+  o.incomeBand = band.id;
+  o.incomeExact = Math.min(n, band.max);
+  render();
 }
 
 function onbIncomeLabelText(o) {
@@ -514,17 +567,22 @@ function onbIncomeSlider(o) {
   if (!band) return "";
   const v = onbIncomeValue(o);
   return `
-    <div class="card" style="margin-top:14px;">
+    <div class="card onb-income-card">
       <p class="slider-readout" id="onbIncomeLabel">${onbIncomeLabelText(o)}</p>
       <input class="journal-slider" type="range"
-             min="${band.min}" max="${band.max}" step="${ONB_INCOME_STEP}"
+             min="${band.min}" max="${band.max}" step="${band.step}"
              value="${v}"
              oninput="onbSetIncomeExact(this.value)"
              aria-label="Annual income">
-      <p class="helper" style="margin:8px 0 0;font-size:11px;">
-        ${band.openTop
-          ? "Drag to your figure — the top of the track covers anything above it."
-          : "Drag to your figure. This is what the budget works from."}
+      <div class="onb-income-typed">
+        <label for="onbIncomeTyped">Or type it</label>
+        <input id="onbIncomeTyped" inputmode="numeric" value="${onbIncomeTypedText(v)}"
+               onchange="onbSetIncomeTyped(this.value)"
+               aria-label="Annual income, typed">
+      </div>
+      <p class="task-desc" style="margin:8px 0 0;">
+        <span class="onb-line">Slide the scale if you want to be more accurate.</span>
+        <span class="onb-line">Otherwise we'll use the middle of the range.</span>
       </p>
     </div>`;
 }
@@ -1138,16 +1196,21 @@ function onbStepBody(key, o) {
     "Driving more means more gas or charging, and more wear on the car.");
 
   if (key === "income") return `
-    <h1 class="title onb-title" style="margin:0 0 6px;">Roughly what comes in each year?</h1>
-    <p class="helper" style="margin:0 0 14px;">Pick the band that fits, then nudge it to your figure.</p>
-    <div class="journal-options">
-      ${ONB_INCOME_BANDS.map(b => `
-        <button class="journal-opt ${o.incomeBand === b.id ? "picked" : ""}" type="button"
-                onclick="onbSetIncomeBand('${b.id}')">
-          <span class="journal-opt-label">${h(b.label)}</span>
-        </button>`).join("")}
-    </div>
-    ${onbIncomeSlider(o)}`;
+    <div class="onb-income-step">
+      <h1 class="title onb-title" style="margin:0 0 8px;">How much do you make each year?</h1>
+      <p class="helper" style="margin:0 0 12px;">
+        <span class="onb-line">Start with your income range.</span>
+        <span class="onb-line">Sharing your income range helps to fine tune finding people like you.</span>
+      </p>
+      <div class="journal-options">
+        ${ONB_INCOME_BANDS.map(b => `
+          <button class="journal-opt ${o.incomeBand === b.id ? "picked" : ""}" type="button"
+                  onclick="onbSetIncomeBand('${b.id}')">
+            <span class="journal-opt-label">${h(b.label)}</span>
+          </button>`).join("")}
+      </div>
+      ${onbIncomeSlider(o)}
+    </div>`;
 
   // A subset of the standalone budget builder's questions — same dimensions and
   // keys, so an answer means the same thing either way; onboarding just asks the

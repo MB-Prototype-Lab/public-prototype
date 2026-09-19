@@ -2084,6 +2084,37 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   opacity: 1;
 }
 
+/* Income step. Six bands plus a slider card have to clear 940px without a
+   scroll, so the rows are tightened here rather than by touching .journal-opt,
+   which every other option list in the app uses. */
+.onb-income-step .journal-options { gap: 6px; }
+.onb-income-step .journal-opt { padding: 9px 12px; }
+.onb-income-card { margin-top: 10px; padding: 10px 12px; }
+
+/* The typed figure, beside the slider that shows the same number. Both write
+   the same state; uiSetValue keeps them in step without a repaint. */
+.onb-income-typed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.onb-income-typed label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+.screen .onb-income-typed input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+  color: var(--text-strong);
+}
+
 /* The whole ZIP step is centred. Scoped to the step, not to onboarding: the
    other steps are option lists and tile grids, where a centred label under a
    left-aligned row would look like a mistake. */
