@@ -1992,17 +1992,31 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    tester gets instead, in their own voice. */
 .onb-zip-later { margin-top: 20px; text-align: center; }
 
-/* Reads as a real button, the same as Continue: .button carries the fill, the
-   radius and the weight. Only the sizing is overridden — this is a full-width
-   choice in the body, not a footer action, so it cannot keep .button's
-   `white-space: nowrap` and inline sizing. Inline-block rather than block so
-   the centring on .onb-zip-step positions it. */
+/* Button-shaped, but NOT the call to action. On the accent fill it read as the
+   thing to press, which inverted the screen: the step's job is to get a ZIP,
+   and the way out was the loudest control on it. Pale neutral fill, ordinary
+   outline, dark label — unmistakably pressable, clearly the second choice.
+   Inline-block rather than block so .onb-zip-step's centring positions it. */
+/* Specificity, twice over. `.screen .button:not(.secondary)` sets the accent
+   fill and is (0,3,0) — `:not()` contributes its argument's weight, so the
+   negation counts as a class. A bare `.onb-zip-later-btn` (0,1,0) loses, and
+   so does `.screen .onb-zip-later-btn` (0,2,0), which is the version that
+   looked correct and silently kept rendering green. Matching (0,3,0) and
+   sitting later in the file is what actually wins it. */
 .onb-zip-later-btn {
   display: inline-block;
   width: 100%;
   max-width: 260px;
   white-space: normal;
+}
+.screen .button.onb-zip-later-btn,
+.screen .button.onb-zip-later-btn:hover {
   padding: 12px 14px;
+  background: var(--soft);
+  border-color: var(--line);
+  color: var(--text-strong);
+  font-weight: 700;
+  filter: none;
 }
 .onb-zip-later-note {
   text-align: center;
@@ -2017,6 +2031,41 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    let one long sentence push a fragment onto the next line and every sentence
    after it would read as starting mid-thought. */
 .onb-line { display: block; }
+
+/* The ask — the reason and the field it is asking for, boxed together. They
+   were two loose blocks with the explanation card below competing for the same
+   attention, so the one thing the step actually wants was the quietest element
+   on it. */
+.onb-zip-ask {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 16px;
+  padding: 14px 14px 16px;
+  margin: 0 0 16px;
+}
+
+/* The field itself. `.screen input` is (0,1,1) and sets the background and a
+   card radius, so a bare class loses to it — every property that has to win
+   here is repeated under a .screen-qualified selector below. */
+.onb-zip-input { text-align: center; }
+.screen .onb-zip-input {
+  border: 2px solid var(--accent);
+  background: var(--card);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 12px 14px;
+  color: var(--text-strong);
+}
+/* Bold placeholder, because "ZIP code" IS the label — there is no separate
+   one, so at rest this is the only thing naming the field. */
+.screen .onb-zip-input::placeholder {
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--rail);
+  opacity: 1;
+}
 
 /* The whole ZIP step is centred. Scoped to the step, not to onboarding: the
    other steps are option lists and tile grids, where a centred label under a

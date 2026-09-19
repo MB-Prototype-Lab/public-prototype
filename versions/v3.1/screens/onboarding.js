@@ -1087,15 +1087,18 @@ function onbStepBody(key, o) {
   if (key === "zip") return `
     <div class="onb-zip-step">
       <h1 class="title onb-title" style="margin:0 0 8px;">What's your ZIP code?</h1>
-      <p class="helper" style="margin:0 0 14px;">
-        <span class="onb-line">It's how I find people like you and near you.</span>
-        <span class="onb-line">Seeing how they spend may help you relate to how you spend.</span>
-        <span class="onb-line">That's all I use it for and it's never shared.</span>
-      </p>
-      <div class="input-group">
-        <input inputmode="numeric" maxlength="5" placeholder="ZIP code" value="${h(o.zip)}"
-               oninput="onbLiveInput('zip', this.value)"
-               onchange="onbLiveInput('zip', this.value)">
+      <div class="onb-zip-ask">
+        <p class="helper" style="margin:0 0 12px;">
+          <span class="onb-line">It's how I find people like you and near you.</span>
+          <span class="onb-line">Seeing how they spend may help you relate to how you spend.</span>
+          <span class="onb-line">That's all I use it for and it's never shared.</span>
+        </p>
+        <div class="input-group" style="margin:0;">
+          <input class="onb-zip-input" inputmode="numeric" maxlength="5"
+                 placeholder="ZIP code" value="${h(o.zip)}"
+                 oninput="onbLiveInput('zip', this.value)"
+                 onchange="onbLiveInput('zip', this.value)">
+        </div>
       </div>
       <div id="onbColChart">${onbColChart(o.zip)}</div>
       ${onbZipLater(o)}
