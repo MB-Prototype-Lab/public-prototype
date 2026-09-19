@@ -67,6 +67,70 @@
     "_demographicsNote": "The owner asked for demographics in the insurance estimate. Age, driving record and claims history are the three things that actually move a premium and NONE of them are collected anywhere in this app. What is available is the ZIP and the car payment, so the estimate uses those and says so. Adding an age question would move this materially."
   },
 
+  "utilities": {
+    "_note": "GAS, which the shared help-me-out rates do not carry. That model prices power and water only, so the row promised 'water, gas, and electricity' and quietly billed two of the three — about $55 a month missing on a house. Kept in THIS file rather than added to help-me-out.json, because that table also feeds the budget builder and changing it would move a figure in a tool nobody asked us to touch.",
+    "_source": "EIA Residential Energy Consumption Survey: average residential natural gas spend by dwelling size, annualised and divided by twelve. Scaled by the same Utilities cost-of-living multiplier as power and water, since gas is priced locally too.",
+    "gasByHome": { "studio": 22, "apt1": 28, "apt2": 38, "house2": 55, "house3": 66, "house4": 80 }
+  },
+
+  "debt": {
+    "_note": "The credit-card and loan row has no estimate behind it — nothing in onboarding asks how many cards or loans somebody carries. So instead of a dollar band, the dropdown offers the COMBINATIONS, each labelled with what it stands for: '$285 (1 loan + 1 card)'. The tester recognises their own situation rather than guessing at a figure, and the label does the explaining a description line would otherwise have to.",
+    "_source": "Card issuers set a minimum payment at roughly 2% of the balance with a floor near $35, which is where most small balances land. $250 is a typical monthly payment on a personal or student loan. Both are anchors to re-source at build.",
+    "_optionsNote": "SIX options, not every combination. Cards 0-3 x loans 0-3 produced sixteen, which is a scroll and a decision rather than a recognition. These are ranges covering the situations people actually land in, and the label says the situation rather than the arithmetic.",
+    "options": [
+      { "label": "Nothing owed",                  "lo": 0,   "hi": 0 },
+      { "label": "A card or two",                 "lo": 35,  "hi": 75 },
+      { "label": "Several cards",                 "lo": 75,  "hi": 200 },
+      { "label": "A loan, maybe a card",          "lo": 250, "hi": 350 },
+      { "label": "A loan and a few cards",        "lo": 350, "hi": 600 },
+      { "label": "More than one loan, plus cards", "lo": 600, "hi": 1000 }
+    ]
+  },
+
+  "connectivity": {
+    "_note": "Phone and internet are ONE row and are priced NATIONALLY — no cost-of-living multiplier. A carrier and an ISP charge the same in Palo Alto as in Helena, and applying the Utilities multiplier to them overstated the bill by more than it corrected.",
+    "_source": "Published carrier and ISP list prices. Per-line price falls as lines are added, which is how every US family plan is actually sold.",
+    "perLine": { "1": 65, "2": 55, "3": 45, "4": 40, "5": 36 },
+    "internet": 75,
+    "maxLines": 5,
+    "_linesNote": "Lines = adults + kids 13 and over, capped at 5. The old model used min(householdSize, 4), which billed a phone line for a toddler."
+  },
+
+  "groceries": {
+    "_note": "Adjusts the peer grocery figure for WHO is in the household, not just how many. The peer value already scales with household size, so this is a ratio against that size — it comes out at 1.0 for a household of adults and only moves when young children are in it.",
+    "_source": "USDA Cost of Food at Home, which prices a child aged 1-8 at roughly two thirds of an adult and a teenager at about an adult's cost.",
+    "weight": { "adult": 1.0, "teen": 1.0, "under13": 0.7 }
+  },
+
+  "aca": {
+    "_note": "The unemployed-insurance estimate. Only ever shown when health coverage comes through a job — that is the only coverage that ends with the paycheck.",
+    "_source": "CMS publishes benchmark silver premiums by rating area and the standard age curve is public. Rating areas are not in this repo, so the benchmark is stubbed at a national figure with a handful of states that diverge far enough to be visibly wrong.",
+    "benchmarkSilver": 480,
+    "benchmarkByState": { "NY": 610, "VT": 690, "WV": 700, "AK": 750, "CA": 450, "MD": 390, "NH": 360 },
+    "ageCurve": { "21": 1.0, "30": 1.135, "40": 1.278, "50": 1.786, "60": 2.714, "67": 3.0 },
+    "childFactor": 0.765,
+    "maxChildrenCounted": 3,
+    "_childNote": "Under-21s all price at the same factor, and only the three oldest count — both are the published ACA rules, not simplifications."
+  },
+
+  "hoa": {
+    "_note": "Branches on PROPERTY TYPE, never on ZIP. HOA fees are bimodal: most houses have none, condos and townhomes almost always carry one. A ZIP-based estimate hands a house owner in a condo-heavy ZIP a fee they do not pay.",
+    "_source": "Census ACS median monthly HOA fee for units that carry one, scaled by the area's housing cost multiplier.",
+    "byPlaceType": { "condo": 350, "houseSmall": 0, "houseLarge": 0, "aptSmall": 0, "aptLarge": 0 },
+    "shownFor": ["condo", "houseSmall", "houseLarge"]
+  },
+
+  "propertyTax": {
+    "_note": "Estimated but NOT counted until the tester adds it. About four in five mortgages escrow property tax, so a pre-filled figure double-counts for most owners — and a number already in the box gets accepted without thought more readily than an empty one. This is the one place the err-high rule is deliberately reversed.",
+    "_source": "County effective tax rates against Zillow home values. Neither is in this repo yet, so this is a state-level stub: effective rate applied to a typical home value scaled by the area's housing multiplier.",
+    "nationalHomeValue": 420000,
+    "rateByState": { "NJ": 0.0223, "IL": 0.0205, "NH": 0.0193, "CT": 0.0179, "TX": 0.0163, "NY": 0.0154, "OH": 0.0152, "PA": 0.0141, "IA": 0.0149, "MI": 0.0138, "WI": 0.0151, "MA": 0.0104, "WA": 0.0084, "OR": 0.0086, "FL": 0.0079, "GA": 0.0083, "NC": 0.0070, "TN": 0.0056, "AR": 0.0061, "AZ": 0.0060, "NV": 0.0049, "UT": 0.0052, "HI": 0.0032, "AL": 0.0040, "CO": 0.0051, "CA": 0.0071 },
+    "nationalRate": 0.0099,
+
+    "valueDispersion": 1.35,
+    "_dispersionNote": "STUB CALIBRATION, not a sourced figure. The county multiplier this scales is derived from RENTS, and home VALUES spread further than rents do — a metro renting at 2.4x national sells at more than 2.4x national. Without it San Francisco priced at about $850k, roughly half of what it is, and the tax estimate came out half as well. Replace the whole thing the moment county ZHVI is in the repo; this exists so the coastal figures are not visibly wrong in a demo."
+  },
+
   "crisis": {
     "_note": "What changes if the paycheck stops. The owner's ruling: ONLY health cover moves. Housing, debt, transport, food and utilities are all carried at their stated figures, and the tool states the adjustment rather than offering a choice about it — an emergency fund that assumes you keep your employer's insurance is not covering the emergency.",
     "replacementPremiumFrom": "helpMeOut:Health.marketplacePremium",

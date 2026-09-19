@@ -47,6 +47,15 @@ function esfSetBufferRaw(raw) {
   render();
 }
 
+/** Already saved — deducts from the goal. Defaults to nothing, typed by hand. */
+function esfSetStartingBalance(raw) {
+  const s = esfSession();
+  const n = Number(String(raw == null ? "" : raw).replace(/[^0-9.]/g, ""));
+  s.startingBalance = isFinite(n) ? Math.max(0, Math.round(n)) : 0;
+  esfLog("already_saved", { amount: s.startingBalance });
+  render();
+}
+
 function esfSetTargetDate(value) {
   const s = esfSession();
   if (value) s.targetDate = value;
@@ -77,19 +86,22 @@ function renderEsfPlan() {
   const inChoices = choices.some(c => Math.round(c * 100) === bufferPct);
   const notes = ESF_CONFIG.coverageNotes || {};
 
-  // The dollar value the percentage is worth, so the tester sees what they are
-  // actually adding rather than having to do the arithmetic from a percent.
-  const bufferAmount = esfTarget() - esfRound(esfSurvivalMonthly() * months);
+  // What the percentage is worth in dollars, computed BEFORE the goal is
+  // rounded to $500 — otherwise the rounding lands in this figure and the extra
+  // appears to change when the coverage does.
+  const bufferAmount = esfBufferAmount();
 
   return `
     <div class="journal-shell">
       <div class="journal-head">
-        <h1 class="title esf-title">${h(ESF_TITLE_MAIN)}</h1>
+        <p class="helper" style="margin:0 0 4px;">Step ${ESF_TOTAL_STEPS} of ${ESF_TOTAL_STEPS}</p>
+        <div class="journal-progress" aria-hidden="true">
+          ${Array.from({ length: ESF_TOTAL_STEPS }, () => `<span class="journal-pip on"></span>`).join("")}
+        </div>
+        <h1 class="title esf-title">Emergency Savings Fund Goal</h1>
       </div>
 
       <div class="journal-body">
-        <p class="esf-step-heading">Emergency Savings Fund Goal</p>
-
         <div class="esf-banner${esfBannerClass(ESF_PLAN_IMAGE)}" style="aspect-ratio:${ESF_PLAN_IMAGE.ratio} / 1;max-height:${ESF_PLAN_IMAGE.maxH}px;">
           <img src="${h(ESF_PLAN_IMAGE.src)}" alt="" aria-hidden="true">
         </div>
@@ -112,35 +124,38 @@ function renderEsfPlan() {
 
         <div class="item-card esf-row">
           <p class="esf-group-label">Breathing room for surprise costs</p>
-          <div class="esf-fields">
-            <div class="esf-field">
-              <label class="esf-field-label" for="esfBufferPct">Extra</label>
-              <select id="esfBufferPct" class="esf-select" onchange="esfSetBuffer(this.value)">
-                ${choices.map(c => `
-                  <option value="${c}" ${Math.round(c * 100) === bufferPct ? "selected" : ""}>
-                    ${c > 0 ? "+" : ""}${Math.round(c * 100)}%
-                  </option>`).join("")}
-                ${inChoices ? "" : `<option value="${s.buffer}" selected>${bufferPct > 0 ? "+" : ""}${bufferPct}%</option>`}
-              </select>
-            </div>
-            <div class="esf-field">
-              <label class="esf-field-label" for="esfBufferAmt">That adds</label>
-              <input id="esfBufferAmt" class="esf-amount" type="text" readonly
-                     value="${h(esfMoney(bufferAmount))}"
-                     aria-label="Amount the extra adds to the goal">
-            </div>
+          <div class="esf-inline">
+            <select class="esf-select esf-inline-ctl" aria-label="Extra percentage"
+                    onchange="esfSetBuffer(this.value)">
+              ${choices.map(c => `
+                <option value="${c}" ${Math.round(c * 100) === bufferPct ? "selected" : ""}>
+                  ${c > 0 ? "+" : ""}${Math.round(c * 100)}%
+                </option>`).join("")}
+              ${inChoices ? "" : `<option value="${s.buffer}" selected>${bufferPct > 0 ? "+" : ""}${bufferPct}%</option>`}
+            </select>
+            <span class="esf-inline-note">adds ${h(esfMoney(bufferAmount))}</span>
+          </div>
+        </div>
+
+        <div class="item-card esf-row">
+          <p class="esf-group-label">Already saved</p>
+          <div class="esf-inline">
+            <input class="esf-amount esf-inline-ctl" type="text" inputmode="numeric"
+                   value="${h(esfMoney(s.startingBalance || 0))}"
+                   aria-label="Amount already saved"
+                   onchange="esfSetStartingBalance(this.value)">
+            <span class="esf-inline-note">${h(esfMoney(Math.max(0, esfTarget() - (s.startingBalance || 0))))} to go</span>
           </div>
         </div>
 
         <div class="item-card esf-row">
           <p class="esf-group-label">Target date: ${h(esfTargetDateLabel())}</p>
-          <p class="helper esf-row-help" style="margin-top:0;">
-            That works out to <strong>${h(esfMoney(esfMonthlyContribution()))}</strong> a month.
-            Move the date and this moves with it.
-          </p>
-          <input class="esf-date" type="date" value="${h(s.targetDate)}"
-                 aria-label="Target date"
-                 onchange="esfSetTargetDate(this.value)">
+          <div class="esf-inline">
+            <input class="esf-date esf-inline-ctl" type="date" value="${h(s.targetDate)}"
+                   aria-label="Target date"
+                   onchange="esfSetTargetDate(this.value)">
+            <span class="esf-inline-note">${h(esfMoney(esfMonthlyContribution()))} a month</span>
+          </div>
         </div>
       </div>
 
@@ -159,8 +174,7 @@ function renderEsfPlanAdmin() {
       <p class="admin-card-title">Plan</p>
       <p class="helper">
         Survival ${esfMoney(esfSurvivalMonthly())} a month
-        (unemployed insurance ${esfMoney(esfRowMonthly("unemployedInsurance"))} is a ROW now,
-        not an uplift; dining out is captured but excluded)
+        (medical ${esfMoney(esfRowMonthly("medical"))} is priced on losing work cover)
         × ${(1 + (s.buffer || 0)).toFixed(2)} = ${esfMoney(esfBufferedMonthly())}
       </p>
       <p class="helper">

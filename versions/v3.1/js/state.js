@@ -206,6 +206,10 @@ const state = {
   expenses: null,
   esfGoal: null,
   esfEvents: [],
+  // Set when the tester says they already have a fund and does not want to
+  // build one. No figure, no goal — just a record that the question has been
+  // answered, so the task is not put to them again.
+  esfSelfReported: null,
   // Which of the nine starting profiles is applied, or null for the persona
   // seed. Written only by profileApply().
   activeProfileId: null,

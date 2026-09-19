@@ -39,6 +39,10 @@ const ESF_STEPS = [
   { id: "rest",      heading: "Living-related Expenses" }
 ];
 
+// The plan screen is a step too, as far as the tester is concerned — it is
+// where the flow ends. It lives in its own file but counts in the progress.
+const ESF_TOTAL_STEPS = ESF_STEPS.length + 1;
+
 // ── Buddy, per step ──────────────────────────────────────────────────────────
 // Owner-supplied art (L22), one scene per step, matched to what that step asks
 // about: the house and cars where rent and a car payment are collected, the
@@ -64,8 +68,8 @@ const ESF_STEPS = [
 // scrollHeight against clientHeight on the real screen.
 const ESF_STEP_IMAGE = {
   1: { src: "assets/img/buddy-home.jpg",            ratio: 2.36, maxH: 140 },
-  2: { src: "assets/img/buddy-utilities.jpg",       ratio: 2.36, maxH: 108 },
-  3: { src: "assets/img/buddy-living-expenses.jpg", ratio: 1.79, maxH: 104 }
+  2: { src: "assets/img/buddy-utilities.jpg",       ratio: 2.36, maxH: 112 },
+  3: { src: "assets/img/buddy-living-expenses.jpg", ratio: 1.79, maxH: 66 }
 };
 
 // The plan screen's own art. Also used by the intro, which has the most room of
@@ -123,6 +127,15 @@ function esfToggleOwns() {
   render();
 }
 
+/** A range was picked — the row takes that range's midpoint. */
+function esfSetRange(rowId, mid) {
+  const s = esfSession();
+  const n = Number(mid);
+  s.rows[rowId] = isFinite(n) ? Math.max(0, Math.round(n)) : 0;
+  s.touched[rowId] = true;
+  render();
+}
+
 function esfToggleExplain(key) {
   const s = esfSession();
   if (!s.explain) s.explain = {};
@@ -141,7 +154,7 @@ function esfToggleExplain(key) {
 const ESF_HELP_ROW_FOR_CATEGORY = {
   "Groceries": "groceries",
   "Debt payments": "debt",
-  "Transport": "carRunning",
+  "Transport": "carCosts",
   "Health": "medical",
   "Utilities": "power"
 };
@@ -175,6 +188,14 @@ function esfNext() {
 function esfBack() {
   const s = esfSession();
   if (s.step > 0) { s.step--; render(); return; }
+  // Back off the FIRST fund screen reopens onboarding at its first question.
+  // navBack() popped to the Goals tab, which is where the fund ends rather than
+  // where it began — so "back" moved the tester forwards.
+  if (typeof ESF_ONLY !== "undefined" && ESF_ONLY && typeof onbStart === "function") {
+    onbStart();
+    go("onboarding");
+    return;
+  }
   navBack();
 }
 
@@ -225,6 +246,84 @@ function esfMoney(n) {
  * carries its own Done key, which commits the field and puts the keyboard away.
  * No separate submit control is needed or wanted here.
  */
+/**
+ * "Based on …" — what an estimate was built from, in one line.
+ *
+ * An auditable estimate earns an override; an unexplained one gets a shrug. The
+ * drivers named here are the ones the tester actually answered, so the line
+ * doubles as a receipt for the onboarding questions.
+ */
+function esfBasedOn(rowId) {
+  const hh = typeof esfHousehold === "function" ? esfHousehold() : null;
+  const zip = (state.profile || {}).zip;
+  const where = zip ? " in " + zip : "";
+  const place = (typeof ONB_PLACE_TYPES !== "undefined" &&
+                 ONB_PLACE_TYPES.find(p => p.id === esfPlaceType())) || null;
+  const people = hh ? hh.people : null;
+  const peopleWord = people === 1 ? "1 person" : people + " people";
+
+  if (rowId === "power") {
+    return "Based on " + (place ? place.label.toLowerCase() : "your home") +
+           where + " with " + peopleWord + ".";
+  }
+  if (rowId === "connect") {
+    // The split is shown because the combined figure is the one people query —
+    // "that seems high" is answerable by "$110 of it is four phone lines".
+    const c = esfData().connectivity || {};
+    const lines = esfPhoneLines();
+    const internet = Number(c.internet) || 0;
+    const phone = Math.max(0, esfConnectivity() - internet);
+    return lines + " phone line" + (lines === 1 ? "" : "s") + " (" + esfMoney(phone) +
+           ") plus internet (" + esfMoney(internet) + ").";
+  }
+  if (rowId === "groceries") {
+    const kids = hh ? hh.youngKids + hh.teens : 0;
+    return "Based on " + (hh ? hh.adultCount : 1) + " adult" + (hh && hh.adultCount === 1 ? "" : "s") +
+           (kids ? " and " + kids + " kid" + (kids === 1 ? "" : "s") : "") + ". Groceries only.";
+  }
+  if (rowId === "carCosts") {
+    const miles = esfMilesPerDay();
+    if (miles === 0) return "Based on not driving.";
+    return "Based on " + (miles == null ? "typical" : miles) + " miles a day" + where + ".";
+  }
+  // ONE LINE. Say what to include, not how it was derived — a tester checking
+  // this row needs to know whether their dental bill belongs in it, and the
+  // pricing method is the thing they care least about.
+  if (rowId === "medical") {
+    return "Insurance, copays, prescriptions, dental and vision.";
+  }
+  // No "Based on" for debt — there is no estimate behind it. What the tester
+  // needs is what counts, not where a number came from.
+  if (rowId === "debt") return "The smallest payment you must make each month on credit cards and loans.";
+  if (rowId === "hoa") return "Based on a " + (place ? place.label.toLowerCase() : "home") + where + ".";
+  if (rowId === "propertyTax") return "Based on typical home values and tax rates" + where + ".";
+  if (rowId === "homeInsurance") return "Based on average premiums" + where + ".";
+  return "";
+}
+
+/** A range dropdown — the only control on an estimated row. */
+function esfRenderRangeField(row) {
+  const value = esfRowValue(row.id);
+  // The debt row offers labelled combinations rather than dollar bands.
+  const combos = row.options === "debt";
+  const options = combos ? esfDebtOptions() : esfBandOptions(value, row);
+  const here = combos ? null : esfBandFor(value, row);
+  const annual = row.cadence === "annual";
+
+  return `
+    <div class="esf-field esf-field-wide">
+      <select class="esf-range" aria-label="${h(row.label)}, a ${annual ? "year" : "month"}"
+              onchange="esfSetRange('${row.id}', this.value)">
+        ${options.map(b => {
+          const on = combos
+            ? Math.round(b.mid) === Math.round(value)
+            : (b.zero ? value === 0 : (!!value && b.lo === here.lo));
+          return `<option value="${b.mid}" ${on ? "selected" : ""}>${h(esfBandLabel(b, row))}</option>`;
+        }).join("")}
+      </select>
+    </div>`;
+}
+
 function esfRenderField(row, bare) {
   const s = esfSession();
   const value = s.rows[row.id];
@@ -270,14 +369,8 @@ function esfRenderField(row, bare) {
 function esfFieldNote(row) {
   if (row.cadence === "annual") return esfMoney(esfRowMonthly(row.id)) + " per month";
 
-  if (row.id === "fuel") {
-    const miles = esfImpliedMiles();
-    if (!miles) return "";
-    // Kept to one line — it wrapped at the full wording, and this note sits in
-    // the tightest box on the screen.
-    return "~" + miles.toLocaleString("en-US") + " mi/mo at $" +
-           esfPerGallon().toFixed(2) + "/gal";
-  }
+  // The car box is one combined figure now, so there is no per-component note
+  // to write — the "Based on" line above it names the drivers instead.
   // Insurance and maintenance carry no note on purpose. Only the fuel figure
   // converts into something a tester can check — miles. "Estimated from your
   // area" under the other two says nothing they can act on and cost two lines
@@ -298,22 +391,24 @@ function esfRenderGroup(group) {
     return bill && bill.qualifier;
   }).filter(Boolean)[0];
 
-  // A choice group is a segmented picker over ONE field. Two fields where one
-  // is always zero is both uglier and more work than a toggle plus a box.
-  if (lead.choice) {
-    const picked = rows.find(esfRowPicked) || lead;
+  // ── Opt-in: estimated, but worth nothing until added ──────────────────────
+  if (lead.optIn) {
+    const added = esfRowAdded(lead.id);
     return `
-      <div class="item-card esf-row">
-        <div class="esf-seg" role="group" aria-label="${h(rows.map(r => r.label).join(" or "))}">
-          ${rows.map(r => `
-            <button type="button" class="esf-seg-btn ${esfRowPicked(r) ? "on" : ""}"
-                    aria-pressed="${esfRowPicked(r)}"
-                    onclick="esfPickChoice('${h(group.id)}','${r.id}')">${h(r.label)}</button>
-          `).join("")}
+      <div class="item-card esf-row ${added ? "esf-row-on" : ""}">
+        <div class="esf-optin-head">
+          <span class="esf-field-label">${h(lead.label)}${
+            lead.labelNote ? `<span class="esf-label-note">${h(lead.labelNote)}</span>` : ""
+          }</span>
+          <button type="button" class="${added ? "esf-added" : "esf-add"}"
+                  aria-pressed="${added}" onclick="esfToggleRow('${lead.id}')">
+            ${added ? "Added" : "Add it"}
+            ${added || lead.startAtZero ? "" :
+              `<span class="esf-add-figure">${h(esfMoney(esfRowMonthly(lead.id, true)))}/mo</span>`}
+          </button>
         </div>
-        ${esfRenderField(picked, true)}
-      </div>
-    `;
+        ${added ? `<div class="esf-fields">${esfRenderRangeField(lead)}</div>` : ""}
+      </div>`;
   }
 
   // Three narrow fields need their own row; two sit comfortably side by side.
@@ -325,7 +420,23 @@ function esfRenderGroup(group) {
   return `
     <div class="item-card esf-row">
       ${lead.groupLabel ? `<p class="esf-group-label">${h(lead.groupLabel)}</p>` : ""}
-      <div class="esf-fields${wide}">${rows.map(r => esfRenderField(r, bare)).join("")}</div>
+      ${rows.map(r => {
+        // An estimated row is a description line and a range. A typed row keeps
+        // its number box — rent and a car payment are figures people know.
+        if (!r.prefill) return "";
+        const based = esfBasedOn(r.id);
+        return `<div class="esf-estimate">
+          ${rows.length > 1 || !lead.groupLabel
+            ? `<span class="esf-field-label">${h(r.label)}${
+                r.labelNote ? `<span class="esf-label-note">${h(r.labelNote)}</span>` : ""}</span>`
+            : ""}
+          ${based ? `<p class="esf-based">${h(based)}</p>` : ""}
+          <div class="esf-fields">${esfRenderRangeField(r)}</div>
+        </div>`;
+      }).join("")}
+      ${rows.some(r => !r.prefill)
+        ? `<div class="esf-fields">${rows.filter(r => !r.prefill).map(r => esfRenderField(r, bare)).join("")}</div>`
+        : ""}
       ${help ? `<p class="helper esf-row-help">${h(help)}</p>` : ""}
       ${qualifier ? `<p class="helper esf-qualifier">${h(qualifier)}</p>` : ""}
     </div>
@@ -345,8 +456,52 @@ function esfRenderIntro() {
          and major unexpected expenses happen</p>
       <p>Let's start with understanding your regular <strong>Monthly Expenses</strong>
          that you think must be paid every month</p>
+
+      <div class="esf-intro-choices">
+        <button class="button full" type="button" onclick="esfNext()">Build my fund</button>
+        <button class="button secondary full" type="button" onclick="esfSkipToGoal()">
+          I already have one
+        </button>
+      </div>
     </div>
   `;
+}
+
+/**
+ * "I already have one" — done, and stop asking.
+ *
+ * NO FIGURE IS COLLECTED, deliberately. Plenty of people are comfortable with
+ * what they have set aside and have no wish to track it here; for them the
+ * useful outcome is not a goal, it is the tool never surfacing as a task again.
+ * Asking for a number to create a goal nobody wanted would be charging them for
+ * the privilege of opting out.
+ *
+ * So this marks the task complete and leaves the Goals tab alone.
+ */
+function esfSkipToGoal() {
+  state.esfSelfReported = { at: todayISO() };
+  esfLog("already_have_one", {});
+  esfCompleteTasks();
+  navGoTabRoot("goals");
+}
+
+/**
+ * Tick the emergency-fund task off in both task systems.
+ *
+ * There are two — `state.tasks` keys on `destination`, the Home daily loop on
+ * `route` — and a task ticked in one still shows as outstanding in the other.
+ * The daily one goes through homeCompleteTask rather than setting the flag by
+ * hand, because that is what pays the Charity Points.
+ */
+function esfCompleteTasks() {
+  (state.tasks || []).forEach(t => {
+    if (t.destination === "esfBuild") t.completed = true;
+  });
+  (state.dailyTasks || []).forEach(t => {
+    if (t.route !== "emergency_fund") return;
+    if (typeof homeCompleteTask === "function") homeCompleteTask(t.id);
+    else t.completed = true;
+  });
 }
 
 function renderEsfBuild() {
@@ -363,17 +518,16 @@ function renderEsfBuild() {
   return `
     <div class="journal-shell">
       <div class="journal-head">
-        <p class="helper" style="margin:0 0 4px;">Step ${s.step + 1} of ${ESF_STEPS.length}</p>
+        <p class="helper" style="margin:0 0 4px;">Step ${s.step + 1} of ${ESF_TOTAL_STEPS}</p>
         <div class="journal-progress" aria-hidden="true">
-          ${ESF_STEPS.map((_, i) => `<span class="journal-pip ${i <= s.step ? "on" : ""}"></span>`).join("")}
+          ${Array.from({ length: ESF_TOTAL_STEPS }, (_, i) =>
+            `<span class="journal-pip ${i <= s.step ? "on" : ""}"></span>`).join("")}
         </div>
-        <h1 class="title esf-title">${h(ESF_TITLE_MAIN)}</h1>
+        <h1 class="title esf-title">${h(intro ? ESF_TITLE_MAIN : (step.heading || ESF_TITLE_MAIN))}</h1>
       </div>
 
       <div class="journal-body ${intro ? "esf-body-intro" : ""}">
         ${intro ? esfRenderIntro() : `
-          ${step.heading ? `<p class="esf-step-heading">${h(step.heading)}</p>` : ""}
-
           ${banner ? `
             <div class="esf-banner${esfBannerClass(banner)}" style="aspect-ratio:${banner.ratio} / 1;max-height:${banner.maxH}px;">
               <img src="${h(banner.src)}" alt="" aria-hidden="true">
@@ -390,7 +544,6 @@ function renderEsfBuild() {
 
           ${s.step === 2 ? `
             <p class="esf-lead"><strong>Monthly Expenses</strong> - Use your best guess</p>
-            <p class="esf-lead-sub">We can revise later if you don't know</p>
           ` : ""}
 
           ${esfGroupsForStep(s.step).map(esfRenderGroup).join("")}
@@ -399,9 +552,10 @@ function renderEsfBuild() {
 
       <div class="journal-foot">
         <button class="button secondary" type="button" onclick="esfBack()">Back</button>
-        <button class="button" type="button" onclick="esfNext()">
-          ${last ? "See my number" : "Continue"}
-        </button>
+        ${intro ? "" : `
+          <button class="button" type="button" onclick="esfNext()">
+            ${last ? "See my number" : "Continue"}
+          </button>`}
       </div>
     </div>
   `;
@@ -415,9 +569,8 @@ function renderEsfBuildAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">Emergency fund — step ${s.step + 1} of ${ESF_STEPS.length}</p>
       <p class="helper">
-        Stated ${esfMoney(esfStatedMonthly())} (incl. unemployed insurance
-        ${esfMoney(esfRowMonthly("unemployedInsurance"))}, excl. dining
-        ${esfMoney(esfRowMonthly("diningOut"))}) · buffer
+        Stated ${esfMoney(esfStatedMonthly())} (medical ${esfMoney(esfRowMonthly("medical"))},
+        priced as if work cover had stopped) · buffer
         ${Math.round((s.buffer || 0) * 100)}% → ${esfMoney(esfBufferedMonthly())} a month
       </p>
       <p class="helper">

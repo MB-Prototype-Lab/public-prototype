@@ -30,7 +30,77 @@
 // (onbCommuteDetail, onbSetLifestyle, onbTransportMonthly, ONB_CAR_CLASSES and
 // the rest), and putting a step back is a one-word edit this way. Do not
 // "clean up" the branches below on the grounds that nothing reaches them.
-const ONB_STEPS = ["name", "goal", "zip", "household", "income", "buddy", "video"];
+// Two step lists, chosen by the ESF_ONLY flag in js/config.js (which loads
+// first). The full list is the v3.1 onboarding plus the three questions the
+// emergency fund needs; the ESF list is only what the fund reads, in the order
+// the ESF spec asks it. Nothing is deleted either way — a step outside the
+// active list keeps its renderer and simply isn't walked.
+const ONB_STEPS_FULL = ["name", "goal", "zip", "household", "place", "income",
+                        "coverage", "miles", "buddy", "video"];
+const ONB_STEPS_ESF  = ["zip", "income", "household", "place", "coverage", "miles"];
+const ONB_STEPS = (typeof ESF_ONLY !== "undefined" && ESF_ONLY) ? ONB_STEPS_ESF : ONB_STEPS_FULL;
+
+// ── Who lives with you ───────────────────────────────────────────────────────
+// Adults are asked by AGE RANGE, not typed ages: the owner's rule for this flow
+// is ranges everywhere, and the marketplace-premium estimate only needs an age
+// close enough to land on the right step of the ACA age curve. `age` is the
+// figure a range stands for when a model needs one number.
+const ONB_ADULT_AGES = [
+  { id: "18-25", label: "18–25", age: 23 },
+  { id: "26-34", label: "26–34", age: 30 },
+  { id: "35-44", label: "35–44", age: 40 },
+  { id: "45-54", label: "45–54", age: 50 },
+  { id: "55-64", label: "55–64", age: 60 },
+  { id: "65+",   label: "65 or older", age: 67 }
+];
+const ONB_MAX_ADULTS = 4;
+
+// Kids by the three buckets the ESF spec names. The buckets are chosen by what
+// they change: 13 is when a kid gets their own phone line, 18 is when a
+// "kid" starts costing like an adult at the grocery store.
+// No 18+ bucket: someone over 18 living at home is an adult, and the adult
+// count above already has them. Counting them twice would inflate household
+// size, and with it groceries, utilities and the premium estimate.
+const ONB_KID_BUCKETS = [
+  { id: "under13", label: "Kids 0–12" },
+  { id: "teen",    label: "Kids 13–17" }
+];
+const ONB_MAX_KIDS_PER_BUCKET = 6;
+
+// ── Your place ───────────────────────────────────────────────────────────────
+// Type only — rent or own is read off the two housing fields on the fund's first
+// screen, which can say "both" where a question here could not. `hoa` is the
+// branch the HOA estimate takes; `home` is the help-me-out utilities key.
+const ONB_PLACE_TYPES = [
+  { id: "aptSmall",   label: "Apartment · studio or 1 bedroom", hoa: "none",  home: "apt1" },
+  { id: "aptLarge",   label: "Apartment · 2 or more bedrooms",  hoa: "none",  home: "apt2" },
+  { id: "condo",      label: "Condo or townhome",               hoa: "condo", home: "apt2" },
+  { id: "houseSmall", label: "House · 2–3 bedrooms",            hoa: "house", home: "house2" },
+  { id: "houseLarge", label: "House · 4 or more bedrooms",      hoa: "house", home: "house4" }
+];
+
+// ── Health coverage ──────────────────────────────────────────────────────────
+// "employer" is the one answer the fund treats differently: it is the only
+// coverage that ends with the paycheck, so it is the only one that gets an
+// unemployed-insurance estimate.
+const ONB_COVERAGE = [
+  { id: "employer", label: "Through my job" },
+  { id: "self",     label: "I buy it myself" },
+  { id: "public",   label: "Medicaid or Medicare" },
+  { id: "none",     label: "No coverage" }
+];
+
+// ── Miles a day ──────────────────────────────────────────────────────────────
+// `miles` is the figure a range stands for. "I don't drive" is an answer, not a
+// skip: without it a tester with no car would be charged fuel and upkeep for
+// the smallest range.
+const ONB_MILES = [
+  { id: "none",   label: "I don't drive", miles: 0 },
+  { id: "lt5",    label: "Under 5 miles",  miles: 3 },
+  { id: "5to15",  label: "5–15 miles",     miles: 10 },
+  { id: "15to30", label: "15–30 miles",    miles: 22 },
+  { id: "30plus", label: "More than 30 miles", miles: 40 }
+];
 
 // Onboarding asks only the install-relevant lifestyle dimensions. The full six
 // live in the standalone lifestyle wizard (LW_QUESTIONS); the dims not asked
@@ -160,7 +230,13 @@ function onbStart() {
     skipPrompt: false,     // name-step "skip this / skip all" confirmation
     name: "",
     zip: "",
-    householdSize: null,
+    householdSize: null,   // derived from adults + kids; kept because the peer model reads it
+    adultCount: null,
+    adultAges: [],         // one ONB_ADULT_AGES id per adult, in order
+    kids: { under13: 0, teen: 0 },
+    placeType: null,
+    coverage: null,
+    miles: null,
     incomeBand: null,
     incomeExact: null,     // slider refinement inside the picked band
     lifestyle: Object.assign({}, PERSONA.lifestyle),   // persona is the fallback
@@ -200,6 +276,46 @@ function onbStart() {
   return state.onboarding;
 }
 
+// ── Who lives with you — handlers ────────────────────────────────────────────
+
+/** Household size follows from the answers; it is never asked separately. */
+function onbSyncHousehold(o) {
+  const kids = o.kids || {};
+  const n = (o.adultCount || 0) + (kids.under13 || 0) + (kids.teen || 0);
+  o.householdSize = n > 0 ? n : null;
+}
+
+function onbSetAdults(n) {
+  const o = state.onboarding;
+  o.adultCount = n;
+  // Keep ages already chosen; trim or pad to the new count. A new adult opens
+  // unanswered rather than on a guessed age.
+  o.adultAges = (o.adultAges || []).slice(0, n);
+  while (o.adultAges.length < n) o.adultAges.push(null);
+  onbSyncHousehold(o);
+  render();
+}
+
+function onbSetAdultAge(i, id) {
+  const o = state.onboarding;
+  if (!o.adultAges) o.adultAges = [];
+  o.adultAges[i] = id || null;
+  render();
+}
+
+function onbStepKids(bucket, delta) {
+  const o = state.onboarding;
+  const cur = (o.kids && o.kids[bucket]) || 0;
+  o.kids[bucket] = Math.max(0, Math.min(ONB_MAX_KIDS_PER_BUCKET, cur + delta));
+  onbSyncHousehold(o);
+  render();
+}
+
+function onbPick(field, id) {
+  state.onboarding[field] = id;
+  render();
+}
+
 function onbNext() {
   const o = state.onboarding;
   if (ONB_STEPS[o.step] === "video") onbVideoStop();   // silence narration on exit
@@ -230,6 +346,17 @@ function onbSkip() {
   const o = state.onboarding;
   const key = ONB_STEPS[o.step];
   if (key === "video") onbVideoStop();
+  // ESF-only: Skip means skip the WHOLE setup, straight into the fund. There is
+  // no "just this screen" choice and no profile picker in between — both were
+  // screens the tester had to get through to reach the thing being tested.
+  if (typeof ESF_ONLY !== "undefined" && ESF_ONLY) {
+    if (typeof profileDefault === "function") {
+      const d = profileDefault();
+      if (d && !state.activeProfileId) profileApply(d.id);
+    }
+    onbFinish();
+    return;
+  }
   if (key === "name") { o.skipPrompt = true; render(); return; }
   o.lwIndex = 0;   // skip the entire lifestyle block in one go
   if (o.step < ONB_STEPS.length - 1) { o.step++; render(); return; }
@@ -551,6 +678,26 @@ function onbFinish() {
   state.profile.name = o.name || (fallback ? fallback.name : "Me");
   if (o.zip) state.profile.zip = o.zip;
   if (o.householdSize) state.profile.householdSize = o.householdSize;
+
+  // ── What the emergency fund reads ─────────────────────────────────────────
+  // Guarded like everything else here: an unanswered question must not
+  // overwrite a profile's value with nothing. The fund's models fall back to
+  // household size when these are absent, so a skipped tester still gets
+  // figures (D19).
+  if (o.adultCount) {
+    state.profile.adults = (o.adultAges || []).map(id => {
+      const band = ONB_ADULT_AGES.find(a => a.id === id);
+      return { ageRange: id, age: band ? band.age : null };
+    });
+    state.profile.kids = Object.assign({ under13: 0, teen: 0 }, o.kids);
+  }
+  if (o.placeType) state.profile.placeType = o.placeType;
+  if (o.coverage)  state.profile.coverage = o.coverage;
+  if (o.miles) {
+    const m = ONB_MILES.find(x => x.id === o.miles);
+    state.profile.milesRange = o.miles;
+    state.profile.milesPerDay = m ? m.miles : null;
+  }
   // The slider's figure if they moved it, else the band's seed. This also
   // drives the budget's monthly figure — which until now was frozen at the
   // seeded persona's $4,390 no matter which band you picked, so "Under $35,000"
@@ -609,6 +756,16 @@ function onbFinish() {
   state.streak = PERSONA.state.streakDaysIfOnboarded;   // 1 day (D06)
   state.onboarding = null;
   observationsRecompute();
+
+  // ESF-only: onboarding hands straight to the fund. It sits on the Goals
+  // stack because that is where the goal it creates will live, so Back from the
+  // fund's first screen has somewhere sensible to go.
+  if (typeof ESF_ONLY !== "undefined" && ESF_ONLY && typeof esfStart === "function") {
+    state.nav.stacks.goals = ["goals"];
+    state.nav.activeStack = "goals";
+    esfStart();
+    return;
+  }
 
   state.nav.stacks.home = ["home"];
   state.nav.activeStack = "home";
@@ -670,12 +827,17 @@ function renderOnboarding() {
 
 // Name-step skip confirmation. Reuses the shared .ls-modal-bg scrim.
 function onbSkipPrompt() {
+  const onName = ONB_STEPS[(state.onboarding || {}).step] === "name";
+  const title = onName ? "No name, no problem" : "Skip this one?";
+  const body = onName
+    ? "I can just call you Buddy. Want to skip only this, or the whole setup?"
+    : "Want to skip only this question, or the whole setup?";
   return `
     <div class="ls-modal-bg" onclick="onbSkipCancel()">
       <div class="card" style="max-width:300px;" onclick="event.stopPropagation()">
-        <h1 class="title onb-title" style="margin:0 0 6px;">No name, no problem</h1>
+        <h1 class="title onb-title" style="margin:0 0 6px;">${h(title)}</h1>
         <p class="task-desc" style="margin:0 0 14px;">
-          I can just call you Buddy. Want to skip only this, or the whole setup?
+          ${h(body)}
         </p>
         <button class="button full" style="margin-bottom:8px;" type="button"
                 onclick="onbSkipName()">Just this screen</button>
@@ -692,7 +854,14 @@ function onbSkipPrompt() {
 function onbAnswered(key, o) {
   if (key === "name")      return !!o.name;
   if (key === "zip")       return !!o.zip;
-  if (key === "household") return !!o.householdSize;
+  // Every adult needs an age range — the unemployed-insurance estimate is priced
+  // per person by age, and a blank one would silently price that adult at zero.
+  if (key === "household") return !!o.adultCount &&
+                                  (o.adultAges || []).length === o.adultCount &&
+                                  o.adultAges.every(Boolean);
+  if (key === "place")     return !!o.placeType;
+  if (key === "coverage")  return !!o.coverage;
+  if (key === "miles")     return !!o.miles;
   if (key === "income")    return !!o.incomeBand;
   if (key === "goal")      return o.improveAreas.length > 0;
   // Same contract as the lesson player: Next unlocks when the piece ends.
@@ -804,6 +973,74 @@ function onbColTeaser(typed) {
     </div>`;
 }
 
+/** A single-choice tile question — the shape three of the new steps share. */
+function onbTileStep(o, field, options, title, help) {
+  return `
+    <h1 class="title onb-title" style="margin:0 0 6px;">${h(title)}</h1>
+    <p class="helper" style="margin:0 0 14px;">${h(help)}</p>
+    <div class="journal-options">
+      ${options.map(opt => `
+        <button class="journal-opt ${o[field] === opt.id ? "picked" : ""}" type="button"
+                aria-pressed="${o[field] === opt.id}"
+                onclick="onbPick('${field}','${opt.id}')">
+          <span class="journal-opt-label">${h(opt.label)}</span>
+        </button>`).join("")}
+    </div>`;
+}
+
+/**
+ * Who lives with you: how many adults, each adult's age range, and kids by
+ * age group. Adults are tiles, ages are dropdowns, kids are counters — each
+ * control matched to the kind of answer, and nothing here is typed.
+ */
+function onbHouseholdBody(o) {
+  const kids = o.kids || {};
+  const adultLabel = n => n === 1 ? "Just me" : n + " adults";
+
+  const agePickers = (o.adultAges || []).map((picked, i) => `
+    <label class="onb-age">
+      <span>${i === 0 ? "Your age" : "Adult " + (i + 1)}</span>
+      <select class="onb-select" onchange="onbSetAdultAge(${i}, this.value)"
+              aria-label="${i === 0 ? "Your age" : "Age of adult " + (i + 1)}">
+        <option value="" ${picked ? "" : "selected"} disabled>Pick a range</option>
+        ${ONB_ADULT_AGES.map(a => `
+          <option value="${a.id}" ${picked === a.id ? "selected" : ""}>${h(a.label)}</option>`).join("")}
+      </select>
+    </label>`).join("");
+
+  const kidRows = ONB_KID_BUCKETS.map(b => {
+    const n = kids[b.id] || 0;
+    return `
+    <div class="onb-count">
+      <span class="onb-count-label">${h(b.label)}</span>
+      <span class="onb-count-ctl">
+        <button type="button" class="onb-count-btn" onclick="onbStepKids('${b.id}', -1)"
+                ${n === 0 ? "disabled" : ""} aria-label="Fewer ${h(b.label)}">&minus;</button>
+        <span class="onb-count-n" aria-live="polite">${n}</span>
+        <button type="button" class="onb-count-btn" onclick="onbStepKids('${b.id}', 1)"
+                ${n >= ONB_MAX_KIDS_PER_BUCKET ? "disabled" : ""} aria-label="More ${h(b.label)}">+</button>
+      </span>
+    </div>`;
+  }).join("");
+
+  return `
+    <h1 class="title onb-title" style="margin:0 0 6px;">Who lives with you?</h1>
+    <p class="helper" style="margin:0 0 12px;">Count yourself as one of the adults.</p>
+
+    <div class="onb-adults" role="group" aria-label="Number of adults">
+      ${[1, 2, 3, 4].slice(0, ONB_MAX_ADULTS).map(n => `
+        <button class="journal-opt onb-adult-opt ${o.adultCount === n ? "picked" : ""}" type="button"
+                aria-pressed="${o.adultCount === n}" onclick="onbSetAdults(${n})">
+          <span class="journal-opt-label">${adultLabel(n)}</span>
+        </button>`).join("")}
+    </div>
+
+    ${agePickers ? `<div class="onb-ages">${agePickers}</div>` : ""}
+
+    <p class="onb-subhead">Any kids at home?</p>
+    <div class="onb-kids">${kidRows}</div>`;
+}
+
 function onbStepBody(key, o) {
   if (key === "name") return `
     <h1 class="title onb-title" style="margin:0 0 6px;">Hi, I'm Buddy — your money companion.</h1>
@@ -828,22 +1065,19 @@ function onbStepBody(key, o) {
     </div>
     <div id="onbColChart">${onbColChart(o.zip)}</div>`;
 
-  if (key === "household") {
-    const HH_LABELS = { 1: "Only me", 2: "2 people", 3: "3 people", 4: "4 or more people" };
-    return `
-    <h1 class="title onb-title" style="margin:0 0 6px;">Who's in your corner?</h1>
-    <p class="helper" style="margin:0 0 14px;">How many people share your place, counting you?</p>
-    <div class="journal-options">
-      ${[1, 2, 3, 4].map(n => `
-        <button class="journal-opt ${o.householdSize === n ? "picked" : ""}" type="button"
-                onclick="state.onboarding.householdSize=${n};render()">
-          <span class="journal-opt-label">${HH_LABELS[n]}</span>
-        </button>`).join("")}
-    </div>
-    <p class="helper" style="margin:14px 0 0;">
-      This helps me size things up — costs like groceries and utilities shift a lot depending on how many people share a home.
-    </p>`;
-  }
+  if (key === "household") return onbHouseholdBody(o);
+
+  if (key === "place") return onbTileStep(o, "placeType", ONB_PLACE_TYPES,
+    "What kind of place do you live in?",
+    "Home size changes what power and water cost. Condos and townhomes usually have a monthly fee too.");
+
+  if (key === "coverage") return onbTileStep(o, "coverage", ONB_COVERAGE,
+    "Where does your health insurance come from?",
+    "If it comes through your job, it would stop if your job did. We'll plan for that.");
+
+  if (key === "miles") return onbTileStep(o, "miles", ONB_MILES,
+    "How far do you drive on a normal day?",
+    "Driving more means more gas or charging, and more wear on the car.");
 
   if (key === "income") return `
     <h1 class="title onb-title" style="margin:0 0 6px;">Roughly what comes in each year?</h1>

@@ -3287,3 +3287,165 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .goal-card-open { cursor: pointer; }
 .goal-card-open:hover { border-color: var(--accent-border); background: var(--accent-soft); }
 .goal-card-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── Onboarding: who lives with you ───────────────────────────────────────────
+   Adults are a 2x2 of tiles, ages are dropdowns, kids are counters. Nothing on
+   this step is typed. Every control clears the 44px tap-target floor. */
+.onb-adults { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.onb-adult-opt { justify-content: center; }
+
+.onb-ages { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.onb-age { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--text); }
+/* Carries .screen: `.screen select` sets its own background and radius and
+   outranks a bare component class. */
+.screen .onb-select {
+  width: 100%; min-height: 44px; padding: 8px 10px; font-size: 14px;
+  color: var(--text); background: var(--card);
+  border: 1px solid var(--rail); border-radius: 10px;
+}
+
+.onb-subhead { margin: 18px 0 8px; font-size: 14px; font-weight: 700; color: var(--text); }
+.onb-kids { display: flex; flex-direction: column; gap: 6px; }
+.onb-count {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 4px 4px 12px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--card);
+}
+.onb-count-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.onb-count-ctl { display: flex; align-items: center; gap: 6px; }
+.onb-count-btn {
+  width: 44px; height: 44px; font: inherit; font-size: 20px; font-weight: 700;
+  cursor: pointer; color: var(--accent); background: var(--soft);
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.onb-count-btn:disabled { opacity: 0.4; cursor: default; }
+.onb-count-n { min-width: 22px; text-align: center; font-size: 16px; font-weight: 700; color: var(--text); }
+
+/* ── ESF: range dropdowns and opt-in rows ─────────────────────────────────────
+   Estimated figures are picked from ranges, never typed. The description line
+   above each one is BLACK, not gray: an estimate that shows its drivers earns
+   an override, an unexplained one gets a shrug — so it is not secondary text. */
+.esf-estimate + .esf-estimate { margin-top: 12px; }
+.esf-based {
+  margin: 3px 0 6px; font-size: 11px; line-height: 1.35; color: var(--text);
+}
+.screen .esf-range {
+  width: 100%; min-height: 44px; padding: 9px 10px;
+  font-size: 14px; font-weight: 600;
+  color: var(--text); background: var(--card);
+  border: 1px solid var(--rail); border-radius: 10px;
+}
+
+/* Opt-in rows sit flat until added, then lift to the added treatment. */
+.esf-optin-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; flex-wrap: wrap;
+}
+
+/* Range rows are taller than the number boxes they replaced — a label, a
+   description and a 44px control each. These two screens carry four and six of
+   them, so the spacing between them is as tight as it goes before the blocks
+   stop reading as separate questions. */
+.esf-estimate + .esf-estimate { margin-top: 8px; }
+.esf-based { margin: 2px 0 4px; }
+.screen .item-card.esf-row { padding: 8px 10px; margin-bottom: 6px; }
+.esf-optin-head { min-height: 44px; }
+
+/* The Add-it button sits BESIDE its label, not under it. The label plus its
+   caveat is long enough to wrap the flex line, which pushed the button onto a
+   row of its own and cost ~40px on a screen that has two of these. */
+.esf-optin-head { flex-wrap: nowrap; align-items: center; }
+.esf-optin-head .esf-field-label { flex: 1 1 auto; min-width: 0; }
+.esf-optin-head .esf-add,
+.esf-optin-head .esf-added { flex: 0 0 auto; padding: 10px 14px; }
+.esf-optin-head .esf-label-note { display: block; margin-left: 0; white-space: normal; }
+
+/* The last few pixels on the two range screens. Six boxes of label +
+   description + a 44px control leave nothing spare, and the control itself is
+   at the tap-target floor and cannot shrink — so the space comes out of the
+   gaps around it rather than the thing being tapped. */
+.screen .item-card.esf-row { padding: 7px 10px; margin-bottom: 5px; }
+.esf-group-label { margin-bottom: 3px; }
+.esf-based { margin: 1px 0 4px; font-size: 10.5px; }
+.esf-estimate + .esf-estimate { margin-top: 6px; }
+.esf-lead { margin-bottom: 1px; }
+.esf-lead-sub { margin-bottom: 6px; }
+
+/* The two escrow rows are a label and a button — no description, no control —
+   so they do not need a full card's breathing room. */
+.esf-optin-head { min-height: 40px; }
+.screen .item-card.esf-row:has(.esf-optin-head) { padding: 4px 10px; }
+
+/* ── Height comes out of the CONTROLS, not the pictures ───────────────────────
+   Buddy is the reason these screens read as a tool rather than a tax form, so
+   the banners are no longer cropped to buy space. The dropdowns and number
+   boxes give it back instead: they were sized at the 44px tap-target floor and
+   are now 36, which is the deliberate trade — this is a desktop-reviewed
+   prototype, and the owner asked for no scrolling over the floor. Revisit if it
+   ever ships to a phone. */
+.screen .esf-range,
+.screen .esf-amount,
+.screen .esf-select,
+.screen .esf-date { min-height: 36px; padding: 5px 9px; font-size: 13.5px; }
+
+/* The figure rides inside the Add-it button, so the row stays one line. */
+.esf-add, .esf-added { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.1; }
+.esf-add-figure { font-size: 10px; font-weight: 600; opacity: 0.75; }
+
+/* CONTAIN, not cover. Capping the height used to crop the sides off — the
+   "Home" sign, the cabinet labels, the money in the case, which is the part
+   that carries the meaning. Scaling the whole picture down instead keeps every
+   one of them; the card's own ground fills the space either side, so it reads
+   as a framed illustration rather than a trimmed one. */
+.esf-banner img { object-fit: contain; }
+.esf-banner { background: var(--soft); border-radius: 10px; }
+
+/* The last 13px on the owner's living-expenses screen — six boxes is the
+   densest the flow gets, and this is the gap between them rather than anything
+   inside them. */
+.screen .item-card.esf-row { margin-bottom: 4px; }
+
+/* Controls down another 20% — 36px to 29. Owner's call, and the third time
+   this floor has moved: fitting five screens with no scrolling and keeping a
+   44px tap target are not both possible at this row count. Recorded rather
+   than quietly absorbed. */
+.screen .esf-range,
+.screen .esf-amount,
+.screen .esf-select,
+.screen .esf-date { min-height: 29px; padding: 3px 9px; font-size: 13px; }
+.esf-add, .esf-added { padding: 6px 12px; min-height: 29px; }
+.esf-optin-head { min-height: 29px; }
+
+/* ── ESF: readable descriptions, aligned controls ─────────────────────────────
+   Every explanatory line under a heading is FULL text colour. They inherited
+   .helper's muted gray, which is right for incidental chrome and wrong for a
+   sentence explaining where somebody's money figure came from — that sentence
+   is the thing that earns an override. */
+.esf-row-help, .esf-qualifier, .esf-based, .esf-lead-sub, .esf-field-unit {
+  color: var(--text);
+}
+.esf-label-note { color: var(--text); opacity: 0.7; }
+
+/* A control and the figure it produces, on one line, aligned. The two used to
+   be separate labelled fields of different widths sitting far apart, which
+   read as two questions rather than one setting and its consequence. */
+.esf-inline { display: flex; align-items: center; gap: 10px; }
+.esf-inline-ctl { flex: 0 0 auto; width: 120px; }
+.esf-inline-note { font-size: 13px; font-weight: 600; color: var(--text); }
+
+/* The intro's two doors, stacked and full width. */
+.esf-intro-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+
+/* ── The explanation lines read as BLACK ──────────────────────────────────────
+   --text is #3D3A36, a warm dark gray. At 10.5px it reads washed out, which is
+   why "make the text darker" kept not landing: it was already --text. These
+   lines carry the reason a figure exists, so they get --text-strong (a token
+   added for them, defined in all four themes) plus a size and weight that hold
+   up at this scale. */
+.esf-based, .esf-row-help, .esf-qualifier, .esf-lead-sub, .esf-inline-note {
+  color: var(--text-strong);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.esf-label-note { color: var(--text-strong); opacity: 0.85; }

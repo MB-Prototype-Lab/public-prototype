@@ -43,55 +43,55 @@ const ESF_ROWS = [
   // tells us whether property tax and a HOA fee are theirs at all. Asking
   // "do you rent or own?" would get one answer where the truth is sometimes two.
   // Steps are 1-indexed here because step 0 is an INTRO with no fields on it.
+  // BOTH are enterable and BOTH are counted — not an either/or. People rent and
+  // carry a mortgage at the same time, and people with a car payment also buy
+  // transit passes. A picker forced them to pick a side and lost the other
+  // figure entirely.
   { id: "rent",     label: "Rent",     category: "Housing", step: 1, group: "roof",
-    choice: true, prefill: false },
+    groupLabel: "What you pay for your home", prefill: false },
   { id: "mortgage", label: "Mortgage", category: "Housing", step: 1, group: "roof",
-    choice: true, prefill: false },
+    prefill: false },
 
   // The payment only. Running costs are a step later, and a tester who folds
   // fuel in here would have it counted twice.
   { id: "carPayment", label: "Car Payments", category: "Transport", step: 1,
-    group: "ride", choice: true, prefill: false },
+    group: "ride", groupLabel: "Getting around", prefill: false },
   { id: "transit", label: "Public Transportation", category: "Transport", step: 1,
-    group: "ride", choice: true, prefill: false },
+    group: "ride", prefill: false },
 
   // ── Keeping things running ─────────────────────────────────────────────────
   { id: "power", label: "Home utilities", category: "Utilities", step: 2,
     group: "power", groupLabel: "Home utilities, including water, gas, and electricity",
-    prefill: true, part: "local" },
+    prefill: true, source: "power", bandWidth: 100 },
 
-  { id: "cellPhone", label: "Cell Phone", category: "Utilities", step: 2,
-    group: "connect", groupLabel: "Staying Connected", prefill: true, part: "phone" },
-  { id: "internet", label: "Internet", category: "Utilities", step: 2,
-    group: "connect", prefill: true, part: "internet" },
+  // ONE row, not two. Both are priced nationally and arrive on the same kind of
+  // bill; splitting them asked the tester to apportion something they have no
+  // reason to have apportioned.
+  { id: "connect", label: "Phone and internet", category: "Utilities", step: 2,
+    group: "connect", groupLabel: "Staying Connected", prefill: true,
+    source: "connectivity" },
 
-  { id: "groceries", label: "Home cooking", category: "Groceries", step: 2,
-    group: "food", groupLabel: "Food Expenses", prefill: true, source: "peer" },
+  { id: "groceries", label: "Groceries", category: "Groceries", step: 2,
+    group: "food", groupLabel: "Food Expenses (Groceries)", prefill: true, source: "groceries" },
 
-  // CAPTURED BUT NOT COUNTED. Dining out is one of the six categories the owner
-  // excluded from the emergency fund as dispensable — you stop ordering in when
-  // the income stops — so `survival: false` keeps it out of the target. It is
-  // still asked, because the emergency fund seeds the BUDGET on the way through
-  // and the budget wants all twelve categories: a real figure here beats the
-  // peer default the budget would otherwise open on.
-  { id: "diningOut", label: "Dining / Ordering out", category: "Dining out", step: 2,
-    group: "food", prefill: true, source: "peer", survival: false },
+  // ONE medical row, priced on what health cover would cost if the job went.
+  // That is the whole point of the fund: the figure worth saving toward is the
+  // one that applies when the paycheck has stopped, not the payroll deduction
+  // that stops with it.
+  //
+  // It sits with the running costs rather than the conditional ones because
+  // almost everybody has a medical figure — unlike property tax or a HOA fee,
+  // which only some testers ever see.
+  { id: "medical", label: "Medical (Insurance, Dental, Vision)", category: "Health", step: 2,
+    group: "medical", prefill: true, source: "medical" },
 
   // ── Living-related expenses ────────────────────────────────────────────────
+  // NO DEFAULT FIGURE. Every other estimate opens on a number because we can
+  // work one out; this one we cannot — minimum payments depend on balances and
+  // card count, which nothing asks for. A pre-filled guess here would be the
+  // tool inventing debt the tester may not have.
   { id: "debt", label: "Credit Card and Loan Minimums", category: "Debt payments", step: 3,
-    group: "debt", prefill: true, source: "peer",
-    help: "The smallest payment you can make, not what you usually pay." },
-
-  { id: "medical", label: "Medical -Related Expenses", category: "Health", step: 3,
-    group: "medical", prefill: true, source: "peer",
-    help: "Any monthly medical expense, including health, dental, or vision insurance, medicine, etc" },
-
-  // The replacement premium, moved OFF the plan screen and onto the row it
-  // belongs beside. It used to be stated once at the end as "if your pay
-  // stopped"; asking it here means the tester sees it next to what they pay
-  // today, which is the only place the comparison makes sense.
-  { id: "unemployedInsurance", label: "Unemployed Insurance", category: "Health", step: 3,
-    group: "medical", prefill: true, source: "unemployedInsurance" },
+    group: "debt", prefill: false, optIn: true, startAtZero: true, options: "debt" },
 
   // ── The last step carries the DERIVED costs ────────────────────────────────
   // Property tax, the HOA fee and the three car running costs all moved off
@@ -108,11 +108,18 @@ const ESF_ROWS = [
   // underneath the box, after they have already typed, is too late.
   { id: "propertyTax", label: "Annual Property Tax", labelNote: "(may be included in mortgage)",
     category: "Housing", step: 3,
-    group: "tax", prefill: true, cadence: "annual", bill: "propertyTax", showIf: "owns" },
+    group: "tax", prefill: true, cadence: "annual", source: "propertyTax", showIf: "owns",
+    optIn: true },
+
+  // Escrowed as often as property tax is, so it gets the same treatment.
+  { id: "homeInsurance", label: "Home Insurance", labelNote: "(may be included in mortgage)",
+    category: "Housing", step: 3,
+    group: "homeInsurance", prefill: true, bill: "homeInsurance", showIf: "owns",
+    optIn: true },
 
   { id: "hoa", label: "HOA, Condo, or Housing Fees", labelNote: "(if not included already)",
     category: "Housing", step: 3,
-    group: "hoa", prefill: true, bill: "hoa", showIf: "owns" },
+    group: "hoa", prefill: true, source: "hoa", showIf: "hoa", optIn: true },
 
   // The catch-all. Opens BLANK rather than on an estimate — there is nothing to
   // estimate, and a figure in a box called "anything else" would be the tool
@@ -120,15 +127,63 @@ const ESF_ROWS = [
   { id: "anythingElse", label: "Anything else to include", category: "Other", step: 3,
     group: "anythingElse", prefill: false },
 
-  // Three running costs, each pre-filled. Only fuel carries a note, because it
-  // is the only one that converts into something a tester can check — miles.
-  { id: "fuel", label: "Fuel / Charge", category: "Transport", step: 2,
-    group: "carRunning", groupLabel: "Car-related Payments", prefill: true, source: "fuel" },
-  { id: "carInsurance", label: "Insurance", category: "Transport", step: 2,
-    group: "carRunning", prefill: true, source: "carInsurance" },
-  { id: "maintenance", label: "Maintenance", category: "Transport", step: 2,
-    group: "carRunning", prefill: true, source: "maintenance" }
+  // ONE box for running a car. Fuel, insurance and upkeep were three fields
+  // that nobody holds apart in their head — and three ranges stacked in one
+  // card read as three questions rather than one. The components still exist
+  // in the model; only the asking is combined.
+  { id: "carCosts", label: "Car: Fuel + Insurance + Maintenance", category: "Transport", step: 2,
+    group: "carRunning", groupLabel: "Car: Fuel + Insurance + Maintenance", prefill: true,
+    source: "carCosts" }
 ];
+
+// ─── Who lives here ──────────────────────────────────────────────────────────
+// Onboarding asks for adults with age ranges and kids in two buckets. Everything
+// downstream reads it through here, including the paths where it was never
+// asked — the nine test profiles carry only a household size, and "skip all
+// setup" fills nothing at all. Those fall back to adults-only at a middling
+// age, which is what the peer model already assumed before the question
+// existed, so no figure moves for a tester who skips.
+function esfHousehold() {
+  const p = state.profile || {};
+  const size = Math.max(1, parseInt(p.householdSize, 10) || 1);
+  const kids = { under13: 0, teen: 0 };
+  let adults = Array.isArray(p.adults) ? p.adults.filter(Boolean) : null;
+
+  if (p.kids) {
+    kids.under13 = Math.max(0, parseInt(p.kids.under13, 10) || 0);
+    kids.teen    = Math.max(0, parseInt(p.kids.teen, 10) || 0);
+  }
+  if (!adults || !adults.length) {
+    const n = Math.max(1, size - kids.under13 - kids.teen);
+    adults = [];
+    for (let i = 0; i < n; i++) adults.push({ age: ESF_DEFAULT_ADULT_AGE });
+  }
+
+  const people = adults.length + kids.under13 + kids.teen;
+  return {
+    adults: adults,
+    adultCount: adults.length,
+    kids: kids,
+    people: people,
+    // Phone lines and the premium both count teenagers as people; groceries
+    // weight them differently. Exposed separately so neither has to re-derive it.
+    teens: kids.teen,
+    youngKids: kids.under13
+  };
+}
+
+// The middle of the ONB_ADULT_AGES bands — used only where onboarding never ran.
+const ESF_DEFAULT_ADULT_AGE = 40;
+
+/** Does health cover come through a job? The only coverage that ends with it. */
+function esfHasEmployerCoverage() {
+  return ((state.profile || {}).coverage || null) === "employer";
+}
+
+/** The onboarding place type, or null when it was never asked. */
+function esfPlaceType() {
+  return (state.profile || {}).placeType || null;
+}
 
 // ─── Driving ─────────────────────────────────────────────────────────────────
 
@@ -199,6 +254,236 @@ function esfMaintenanceEstimate() {
   return esfRound(miles * (Number(d.maintenancePerMile) || 0));
 }
 
+// ─── Phone and internet ──────────────────────────────────────────────────────
+
+/**
+ * Lines = adults plus kids old enough to carry a phone, capped.
+ *
+ * The old figure was `min(householdSize, 4)`, which billed a line for a
+ * toddler. Thirteen is the bucket boundary for exactly this reason.
+ */
+function esfPhoneLines() {
+  const hh = esfHousehold();
+  const cap = Number((esfData().connectivity || {}).maxLines) || 5;
+  return Math.max(1, Math.min(cap, hh.adultCount + hh.teens));
+}
+
+/**
+ * One figure for phone and internet together, priced NATIONALLY.
+ *
+ * No cost-of-living multiplier, ever. A carrier and an ISP charge the same
+ * everywhere, and running them through the Utilities multiplier overstated the
+ * bill by more than leaving them flat ever did.
+ */
+function esfConnectivity() {
+  const c = esfData().connectivity || {};
+  const lines = esfPhoneLines();
+  const table = c.perLine || {};
+  // Per-line price falls as lines are added; past the table's last entry the
+  // cheapest rate stands rather than falling back to the single-line price.
+  const rate = Number(table[String(lines)]) ||
+               Number(table[String(Object.keys(table).length)]) || 0;
+  return esfRound(rate * lines + (Number(c.internet) || 0));
+}
+
+// ─── Groceries ───────────────────────────────────────────────────────────────
+
+/**
+ * The peer grocery figure, adjusted for WHO is in the household.
+ *
+ * The peer value already scales with household SIZE, so this is a ratio against
+ * that size rather than a second per-person build-up — which would double-count
+ * it. Four adults comes out at exactly the peer figure; two adults and two small
+ * children comes out below it, because a five-year-old does not eat like an
+ * adult.
+ */
+function esfGroceries() {
+  const peer = Number(benchPeerValue("Groceries", benchOptsForUser())) || 0;
+  const hh = esfHousehold();
+  const w = (esfData().groceries || {}).weight || {};
+  if (!hh.people) return esfRound(peer);
+
+  const weighted = hh.adultCount * (Number(w.adult) || 1) +
+                   hh.teens      * (Number(w.teen) || 1) +
+                   hh.youngKids  * (Number(w.under13) || 1);
+  return esfRound(peer * (weighted / hh.people));
+}
+
+// ─── Car ─────────────────────────────────────────────────────────────────────
+
+/** Miles a day from onboarding. Zero is a real answer — "I don't drive". */
+function esfMilesPerDay() {
+  const p = state.profile || {};
+  const m = Number(p.milesPerDay);
+  if (isFinite(m) && p.milesRange) return m;
+  return null;   // never asked
+}
+
+/** Fuel or charging, from miles driven and the local pump price. */
+function esfFuelEstimate() {
+  const d = esfDriving();
+  const miles = esfMilesPerDay();
+  if (miles === 0) return 0;
+  const perDay = miles == null ? null : miles;
+  const mpg = Number(d.milesPerGallon) || 25;
+  const perGallon = esfPerGallon();
+  if (perDay == null || !mpg || !perGallon) {
+    // Never asked — fall back to the peer split, so the row still shows a
+    // plausible figure rather than a zero (D19).
+    return esfCarOpeningSplit(benchOptsForUser()).fuel;
+  }
+  return esfRound(perDay * ESF_DAYS_PER_MONTH * (perGallon / mpg));
+}
+
+/** Upkeep follows distance, at AAA's per-mile rate. */
+function esfMaintenanceFromMiles() {
+  const d = esfDriving();
+  const miles = esfMilesPerDay();
+  if (miles === 0) return 0;
+  if (miles == null) return esfCarOpeningSplit(benchOptsForUser()).maintenance;
+  return esfRound(miles * ESF_DAYS_PER_MONTH * (Number(d.maintenancePerMile) || 0));
+}
+
+const ESF_DAYS_PER_MONTH = 30.4;
+
+/** Everything a car costs to run: fuel or charging, insurance, and upkeep. */
+function esfCarCosts() {
+  return esfRound(esfFuelEstimate() + esfCarInsurance() + esfMaintenanceFromMiles());
+}
+
+/**
+ * Insurance, separate from the other two because it is NOT mileage-driven —
+ * somebody who barely drives still pays most of a premium. Kept as its own
+ * function so the combined box can still be taken apart.
+ */
+function esfCarInsurance() {
+  if (esfMilesPerDay() === 0) return 0;
+  return esfCarOpeningSplit(benchOptsForUser()).carInsurance;
+}
+
+/**
+ * Medical, priced on what cover costs once the job has gone.
+ *
+ * That is the honest figure for a fund whose whole purpose is surviving a lost
+ * paycheck: an employer deduction stops when the employer does. Anyone already
+ * buying their own cover, or on Medicaid or Medicare, keeps paying what they
+ * pay — so for them this is just the peer figure.
+ */
+function esfMedical() {
+  if (esfHasEmployerCoverage()) return esfReplacementPremium();
+  return esfRound(benchPeerValue("Health", benchOptsForUser()));
+}
+
+// ─── The unemployed-insurance premium ────────────────────────────────────────
+
+/** The ACA factor for one age, interpolated between the published anchors. */
+function esfAgeFactor(age) {
+  const curve = (esfData().aca || {}).ageCurve || {};
+  const ages = Object.keys(curve).map(Number).sort((a, b) => a - b);
+  if (!ages.length) return 1;
+  const n = Number(age) || ESF_DEFAULT_ADULT_AGE;
+  if (n <= ages[0]) return Number(curve[ages[0]]);
+  if (n >= ages[ages.length - 1]) return Number(curve[ages[ages.length - 1]]);
+  for (let i = 1; i < ages.length; i++) {
+    if (n <= ages[i]) {
+      const lo = ages[i - 1], hi = ages[i];
+      const t = (n - lo) / (hi - lo);
+      return Number(curve[lo]) + t * (Number(curve[hi]) - Number(curve[lo]));
+    }
+  }
+  return 1;
+}
+
+/**
+ * What health cover would cost if the paycheck stopped.
+ *
+ * Only ever non-zero for employer coverage — that is the only kind that ends
+ * with the job. Priced the way the marketplace actually prices: a benchmark
+ * plan for the area times the sum of each person's age factor, with children
+ * at a flat factor and only the three oldest counted. Both of those are the
+ * published rules rather than simplifications.
+ *
+ * Deliberately UNSUBSIDISED, which is conservative — someone whose income drops
+ * to nothing usually qualifies for a large subsidy. Right for a safety net, but
+ * the copy must not imply it is the only outcome.
+ */
+function esfReplacementPremium() {
+  if (!esfHasEmployerCoverage()) return 0;
+
+  const aca = esfData().aca || {};
+  let benchmark = Number(aca.benchmarkSilver) || 0;
+  try {
+    const st = (benchColMultipliers(state.profile.zip).county || {}).state;
+    const byState = aca.benchmarkByState || {};
+    if (st && byState[st] != null) benchmark = Number(byState[st]);
+  } catch (e) { /* national benchmark stands */ }
+
+  const hh = esfHousehold();
+  let factor = hh.adults.reduce((sum, a) => sum + esfAgeFactor(a && a.age), 0);
+
+  const childFactor = Number(aca.childFactor) || 0;
+  const counted = Math.min(hh.youngKids + hh.teens, Number(aca.maxChildrenCounted) || 3);
+  factor += counted * childFactor;
+
+  return esfRound(benchmark * factor);
+}
+
+// ─── Housing extras ──────────────────────────────────────────────────────────
+
+/** Is there an HOA row at all? Renters never see one. */
+function esfHoaApplies() {
+  const shown = (esfData().hoa || {}).shownFor || [];
+  const type = esfPlaceType();
+  if (!type) return esfOwnsHome();   // never asked — fall back to the old test
+  return shown.indexOf(type) !== -1;
+}
+
+/**
+ * HOA by PROPERTY TYPE, never by ZIP.
+ *
+ * Fees are bimodal — most houses carry none, condos and townhomes almost always
+ * carry one — so a ZIP-based estimate hands a house owner in a condo-heavy area
+ * a fee they do not pay. The area only scales a fee that exists.
+ */
+function esfHoaEstimate() {
+  const table = (esfData().hoa || {}).byPlaceType || {};
+  const type = esfPlaceType();
+  const base = Number(table[type]);
+  if (!isFinite(base) || base <= 0) return 0;
+  let mult = 1;
+  try {
+    const m = Number((benchColMultipliers(state.profile.zip).multipliers || {}).Housing);
+    if (isFinite(m) && m > 0) mult = m;
+  } catch (e) { mult = 1; }
+  return esfRound(base * mult);
+}
+
+/**
+ * Property tax, estimated but NOT counted until the tester adds it.
+ *
+ * Four in five mortgages escrow it, so a pre-filled figure double-counts for
+ * most owners — and a number already in the box is accepted without thought
+ * more readily than an empty one. The single place the err-high rule is
+ * deliberately reversed.
+ */
+function esfPropertyTaxEstimate() {
+  const t = esfData().propertyTax || {};
+  let rate = Number(t.nationalRate) || 0;
+  let mult = 1;
+  try {
+    const col = benchColMultipliers(state.profile.zip);
+    const st = (col.county || {}).state;
+    if (st && (t.rateByState || {})[st] != null) rate = Number(t.rateByState[st]);
+    const m = Number((col.multipliers || {}).Housing);
+    if (isFinite(m) && m > 0) mult = m;
+  } catch (e) { /* national figures stand */ }
+  // The multiplier is rent-derived and home values disperse further than rents,
+  // so it is raised by a documented stub exponent before it prices a house.
+  const disp = Number(t.valueDispersion) || 1;
+  const value = (Number(t.nationalHomeValue) || 0) * Math.pow(mult, disp);
+  return esfRound(value * rate / 12);
+}
+
 /**
  * Is this row's precondition met?
  *
@@ -216,8 +501,11 @@ function esfMaintenanceEstimate() {
  * treated as an owner so more of the tool is visible during testing.
  */
 function esfRowShows(row) {
-  if (!row || row.showIf !== "owns") return true;
-  return esfOwnsHome();
+  if (!row || !row.showIf) return true;
+  if (row.showIf === "owns")     return esfOwnsHome();
+  if (row.showIf === "hoa")      return esfHoaApplies();
+  if (row.showIf === "employer") return esfHasEmployerCoverage();
+  return true;
 }
 
 // ── Choice groups ────────────────────────────────────────────────────────────
@@ -327,6 +615,9 @@ const ESF_CONFIG = {
   // 24 is a placeholder pending the owner's ruling, not a researched figure.
   targetMonths: 24,
 
+  // The goal itself rounds to the nearest $500 — see esfTarget.
+  targetRoundTo: 500,
+
   // Everything rounds to the nearest 5, matching PEER_BENCHMARKS.method.roundTo
   // so an ESF figure and the peer figure beside it never disagree by $2 for
   // reasons no tester could see.
@@ -368,6 +659,52 @@ function esfRowsForCategory(category) {
  * Home size is not collected anywhere — it was cut from onboarding deliberately
  * — so household size proxies for it.
  */
+/**
+ * Power, water and gas for this home — the LOCAL part of utilities.
+ *
+ * Home size comes from the onboarding house-type question; before that existed
+ * household size stood in for it, which is a far weaker proxy (two people in a
+ * 4-bedroom house heat the same rooms as five).
+ *
+ * The cost-of-living multiplier is applied ONCE, here, and the underlying rate
+ * stays national. Reaching for the state electricity ratio inside the model as
+ * well squares it — that bug shipped once and overstated Los Angeles by 65%.
+ */
+function esfPowerEstimate() {
+  const rates = ((hmoTree("Utilities") || {}).rates) || {};
+  const home = esfHomeKey();
+  const kwh = Number((rates.kwhByHome || {})[home]) || 0;
+  const power = (kwh * (Number(rates.nationalCentsPerKwh) || 0)) / 100;
+  const water = Number((rates.waterByHome || {})[home]) || 0;
+  // Gas comes from this tool's own table — the shared one has none, so the row
+  // was promising three utilities and pricing two.
+  const gas = Number(((esfData().utilities || {}).gasByHome || {})[home]) || 0;
+
+  let mult = 1;
+  try {
+    const m = Number((benchColMultipliers(state.profile.zip).multipliers || {}).Utilities);
+    if (isFinite(m) && m > 0) mult = m;
+  } catch (e) { mult = 1; }
+
+  const figure = esfRound((power + water + gas) * mult);
+  // No rate table (a failed data load) — the peer figure rather than a zero.
+  if (!figure) return esfRound(benchPeerValue("Utilities", benchOptsForUser()));
+  return figure;
+}
+
+/** The help-me-out home-size key for this profile's place type. */
+function esfHomeKey() {
+  const type = esfPlaceType();
+  if (type && typeof ONB_PLACE_TYPES !== "undefined") {
+    const match = ONB_PLACE_TYPES.find(p => p.id === type);
+    if (match && match.home) return match.home;
+  }
+  // Never asked — household size is the old stand-in.
+  const table = (esfData().utilitiesSplit || {}).homeByHousehold || {};
+  const hh = Math.max(1, parseInt((state.profile || {}).householdSize, 10) || 1);
+  return table[String(Math.min(hh, 4))] || "apt2";
+}
+
 function esfUtilitiesSplit() {
   const peer = Number(benchPeerValue("Utilities", benchOptsForUser())) || 0;
   const rates = ((hmoTree("Utilities") || {}).rates) || {};
@@ -458,15 +795,31 @@ function esfCarOpeningSplit(opts) {
  */
 function esfOpeningValues() {
   const opts = benchOptsForUser();
-  const split = esfUtilitiesSplit();
   const car = esfCarOpeningSplit(opts);
   const out = {};
 
   ESF_ROWS.forEach(r => {
     if (!r.prefill) { out[r.id] = null; return; }
-    if (split[r.id] != null) { out[r.id] = split[r.id]; return; }
-    if (car[r.id] != null)   { out[r.id] = car[r.id]; return; }
+    // Each estimated row names the model that fills it. Anything without a
+    // named source falls through to the peer figure for its category, which is
+    // still right for medical and the debt minimums.
+    if (r.source === "power")        { out[r.id] = esfPowerEstimate(); return; }
+    if (r.source === "connectivity") { out[r.id] = esfConnectivity(); return; }
+    if (r.source === "groceries")    { out[r.id] = esfGroceries(); return; }
+    if (r.source === "carCosts")     { out[r.id] = esfCarCosts(); return; }
+    if (r.source === "medical")      { out[r.id] = esfMedical(); return; }
+    if (r.source === "hoa")          { out[r.id] = esfHoaEstimate(); return; }
+    // Annual rows store the ANNUAL figure — the estimate is monthly, so it is
+    // scaled here and divided back out by esfRowMonthly. One conversion, one
+    // place.
+    if (r.source === "propertyTax")  { out[r.id] = esfRound(esfPropertyTaxEstimate() * 12); return; }
     if (r.source === "unemployedInsurance") { out[r.id] = esfReplacementPremium(); return; }
+    if (car[r.id] != null)           { out[r.id] = car[r.id]; return; }
+    if (r.bill) {
+      const monthly = esfBillEstimate(esfBills().find(b => b.id === r.bill));
+      out[r.id] = r.cadence === "annual" ? esfRound(monthly * 12) : monthly;
+      return;
+    }
     if (r.bill) {
       // A local figure from data/emergency-fund.json — home insurance and HOA
       // carry the ZIP's housing multiplier, property tax is a ratio of what
@@ -604,6 +957,19 @@ function esfIsEsfGoal(goal) {
 }
 
 /**
+ * Any goal that IS an emergency fund, however it got there.
+ *
+ * Matches on the label as well as the id, because the seeded goal ("Build a
+ * $3,000 emergency fund") was authored long before this tool existed and has
+ * no id of ours to match on.
+ */
+function esfLooksLikeEsfGoal(goal) {
+  if (!goal) return false;
+  if (esfIsEsfGoal(goal)) return true;
+  return /emergency\s*(savings\s*)?fund/i.test(String(goal.label || ""));
+}
+
+/**
  * Reopen the tool from the goal card.
  *
  * RESUMES rather than restarts: the session is still on state.esf with every
@@ -651,6 +1017,13 @@ function esfOwnsHome() {
   // as separate figures precisely so this can be read off real numbers rather
   // than inferred — and it handles the case a single question cannot, somebody
   // carrying both.
+  // An APARTMENT settles it: nobody owning their home calls it an apartment,
+  // so there is no property tax and no home insurance to ask about. Condos and
+  // houses are ambiguous — either can be rented — so they fall through to the
+  // housing figures below.
+  const place = esfPlaceType();
+  if (place === "aptSmall" || place === "aptLarge") return false;
+
   // The segmented picker in box 1 IS the answer — whichever side it is on says
   // whether the roof is owned, whether or not a figure has been typed yet.
   const s = state.esf;
@@ -699,6 +1072,132 @@ function esfCoverageMonths() {
   return hh === 1 ? ESF_CONFIG.coverageSingle : ESF_CONFIG.coverageDefault;
 }
 
+// ─── Ranges ──────────────────────────────────────────────────────────────────
+// Estimated figures are picked from a dropdown of ranges, never typed. Nobody
+// knows their power bill to the dollar, and a range is both easier to answer and
+// more honest about what an estimate is.
+//
+// Band width scales with the figure. A flat $50 band is absurd on a $60 phone
+// bill and useless on a $2,000 mortgage, so the step follows the magnitude —
+// which is the same reason the adjustment control was a percentage, back when
+// there was one.
+
+const ESF_BANDS = [
+  { under: 100,   width: 25 },
+  { under: 500,   width: 50 },
+  { under: 1500,  width: 100 },
+  { under: 6000,  width: 250 },
+  { under: Infinity, width: 1000 }
+];
+
+/**
+ * How wide a band is at this figure.
+ *
+ * A row can override it. Home utilities does: it is three bills in one figure
+ * — power, water and gas — so it runs from under $100 to past $700 depending on
+ * the house and the season, and $50 steps would make a dropdown nobody wants to
+ * scroll.
+ */
+function esfBandWidth(value, row) {
+  if (row && row.bandWidth) return row.bandWidth;
+  const v = Math.max(0, Number(value) || 0);
+  const band = ESF_BANDS.find(b => v < b.under) || ESF_BANDS[ESF_BANDS.length - 1];
+  return band.width;
+}
+
+/** The band a figure falls in: its floor, ceiling and midpoint. */
+function esfBandFor(value, row) {
+  const v = Math.max(0, Number(value) || 0);
+  const w = esfBandWidth(v, row);
+  const lo = Math.floor(v / w) * w;
+  return { lo: lo, hi: lo + w, mid: lo + w / 2, width: w };
+}
+
+const ESF_BANDS_BELOW = 4;
+const ESF_BANDS_ABOVE = 5;
+
+/**
+ * The ranges offered for a row, centred on where its figure currently sits.
+ *
+ * A zero option comes first — "none of this applies to me" is a real answer for
+ * a HOA fee or a car, and without it the lowest choice would still charge them
+ * something.
+ */
+function esfBandOptions(value, row) {
+  const here = esfBandFor(value, row);
+  const out = [{ lo: 0, hi: 0, mid: 0, zero: true }];
+  for (let i = -ESF_BANDS_BELOW; i <= ESF_BANDS_ABOVE; i++) {
+    const lo = here.lo + i * here.width;
+    if (lo < 0) continue;
+    if (lo === 0 && here.width === here.lo) continue;
+    out.push({ lo: lo, hi: lo + here.width, mid: lo + here.width / 2 });
+  }
+  return out;
+}
+
+/**
+ * The debt row's options: every plausible mix of cards and loans, each labelled
+ * with what it stands for.
+ *
+ * This row is the one estimate the app cannot make — minimums depend on card
+ * count and balances, and onboarding asks for neither. Offering dollar bands
+ * would ask the tester to convert their situation into a number in their head.
+ * Offering "1 loan + 1 card" asks them to recognise it instead, and the figure
+ * comes out the other side.
+ */
+function esfDebtOptions() {
+  const list = (esfData().debt || {}).options || [];
+  return list.map(o => {
+    const lo = Number(o.lo) || 0;
+    const hi = Number(o.hi) || 0;
+    if (!hi) return { mid: 0, zero: true, note: o.label };
+    return { lo: lo, hi: hi, mid: esfRound((lo + hi) / 2), note: o.label };
+  });
+}
+
+/**
+ * "$100 – $150", or "$0" for the zero option.
+ *
+ * An ANNUAL band carries its monthly equivalent in parentheses — "$4,000 –
+ * $4,500 ($354/mo)". The conversion used to sit on its own line under the box,
+ * which cost a line on the tightest screen and read as a second figure rather
+ * than the same one restated.
+ */
+function esfBandLabel(band, row) {
+  if (band && band.zero && band.note) return band.note;
+  if (!band || band.zero) return esfMoney(0);
+  // A debt option leads with the SITUATION and carries its range after it —
+  // "A loan, maybe a card ($250 – $350)". The tester is recognising their own
+  // circumstances, not picking a number, so the words come first.
+  if (band.note) return band.note + " (" + esfMoney(band.lo) + " – " + esfMoney(band.hi) + ")";
+  const span = esfMoney(band.lo) + " – " + esfMoney(band.hi);
+  if (row && row.cadence === "annual") {
+    return span + " (" + esfMoney(band.mid / 12) + "/mo)";
+  }
+  return span;
+}
+
+// ─── Opt-in rows ─────────────────────────────────────────────────────────────
+// Property tax and home insurance are estimated but contribute NOTHING until
+// the tester adds them. Four in five mortgages escrow both, so a pre-filled
+// figure double-counts for most owners — and a number already sitting in a box
+// gets accepted without thought more readily than an empty one. The single
+// place the err-high rule is deliberately reversed.
+
+function esfRowAdded(rowId) {
+  const s = esfSession();
+  return !!(s.added && s.added[rowId]);
+}
+
+function esfToggleRow(rowId) {
+  const s = esfSession();
+  if (!s.added) s.added = {};
+  if (s.added[rowId]) delete s.added[rowId];
+  else s.added[rowId] = true;
+  esfLog("row_toggled", { row: rowId, added: !!s.added[rowId] });
+  render();
+}
+
 /**
  * A row's contribution to a MONTH.
  *
@@ -707,13 +1206,22 @@ function esfCoverageMonths() {
  * the divide happens here and exactly here — a second one anywhere else divides
  * a property tax bill by 144.
  */
-function esfRowMonthly(rowId) {
+function esfRowMonthly(rowId, ignoreOptIn) {
   const row = esfRow(rowId);
+  // `ignoreOptIn` asks what the row WOULD contribute — what the Add-it button
+  // has to show, since a figure of $0 tells the tester nothing about whether
+  // adding it is worth a tap.
+  if (ignoreOptIn && row) {
+    const raw = esfRowValue(rowId);
+    return row.cadence === "annual" ? raw / 12 : raw;
+  }
   // A row the tester never sees must not be in their total. Filtering only the
   // render would leave property tax silently priced into a renter's target —
   // invisible on screen and impossible to argue with. The same applies to the
   // unpicked half of a choice group.
   if (!esfRowShows(row) || !esfRowPicked(row)) return 0;
+  // An opt-in row is estimated but weightless until the tester adds it.
+  if (row && row.optIn && !esfRowAdded(row.id)) return 0;
   const value = esfRowValue(rowId);
   return row && row.cadence === "annual" ? value / 12 : value;
 }
@@ -746,12 +1254,11 @@ function esfStatedMonthly() {
  * It must still be VISIBLE. A target built on $3,000 a month when the tester
  * stated $2,700 reads as a bug unless something on screen names the difference.
  */
-function esfReplacementPremium() {
-  const crisis = esfData().crisis || {};
-  const premium = Number(((hmoTree("Health") || {}).rates || {}).marketplacePremium) || 0;
-  const hh = Math.max(1, parseInt((state.profile || {}).householdSize, 10) || 1);
-  return esfRound(premium * Math.min(hh, Number(crisis.maxCovered) || 2));
-}
+// The flat "marketplace premium x up to two adults" estimate that used to live
+// here is gone — it is priced by the ACA age curve now (esfReplacementPremium,
+// above), which is what onboarding's adult ages were added for. Two definitions
+// of the same name sat in this file for a while and the later one silently won,
+// which is exactly the shadowing trap CLAUDE.md warns about.
 
 /**
  * Everything that would still be owed if the paycheck stopped.
@@ -777,8 +1284,22 @@ function esfBufferedMonthly() {
   return esfRound(esfSurvivalMonthly() * (1 + (Number(s.buffer) || 0)));
 }
 
+/**
+ * The goal, rounded to the nearest $500.
+ *
+ * $19,140 reads as a precise figure when every input behind it was a range;
+ * $19,000 says "estimate" without needing a disclaimer to say it.
+ */
 function esfTarget() {
-  return esfRound(esfBufferedMonthly() * esfCoverageMonths());
+  const raw = esfBufferedMonthly() * esfCoverageMonths();
+  const step = ESF_CONFIG.targetRoundTo || 500;
+  return Math.max(step, Math.round(raw / step) * step);
+}
+
+/** What the breathing-room percentage is worth, before the goal is rounded. */
+function esfBufferAmount() {
+  const months = esfCoverageMonths();
+  return esfRound((esfBufferedMonthly() - esfSurvivalMonthly()) * months);
 }
 
 /** Months between today and the target date, floored at one. */
@@ -901,14 +1422,18 @@ function esfCommit() {
     coverageMonths: esfCoverageMonths(),
     monthlyFigure: esfBufferedMonthly()
   };
-  state.tacticalGoals = (state.tacticalGoals || []).filter(g => g.id !== state.esfGoal.id);
+  // EXACTLY ONE emergency fund on the Goals tab, ever. Re-running the tool
+  // replaces the goal rather than adding a second one — and the seeded
+  // "Build a $3,000 emergency fund" counts as one, so it goes too. Two funds
+  // with different targets is a tester wondering which one is theirs.
+  state.tacticalGoals = (state.tacticalGoals || []).filter(g => !esfLooksLikeEsfGoal(g));
   state.tacticalGoals.push(state.esfGoal);
 
   esfLog("goal_set", {
     target: target,
     coverageMonths: esfCoverageMonths(),
     buffer: s.buffer,
-    unemployedInsurance: esfRowMonthly("unemployedInsurance"),
+    medical: esfRowMonthly("medical"),
     untouchedRows: esfRowsRemaining()
   });
 
