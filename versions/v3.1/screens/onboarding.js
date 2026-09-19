@@ -938,10 +938,7 @@ function onbColChart(zip) {
   // `onb-col-axis` stay in components.css — v3 renders the same chart from its
   // own copy of this file.
   return `
-    <p class="onb-col-text onb-col-lead onb-zip-result">
-      <span class="onb-line">Expenses will be shown based on people like you in ${where}.</span>
-      <span class="onb-line">We'll collect a little more info about you to get closer to the right peer.</span>
-    </p>`;
+    <p class="task-desc onb-zip-result">We'll use people like you in ${where}.</p>`;
 }
 
 // The composite is a weighted basket, and most of that basket is priced
