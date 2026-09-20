@@ -3861,12 +3861,16 @@ button.esf-based {
    He sits flush to the bottom edge with no padding under him, so the header is
    only as tall as he is. Every pixel of chrome here comes out of the
    conversation. */
+/* The title and Buddy are ONE centred group, not two things pinned to opposite
+   edges. Apart, the eye had to travel the width of the panel and they read as
+   a label on the left and a logo on the right; together they read as him
+   introducing himself. Still one row, so the header stays short. */
 .esf-buddy-head {
   flex-shrink: 0;
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: center;
+  gap: 12px;
   padding: 4px 16px 0;
   border-bottom: 1px solid var(--line);
   background: var(--accent-soft);
@@ -3897,15 +3901,49 @@ button.esf-based {
 .esf-buddy-thread .chat-row-user  { margin-left: 37px; }
 
 /* ── A lifestyle question, and the figure it reaches ─────────────────────────
-   A DROPDOWN rather than a chip rack. The owner asked for drop-down choices and
-   the options are why: "Warehouse clubs (Sam's, Costco)" and five driving bands
-   do not fit on chips without wrapping into a rack that fills half the panel.
-   The brand names cannot go — they are what makes an option land at a 5th-grade
-   reading level — so the control gives instead.
+   THE OPTIONS LIVE INSIDE THE PANEL. A native <select> was the first build and
+   the owner's own ask, and on a real phone it is right — the options open as a
+   picker sheet. But this prototype is a phone FRAME inside a desktop browser,
+   and a select's option list is drawn by the operating system rather than laid
+   out by the page, so it ignores the frame and spills out of the bottom of the
+   phone. No CSS can contain it; the control has to change.
 
-   It reuses .esf-range, the same control the rows on the screen behind use, so
-   answering a question in here feels like the thing it is about to change. */
+   These are ordinary buttons, capped in height and scrolling inside the footer.
+   The cap is what guarantees it: six options at 40px would be 240px and the
+   footer would push the transcript out of the panel, so the list scrolls rather
+   than the panel growing. */
 .esf-buddy-q { padding-bottom: 9px; }
+.esf-buddy-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* About three and a half rows. Taller and the footer takes half the panel
+     and the transcript -- the thing they opened this for -- is squeezed to a
+     couple of bubbles. Only three questions in the pack exceed four options. */
+  max-height: 150px;
+  overflow-y: auto;
+  /* Room for the focus ring, which is drawn OUTSIDE the button and would be
+     clipped by the scroller otherwise. Matched padding keeps the content box
+     where it was. */
+  margin: 0 -4px;
+  padding: 2px 4px;
+}
+.esf-buddy-opt {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.esf-buddy-opt:hover { border-color: var(--accent); background: var(--accent-soft); }
 .esf-buddy-q-step {
   display: block;
   margin-bottom: 5px;
@@ -3916,7 +3954,6 @@ button.esf-based {
   color: var(--text);
   opacity: .6;
 }
-.esf-buddy-select { width: 100%; }
 
 /* The offer to work a figure out, and the figure when it arrives. Both lead
    their rack: on a row with questions behind it, that is what opening Buddy was

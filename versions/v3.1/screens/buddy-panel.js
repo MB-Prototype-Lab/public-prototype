@@ -188,13 +188,18 @@ function renderEsfBuddyList() {
 /**
  * The control under the transcript while a lifestyle question set is running.
  *
- * A DROPDOWN, not a chip rack. Owner asked for drop-down choices and the
- * options are why: "Warehouse clubs (Sam's, Costco)" and five driving bands do
- * not fit on chips without wrapping into a rack that fills half the panel. The
- * brand names cannot go — they are what makes the option land at a 5th-grade
- * reading level — so the control gives instead.
+ * A LIST INSIDE THE PANEL, not a native <select>.
  *
- * `onchange`, never `oninput`, per the repo's input rule.
+ * It was a <select> first, which is what the owner asked for and is right on a
+ * real phone, where the options open as a picker sheet. But this prototype is a
+ * phone FRAME inside a desktop browser, and a select's option list is drawn by
+ * the operating system — it is not laid out by the page, so it ignores the
+ * frame entirely and spills out of the bottom of the phone. Nothing in CSS can
+ * contain it.
+ *
+ * So the options are ordinary buttons in the panel's own footer, capped in
+ * height and scrolling inside it. Same one-tap choice, same full option text
+ * with the brand names that make it readable, and it can never leave the frame.
  */
 function renderEsfBuddyQuestion() {
   const b = esfBuddy();
@@ -206,12 +211,11 @@ function renderEsfBuddyQuestion() {
   return `
     <div class="esf-buddy-q">
       <span class="esf-buddy-q-step">Question ${b.q.index + 1} of ${total}</span>
-      <select class="esf-range esf-buddy-select" aria-label="${h(q.ask)}"
-              onchange="esfBuddyAnswerLifestyle(this.value)">
-        <option value="" selected disabled>Pick one…</option>
-        ${(q.options || []).map(o =>
-          `<option value="${h(o.id)}">${h(o.label)}</option>`).join("")}
-      </select>
+      <div class="esf-buddy-opts" role="group" aria-label="${h(q.ask)}">
+        ${(q.options || []).map(o => `
+          <button class="esf-buddy-opt" type="button"
+                  onclick="esfBuddyAnswerLifestyle('${h(o.id)}')">${h(o.label)}</button>`).join("")}
+      </div>
     </div>`;
 }
 
