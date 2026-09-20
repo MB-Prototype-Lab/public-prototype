@@ -226,13 +226,13 @@
     "medical": {
       "label": "Medical",
       "row": "medical",
-      "_note": "TWO ANSWERS, because the row is built two ways. Somebody covered through work is priced on a replacement premium — what their own plan would cost once the job stopped — and that figure is deliberately large. Somebody who already buys their own is priced on ordinary out-of-pocket costs, and for them esfReplacementPremium() is 0. Saying 'this looks high on purpose' over $165 is a tool that does not know what it is showing you. Resolved by the employerCoverage variant in js/buddy-esf.js.",
+      "_note": "TWO ANSWERS, because the row is built two ways. Somebody covered through work is priced on a replacement premium — what their own plan would cost once the job stopped. Somebody who already buys their own is priced on ordinary out-of-pocket costs, and for them esfReplacementPremium() is 0. An explanation that does not match the number beside it is worse than none. Resolved by the employerCoverage variant in js/buddy-esf.js.",
+      "_voiceNote": "OWNER'S RULING, and it overrides the spec: Buddy states what the figure is built from and stops. He does NOT tell the user the number is high. The spec's copy opened 'This one looks high on purpose' — cut. Calling attention to a cost is a short step from suggesting something be done about it, and the same restraint that keeps him off advice keeps him off commentary. The facts do the work: cover comes through the job, the job stopping ends it, so the row prices the replacement.",
       "variantOn": "employerCoverage",
       "sayIf": {
         "employer": [
-          "This one looks high on purpose. Here is why.",
-          "Your job pays most of your health insurance. If the job stops, that stops too.",
-          "You would buy your own plan. That costs more.",
+          "Your health cover comes through your job.",
+          "If the job stops, that cover stops with it.",
           "So this row is what your own plan would cost, not what comes out of your paycheck today."
         ],
         "own": [
@@ -247,8 +247,9 @@
             "id": "medicalOk",
             "label": "That makes sense",
             "say": [
-              "Good. Leave it where it is.",
-              "This is the row people cut first, and it is the one that hurts most to be wrong about."
+              "Good.",
+              "The figure is a mid-level plan priced on the ages in your household.",
+              "You can change it whenever you want."
             ]
           },
           {
@@ -280,7 +281,7 @@
       "say": [
         "This is fuel, insurance and upkeep.",
         "Not your car payment — that was the last screen.",
-        "Insurance is the big one, and it does not change with how far you drive."
+        "Insurance is the largest part of it. It does not change with how far you drive."
       ],
       "chips": [
         {

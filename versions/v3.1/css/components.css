@@ -3820,26 +3820,24 @@ button.esf-based {
    Big title, and Buddy himself on the right. The picture is the thing that
    says "you are talking to someone" before a word is read — the header was
    two lines of grey type and read as a settings pane. */
+/* BUDDY IS CENTRED, and the type sits under him. Owner's call: he is the star
+   of this experience, so he gets the middle of the header rather than a corner
+   of it. He was right-aligned first, which read as a logo parked beside a
+   label — the eye went to the words and he became decoration. */
 .esf-buddy-head {
   flex-shrink: 0;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 16px 0;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 6px 16px 9px;
   border-bottom: 1px solid var(--line);
   background: var(--accent-soft);
   border-radius: 22px 22px 0 0;
 }
-.esf-buddy-headtext { padding-bottom: 12px; }
-.esf-buddy-title { margin: 0; font-size: 21px; font-weight: 900; color: var(--text); letter-spacing: -.01em; }
-.esf-buddy-sub   { margin: 2px 0 0; font-size: 11.5px; color: var(--text); opacity: .72; }
-/* Sits ON the header's bottom edge, so he reads as leaning into the
-   conversation rather than being a logo in a box. */
-.esf-buddy-hero {
-  width: 78px; height: auto; display: block; margin-bottom: -1px;
-  flex: 0 0 auto;
-}
+.esf-buddy-title { margin: 3px 0 0; font-size: 21px; font-weight: 900; color: var(--text); letter-spacing: -.01em; }
+.esf-buddy-sub   { margin: 1px 0 0; font-size: 11.5px; color: var(--text); opacity: .72; }
+.esf-buddy-hero { width: 80px; height: auto; display: block; flex: 0 0 auto; }
 
 /* ── Buddy's avatar on a run of bubbles ──────────────────────────────────────
    ONE face per run, on the last bubble, with the bubbles above it tucked in.
