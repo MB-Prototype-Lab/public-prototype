@@ -97,10 +97,12 @@ function renderEsfBuddyPanel() {
     <div class="esf-buddy" role="dialog" aria-modal="true" aria-label="Ask Buddy">
 
       <div class="esf-buddy-head">
+        <div class="esf-buddy-headtext">
+          <p class="esf-buddy-title">Ask Buddy</p>
+          <p class="esf-buddy-sub">${h(entry ? entry.label : "Pick what you'd like help with")}</p>
+        </div>
         <img class="esf-buddy-hero" src="${h(ESF_BUDDY_CHAT_ART)}" alt="" aria-hidden="true"
              onerror="${ESF_BUDDY_ART_FALLBACK}">
-        <p class="esf-buddy-title">Ask Buddy</p>
-        <p class="esf-buddy-sub">${h(entry ? entry.label : "Pick what you'd like help with")}</p>
       </div>
 
       <div class="esf-buddy-thread" id="esfBuddyThread">

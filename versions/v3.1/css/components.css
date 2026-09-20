@@ -3849,27 +3849,37 @@ button.esf-based {
 .esf-ask-emoji { font-size: 17px; line-height: 1; }
 
 /* ── The panel header ────────────────────────────────────────────────────────
-   Big title, and Buddy himself on the right. The picture is the thing that
-   says "you are talking to someone" before a word is read — the header was
-   two lines of grey type and read as a settings pane. */
-/* BUDDY IS CENTRED, and the type sits under him. Owner's call: he is the star
-   of this experience, so he gets the middle of the header rather than a corner
-   of it. He was right-aligned first, which read as a logo parked beside a
-   label — the eye went to the words and he became decoration. */
+   TYPE LEFT, BUDDY RIGHT, and as short as it can be. The picture is what says
+   "you are talking to someone" before a word is read — without it the header
+   was two lines of grey type and read as a settings pane.
+
+   He was briefly centred with the words underneath, which made him unmissable
+   and cost about 75px of a panel that is only three-quarters of a phone tall.
+   The transcript is what people opened this for, and the header was eating two
+   bubbles' worth of it.
+
+   He sits flush to the bottom edge with no padding under him, so the header is
+   only as tall as he is. Every pixel of chrome here comes out of the
+   conversation. */
 .esf-buddy-head {
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 6px 16px 9px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 16px 0;
   border-bottom: 1px solid var(--line);
   background: var(--accent-soft);
   border-radius: 22px 22px 0 0;
 }
-.esf-buddy-title { margin: 3px 0 0; font-size: 21px; font-weight: 900; color: var(--text); letter-spacing: -.01em; }
-.esf-buddy-sub   { margin: 1px 0 0; font-size: 11.5px; color: var(--text); opacity: .72; }
-.esf-buddy-hero { width: 80px; height: auto; display: block; flex: 0 0 auto; }
+.esf-buddy-headtext { padding-bottom: 9px; min-width: 0; }
+.esf-buddy-title { margin: 0; font-size: 19px; font-weight: 900; color: var(--text); letter-spacing: -.01em; }
+.esf-buddy-sub {
+  margin: 1px 0 0; font-size: 11.5px; color: var(--text); opacity: .72;
+  /* A long row label must not push Buddy off the right edge. */
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.esf-buddy-hero { width: 58px; height: auto; display: block; flex: 0 0 auto; margin-bottom: -1px; }
 
 /* ── Buddy's avatar on a run of bubbles ──────────────────────────────────────
    ONE face per run, on the last bubble, with the bubbles above it tucked in.
