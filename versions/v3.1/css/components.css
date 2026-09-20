@@ -3785,36 +3785,68 @@ button.esf-based {
    space-between, which would otherwise spread three children evenly and drift
    Ask off-centre as the primary's label changes length.
 
-   Dark text on LEGO orange is about 5.2:1 and passes AA. White on it is about
-   2.9:1 and fails. Both literals rather than theme tokens on purpose: this is
-   Buddy's own accent and must not drift with the four themes, or it stops
-   being his. */
-.esf-foot .button:last-child { margin-left: auto; }
+   AMBER, not the LEGO orange it started as -- that read as a warning light
+   beside a calm sage primary. Dark #2B1A0E on this amber is about 7.9:1, up
+   from the orange's 5.2:1, and both pass AA. White on either FAILS (2.9:1 on
+   the orange), so the dark text is not a style choice.
 
+   Literals rather than theme tokens on purpose: this is Buddy's own accent and
+   must not drift with the four themes, or it stops being his. */
+/* THREE EQUAL COLUMNS, so Ask is dead centre no matter how long the primary's
+   label is. .journal-foot is space-between, which spreads three children by
+   their own widths and drifts Ask off-centre as "Continue" becomes "See my
+   number". A grid ignores content width, which is the whole point.
+
+   The intro step has only two children (no primary). Ask still lands in column
+   two, so it stays centred there as well. */
+.journal-foot.esf-foot {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+/* Equal thirds are narrower than .button's defaults allow for the longest label
+   this footer carries. At 13px with 13px side padding "See my number" wants
+   112px in a 103px column and SPILLS — a button's overflow is visible, so the
+   text paints straight over the edge of its own pill rather than being cut.
+   Both the padding and one step of type size come off; 12px keeps a legible
+   label and the tap target is unchanged at 44px. */
+.journal-foot.esf-foot > .button,
+.journal-foot.esf-foot > .esf-ask {
+  width: 100%;
+  padding-left: 5px;
+  padding-right: 5px;
+  font-size: 12px;
+}
+
+/* Ask carries .button's metrics exactly — same padding, radius, type — so the
+   three read as one set. Only the colour and the dog differ. Its own padding is
+   tightened because the dog is doing some of the work a word would. */
 .esf-ask {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  min-height: 44px;
-  padding: 7px 10px 7px 15px;
-  border: 0;
-  border-radius: 999px;
-  background: #FF6D00;
+  padding: 10px 8px;
+  border: 1px solid #C97B0E;
+  border-radius: 13px;
+  background: #E9A227;
   color: #2B1A0E;
   font-size: 13px;
   font-weight: 850;
   font-family: Arial, Helvetica, sans-serif;
   white-space: nowrap;
   cursor: pointer;
-  flex: 0 0 auto;
 }
 .esf-ask:hover { filter: brightness(1.05); }
+/* 22px, not 30 — the dog sized the button before, standing taller than the
+   type beside it and pushing Ask out of line with Back and Continue. */
 .esf-ask-face {
-  width: 30px; height: 30px; border-radius: 50%; object-fit: cover; display: block;
+  width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: block;
   background: #FFF;                      /* the art's own ring, continued */
   box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .9);
 }
-.esf-ask-emoji { font-size: 22px; line-height: 1; }
+.esf-ask-emoji { font-size: 17px; line-height: 1; }
 
 /* ── The panel header ────────────────────────────────────────────────────────
    Big title, and Buddy himself on the right. The picture is the thing that
