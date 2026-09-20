@@ -3955,18 +3955,60 @@ button.esf-based {
   opacity: .6;
 }
 
-/* The offer to work a figure out, and the figure when it arrives. Both lead
-   their rack: on a row with questions behind it, that is what opening Buddy was
-   for — the explanation is context, not the destination. */
-.esf-buddy-chip-ask {
+
+/* ── The menu: three buttons, one row, always the same three ─────────────────
+   [ Back to the list ]  [ Start over ]  [ Help me calculate this ]
+
+   A GRID, not a chip rack. Chips size themselves to their text and wrap, which
+   is exactly wrong here: these three moved position on nearly every screen and
+   spilled onto a second line, so the pattern had to be re-read each time.
+   Equal columns pin each action to a place the user can learn once.
+
+   A button that does not apply is disabled rather than removed — removing one
+   would shift the other two, which is the one thing this row exists to stop. */
+.esf-buddy-nav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding-bottom: 9px;
+}
+.esf-buddy-navbtn {
+  min-height: 44px;
+  padding: 6px 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.esf-buddy-navbtn:not(:disabled):hover { background: var(--accent-soft); border-color: var(--accent); }
+/* Visibly out of reach, still holding its column. */
+.esf-buddy-navbtn:disabled { opacity: .38; cursor: default; }
+/* The one that does something to the row behind the panel reads as the action
+   of the three, without competing with the figure when one is on offer. */
+.esf-buddy-navbtn-go:not(:disabled) {
   background: var(--accent-soft);
   border-color: var(--accent);
-  color: var(--text);
-  font-weight: 850;
 }
-.esf-buddy-chip-apply {
+
+/* The figure gets a full-width row above the menu. It is THE action at that
+   moment; sitting it beside two ways out would make it one option of three. */
+.esf-buddy-applyrow { padding-bottom: 9px; }
+.esf-buddy-apply {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
   background: var(--accent);
-  border-color: var(--accent);
   color: var(--on-accent);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
   font-weight: 850;
+  cursor: pointer;
 }
+.esf-buddy-apply:hover { filter: brightness(1.06); }

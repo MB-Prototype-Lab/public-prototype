@@ -113,6 +113,7 @@ function renderEsfBuddyPanel() {
 
       <div class="esf-buddy-foot">
         ${renderEsfBuddyChips()}
+        ${renderEsfBuddyNav()}
         <div class="esf-buddy-bar">
           <button class="esf-buddy-x" type="button" onclick="esfBuddyClose()"
                   aria-label="Close Buddy">&times;</button>
@@ -228,14 +229,12 @@ function renderEsfBuddyQuestion() {
 function renderEsfBuddyApply() {
   const amount = esfBuddyPendingFigure();
   if (amount == null) return "";
+  // A row of its own, above the menu. This is THE action at this moment, and
+  // sitting it in a rack beside two ways out would make it one option of three.
   return `
-    <div class="chat-chips esf-buddy-chips">
-      <button class="chat-chip esf-buddy-chip-apply" type="button"
+    <div class="esf-buddy-applyrow">
+      <button class="esf-buddy-apply" type="button"
               onclick="esfBuddyApplyFigure()">Use ${h(esfMoney(amount))}</button>
-      <button class="chat-chip esf-buddy-chip-nav" type="button"
-              onclick="esfBuddyRestartLifestyle()">Start these questions over</button>
-      <button class="chat-chip esf-buddy-chip-nav" type="button"
-              onclick="esfBuddyToList()">Back to the list</button>
     </div>`;
 }
 
@@ -252,26 +251,55 @@ function renderEsfBuddyChips() {
   const chips = (b.chips || [])
     .map(id => esfBuddyFindChip(esfBuddyChipsFor(entry), id))
     .filter(Boolean);
-  const showBack = !!b.node;
-  const showOver = b.thread.length > 0;
-  // The offer to work the figure out, on any row that has questions behind it.
-  // First in the rack, because on these rows it is the point of opening Buddy —
-  // the explanation is context for it, not the destination.
-  const rowId = entry && entry.row;
-  const canAsk = rowId && typeof esfHasLifestyle === "function" && esfHasLifestyle(rowId);
-  if (!chips.length && !showBack && !showOver && !canAsk) return "";
+  // Navigation is NOT in here any more — it lives in renderEsfBuddyNav below,
+  // in a fixed row. This rack only ever carries answers to what Buddy just
+  // asked, so nothing in it moves position for reasons the user cannot see.
+  if (!chips.length) return "";
 
   return `
     <div class="chat-chips esf-buddy-chips">
-      ${canAsk ? `<button class="chat-chip esf-buddy-chip-ask" type="button"
-                          onclick="esfBuddyAskLifestyle('${h(rowId)}')">Help me work it out</button>` : ""}
       ${chips.map(c => `
         <button class="chat-chip" type="button"
                 onclick="esfBuddyChip('${h(c.id)}')">${h(c.label)}</button>`).join("")}
-      ${showBack ? `<button class="chat-chip esf-buddy-chip-nav" type="button"
-                            onclick="esfBuddyToList()">Back to the list</button>` : ""}
-      ${showOver ? `<button class="chat-chip esf-buddy-chip-nav" type="button"
-                            onclick="esfBuddyStartOver()">Start over</button>` : ""}
+    </div>`;
+}
+
+/**
+ * THE MENU. Three buttons, one row, always the same three in the same order:
+ *
+ *     [ Back to the list ]   [ Start over ]   [ Help me calculate this ]
+ *
+ * FIXED POSITION IS THE WHOLE POINT — a pattern to learn once, not a rack that
+ * reshuffles as the conversation moves. It used to be exactly that: these
+ * appeared and disappeared among the answer chips and wrapped onto a second
+ * line, so the same action sat somewhere different on nearly every screen.
+ *
+ * A button that does not apply right now is DISABLED, never removed. Removing
+ * one would shift the other two, which is the one thing this row exists to
+ * prevent.
+ *
+ * "Help me calculate this" rather than "Help me work it out" — owner's call.
+ * "Work it out" describes a mood; "calculate this" names the action and says it
+ * applies to the row in front of you.
+ */
+function renderEsfBuddyNav() {
+  const b = esfBuddy();
+  // Nothing has happened yet: the question list IS the screen and needs no menu.
+  if (!b.node && !b.thread.length) return "";
+
+  const entry = b.node ? esfBuddyEntry(b.node) : null;
+  const rowId = (entry && entry.row) || "";
+  const canAsk = !!(rowId && typeof esfHasLifestyle === "function" &&
+                    esfHasLifestyle(rowId) && !b.q);
+
+  return `
+    <div class="esf-buddy-nav">
+      <button class="esf-buddy-navbtn" type="button" ${b.node ? "" : "disabled"}
+              onclick="esfBuddyToList()">Back to the list</button>
+      <button class="esf-buddy-navbtn" type="button" ${b.thread.length ? "" : "disabled"}
+              onclick="esfBuddyStartOverHere()">Start over</button>
+      <button class="esf-buddy-navbtn esf-buddy-navbtn-go" type="button" ${canAsk ? "" : "disabled"}
+              onclick="esfBuddyAskLifestyle('${h(rowId)}')">Help me calculate this</button>
     </div>`;
 }
 

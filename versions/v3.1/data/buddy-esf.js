@@ -215,7 +215,7 @@ const BUDDY_ESF =
       "row": "power",
       "say": [
         "This is your water, gas and electricity, all in one figure.",
-        "Not sure? I can ask you three quick questions and work it out."
+        "Not sure? I can ask three quick questions and calculate it."
       ]
     },
 
@@ -235,7 +235,7 @@ const BUDDY_ESF =
       "say": [
         "Groceries means food you cook and eat at home.",
         "Not restaurants or takeout. Those are not part of an emergency fund.",
-        "Not sure what you spend? I'll ask how you shop and work it out."
+        "Not sure what you spend? I can ask how you shop and calculate it."
       ]
     },
 

@@ -322,6 +322,21 @@ function esfBuddyResetThread(key) {
   b.applied = false;
 }
 
+/**
+ * The menu's middle button: start the CURRENT thing over.
+ *
+ * Mid-questions that means the question set, because somebody who wants to
+ * change an answer should not lose the explanation they read first. Anywhere
+ * else it means the conversation. One label, one idea — "start over" starts
+ * over whatever you are in the middle of — and it keeps the menu's three slots
+ * fixed instead of needing a fourth button that only exists sometimes.
+ */
+function esfBuddyStartOverHere() {
+  const b = esfBuddy();
+  if (b.q) { esfBuddyRestartLifestyle(); return; }
+  esfBuddyStartOver();
+}
+
 /** "Start over" — clears this step's conversation and returns to a fresh list. */
 function esfBuddyStartOver() {
   esfBuddyResetThread();
@@ -499,7 +514,10 @@ function esfBuddyAskLifestyle(rowId) {
   const b = esfBuddy();
   if (!esfHasLifestyle(rowId)) return;
   b.q = { rowId: rowId, index: 0, answers: {}, done: false };
-  esfBuddyUserSaid("Help me work it out");
+  // Echo the BUTTON'S OWN WORDS. A tapped control and the bubble it produces
+  // saying two different things makes the transcript stop being a record of
+  // what the user did.
+  esfBuddyUserSaid("Help me calculate this");
   esfBuddyAskCurrent();
   esfLog("chat_help_started", { rowId: rowId });
   render();
