@@ -3872,12 +3872,9 @@ button.esf-based {
   background: var(--accent-soft);
   border-radius: 22px 22px 0 0;
 }
-.esf-buddy-headtext { padding-bottom: 9px; min-width: 0; }
-.esf-buddy-title { margin: 0; font-size: 19px; font-weight: 900; color: var(--text); letter-spacing: -.01em; }
-.esf-buddy-sub {
-  margin: 1px 0 0; font-size: 11.5px; color: var(--text); opacity: .72;
-  /* A long row label must not push Buddy off the right edge. */
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.esf-buddy-title {
+  margin: 0 0 11px; font-size: 19px; font-weight: 900;
+  color: var(--text); letter-spacing: -.01em;
 }
 .esf-buddy-hero { width: 58px; height: auto; display: block; flex: 0 0 auto; margin-bottom: -1px; }
 

@@ -87,20 +87,20 @@ function renderEsfBuddyButton() {
 // a disabled field dispatches no events, and that tap is the MEASUREMENT: how
 // many testers reach for it anyway is the demand for the real thing.
 
+// NO SUBTITLE. It carried the open row's label, which the transcript already
+// says — the row's name IS the first question, echoed as the user's own bubble
+// the moment they tap it. A header repeating it was the same word twice on one
+// screen, and it cost the only line of chrome that varied.
 function renderEsfBuddyPanel() {
   const b = esfBuddy();
   if (!b.open) return "";
-  const entry = b.node ? esfBuddyEntry(b.node) : null;
 
   return `
     <div class="esf-buddy-scrim" onclick="esfBuddyClose()"></div>
     <div class="esf-buddy" role="dialog" aria-modal="true" aria-label="Ask Buddy">
 
       <div class="esf-buddy-head">
-        <div class="esf-buddy-headtext">
-          <p class="esf-buddy-title">Ask Buddy</p>
-          <p class="esf-buddy-sub">${h(entry ? entry.label : "Pick what you'd like help with")}</p>
-        </div>
+        <p class="esf-buddy-title">Ask Buddy</p>
         <img class="esf-buddy-hero" src="${h(ESF_BUDDY_CHAT_ART)}" alt="" aria-hidden="true"
              onerror="${ESF_BUDDY_ART_FALLBACK}">
       </div>

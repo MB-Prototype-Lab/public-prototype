@@ -63,9 +63,11 @@
     "rent": {
       "label": "Rent",
       "row": "rent",
+      "_note": "YOUR SHARE, not the whole bill. The spec's copy said 'put in the whole payment, even if you split it with someone' — wrong, and expensively so. The fund covers what this person has to keep paying, and a roommate's half is not that. On a $2,400 flat split two ways, counting the whole rent overstates the monthly figure by $1,200 and a six-month target by $7,200.",
       "say": [
         "Rent is what you pay your landlord each month.",
-        "Put in the whole payment, even if you split it with someone. Include parking or storage if they are on the same bill.",
+        "Put in your share only. If you split it with someone, count what comes out of your pocket.",
+        "Include parking or storage if they are on the same bill.",
         "If your rent covers utilities, say so — I'll help you skip them later."
       ],
       "chips": [
@@ -96,7 +98,7 @@
       "say": [
         "Your mortgage is what you send the bank each month.",
         "Most people's payment also covers property tax and home insurance. That is called escrow.",
-        "If yours does, put the whole payment in."
+        "If yours does, put the payment in with the tax and insurance included."
       ],
       "chips": [
         {
