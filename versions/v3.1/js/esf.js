@@ -227,14 +227,16 @@ function esfImpliedMiles() {
  */
 function esfInsuranceEstimate() {
   const d = esfDriving();
-  const rates = ((hmoTree("Transport") || {}).rates) || {};
-  const base = Number((rates.insuranceMonthly || {}).midsize) || 0;
 
-  let col = 1;
-  try {
-    const m = Number((benchColMultipliers(state.profile.zip).multipliers || {}).Transport);
-    if (isFinite(m) && m > 0) col = m;
-  } catch (e) { col = 1; }
+  // ── STATE AVERAGE, NOT A COST-OF-LIVING MULTIPLIER ─────────────────────────
+  // Premiums are set by state regulation, minimum-coverage law, litigation
+  // climate and weather losses. None of that tracks the price of a restaurant
+  // meal, so the Transport COL index was the wrong instrument — it moved only
+  // 0.92 to 1.17 across the whole country while real premiums run close to
+  // threefold from Maine to Louisiana. Maine came out dearer than Texas.
+  //
+  // The state figure is therefore the BASE, not a modifier on a national one.
+  const base = esfInsuranceStateMonthly();
 
   const typical = Number(d.typicalCarPayment) || 0;
   const range = d.paymentFactorRange || [0.8, 1.4];
@@ -244,7 +246,31 @@ function esfInsuranceEstimate() {
     factor = Math.min(range[1], Math.max(range[0], payment / typical));
   }
 
-  return esfRound(base * col * factor);
+  return esfRound(base * factor);
+}
+
+/**
+ * The state's average full-coverage premium, monthly.
+ *
+ * Resolved from the ZIP's state through benchColMultipliers, which already does
+ * the ZIP → county → state walk. Falls back to the national figure for a state
+ * not in the table or a ZIP that resolves to nothing — never to zero, which
+ * would quietly remove the largest component of running a car.
+ */
+function esfInsuranceStateMonthly() {
+  const d = esfDriving();
+  const national = Number(d.insuranceAnnualNational) || 0;
+  const byState = d.insuranceAnnualByState || {};
+  let annual = national;
+  try {
+    // The state CODE lives on the county row, not on `col.state` — that is the
+    // state's data object (electricity rate and ratio) and carries no name.
+    const col = benchColMultipliers(state.profile.zip);
+    const code = col && col.county ? col.county.state : null;
+    const hit = code ? Number(byState[String(code).toUpperCase()]) : NaN;
+    if (isFinite(hit) && hit > 0) annual = hit;
+  } catch (e) {}
+  return annual / 12;
 }
 
 /** Maintenance follows DISTANCE, so it is derived from the fuel figure. */
@@ -357,8 +383,15 @@ function esfCarCosts() {
  * function so the combined box can still be taken apart.
  */
 function esfCarInsurance() {
+  // ── "I don't drive" IS TREATED AS "no car" ─────────────────────────────────
+  // A parked car still carries insurance, so zeroing on mileage is wrong in
+  // principle. It is kept because nothing in this flow asks whether the tester
+  // OWNS a car — "I don't drive" is the only signal there is, and charging a
+  // premium to somebody who told us they do not drive is the more visible of
+  // the two errors. The honest fix is a car-ownership question in onboarding;
+  // flagged in the spec's Open items rather than decided here.
   if (esfMilesPerDay() === 0) return 0;
-  return esfCarOpeningSplit(benchOptsForUser()).carInsurance;
+  return esfInsuranceEstimate();
 }
 
 /**
@@ -450,12 +483,18 @@ function esfHoaEstimate() {
   const type = esfPlaceType();
   const base = Number(table[type]);
   if (!isFinite(base) || base <= 0) return 0;
-  let mult = 1;
-  try {
-    const m = Number((benchColMultipliers(state.profile.zip).multipliers || {}).Housing);
-    if (isFinite(m) && m > 0) mult = m;
-  } catch (e) { mult = 1; }
-  return esfRound(base * mult);
+  // NO ZIP MULTIPLIER. This used to scale by the Housing cost-of-living index,
+  // which is the one thing the rule for this row forbids: HOA fees are bimodal
+  // and driven by property TYPE, not location. Most houses carry none or a
+  // token amount; condos and townhomes almost always carry a few hundred. In
+  // 94070 the Housing index is 2.02, which turned a $350 condo fee into $705.
+  //
+  // Fees are not perfectly flat nationally, so this now errs low in expensive
+  // metros. That is the safer of the two errors here: an understated fee is a
+  // slightly small target, an invented $705 one is a figure a condo owner can
+  // see is wrong, and a tester who can see one number is wrong stops trusting
+  // the other eleven.
+  return esfRound(base);
 }
 
 /**
@@ -680,16 +719,55 @@ function esfPowerEstimate() {
   // was promising three utilities and pricing two.
   const gas = Number(((esfData().utilities || {}).gasByHome || {})[home]) || 0;
 
-  let mult = 1;
-  try {
-    const m = Number((benchColMultipliers(state.profile.zip).multipliers || {}).Utilities);
-    if (isFinite(m) && m > 0) mult = m;
-  } catch (e) { mult = 1; }
+  // ── THREE UTILITIES, TWO GEOGRAPHIES ───────────────────────────────────────
+  // The Utilities multiplier is an ELECTRICITY RATE ratio and nothing else —
+  // built from EIA state cents-per-kWh. Applying it to water and gas claimed a
+  // San Carlos water bill is 2.6x the national one, which is not how municipal
+  // water or pipeline gas are priced, and pushed a 4-bed house to $1,035.
+  //
+  // Power keeps the rate ratio. Water and gas take the composite regional price
+  // level, which is what "things cost a bit more here" actually looks like:
+  // 1.18 in San Carlos rather than 2.60.
+  const u = esfData().utilities || {};
+  const cap = Number(u.electricityCapMultiplier) || Infinity;
+  const power$ = power * Math.min(esfUtilitiesRateMultiplier(), cap);
+  const local$ = (water + gas) * esfGeneralPriceLevel();
 
-  const figure = esfRound((power + water + gas) * mult);
+  const figure = esfRound(power$ + local$);
   // No rate table (a failed data load) — the peer figure rather than a zero.
   if (!figure) return esfRound(benchPeerValue("Utilities", benchOptsForUser()));
   return figure;
+}
+
+/**
+ * The Utilities cost-of-living multiplier — an ELECTRICITY RATE ratio.
+ *
+ * Named for what it is rather than for the category it is filed under, because
+ * the category name is what invited it to be applied to water and gas.
+ */
+function esfUtilitiesRateMultiplier() {
+  try {
+    const m = Number((benchColMultipliers(state.profile.zip).multipliers || {}).Utilities);
+    if (isFinite(m) && m > 0) return m;
+  } catch (e) {}
+  return 1;
+}
+
+/**
+ * The composite regional price level (BEA RPP, all items) as a multiplier.
+ *
+ * For costs that are genuinely local but do not track any single category's
+ * index — municipal water, piped gas. Far milder than the housing or
+ * electricity columns, which is the point: 1.18 in San Carlos against 2.02 and
+ * 2.60. Falls back to 1, never to another category's multiplier.
+ */
+function esfGeneralPriceLevel() {
+  try {
+    const col = benchColMultipliers(state.profile.zip);
+    const all = col && col.geo ? Number(col.geo.all) / 100 : NaN;
+    if (isFinite(all) && all > 0) return all;
+  } catch (e) {}
+  return 1;
 }
 
 /** The help-me-out home-size key for this profile's place type. */

@@ -71,12 +71,16 @@ const ONB_MAX_KIDS_PER_BUCKET = 6;
 // Type only — rent or own is read off the two housing fields on the fund's first
 // screen, which can say "both" where a question here could not. `hoa` is the
 // branch the HOA estimate takes; `home` is the help-me-out utilities key.
+// `short` is for prose, where the tile label is too long to sit in a sentence:
+// "Based on apartment · studio or 1 bedroom in 37203 with 1 person." wrapped to
+// two lines and put the ESF's utilities step 6px over the no-scroll budget.
+// The tiles keep the full label — there it is a heading with room around it.
 const ONB_PLACE_TYPES = [
-  { id: "aptSmall",   label: "Apartment · studio or 1 bedroom", hoa: "none",  home: "apt1" },
-  { id: "aptLarge",   label: "Apartment · 2 or more bedrooms",  hoa: "none",  home: "apt2" },
-  { id: "condo",      label: "Condo or townhome",               hoa: "condo", home: "apt2" },
-  { id: "houseSmall", label: "House · 2–3 bedrooms",            hoa: "house", home: "house2" },
-  { id: "houseLarge", label: "House · 4 or more bedrooms",      hoa: "house", home: "house4" }
+  { id: "aptSmall",   label: "Apartment · studio or 1 bedroom", short: "a small apartment", hoa: "none",  home: "apt1" },
+  { id: "aptLarge",   label: "Apartment · 2 or more bedrooms",  short: "a 2-bed apartment",           hoa: "none",  home: "apt2" },
+  { id: "condo",      label: "Condo or townhome",               short: "a condo or townhome",         hoa: "condo", home: "apt2" },
+  { id: "houseSmall", label: "House · 2–3 bedrooms",            short: "a 2–3 bed house",             hoa: "house", home: "house2" },
+  { id: "houseLarge", label: "House · 4 or more bedrooms",      short: "a 4-bed house",               hoa: "house", home: "house4" }
 ];
 
 // ── Health coverage ──────────────────────────────────────────────────────────

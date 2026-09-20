@@ -64,13 +64,33 @@
     "paymentFactorRange": [0.8, 1.4],
     "_paymentFactorNote": "Clamped hard. The payment is weak evidence about premium and unclamped it would let a $1,500 truck note triple somebody's insurance estimate.",
 
-    "_demographicsNote": "The owner asked for demographics in the insurance estimate. Age, driving record and claims history are the three things that actually move a premium and NONE of them are collected anywhere in this app. What is available is the ZIP and the car payment, so the estimate uses those and says so. Adding an age question would move this materially."
+    "_demographicsNote": "The owner asked for demographics in the insurance estimate. Age, driving record and claims history are the three things that actually move a premium and NONE of them are collected anywhere in this app. What is available is the ZIP and the car payment, so the estimate uses those and says so. Adding an age question would move this materially.",
+
+    "_insuranceNote": "STATE, not a cost-of-living multiplier. Premiums are set by state regulation, minimum-coverage law, litigation climate and weather losses — none of which track the price of a restaurant meal, so the Transport COL index is the wrong instrument and was pricing Louisiana and Maine alike. The spread is close to threefold end to end, which is far wider than any COL column, so the state figure has to be the base rather than a modifier on a national one.",
+    "insuranceAnnualNational": 1680,
+    "insuranceAnnualByState": {
+      "LA": 2900, "FL": 2870, "NY": 2620, "NV": 2450, "MI": 2400, "DE": 2250,
+      "CO": 2180, "GA": 2100, "TX": 2050, "RI": 2040, "CA": 2000, "SC": 1960,
+      "MD": 1930, "CT": 1880, "NJ": 1860, "OK": 1810, "AZ": 1790, "KY": 1780,
+      "MS": 1760, "AR": 1720, "AL": 1660, "MO": 1650, "MN": 1620, "TN": 1600,
+      "KS": 1580, "PA": 1570, "NE": 1540, "IL": 1520, "WV": 1510, "AK": 1500,
+      "UT": 1490, "NM": 1480, "MT": 1470, "WA": 1460, "OR": 1440, "NC": 1430,
+      "IN": 1410, "WI": 1380, "SD": 1370, "ND": 1360, "VA": 1350, "MA": 1340,
+      "IA": 1320, "OH": 1290, "ID": 1240, "NH": 1220, "WY": 1200, "HI": 1190,
+      "VT": 1180, "ME": 1140
+    },
+    "_insuranceSource": "NAIC average annual full-coverage auto premium by state. ANCHORS, not researched constants — refresh from the NAIC Auto Insurance Database Report at build. Full coverage on purpose: it errs high, which is correct for a safety net, and it avoids needing a vehicle-age question nothing asks."
   },
 
   "utilities": {
     "_note": "GAS, which the shared help-me-out rates do not carry. That model prices power and water only, so the row promised 'water, gas, and electricity' and quietly billed two of the three — about $55 a month missing on a house. Kept in THIS file rather than added to help-me-out.json, because that table also feeds the budget builder and changing it would move a figure in a tool nobody asked us to touch.",
-    "_source": "EIA Residential Energy Consumption Survey: average residential natural gas spend by dwelling size, annualised and divided by twelve. Scaled by the same Utilities cost-of-living multiplier as power and water, since gas is priced locally too.",
-    "gasByHome": { "studio": 22, "apt1": 28, "apt2": 38, "house2": 55, "house3": 66, "house4": 80 }
+    "_source": "EIA Residential Energy Consumption Survey: average residential natural gas spend by dwelling size, annualised and divided by twelve.",
+    "gasByHome": { "studio": 22, "apt1": 28, "apt2": 38, "house2": 55, "house3": 66, "house4": 80 },
+
+    "_multiplierNote": "THREE utilities, TWO geographies. The Utilities cost-of-living multiplier is an ELECTRICITY RATE ratio — it is built from EIA state cents-per-kWh and nothing else. Applying it to water and gas said a San Carlos water bill is 2.6x the national one, which it is not: water is a municipal charge and gas has its own pipeline economics. Water and gas now take the composite regional price level (BEA RPP, geo.all) instead, which is what 'things cost a bit more here' actually looks like — 1.18 in San Carlos, not 2.60. Same class of error the _note in zip-cost-of-living.json warns about: one ratio applied to something that does not vary that way.",
+
+    "electricityCapMultiplier": 1.6,
+    "_electricityCapSource": "A DOCUMENTED STUB, like propertyTax.valueDispersion. kwhByHome is national-average usage, and usage runs INVERSE to rate: the high-rate states are mild-climate coastal ones where households use far less power. Coastal California averages roughly 500-700 kWh a month against a national 900-1300, while its rate ratio is about 2.6 — so multiplying national usage by the full rate ratio overstates twice and produced a $557 power bill for a 4-bed in 94070. Net of the usage difference the real multiple is nearer 1.4-1.7, so the rate ratio is capped here. The honest fix is regionalised kwhByHome, which needs a climate-zone table this prototype does not carry. The cap only ever bites above 1.6; every ZIP at or below it is unaffected."
   },
 
   "debt": {

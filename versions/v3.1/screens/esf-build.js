@@ -219,7 +219,10 @@ function esfRowSource(rowId) {
   if (rowId === "debt") {
     return "The smallest payment a lender would accept on a typical balance — not what people usually pay.";
   }
-  if (rowId === "carRunning") {
+  // `carCosts`, not `carRunning` — carRunning is the GROUP name and this
+  // function is passed a ROW id, so the branch never fired and the car row fell
+  // through to the generic "public spending data" line.
+  if (rowId === "carCosts") {
     return "AAA's running costs — fuel, upkeep and insurance. Insurance is most of it before a wheel turns.";
   }
   if (rowId === "propertyTax") {
@@ -263,7 +266,7 @@ function esfBasedOn(rowId) {
   const peopleWord = people === 1 ? "1 person" : people + " people";
 
   if (rowId === "power") {
-    return "Based on " + (place ? place.label.toLowerCase() : "your home") +
+    return "Based on " + (place ? (place.short || place.label.toLowerCase()) : "your home") +
            where + " with " + peopleWord + ".";
   }
   if (rowId === "connect") {

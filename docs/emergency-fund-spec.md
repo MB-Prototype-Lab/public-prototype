@@ -22,6 +22,13 @@ here is resolved or something new is found.
   suppresses it on a coarse pointer and the browser pane emulates touch below
   768px, so keyboard behaviour has to be checked at desktop width.
 
+### Needs a decision
+
+- **"I don't drive" is being read as "I have no car."** It zeroes fuel,
+  maintenance *and* insurance. A parked car still carries a premium, but nothing
+  asks about car ownership, so this is the only signal available. Either add an
+  ownership question or accept the assumption — §6.4.
+
 ### Worth building next
 
 - **Runway line** — *"about 1.2 months covered today"*. Cheap, and the stickiest
@@ -45,8 +52,32 @@ here is resolved or something new is found.
 - Every rate figure in §6 is an anchor, not a researched constant. Refresh from
   source at build time.
 
+### Known stubs, continued
+
+- **`electricityCapMultiplier: 1.6`** caps the electricity rate ratio because
+  `kwhByHome` is national usage and ignores climate (§6.1). The honest fix is a
+  regionalised usage table.
+
 ### Resolved
 
+- **Model defects D1–D4** (audit of 2026-09-19), all fixed and verified across
+  five ZIPs:
+  - **D1** Utilities was up to 2.6× too high — an electricity rate ratio was
+    being applied to water and gas, and national usage compounded it. §6.1
+  - **D2** HOA was multiplied by the Housing index, which §6.8 explicitly
+    forbids. §6.8
+  - **D3** Car insurance read a peer split scaled by a COL index instead of the
+    specced state average. §6.4
+  - **D4** `esfRowSource()` branched on `carRunning`, which is a *group* name,
+    not a row id — the branch never fired and the car row fell through to a
+    generic line. One-word fix.
+  - **D5** property tax and **D6** typed rows were documentation items, not
+    bugs; both already recorded.
+
+  All three of D1–D3 were the same root cause: **a cost-of-living multiplier
+  applied to something that does not vary that way.** `zip-cost-of-living.json`
+  warns about exactly this in its own note. The table was built correctly;
+  three call sites reached for the wrong column.
 - **Over-funded state** — not a state that should exist. A user either has an
   emergency fund or doesn't. Someone who already has one has the goal marked
   complete in the goal list, and reaches the fund again through the Tools tab.
@@ -332,15 +363,46 @@ source attached.**
 ### 6.1 Utilities — `esfPowerEstimate()`
 
 ```
-power = kWhByHomeType × nationalCentsPerKwh ÷ 100
-water = waterByHomeType
-gas   = gasByHome[homeType]
-figure = (power + water + gas) × colMultiplier["Utilities"]
+power  = kWhByHomeType × nationalCentsPerKwh ÷ 100
+water  = waterByHomeType
+gas    = gasByHome[homeType]
+figure = power × min(electricityRateRatio, 1.6)
+       + (water + gas) × generalPriceLevel
 ```
 
 **Gas was missing and the label promised it.** The row says "water, gas, and
 electricity" and only power and water were priced — about $55/month short on a
 house. `utilities.gasByHome` (EIA, studio $22 → 4-bed house $80) was added.
+
+**THREE UTILITIES, TWO GEOGRAPHIES — fixed 2026-09-19 (defect D1).** The
+Utilities cost-of-living multiplier is an *electricity rate ratio*, built from
+EIA state cents-per-kWh and nothing else. It was being applied to water and gas
+as well, which claimed a San Carlos water bill is 2.6× the national one. Water
+is a municipal charge and gas has its own pipeline economics; neither tracks an
+electricity tariff.
+
+Water and gas now take the **composite regional price level** (BEA RPP, all
+items) via `esfGeneralPriceLevel()` — 1.18 in San Carlos rather than 2.60.
+
+**The electricity ratio is capped at 1.6 — a documented stub** (defect D1b).
+`kwhByHome` is national-average usage, and usage runs *inverse* to rate: the
+high-rate states are mild-climate coastal ones where households use far less
+power. Coastal California averages roughly 500–700 kWh/month against a national
+900–1,300 while its rate ratio is ~2.6, so national usage × the full rate ratio
+overstates twice. Net of the usage difference the real multiple is nearer
+1.4–1.7. The honest fix is a regionalised `kwhByHome`, which needs a
+climate-zone table this prototype does not carry.
+
+| ZIP | Before | After |
+|---|---|---|
+| 94070 San Carlos | $1,035 | **$560** |
+| 90210 Beverly Hills | $890 | **$555** |
+| 10001 New York | $770 | **$550** |
+| 37203 Nashville | $265 | **$320** |
+| 72756 Rogers AR | $275 | **$315** |
+
+Spread falls from 3.9× to 1.8×. The two cheap ZIPs rise because water and gas
+were previously being *discounted* by an electricity ratio below 1.
 
 **Never reach past `benchColMultipliers()`.** Reading `state.utilitiesRatio`
 inside the model squares the adjustment; this bug existed once and produced a
@@ -369,12 +431,39 @@ different weights (`groceries.weight`). Plan tier follows income band.
 ```
 fuel        = milesPerDay × 30.4 × (dollarsPerGallon ÷ mpg)
 maintenance = milesPerDay × 30.4 × centsPerMile
-insurance   = stateAverage ÷ 12
+insurance   = insuranceAnnualByState[state] ÷ 12 × paymentFactor
 carCosts    = fuel + insurance + maintenance
 ```
 
-Insurance is **not** mileage-driven — state is the dominant term. Miles of
-`none` zeroes fuel and maintenance.
+Insurance is **not** mileage-driven — state is the dominant term.
+
+**This was specced and not implemented — fixed 2026-09-19 (defect D3).** The
+code read a peer split scaled by the *Transport* cost-of-living index, which
+moves only 0.92–1.17 across the whole country while real premiums run close to
+threefold from Maine to Louisiana. Maine came out dearer than Texas. Premiums
+are set by state regulation, minimum-coverage law, litigation climate and
+weather losses; none of that tracks the price of a restaurant meal, so the
+state figure has to be the **base**, not a modifier on a national one.
+`driving.insuranceAnnualByState` (NAIC anchors, 50 states + national fallback)
+now carries it, via `esfInsuranceStateMonthly()`.
+
+`paymentFactor` survives: the car payment on step 2 is weak evidence about what
+the car is worth, clamped to 0.8–1.4 so a large truck note cannot triple the
+estimate.
+
+| ZIP | Before | After |
+|---|---|---|
+| 10001 New York | $145 | **$220** |
+| 90210 / 94070 California | $140 / $155 | **$165** |
+| 72756 Rogers AR | $120 | **$145** |
+| 37203 Nashville | $125 | **$135** |
+
+**Miles of `none` still zeroes the whole row, insurance included.** A parked car
+does carry insurance, so this is wrong in principle — but nothing in the flow
+asks whether the tester owns a car, and *"I don't drive"* is the only signal
+there is. Charging a premium to someone who just said they don't drive is the
+more visible error. The real fix is a car-ownership question; it is in **Open
+items**, not decided here.
 
 ### 6.5 Medical — `esfMedical()` / `esfReplacementPremium()`
 
@@ -438,6 +527,26 @@ Same treatment for **home insurance**.
 **Never estimated from ZIP.** HOA fees are bimodal and driven by property
 *type*. Branches on the place-type tile: apartments hidden, houses default low,
 condos and townhomes pre-filled.
+
+**The code broke this rule until 2026-09-19 (defect D2).** It multiplied the
+type-based figure by the **Housing** cost-of-living index — which is estimating
+from ZIP, the one thing this section forbids. In 94070 that index is 2.02 and
+turned a $350 condo fee into $705. The multiplier is gone; the figure is now
+whatever `hoa.byPlaceType` says, unmodified.
+
+| ZIP | Condo, before | After |
+|---|---|---|
+| 10001 New York | $885 | **$350** |
+| 94070 San Carlos | $705 | **$350** |
+| 90210 Beverly Hills | $565 | **$350** |
+| 37203 Nashville | $405 | **$350** |
+| 72756 Rogers AR | $265 | **$350** |
+
+Fees are not perfectly flat nationally, so this now errs low in expensive
+metros. That is the safer of the two errors: an understated fee is a slightly
+small target, while an invented $885 one is a figure a condo owner can see is
+wrong — and a tester who catches one number being wrong stops trusting the
+other eleven.
 
 ---
 
