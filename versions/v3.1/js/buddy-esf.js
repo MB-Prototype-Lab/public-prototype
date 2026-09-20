@@ -227,6 +227,48 @@ function esfBuddyEntry(id) {
   return (buddyEsfData().rows || {})[id] || null;
 }
 
+// ── Copy that depends on the user ────────────────────────────────────────────
+// Most entries say one thing. A few cannot, because the figure they are
+// explaining is built differently for different people, and an explanation that
+// does not match the number on screen is worse than none.
+//
+// Medical is the case that forced this. It is priced as if the job stopped —
+// an unsubsidized benchmark premium — but ONLY for somebody whose cover comes
+// through work. For everybody else esfReplacementPremium() is 0 and the row is
+// ordinary out-of-pocket costs. "This looks high on purpose" over $165 reads as
+// a tool that does not know what it is showing you.
+//
+// A resolver returns a key into the entry's `sayIf` / `chipsIf`. Adding a
+// conditional entry is a resolver plus a data key, not a branch in the render.
+const ESF_BUDDY_VARIANTS = {
+  employerCoverage: function () {
+    return (typeof esfHasEmployerCoverage === "function" && esfHasEmployerCoverage())
+      ? "employer" : "own";
+  }
+};
+
+function esfBuddyVariant(entry) {
+  if (!entry || !entry.variantOn) return null;
+  const fn = ESF_BUDDY_VARIANTS[entry.variantOn];
+  return fn ? fn() : null;
+}
+
+/** An entry's paragraphs, after the variant is resolved. */
+function esfBuddySayFor(entry) {
+  if (!entry) return [];
+  const key = esfBuddyVariant(entry);
+  if (key && entry.sayIf && entry.sayIf[key]) return entry.sayIf[key];
+  return entry.say || [];
+}
+
+/** An entry's chips, after the variant is resolved. */
+function esfBuddyChipsFor(entry) {
+  if (!entry) return [];
+  const key = esfBuddyVariant(entry);
+  if (key && entry.chipsIf && entry.chipsIf[key]) return entry.chipsIf[key];
+  return entry.chips || [];
+}
+
 /**
  * Find a chip anywhere in an entry's tree.
  *
@@ -318,9 +360,9 @@ function esfBuddyPick(id) {
   b.node = id;
   b.asked[id] = true;
   esfBuddyUserSaid(entry.label);
-  esfBuddySay(entry.say);
+  esfBuddySay(esfBuddySayFor(entry));
   esfBuddySay(esfBuddyFigureLine(entry));
-  b.chips = (entry.chips || []).map(c => c.id);
+  b.chips = esfBuddyChipsFor(entry).map(c => c.id);
   esfLog("chat_row_picked", { rowId: entry.row || id });
   render();
 }
@@ -354,7 +396,7 @@ function esfBuddyChip(chipId) {
   const b = esfBuddy();
   const entry = esfBuddyEntry(b.node);
   if (!entry) return;
-  const chip = esfBuddyFindChip(entry.chips, chipId);
+  const chip = esfBuddyFindChip(esfBuddyChipsFor(entry), chipId);
   if (!chip) return;
 
   esfBuddyUserSaid(chip.label);

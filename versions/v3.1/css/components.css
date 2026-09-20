@@ -3630,39 +3630,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 #buddyRoot > * { pointer-events: auto; }
 
-/* ── The pill ────────────────────────────────────────────────────────────────
-   FLOATS above the footer rather than sitting in it. That is what makes it cost
-   ZERO vertical layout — and on these screens that is the whole argument: tap
-   targets are already down to 29px against the repo's 44px floor because the
-   capture steps must not scroll at 430x940. A floating button can be a full
-   44px when almost nothing else on the screen can.
-
-   Dark text on LEGO orange is about 5.2:1 and passes AA. White on it is about
-   2.9:1 and fails — see the note in screens/buddy-panel.js. Both colours are
-   literals rather than theme tokens on purpose: this is Buddy's own accent and
-   must not drift with the four themes, or it stops being his. */
-.esf-ask {
-  position: absolute;
-  right: 16px;
-  bottom: 72px;                /* clear of the Back / Continue footer */
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 44px;
-  padding: 8px 16px 8px 9px;
-  border: 0;
-  border-radius: 999px;
-  background: #FF6D00;
-  color: #2B1A0E;
-  font-size: 13px;
-  font-weight: 850;
-  font-family: Arial, Helvetica, sans-serif;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, .55), 0 6px 18px rgba(43, 39, 35, .3);
-  cursor: pointer;
-}
-.esf-ask:hover { filter: brightness(1.05); }
-.esf-ask-face  { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: block; }
-.esf-ask-emoji { font-size: 22px; line-height: 1; }
 
 /* ── The panel ───────────────────────────────────────────────────────────────
    Roughly three-quarters of the frame, anchored to the bottom edge, in the SAME
@@ -3685,6 +3652,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   border-radius: 22px 22px 28px 28px;
   box-shadow: 0 -10px 34px rgba(43, 39, 35, .22);
   animation: esfBuddyIn .2s cubic-bezier(.2, .7, .3, 1) both;
+  overflow: hidden;
 }
 
 @keyframes esfBuddyIn {
@@ -3692,13 +3660,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   to   { transform: none; opacity: 1; }
 }
 
-.esf-buddy-head {
-  flex-shrink: 0;
-  padding: 13px 18px 10px;
-  border-bottom: 1px solid var(--line);
-}
-.esf-buddy-title { margin: 0; font-size: 15px; font-weight: 850; color: var(--text); }
-.esf-buddy-sub   { margin: 2px 0 0; font-size: 11.5px; color: var(--muted); }
 
 /* THE ONE PLACE SCROLLING IS ALLOWED. Owner's ruling: every question and answer
    stays on screen, stacked, and the user scrolls back through them rather than
@@ -3813,3 +3774,87 @@ button.esf-based {
 }
 .esf-disclosed { color: var(--accent); font-weight: 750; }
 .esf-disclosed:hover { text-decoration: underline; }
+
+/* ── The Ask button, in the footer ───────────────────────────────────────────
+   [Back] [Ask 🐶] [primary]. It floated above the footer at first, which cost
+   no vertical layout but covered whatever row sat under it. In the bar it
+   costs height once, shared with buttons that were already there.
+
+   `margin-left: auto` on the primary is what pins the three: Back hard left,
+   the primary hard right, Ask sitting between them. .journal-foot is
+   space-between, which would otherwise spread three children evenly and drift
+   Ask off-centre as the primary's label changes length.
+
+   Dark text on LEGO orange is about 5.2:1 and passes AA. White on it is about
+   2.9:1 and fails. Both literals rather than theme tokens on purpose: this is
+   Buddy's own accent and must not drift with the four themes, or it stops
+   being his. */
+.esf-foot .button:last-child { margin-left: auto; }
+
+.esf-ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 7px 10px 7px 15px;
+  border: 0;
+  border-radius: 999px;
+  background: #FF6D00;
+  color: #2B1A0E;
+  font-size: 13px;
+  font-weight: 850;
+  font-family: Arial, Helvetica, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.esf-ask:hover { filter: brightness(1.05); }
+.esf-ask-face {
+  width: 30px; height: 30px; border-radius: 50%; object-fit: cover; display: block;
+  background: #FFF;                      /* the art's own ring, continued */
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .9);
+}
+.esf-ask-emoji { font-size: 22px; line-height: 1; }
+
+/* ── The panel header ────────────────────────────────────────────────────────
+   Big title, and Buddy himself on the right. The picture is the thing that
+   says "you are talking to someone" before a word is read — the header was
+   two lines of grey type and read as a settings pane. */
+.esf-buddy-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--accent-soft);
+  border-radius: 22px 22px 0 0;
+}
+.esf-buddy-headtext { padding-bottom: 12px; }
+.esf-buddy-title { margin: 0; font-size: 21px; font-weight: 900; color: var(--text); letter-spacing: -.01em; }
+.esf-buddy-sub   { margin: 2px 0 0; font-size: 11.5px; color: var(--text); opacity: .72; }
+/* Sits ON the header's bottom edge, so he reads as leaning into the
+   conversation rather than being a logo in a box. */
+.esf-buddy-hero {
+  width: 78px; height: auto; display: block; margin-bottom: -1px;
+  flex: 0 0 auto;
+}
+
+/* ── Buddy's avatar on a run of bubbles ──────────────────────────────────────
+   ONE face per run, on the last bubble, with the bubbles above it tucked in.
+   Three stacked paragraphs each wearing the same face read as three people
+   talking. The empty span holds the gutter so the bubbles in a run stay in
+   one column. */
+.esf-buddy-row { display: flex; align-items: flex-end; gap: 7px; }
+.esf-buddy-avatar {
+  flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%;
+  overflow: hidden; background: transparent;
+}
+.esf-buddy-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.esf-buddy-row-end .esf-buddy-avatar { background: #FFF; box-shadow: 0 0 0 1px var(--line); }
+/* A bubble mid-run keeps its corner square on the side the tail will be, so a
+   run reads as one utterance broken over lines. */
+.esf-bubble-mid.chat-bubble-buddy { border-bottom-left-radius: 16px; }
+.esf-bubble-mid.chat-bubble-user  { border-bottom-right-radius: 16px; }
+.esf-buddy-thread .chat-row-user  { margin-left: 37px; }

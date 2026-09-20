@@ -565,8 +565,9 @@ function renderEsfBuild() {
         `}
       </div>
 
-      <div class="journal-foot">
+      <div class="journal-foot esf-foot">
         <button class="button secondary" type="button" onclick="esfBack()">Back</button>
+        ${renderEsfBuddyButton()}
         ${intro ? "" : `
           <button class="button" type="button" onclick="esfNext()">
             ${last ? "See my number" : "Continue"}

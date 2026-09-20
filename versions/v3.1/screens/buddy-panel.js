@@ -21,7 +21,14 @@
 // scrolls back through them. The no-scrolling rule is about the ESF capture
 // screens, and this panel is the one place it is deliberately relaxed.
 
-// ── The pill ─────────────────────────────────────────────────────────────────
+// ── The Ask button ───────────────────────────────────────────────────────────
+// IN THE FOOTER, between Back and Continue. It floated above the footer at
+// first, which cost no layout but sat on top of whatever row happened to be
+// under it — on step 3 that was the Medical label. The ESF steps have no nav
+// bar to hang it off (esf-build.js: "NAV BAR: Hidden — full-bleed"), so the
+// footer is the only bar there is, and the owner's call is that it belongs in
+// it: Back on the left, Ask in the middle, the green primary on the right.
+//
 // LEGO orange with DARK text. That pairing is not a style choice:
 //   #2B1A0E on #FF6D00 is about 5.2:1 and passes AA.
 //   White on #FF6D00 is about 2.9:1 and FAILS.
@@ -31,23 +38,34 @@
 // Orange reads as WARNING in finance UI; the dog's face and using this colour
 // for nothing else is what mitigates that.
 //
-// "Ask Buddy", not "Help" — people scan for help when stuck, but it reads as
-// app support, and testers did not want support. They wanted the dog.
+// The word is "Ask" and the dog carries the rest. "Help" is what people scan
+// for when stuck but it reads as app support, and testers did not want
+// support — they wanted the dog.
 //
 // The art is an <img> when it exists and the emoji otherwise. A missing
 // illustration must degrade to something, never to a gap where a face was
 // promised (D10's rule, applied to a button).
 const ESF_BUDDY_PILL_ART = "assets/img/buddy-ask.png";
+const ESF_BUDDY_CHAT_ART = "assets/img/buddy-chat.png";
 
-function renderEsfBuddyPill() {
-  const b = esfBuddy();
-  if (b.open) return "";
+// Swaps in the emoji if the file is missing, so the button is never wordless.
+const ESF_BUDDY_ART_FALLBACK =
+  "this.replaceWith(Object.assign(document.createElement('span')," +
+  "{className:'esf-ask-emoji',textContent:'\\u{1F436}'}))";
+
+/**
+ * The footer button. Rendered INTO the screen's own footer by esf-build.js and
+ * esf-plan.js, not into #buddyRoot — it is part of the bar now, so it moves
+ * with it rather than hovering over the content.
+ */
+function renderEsfBuddyButton() {
+  if (!esfBuddyAvailable()) return "";
   return `
     <button class="esf-ask" type="button" onclick="esfBuddyOpen()"
             aria-label="Ask Buddy for help with this screen">
+      <span>Ask</span>
       <img class="esf-ask-face" src="${h(ESF_BUDDY_PILL_ART)}" alt="" aria-hidden="true"
-           onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'esf-ask-emoji',textContent:'\\u{1F436}'}))">
-      <span>Ask Buddy</span>
+           onerror="${ESF_BUDDY_ART_FALLBACK}">
     </button>`;
 }
 
@@ -79,18 +97,17 @@ function renderEsfBuddyPanel() {
     <div class="esf-buddy" role="dialog" aria-modal="true" aria-label="Ask Buddy">
 
       <div class="esf-buddy-head">
-        <p class="esf-buddy-title">Ask Buddy</p>
-        <p class="esf-buddy-sub">${h(entry ? entry.label : "Pick what you'd like help with")}</p>
+        <div class="esf-buddy-headtext">
+          <p class="esf-buddy-title">Ask Buddy</p>
+          <p class="esf-buddy-sub">${h(entry ? entry.label : "Pick what you'd like help with")}</p>
+        </div>
+        <img class="esf-buddy-hero" src="${h(ESF_BUDDY_CHAT_ART)}" alt="" aria-hidden="true"
+             onerror="${ESF_BUDDY_ART_FALLBACK}">
       </div>
 
       <div class="esf-buddy-thread" id="esfBuddyThread">
         ${b.thread.length ? "" : `<p class="esf-buddy-prompt">${h(esfBuddyPrompt())}</p>`}
-        ${b.thread.map(m => `
-          <div class="chat-row ${m.from === "user" ? "chat-row-user" : ""}">
-            <div class="chat-bubble ${m.from === "user" ? "chat-bubble-user" : "chat-bubble-buddy"}">
-              ${h(m.text)}
-            </div>
-          </div>`).join("")}
+        ${renderEsfBuddyThread()}
         ${b.node ? "" : renderEsfBuddyList()}
       </div>
 
@@ -107,6 +124,37 @@ function renderEsfBuddyPanel() {
       </div>
 
     </div>`;
+}
+
+/**
+ * The transcript.
+ *
+ * Buddy's runs carry ONE avatar, on the last bubble of the run, with the bubbles
+ * above it tucked in. Three stacked paragraphs each wearing the same face reads
+ * as three people talking; one face under a run reads as somebody finishing a
+ * thought. That is the difference between this and a list of notices, and it is
+ * most of what makes the panel look like a chat.
+ */
+function renderEsfBuddyThread() {
+  const thread = esfBuddy().thread;
+  return thread.map((m, i) => {
+    const mine = m.from === "user";
+    const next = thread[i + 1];
+    const endsRun = !next || next.from !== m.from;
+    if (mine) {
+      return `
+        <div class="chat-row chat-row-user esf-buddy-row">
+          <div class="chat-bubble chat-bubble-user ${endsRun ? "" : "esf-bubble-mid"}">${h(m.text)}</div>
+        </div>`;
+    }
+    return `
+      <div class="chat-row esf-buddy-row ${endsRun ? "esf-buddy-row-end" : ""}">
+        <span class="esf-buddy-avatar" aria-hidden="true">${endsRun
+          ? `<img src="${h(ESF_BUDDY_PILL_ART)}" alt="" onerror="${ESF_BUDDY_ART_FALLBACK}">`
+          : ""}</span>
+        <div class="chat-bubble chat-bubble-buddy ${endsRun ? "" : "esf-bubble-mid"}">${h(m.text)}</div>
+      </div>`;
+  }).join("");
 }
 
 /**
@@ -158,10 +206,16 @@ function renderEsfBuddyChips() {
     </div>`;
 }
 
-/** Everything in the fixed layer, painted by render() into #buddyRoot. */
+/**
+ * The fixed layer, painted by render() into #buddyRoot.
+ *
+ * Only the PANEL lives here now — the Ask button moved into each screen's own
+ * footer. The panel still belongs in its own root: it has to sit over the
+ * screen, and the keypad must not be able to shift it.
+ */
 function renderEsfBuddyLayer() {
   if (!esfBuddyAvailable()) return "";
-  return renderEsfBuddyPill() + renderEsfBuddyPanel();
+  return renderEsfBuddyPanel();
 }
 
 /**

@@ -226,29 +226,52 @@
     "medical": {
       "label": "Medical",
       "row": "medical",
-      "say": [
-        "This one looks high on purpose. Here is why.",
-        "Your job pays most of your health insurance. If the job stops, that stops too.",
-        "You would buy your own plan. That costs more."
-      ],
-      "chips": [
-        {
-          "id": "medicalOk",
-          "label": "That makes sense",
-          "say": [
-            "Good. Leave it where it is.",
-            "This is the row people cut first, and it is the one that hurts most to be wrong about."
-          ]
-        },
-        {
-          "id": "medicalOwn",
-          "label": "I already buy my own insurance",
-          "say": [
-            "Then put in what you actually pay.",
-            "Your cost will not change if you lose a job."
-          ]
-        }
-      ]
+      "_note": "TWO ANSWERS, because the row is built two ways. Somebody covered through work is priced on a replacement premium — what their own plan would cost once the job stopped — and that figure is deliberately large. Somebody who already buys their own is priced on ordinary out-of-pocket costs, and for them esfReplacementPremium() is 0. Saying 'this looks high on purpose' over $165 is a tool that does not know what it is showing you. Resolved by the employerCoverage variant in js/buddy-esf.js.",
+      "variantOn": "employerCoverage",
+      "sayIf": {
+        "employer": [
+          "This one looks high on purpose. Here is why.",
+          "Your job pays most of your health insurance. If the job stops, that stops too.",
+          "You would buy your own plan. That costs more.",
+          "So this row is what your own plan would cost, not what comes out of your paycheck today."
+        ],
+        "own": [
+          "This is insurance, copays, prescriptions, dental and vision.",
+          "You already buy your own plan, so this number does not change if a job goes away.",
+          "Put in what you actually pay."
+        ]
+      },
+      "chipsIf": {
+        "employer": [
+          {
+            "id": "medicalOk",
+            "label": "That makes sense",
+            "say": [
+              "Good. Leave it where it is.",
+              "This is the row people cut first, and it is the one that hurts most to be wrong about."
+            ]
+          },
+          {
+            "id": "medicalOwn",
+            "label": "I already buy my own insurance",
+            "say": [
+              "Then put in what you actually pay instead.",
+              "Your cost will not change if you lose a job."
+            ]
+          }
+        ],
+        "own": [
+          {
+            "id": "medicalWhatCounts",
+            "label": "What counts here?",
+            "say": [
+              "Your premium, plus what you pay at the counter.",
+              "Copays, prescriptions, dental and vision.",
+              "Leave out anything a flexible spending account already covers."
+            ]
+          }
+        ]
+      }
     },
 
     "carCosts": {

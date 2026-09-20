@@ -160,8 +160,9 @@ function renderEsfPlan() {
         </div>
       </div>
 
-      <div class="journal-foot">
+      <div class="journal-foot esf-foot">
         <button class="button secondary" type="button" onclick="esfPlanBack()">Back</button>
+        ${renderEsfBuddyButton()}
         <button class="button" type="button" onclick="esfCommit()">Set my goal</button>
       </div>
     </div>
