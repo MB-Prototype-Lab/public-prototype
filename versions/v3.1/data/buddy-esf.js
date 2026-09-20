@@ -208,12 +208,14 @@ const BUDDY_ESF =
       ]
     },
 
+    "_step3Note": "These five rows all open on an ESTIMATE, so Buddy's job here is different from step 2. He says what the row covers and what is already in the figure, then offers to work it out. He does NOT explain how to calculate it — the questions do that, and they do it by asking how the person lives rather than what they spend.",
+
     "power": {
       "label": "Home utilities",
       "row": "power",
       "say": [
-        "This is your water, gas and electricity.",
-        "One figure for all three. Use a normal month, not your worst one."
+        "This is your water, gas and electricity, all in one figure.",
+        "Not sure? I can ask you three quick questions and work it out."
       ]
     },
 
@@ -222,7 +224,8 @@ const BUDDY_ESF =
       "row": "connect",
       "say": [
         "This is your phone bill and your internet bill together.",
-        "I counted a line for every adult and teenager in your household."
+        "I counted a line for every adult and teenager in your household.",
+        "If that is not right, let me ask you about it."
       ]
     },
 
@@ -231,7 +234,8 @@ const BUDDY_ESF =
       "row": "groceries",
       "say": [
         "Groceries means food you cook and eat at home.",
-        "Not restaurants or takeout. Those are not part of an emergency fund."
+        "Not restaurants or takeout. Those are not part of an emergency fund.",
+        "Not sure what you spend? I'll ask how you shop and work it out."
       ]
     },
 

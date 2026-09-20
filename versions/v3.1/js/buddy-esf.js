@@ -185,6 +185,7 @@ function esfBuddy() {
     s.buddy = {
       open: false,
       forStep: null,      // which step the transcript belongs to
+      q: null,            // an in-flight lifestyle question set, or null
       thread: [],         // {from, text} — the accumulating transcript
       node: null,         // the entry currently being answered, or null for the list
       chips: [],          // the answer choices under the thread
@@ -317,6 +318,7 @@ function esfBuddyResetThread(key) {
   b.node = null;
   b.chips = [];
   b.asked = {};
+  b.q = null;
   b.applied = false;
 }
 
@@ -332,6 +334,7 @@ function esfBuddyToList() {
   const b = esfBuddy();
   b.node = null;
   b.chips = [];
+  b.q = null;          // abandon a half-answered question set with it
   render();
 }
 
@@ -359,6 +362,7 @@ function esfBuddyPick(id) {
 
   b.node = id;
   b.asked[id] = true;
+  b.q = null;
   esfBuddyUserSaid(entry.label);
   esfBuddySay(esfBuddySayFor(entry));
   esfBuddySay(esfBuddyFigureLine(entry));
@@ -412,6 +416,213 @@ function esfBuddyChip(chipId) {
   esfBuddySay(chip.say);
   b.chips = (chip.chips || []).map(c => c.id);
   esfLog("chat_question", { rowId: entry.row || b.node, optionId: chipId });
+  render();
+}
+
+// ── Lifestyle questions ──────────────────────────────────────────────────────
+// THE MECHANIC IS A MULTIPLIER, NOT A CALCULATION:
+//
+//     adjusted = the row's OPENING estimate  x  the product of every answer
+//
+// js/help-me-out.js computes figures from scratch — miles x rate + insurance.
+// It throws the ESF's own estimate away and builds a new number. This does the
+// opposite: the ESF has already priced this row for the ZIP, income band and
+// household, and these questions adjust that for how the person actually lives.
+//
+// Three reasons that difference matters. The estimate stays the spine. It is a
+// multiplier per option rather than a model per category, so it is far less
+// content. And it can never disagree with the screen — a from-scratch tree can
+// return a figure wildly apart from the dropdown beside it and leave the user
+// with two numbers and no way to choose.
+//
+// So this is a new lightweight mode, NOT an extension of help-me-out, which
+// stays where it is serving the budget builder.
+//
+// THE USER NEVER TYPES A FIGURE. They answer questions about how they live and
+// the estimate moves. They can still type one into the row itself if they want
+// to — the point is that they never have to.
+
+function esfLifestyleSet(rowId) {
+  return ((esfData().lifestyleModifiers || {})[rowId]) || null;
+}
+
+/** True when a row has questions to offer. */
+function esfHasLifestyle(rowId) {
+  const set = esfLifestyleSet(rowId);
+  return !!(set && set.questions && set.questions.length);
+}
+
+/**
+ * The figure the multipliers apply to.
+ *
+ * The OPENING estimate, never the current value. Running the questions twice
+ * would otherwise compound — a second pass would scale a figure that had
+ * already been scaled, and answering the same way twice would move the number
+ * both times.
+ */
+function esfLifestyleBase(rowId) {
+  const s = esfSession();
+  const opening = s.opening ? s.opening[rowId] : null;
+  return Number(opening) || Number(esfRowValue(rowId)) || 0;
+}
+
+function esfLifestyleQuestion(rowId, index) {
+  const set = esfLifestyleSet(rowId);
+  if (!set) return null;
+  return set.questions[index] || null;
+}
+
+function esfLifestyleOption(rowId, questionId, optionId) {
+  const set = esfLifestyleSet(rowId);
+  if (!set) return null;
+  const q = (set.questions || []).find(x => x.id === questionId);
+  if (!q) return null;
+  return (q.options || []).find(o => o.id === optionId) || null;
+}
+
+/** base x every chosen multiplier, rounded the way every other ESF figure is. */
+function esfLifestyleResult(rowId, answers) {
+  const set = esfLifestyleSet(rowId);
+  if (!set) return 0;
+  let n = esfLifestyleBase(rowId);
+  (set.questions || []).forEach(q => {
+    const chosen = answers[q.id];
+    if (!chosen) return;
+    const opt = (q.options || []).find(o => o.id === chosen);
+    if (opt) n = n * (Number(opt.x) || 1);
+  });
+  return esfRound(n);
+}
+
+/** Start the questions for a row. */
+function esfBuddyAskLifestyle(rowId) {
+  const b = esfBuddy();
+  if (!esfHasLifestyle(rowId)) return;
+  b.q = { rowId: rowId, index: 0, answers: {}, done: false };
+  esfBuddyUserSaid("Help me work it out");
+  esfBuddyAskCurrent();
+  esfLog("chat_help_started", { rowId: rowId });
+  render();
+}
+
+/** Push the question the flow is currently on. */
+function esfBuddyAskCurrent() {
+  const b = esfBuddy();
+  if (!b.q) return;
+  const q = esfLifestyleQuestion(b.q.rowId, b.q.index);
+  if (!q) return;
+  esfBuddySay([q.ask]);
+}
+
+/**
+ * An answer was picked.
+ *
+ * Records it, echoes the label into the transcript, and either asks the next
+ * question or works out the figure.
+ */
+function esfBuddyAnswerLifestyle(optionId) {
+  const b = esfBuddy();
+  if (!b.q || b.q.done) return;
+  const q = esfLifestyleQuestion(b.q.rowId, b.q.index);
+  if (!q) return;
+  const opt = esfLifestyleOption(b.q.rowId, q.id, optionId);
+  if (!opt) return;
+
+  b.q.answers[q.id] = optionId;
+  esfBuddyUserSaid(opt.label);
+  esfLog("chat_question", { rowId: b.q.rowId, questionId: q.id, optionId: optionId });
+
+  b.q.index++;
+  if (esfLifestyleQuestion(b.q.rowId, b.q.index)) { esfBuddyAskCurrent(); render(); return; }
+
+  // Out of questions — offer the figure. Buddy PROPOSES, the user confirms;
+  // he never writes a figure into the row without the tap.
+  b.q.done = true;
+  const amount = esfLifestyleResult(b.q.rowId, b.q.answers);
+  esfBuddySay([esfLifestyleSummary(b.q.rowId, b.q.answers, amount)]);
+  b.chips = [];
+  render();
+}
+
+/**
+ * "Shopping once or twice a week at regular grocery stores, I'd put you around
+ * $460 a month."
+ *
+ * Built from the labels they actually picked, so the figure is visibly a
+ * consequence of their own answers rather than something that arrived.
+ */
+function esfLifestyleSummary(rowId, answers, amount) {
+  const set = esfLifestyleSet(rowId);
+  const picked = (set.questions || [])
+    .map(q => {
+      const opt = (q.options || []).find(o => o.id === answers[q.id]);
+      if (!opt) return null;
+      // `short` is the option worded as a sentence fragment. The label itself
+      // is written to be recognised in a dropdown — "Higher-end stores (Whole
+      // Foods)" — and the brand in brackets is what makes it land there, but it
+      // reads badly mid-sentence. Lowercasing the label instead was worse: it
+      // turned Whole Foods into whole foods.
+      return opt.short || opt.label;
+    })
+    .filter(Boolean);
+  const row = esfRow(rowId);
+  const per = row && row.cadence === "annual" ? " a year" : " a month";
+  const lead = picked.length ? picked.join(", ") + " — " : "";
+  return lead + "I'd put you around " + esfMoney(amount) + per + ".";
+}
+
+/** The figure currently on offer, or null when the flow has not finished. */
+function esfBuddyPendingFigure() {
+  const b = esfBuddy();
+  if (!b.q || !b.q.done) return null;
+  return esfLifestyleResult(b.q.rowId, b.q.answers);
+}
+
+/**
+ * "Use $460" — the handback.
+ *
+ * The figure is SNAPPED TO THE BAND THAT CONTAINS IT and applied through
+ * esfSetRange, which is what the dropdown itself uses. Owner's ruling: "if peer
+ * expense default is $200, but the user confirms $300 through chat, the
+ * dropdown will change to the number that includes $300." So the control ends
+ * up on a band the user could have picked by hand, not on a loose figure that
+ * no option matches.
+ *
+ * THE PANEL STAYS OPEN and returns to the question list. The row updates behind
+ * it, visible because the screen underneath never went away — that visible
+ * change is the most convincing moment in the feature, and closing the panel
+ * would throw it away.
+ */
+function esfBuddyApplyFigure() {
+  const b = esfBuddy();
+  const amount = esfBuddyPendingFigure();
+  if (amount == null) return;
+  const rowId = b.q.rowId;
+  const row = esfRow(rowId);
+  const from = esfRowValue(rowId);
+  const band = esfBandFor(amount, row);
+
+  esfSetRange(rowId, band.mid);          // sets `touched`, so the row stops being an estimate
+  b.applied = true;
+  esfLog("chat_applied", { rowId: rowId, from: from, to: amount, band: band.lo + "-" + band.hi });
+
+  esfBuddySay(["Done — I've set " + (row ? row.label : rowId) + " to " +
+               esfMoney(band.lo) + " – " + esfMoney(band.hi) + ". You can change it on the screen whenever you want."]);
+  b.q = null;
+  b.node = null;                          // back to the list, transcript intact
+  b.chips = [];
+  render();
+}
+
+/** "Start these questions over" — same row, clean slate. */
+function esfBuddyRestartLifestyle() {
+  const b = esfBuddy();
+  if (!b.q) return;
+  const rowId = b.q.rowId;
+  esfLog("chat_restart", { rowId: rowId });
+  b.q = { rowId: rowId, index: 0, answers: {}, done: false };
+  esfBuddySay(["Let's go again."]);
+  esfBuddyAskCurrent();
   render();
 }
 

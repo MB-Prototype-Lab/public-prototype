@@ -3895,3 +3895,41 @@ button.esf-based {
 .esf-bubble-mid.chat-bubble-buddy { border-bottom-left-radius: 16px; }
 .esf-bubble-mid.chat-bubble-user  { border-bottom-right-radius: 16px; }
 .esf-buddy-thread .chat-row-user  { margin-left: 37px; }
+
+/* ── A lifestyle question, and the figure it reaches ─────────────────────────
+   A DROPDOWN rather than a chip rack. The owner asked for drop-down choices and
+   the options are why: "Warehouse clubs (Sam's, Costco)" and five driving bands
+   do not fit on chips without wrapping into a rack that fills half the panel.
+   The brand names cannot go — they are what makes an option land at a 5th-grade
+   reading level — so the control gives instead.
+
+   It reuses .esf-range, the same control the rows on the screen behind use, so
+   answering a question in here feels like the thing it is about to change. */
+.esf-buddy-q { padding-bottom: 9px; }
+.esf-buddy-q-step {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: .6;
+}
+.esf-buddy-select { width: 100%; }
+
+/* The offer to work a figure out, and the figure when it arrives. Both lead
+   their rack: on a row with questions behind it, that is what opening Buddy was
+   for — the explanation is context, not the destination. */
+.esf-buddy-chip-ask {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+  font-weight: 850;
+}
+.esf-buddy-chip-apply {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 850;
+}

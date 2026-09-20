@@ -185,9 +185,62 @@ function renderEsfBuddyList() {
     </div>`;
 }
 
+/**
+ * The control under the transcript while a lifestyle question set is running.
+ *
+ * A DROPDOWN, not a chip rack. Owner asked for drop-down choices and the
+ * options are why: "Warehouse clubs (Sam's, Costco)" and five driving bands do
+ * not fit on chips without wrapping into a rack that fills half the panel. The
+ * brand names cannot go — they are what makes the option land at a 5th-grade
+ * reading level — so the control gives instead.
+ *
+ * `onchange`, never `oninput`, per the repo's input rule.
+ */
+function renderEsfBuddyQuestion() {
+  const b = esfBuddy();
+  if (!b.q || b.q.done) return "";
+  const q = esfLifestyleQuestion(b.q.rowId, b.q.index);
+  if (!q) return "";
+  const total = (esfLifestyleSet(b.q.rowId).questions || []).length;
+
+  return `
+    <div class="esf-buddy-q">
+      <span class="esf-buddy-q-step">Question ${b.q.index + 1} of ${total}</span>
+      <select class="esf-range esf-buddy-select" aria-label="${h(q.ask)}"
+              onchange="esfBuddyAnswerLifestyle(this.value)">
+        <option value="" selected disabled>Pick one…</option>
+        ${(q.options || []).map(o =>
+          `<option value="${h(o.id)}">${h(o.label)}</option>`).join("")}
+      </select>
+    </div>`;
+}
+
+/**
+ * The handback. Buddy proposes, the user confirms.
+ *
+ * He never writes a figure into the row without this tap — and the panel stays
+ * open afterwards, so the row visibly changes behind it.
+ */
+function renderEsfBuddyApply() {
+  const amount = esfBuddyPendingFigure();
+  if (amount == null) return "";
+  return `
+    <div class="chat-chips esf-buddy-chips">
+      <button class="chat-chip esf-buddy-chip-apply" type="button"
+              onclick="esfBuddyApplyFigure()">Use ${h(esfMoney(amount))}</button>
+      <button class="chat-chip esf-buddy-chip-nav" type="button"
+              onclick="esfBuddyRestartLifestyle()">Start these questions over</button>
+      <button class="chat-chip esf-buddy-chip-nav" type="button"
+              onclick="esfBuddyToList()">Back to the list</button>
+    </div>`;
+}
+
 /** The answer choices, plus the two ways back. */
 function renderEsfBuddyChips() {
   const b = esfBuddy();
+  // A running question set owns the footer — its dropdown, or the figure it
+  // arrived at. The row's own chips would be a second thing to answer.
+  if (b.q) return b.q.done ? renderEsfBuddyApply() : renderEsfBuddyQuestion();
   const entry = b.node ? esfBuddyEntry(b.node) : null;
   // esfBuddyChipsFor, not entry.chips — a variant entry keeps its choices in
   // chipsIf and has no `chips` at all, so reading the raw key silently dropped
@@ -197,10 +250,17 @@ function renderEsfBuddyChips() {
     .filter(Boolean);
   const showBack = !!b.node;
   const showOver = b.thread.length > 0;
-  if (!chips.length && !showBack && !showOver) return "";
+  // The offer to work the figure out, on any row that has questions behind it.
+  // First in the rack, because on these rows it is the point of opening Buddy —
+  // the explanation is context for it, not the destination.
+  const rowId = entry && entry.row;
+  const canAsk = rowId && typeof esfHasLifestyle === "function" && esfHasLifestyle(rowId);
+  if (!chips.length && !showBack && !showOver && !canAsk) return "";
 
   return `
     <div class="chat-chips esf-buddy-chips">
+      ${canAsk ? `<button class="chat-chip esf-buddy-chip-ask" type="button"
+                          onclick="esfBuddyAskLifestyle('${h(rowId)}')">Help me work it out</button>` : ""}
       ${chips.map(c => `
         <button class="chat-chip" type="button"
                 onclick="esfBuddyChip('${h(c.id)}')">${h(c.label)}</button>`).join("")}
