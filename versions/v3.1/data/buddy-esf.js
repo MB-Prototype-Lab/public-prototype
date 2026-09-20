@@ -102,10 +102,12 @@ const BUDDY_ESF =
     "mortgage": {
       "label": "Mortgage",
       "row": "mortgage",
+      "_note": "Escrow comes BEFORE the share line on purpose. Escrow is the double-count trap and the reason this entry exists; the split is a qualifier on the amount. Reversing them buries the trap under a caveat that applies to fewer people.",
       "say": [
         "Your mortgage is what you send the bank each month.",
         "Most people's payment also covers property tax and home insurance. That is called escrow.",
-        "If yours does, put the payment in with the tax and insurance included."
+        "If yours does, include the tax and insurance in what you enter.",
+        "Splitting the payment with someone? Count your share only."
       ],
       "chips": [
         {
@@ -159,10 +161,11 @@ const BUDDY_ESF =
     "carPayment": {
       "label": "Car payments",
       "row": "carPayment",
+      "_note": "The share line is ONE CLAUSE here, against rent's two sentences and mortgage's own line. Owner's read: a split car payment happens far less often than a split rent or mortgage, and every line in this panel is read by everybody — a caveat that applies to few people should not cost the same space as one that applies to most.",
       "say": [
         "This is just your car loan or lease payment. Nothing else.",
         "Not gas. Not insurance. Not repairs. Those come on the next screen.",
-        "Paying off two cars? Add them together."
+        "Paying off two cars? Add them together. Sharing one? Count your share only."
       ],
       "chips": [
         {
