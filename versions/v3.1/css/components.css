@@ -3614,3 +3614,202 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   line-height: 1.35;
 }
 .esf-label-note { color: var(--text-strong); opacity: 0.85; }
+
+/* ─── Ask Buddy — the ESF panel ──────────────────────────────────────────────
+   Renders from screens/buddy-panel.js into #buddyRoot, a SIBLING of #screenRoot
+   (index.html). The root is a fixed layer inside the phone frame, which is what
+   keeps the pill still while the simulated keypad adds and removes its 250px:
+   a button that moves mid-press never receives the click. Same arrangement
+   #keyboardRoot uses, one z-index below it — the keypad covers Buddy, because
+   when both are up the thing being typed into is the one that matters. */
+#buddyRoot {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  pointer-events: none;        /* an empty root must not eat taps on the screen */
+}
+#buddyRoot > * { pointer-events: auto; }
+
+/* ── The pill ────────────────────────────────────────────────────────────────
+   FLOATS above the footer rather than sitting in it. That is what makes it cost
+   ZERO vertical layout — and on these screens that is the whole argument: tap
+   targets are already down to 29px against the repo's 44px floor because the
+   capture steps must not scroll at 430x940. A floating button can be a full
+   44px when almost nothing else on the screen can.
+
+   Dark text on LEGO orange is about 5.2:1 and passes AA. White on it is about
+   2.9:1 and fails — see the note in screens/buddy-panel.js. Both colours are
+   literals rather than theme tokens on purpose: this is Buddy's own accent and
+   must not drift with the four themes, or it stops being his. */
+.esf-ask {
+  position: absolute;
+  right: 16px;
+  bottom: 72px;                /* clear of the Back / Continue footer */
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px 16px 8px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: #FF6D00;
+  color: #2B1A0E;
+  font-size: 13px;
+  font-weight: 850;
+  font-family: Arial, Helvetica, sans-serif;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .55), 0 6px 18px rgba(43, 39, 35, .3);
+  cursor: pointer;
+}
+.esf-ask:hover { filter: brightness(1.05); }
+.esf-ask-face  { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: block; }
+.esf-ask-emoji { font-size: 22px; line-height: 1; }
+
+/* ── The panel ───────────────────────────────────────────────────────────────
+   Roughly three-quarters of the frame, anchored to the bottom edge, in the SAME
+   rectangle on every ESF screen. The step header and progress pips stay visible
+   above it, so the user never loses where they are. */
+.esf-buddy-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(43, 39, 35, .34);
+}
+
+.esf-buddy {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 76%;
+  display: flex;
+  flex-direction: column;
+  background: var(--screen);
+  border-top: 1px solid var(--line);
+  border-radius: 22px 22px 28px 28px;
+  box-shadow: 0 -10px 34px rgba(43, 39, 35, .22);
+  animation: esfBuddyIn .2s cubic-bezier(.2, .7, .3, 1) both;
+}
+
+@keyframes esfBuddyIn {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.esf-buddy-head {
+  flex-shrink: 0;
+  padding: 13px 18px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.esf-buddy-title { margin: 0; font-size: 15px; font-weight: 850; color: var(--text); }
+.esf-buddy-sub   { margin: 2px 0 0; font-size: 11.5px; color: var(--muted); }
+
+/* THE ONE PLACE SCROLLING IS ALLOWED. Owner's ruling: every question and answer
+   stays on screen, stacked, and the user scrolls back through them rather than
+   clicking back to re-read. The ESF capture screens still do not scroll. */
+.esf-buddy-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.esf-buddy-prompt {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* ── The question list ───────────────────────────────────────────────────────
+   Where several rows sit on one screen the user must be able to pick which one
+   they are asking about, and get back to that list. Asked rows are ticked and
+   STILL TAPPABLE — an answer can always be changed. */
+.esf-buddy-list { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+
+.esf-buddy-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--card);
+  color: var(--text);          /* body copy is never --muted */
+  font-size: 13px;
+  font-weight: 700;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.esf-buddy-item:hover { border-color: var(--accent); background: var(--accent-soft); }
+.esf-buddy-item-mark  { flex: 0 0 auto; font-size: 14px; color: var(--muted); }
+.esf-buddy-item-done .esf-buddy-item-mark { color: var(--accent); font-weight: 900; }
+
+.esf-buddy-foot {
+  flex-shrink: 0;
+  border-top: 1px solid var(--line);
+  background: var(--card);
+  padding: 9px 16px 12px;
+  border-radius: 0 0 28px 28px;
+}
+.esf-buddy-chips { padding-bottom: 9px; }
+/* The two ways back read as navigation, not as an answer to the question. */
+.esf-buddy-chip-nav { background: transparent; color: var(--muted); font-weight: 600; }
+
+/* ── The bar: X bottom-left, inert input beside it ───────────────────────────
+   Everything the user touches lives in the lower half — the panel is
+   one-handed. The X sits away from the thumb's natural travel so it is not hit
+   by accident, and still inside reach. */
+.esf-buddy-bar { display: flex; gap: 9px; align-items: center; }
+
+.esf-buddy-x {
+  flex: 0 0 auto;
+  width: 44px; height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--text);
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+}
+.esf-buddy-x:hover { background: var(--accent-soft); border-color: var(--accent); }
+
+/* PRESENT, VISIBLE, INERT. Visibly greyed, no caret, no keyboard — `disabled`
+   is what guarantees the simulated keypad can never open from it. The wrapper
+   carries the click handler because a disabled input dispatches no events, and
+   the tap is the measurement we want. */
+.esf-buddy-inputwrap { flex: 1; min-width: 0; display: block; cursor: default; }
+.esf-buddy-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 11px 14px;
+  opacity: .62;
+  cursor: default;
+  pointer-events: none;        /* the wrapper takes the tap, not the field */
+}
+
+/* ── The disclosure note ─────────────────────────────────────────────────────
+   REPLACES the "Based on …" line, never joins it, so it is height-neutral —
+   see rule 3 in js/buddy-esf.js. It inherits .esf-based and only adds the
+   accent and the fact that it is tappable, which is rule 4: a user who
+   mis-taps "my rent covers utilities" can undo it without hunting. */
+button.esf-based {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+}
+.esf-disclosed { color: var(--accent); font-weight: 750; }
+.esf-disclosed:hover { text-decoration: underline; }
