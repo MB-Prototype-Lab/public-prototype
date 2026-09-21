@@ -1,0 +1,41 @@
+name: Checks
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  app:
+    name: App checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: bash scripts/check-syntax.sh
+      - run: bash scripts/sweep.sh
+      - run: python3 scripts/check-paths.py
+      - run: node tests/release-runtime.cjs
+  publication:
+    name: Publication checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m unittest discover -s tests -v
+      - name: Catalog and migration policy
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/publish.py check --base "$BASE"
+      - name: Rehearse packaging without creating tags
+        run: python3 scripts/publish.py build --offline --output "$RUNNER_TEMP/rehearsal"

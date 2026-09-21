@@ -1,0 +1,51 @@
+name: Publish snapshots
+on:
+  push:
+    tags: ['publish/**']
+permissions:
+  contents: read
+# Covers validation through deployment: a later run always sees the preceding manifest.
+concurrency:
+  group: pages-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: bash scripts/check-syntax.sh
+      - run: bash scripts/sweep.sh
+      - run: python3 scripts/check-paths.py
+      - run: node tests/release-runtime.cjs
+      - run: python3 -m unittest discover -s tests -v
+      - uses: actions/configure-pages@v5
+      - name: Validate and build against the live manifest
+        env:
+          PUBLICATION_REF: ${{ github.ref }}
+          VERIFIED_MIGRATION_BASELINE: ${{ vars.VERIFIED_MIGRATION_BASELINE }}
+          BOOTSTRAP_PUBLICATION_REF: ${{ vars.BOOTSTRAP_PUBLICATION_REF }}
+        run: python3 scripts/deploy-prepare.py
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: publication-output
+      - name: Reject a stale queued publication immediately before deployment
+        run: |
+          git fetch origin main --no-tags
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+      - uses: actions/deploy-pages@v4
+        id: deployment

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Generates versions/v3/data/*.js from the sibling *.json files.
+if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
+# Generates app/data/*.js from the sibling *.json files.
 #
 # WHY THIS EXISTS (L13, architecture.md §1): the app is opened as a file:// page
 # with no dev server, and browsers block fetch()/XHR against local files. So the
@@ -18,10 +19,8 @@
 
 set -euo pipefail
 
-# Same MB_VERSION switch as sweep.sh -- v3, v3.1 and v4 each have their own
-# data/, and wrapping the wrong one leaves the edited JSON with a stale .js
-# beside it.
-DIR="versions/${MB_VERSION:-v4}/data"
+# There is one editable data directory.
+DIR="app/data"
 [ -d "$DIR" ] || { echo "error: $DIR not found (run from repo root)" >&2; exit 1; }
 
 # json basename -> global const name. Keep in sync with architecture.md §1.

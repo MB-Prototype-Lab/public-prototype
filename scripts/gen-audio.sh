@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
 # Generates narration audio for the daily update, and extracts its timings.
 #
 # WHY THIS EXISTS (L10): the spec assumes live Web Speech playback, where
@@ -17,9 +18,9 @@
 # single segment can be re-cut without redoing the whole script.
 #
 # OUTPUT
-#   versions/v3/assets/audio/daily/<scriptId>/<segmentId>.wav
-#   versions/v3/data/daily-timings.js     generated, loaded by the player
-#   versions/v3/assets/audio/onboarding/onboarding_intro/<segmentId>.wav
+#   app/assets/audio/daily/<scriptId>/<segmentId>.wav
+#   app/data/daily-timings.js     generated, loaded by the player
+#   app/assets/audio/onboarding/onboarding_intro/<segmentId>.wav
 #
 # The onboarding intro is generated the same way but needs no timings: its
 # player advances on the audio element's `ended` event rather than a timing
@@ -39,12 +40,12 @@
 set -euo pipefail
 
 VOICE="${VOICE:-Samantha}"
-V="${MB_VERSION:-v4}"            # same switch as sweep.sh / wrap-data.sh
-SRC="versions/$V/data/daily-scripts.json"
-OUTDIR="versions/$V/assets/audio/daily"
-TIMINGS="versions/$V/data/daily-timings.js"
-ONB_SRC="versions/$V/data/onboarding-script.json"
-ONB_OUTDIR="versions/$V/assets/audio/onboarding"
+
+SRC="app/data/daily-scripts.json"
+OUTDIR="app/assets/audio/daily"
+TIMINGS="app/data/daily-timings.js"
+ONB_SRC="app/data/onboarding-script.json"
+ONB_OUTDIR="app/assets/audio/onboarding"
 
 [ -f "$SRC" ] || { echo "error: $SRC not found (run from repo root)" >&2; exit 1; }
 command -v say >/dev/null || { echo "error: 'say' not found — macOS only" >&2; exit 2; }

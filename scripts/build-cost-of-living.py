@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generates versions/<MB_VERSION>/data/zip-cost-of-living.json (default v4).
+Generates app/data/zip-cost-of-living.json.
 
 WHY THIS EXISTS
 ---------------
@@ -60,7 +60,9 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
-OUT = os.path.join(REPO, "versions", os.environ.get("MB_VERSION", "v4"),
+if "MB_VERSION" in os.environ:
+    raise SystemExit("error: MB_VERSION is retired; tooling uses app/")
+OUT = os.path.join(REPO, "app",
                    "data", "zip-cost-of-living.json")
 CACHE = os.environ.get("COL_CACHE", os.path.join(tempfile.gettempdir(), "moneybuddy-col-cache"))
 

@@ -1259,22 +1259,10 @@ if (typeof USEBERRY_TRACKING !== "undefined" && USEBERRY_TRACKING) {
 chk(typeof useberryActive === "function" && useberryActive() === false,
     "the tracker stays inert off http/https");
 
-// ── the gate's copy agrees with the real flag ──────────────────────────────
-// The gate cannot read USEBERRY_TRACKING (it never loads a version's scripts),
-// so it keeps a duplicate. A build observed while the gate says it is not is
-// the one outcome nobody could see from either file alone.
-if (typeof __GATE_JS === "string" && typeof APP_VERSION !== "undefined") {
-  var esc = APP_VERSION.replace(/\./g, "\\.");
-  var row = new RegExp('id:\\s*"' + esc + '"[^}]*tracking:\\s*(true|false)');
-  var m = __GATE_JS.match(row);
-  chk(!!m, "the gate lists " + APP_VERSION + " with a tracking flag",
-      "add tracking: true|false to its VERSIONS entry in gate/gate.js");
-  if (m) {
-    chk((m[1] === "true") === (USEBERRY_TRACKING === true),
-        "the gate's tracking flag matches this build's",
-        "gate says " + m[1] + ", js/config.js says " + USEBERRY_TRACKING);
-  }
-}
+// Development defaults and published settings are tested independently.
+chk(window.MB_RELEASE.tracking === false && USEBERRY_TRACKING === false,
+    "development tracking is off");
+chk(window.MB_RELEASE.selector === "../index.html", "local refresh returns to root");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
