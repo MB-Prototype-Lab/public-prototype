@@ -272,30 +272,15 @@ top-bar and nav offsets.
 
 ## Verifying
 
-No browser here — you cannot visually QA. **Which JS engine exists depends on the
-machine**: the Mac has `jsc` and no `node`; the Linux/WSL box has `node` (often
-only under `~/.nvm`, off PATH) and no `jsc`. Don't assume either.
-- `bash scripts/check-syntax.sh <path>` on everything you touch (no args = all
-  v3 + gate JS). It's the only automated gate, and it detects both engines.
-- For logic, write a temporary DOM-stubbed harness that concatenates the needed
-  files into **one** script, then run it (`node harness.js` / `jsc harness.js`).
-  Concatenating matters: separately-evaluated scripts don't share top-level
-  `const` bindings, but a browser's `<script>` tags do. Under node, use
-  `vm.runInContext` with a stub context and append `this.__api = { ... }` —
-  top-level `const` does not attach to a vm context's globals.
-  **Delete it before committing.**
-- The data wrappers are checkable: eval each `data/*.js` and deep-compare the
-  global it declares against the `.json` beside it. That catches wrapper drift,
-  which is silent and otherwise invisible until a figure looks wrong.
-- Ask the repo owner to eyeball anything visual — say so plainly rather than
-  claiming it renders.
+Follow [testing](testing.md): syntax, app sweep, path checks, publication tests, and
+applicable PM checks. Node/JavaScriptCore availability must be checked, not assumed.
+Keep useful regression tests. Data wrappers must match sibling JSON. Publication
+tracking is independent of the untracked development sweep.
 
 ## Don't
 
-- Don't edit `versions/v1/` or `versions/v2/` — both frozen. Versions are test
-  variants a tester picks at the gate, not a migration path.
-- Don't edit `app/` or `versions/v3.1/` from here. They are a live A/B
-  pair; a fix crosses into them only when the owner says it should.
+Do not edit historical snapshots; ship fixes as new IDs. Current work belongs in app/.
+
 - Don't build sprite-sheet `background-position` cropping. **L22 allows
   owner-supplied buddy illustrations, but they are separate files chosen by
   buddy state — not sheets addressed by offset.** D39's cropping machinery stays

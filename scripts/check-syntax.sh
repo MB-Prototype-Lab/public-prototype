@@ -14,9 +14,9 @@
 # makes it fail with "Could not open file", which looks like a syntax error and
 # isn't.
 #
-#   bash scripts/check-syntax.sh                 # all JS under versions/v3 + gate
+#   bash scripts/check-syntax.sh                 # all JS under app + gate
 #   bash scripts/check-syntax.sh path/to/file.js # specific files
-#   bash scripts/check-syntax.sh versions/v3     # everything under a directory
+#   bash scripts/check-syntax.sh app     # everything under a directory
 #
 # Exits non-zero if anything fails to parse.
 
@@ -45,10 +45,8 @@ fi
 # Collect targets: explicit args, or the default set.
 files=()
 if [ "$#" -eq 0 ]; then
-  # Every live version, not just one. v3 and v3.1 are an A/B pair and v4 is the
-  # copy new work goes into; all three ship, and checking only one lets a syntax
-  # error reach the gate in the others.
-  while IFS= read -r f; do files+=("$f"); done < <(find versions/v3 versions/v3.1 versions/v4 gate -name '*.js' 2>/dev/null | sort)
+  # Historical blobs are validated by publication digests.
+  while IFS= read -r f; do files+=("$f"); done < <(find app gate -name '*.js' 2>/dev/null | sort)
 else
   for arg in "$@"; do
     if [ -d "$arg" ]; then

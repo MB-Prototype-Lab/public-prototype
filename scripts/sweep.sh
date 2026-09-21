@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
+if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
 # Phase 6 correctness sweep — run from the repo root.
 #
 #   bash scripts/sweep.sh
 #
-# Concatenates the DOM stub, every <script> in versions/v3/index.html in load
+# Concatenates the DOM stub, every <script> in app/index.html in load
 # order, and scripts/sweep.js into one file, then runs it under node or jsc —
 # whichever this machine has (see check-syntax.sh; the Mac has jsc and no node,
 # the Linux/WSL box the reverse). One script rather than separate evaluations,
@@ -26,19 +27,7 @@ fi
 [ -n "$ENGINE" ] || ENGINE="$JSC"
 [ -x "$ENGINE" ] || { echo "error: no JS engine found — need node or macOS jsc" >&2; exit 2; }
 
-# Which version to sweep. There are THREE live versions -- v3 and v3.1 are an
-# A/B pair and v4 is the copy work now happens in -- so a hardcoded path would
-# silently check one of the others and report green while the folder you edited
-# went unexamined.
-#
-#   bash scripts/sweep.sh                    # v4, the default below
-#   MB_VERSION=v3.1 bash scripts/sweep.sh    # the B side of the pair
-#   MB_VERSION=v3   bash scripts/sweep.sh    # the control
-# The default lives in ONE place, because §7c compares the film tool's default
-# against it and two literals would be the drift the check exists to catch.
-MB_DEFAULT_VERSION="v4"
-APP="versions/${MB_VERSION:-$MB_DEFAULT_VERSION}"
-[ -d "$APP" ] || { echo "error: $APP not found (MB_VERSION=${MB_VERSION:-$MB_DEFAULT_VERSION})" >&2; exit 1; }
+APP="app"
 # Explicit template — `mktemp -t <prefix>` is BSD-only; GNU mktemp needs the
 # XXXXXX and otherwise fails, leaving OUT as a bare ".js" written to the repo.
 OUT="$(mktemp "${TMPDIR:-/tmp}/mb-sweep.XXXXXX").js"
@@ -129,13 +118,9 @@ done < <(grep -o 'src="[^"]*\.js"' "$APP/index.html" | sed 's/src="//;s/"//')
 # collide), so it keeps its own copy of which builds carry a usability tracker.
 # Injecting the source lets §7d assert that copy against the real flag instead
 # of trusting anyone to update both.
-# The film tool's own MB_VERSION default. It is the sixth tool that reads the
-# switch and the one that was missed when v4 was created -- a render then
-# encoded four films into v3.1 while v4's sweep went on reporting "1 of 10
-# rendered". Nothing errored; the files landed in another version.
-FILM_DEFAULT="$(sed -n 's/^const VERSION = process\.env\.MB_VERSION || "\(.*\)";/\1/p' tools/film/build-films.mjs)"
-printf '\nvar __FILM_TOOL_VERSION = "%s";\nvar __DEFAULT_VERSION = "%s";\n' \
-  "$FILM_DEFAULT" "$MB_DEFAULT_VERSION" >> "$OUT"
+# Assert the film tool's output root against the one editable app.
+FILM_DEFAULT="$(sed -n 's/^const APP = path.join(REPO, "\(.*\)");/\1/p' tools/film/build-films.mjs)"
+printf '\nvar __FILM_TOOL_VERSION = "%s";\nvar __DEFAULT_VERSION = "app";\n' "$FILM_DEFAULT" >> "$OUT"
 
 # js/render.js as a string. §7f needs the journal-mode class lists, and those
 # are toggle() arguments rather than a named constant -- there is nothing to

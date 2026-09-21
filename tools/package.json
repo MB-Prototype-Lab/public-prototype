@@ -2,7 +2,7 @@
   "name": "moneybuddy-tools",
   "private": true,
   "type": "module",
-  "description": "Build-time only. See plan.md L23: npm lives HERE, never in versions/. The app stays vanilla, dependency-free and file://-only; this folder renders committed .mp4 assets the way scripts/gen-audio.sh renders committed .wav assets.",
+  "description": "Build-time only. See plan.md L23: npm lives HERE, never in app/. The app stays vanilla, dependency-free and file://-only; this folder renders committed .mp4 assets the way scripts/gen-audio.sh renders committed .wav assets.",
   "scripts": {
     "films": "node film/build-films.mjs",
     "preview": "hyperframes preview"
