@@ -65,7 +65,7 @@ management remain separate work.
 | Locally implemented | Complete |
 | Locally verified | Python/static/export checks complete; JS/browser checks pending |
 | Pushed | Organization rollout code/tests pushed at b6ca568 |
-| PR / CI | PR creation rejected: token lacks createPullRequest access; no CI run yet |
+| PR / CI | [PR #1](https://github.com/MB-Prototype-Lab/public-prototype/pull/1) opened; inspect its latest checks for current CI evidence |
 | Merged | Not performed |
 | Administrator setup complete | Not verified |
 | Deployed | Not performed |
@@ -77,15 +77,14 @@ For baseline verification, tags, failure recovery and administrator setup use
 
 ## Current handoff
 
-The organization branch push succeeded on 2026-09-21. GitHub rejected PR creation
-with `Resource not accessible by personal access token (createPullRequest)`.
-Update the gh credential to allow pull-request writes on this repository, or open
-the organization comparison link above and create the PR with base `main` and head
-`work/collaboration-publishing`. Use the title above and summarize the change and
-validation from this document, retaining the pending PM and rollout checklist.
+The organization branch is pushed and [PR #1](https://github.com/MB-Prototype-Lab/public-prototype/pull/1)
+is open against main. Reauthentication resolved the earlier createPullRequest token
+failure. App checks and Publication checks started successfully; their latest results
+and final verification record belong in the PR. Branch pushes alone do not initiate
+these checks until a PR exists.
 
-Once the PR exists, inspect App checks and Publication checks for its latest commit,
-resolve failures and update the PR verification record. Branch pushes alone do not
-trigger these checks. Do not push main or publication tags to work around this gate.
+Actions is enabled. Repository variables and environments were empty when inspected;
+main had no branch protection configured. No settings were changed. PM verification,
+administrator setup, baseline/study confirmation, merge and deployment remain pending.
 Passing CI, PM signoff, merge, administrator setup and live verification must be
 reported separately; none is established by the successful branch push.
