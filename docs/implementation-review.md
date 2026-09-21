@@ -1,11 +1,11 @@
 # Collaboration and publishing review
 
-Prepared PR title: **Consolidate the app and separate shipping from snapshot publication**
+PR title: **Consolidate the app and separate shipping from snapshot publication**
 
 Organization comparison:
 https://github.com/MB-Prototype-Lab/public-prototype/compare/main...work%2Fcollaboration-publishing
 
-## Prepared PR body
+## Change summary
 
 MoneyBuddy currently keeps five editable application copies and publishes through a
 separate branch. This change puts current development in app/, adds start/sync/ship/
@@ -33,8 +33,8 @@ Validation performed locally:
   metadata, lifecycle/study transitions, restoration, missing/moved tags, stale runs,
   missing assets, bootstrap safeguards and output preservation.
 - All five legacy exports matched committed files byte-for-byte before consolidation.
-  Two complete builds matched: 540 files, about 35 MB. The repeat build validated
-  against the first manifest. Actual app packaging validates with tracking on and off.
+  Two complete builds of b6ca568 matched: 540 files, 35,015,483 bytes. The repeat
+  build validated against the first manifest. Actual app packaging validates with tracking on and off.
 - Local HTML/CSS references, Python compilation, shell syntax, four skill validators
   and catalog/migration policy pass. Supplied MB_VERSION fails before tool work.
 - JavaScript syntax, app sweep and release runtime tests **not run successfully**:
@@ -64,7 +64,8 @@ management remain separate work.
 |---|---|
 | Locally implemented | Complete |
 | Locally verified | Python/static/export checks complete; JS/browser checks pending |
-| Pushed | Implementation f58b1d1 is on the organization remote; rollout follow-up in progress |
+| Pushed | Organization rollout code/tests pushed at b6ca568 |
+| PR / CI | PR creation rejected: token lacks createPullRequest access; no CI run yet |
 | Merged | Not performed |
 | Administrator setup complete | Not verified |
 | Deployed | Not performed |
@@ -73,3 +74,18 @@ management remain separate work.
 For browser submission and squash-merge actions use [workflow](workflow.md).
 For baseline verification, tags, failure recovery and administrator setup use
 [publishing](publishing.md). The untracked branching.md records local commit progress.
+
+## Current handoff
+
+The organization branch push succeeded on 2026-09-21. GitHub rejected PR creation
+with `Resource not accessible by personal access token (createPullRequest)`.
+Update the gh credential to allow pull-request writes on this repository, or open
+the organization comparison link above and create the PR with base `main` and head
+`work/collaboration-publishing`. Use the title above and summarize the change and
+validation from this document, retaining the pending PM and rollout checklist.
+
+Once the PR exists, inspect App checks and Publication checks for its latest commit,
+resolve failures and update the PR verification record. Branch pushes alone do not
+trigger these checks. Do not push main or publication tags to work around this gate.
+Passing CI, PM signoff, merge, administrator setup and live verification must be
+reported separately; none is established by the successful branch push.
