@@ -5,6 +5,8 @@ Run from the repository root:
 ```sh
 bash scripts/check-syntax.sh
 bash scripts/sweep.sh
+python3 scripts/check-paths.py
+node tests/release-runtime.cjs
 python3 -m unittest discover -s tests -v
 python3 scripts/publish.py check
 ```

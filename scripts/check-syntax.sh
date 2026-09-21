@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
 # JS syntax checker — the automated gate for this repo.
 #
 # WHY THIS EXISTS: this repo gets worked on from more than one machine, and the
