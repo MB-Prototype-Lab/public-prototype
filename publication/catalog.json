@@ -15,7 +15,7 @@
       "description": "",
       "order": 0,
       "state": "archived",
-      "ongoing_study": null
+      "ongoing_study": false
     },
     {
       "id": "v2",
@@ -30,7 +30,7 @@
       "description": "",
       "order": 1,
       "state": "archived",
-      "ongoing_study": null
+      "ongoing_study": false
     },
     {
       "id": "v3",
@@ -45,7 +45,7 @@
       "description": "",
       "order": 2,
       "state": "archived",
-      "ongoing_study": null
+      "ongoing_study": false
     },
     {
       "id": "v3.1",
@@ -60,7 +60,7 @@
       "description": "",
       "order": 3,
       "state": "archived",
-      "ongoing_study": null
+      "ongoing_study": false
     },
     {
       "id": "v4",
@@ -75,7 +75,7 @@
       "description": "",
       "order": 4,
       "state": "active",
-      "ongoing_study": null
+      "ongoing_study": true
     }
   ]
 }
