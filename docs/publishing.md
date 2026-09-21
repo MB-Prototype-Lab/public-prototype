@@ -3,8 +3,9 @@
 Shipping integrates app work into main. Publishing is an explicit, separately
 requested release of the selector and its retained snapshots. Ordinary main pushes
 and catalog merges do not deploy. The sole deployment trigger is a new
-`publish/<unique-id>` tag. Do not run remote commands below during the local-only
-implementation. The future workflow requires remote-read and remote-write authority.
+`publish/<unique-id>` tag. The organization rollout currently permits branch pushes,
+PR creation and CI verification only. Tag creation/push, merge, settings changes and
+deployment require separate authorization. The old repo/site remains the blue fallback.
 
 ## Source and catalog
 
@@ -34,15 +35,18 @@ already-loaded browser copies.
 ## Provisional migration and first cutover
 
 The local migration baseline is cached origin/demo:
-`6666b1a7cd27a1c63a2ee51bd5728a6fe9356791`. This is not verified current remote state.
+`6666b1a7cd27a1c63a2ee51bd5728a6fe9356791`. The organization demo ref still matches
+this SHA as of 2026-09-21; the actual blue serving revision still requires owner
+verification.
 Every original file from v1, v2, v3, v3.1 and v4 was exported and compared before
 removing editable copies. Digests and intended tags are in publication/migration.json.
 All intended `snapshot/v1`, `snapshot/v2`, `snapshot/v3`, `snapshot/v3.1`, `snapshot/v4`
 tags point to that SHA. No source tags have been created in this repository yet.
 Legacy v4 tracks; v1–v3.1 do not. Study status is intentionally unknown for every build.
 
-Before cutover, the owner verifies the actual Pages source and authorizes refreshing
-origin/demo. Compare its full SHA to the baseline. If different, stop and regenerate
+Before cutover, the owner verifies the actual blue Pages serving revision and
+compares its full SHA to the baseline. Matching green origin/demo alone is not
+verification of the blue site. If different, stop and regenerate
 the migration exports/catalog from the exact serving revision, compare all original
 bytes again, and review a new PR; no legacy baseline changes after first publication.
 Do not edit demo. Preserve it as fallback until live verification succeeds.
@@ -54,9 +58,11 @@ inferred values. First deployment accepts a missing manifest only on HTTP 404 an
 only for that exact approved tag and baseline. Other errors, malformed manifests or
 unknown study flags stop deployment. Clear the bootstrap variable immediately after
 successful deployment. Every later run must retrieve and validate the live manifest.
-The current source assumes project Pages at
-https://superdyu.github.io/mbprototype_v1/; if owner verification finds a custom URL,
-update and review the fixed manifest URL and local historical link before cutover.
+Green uses project Pages at https://mb-prototype-lab.github.io/public-prototype/.
+Deployment validates against green's manifest, never the blue site's publication history.
+The local historical link already targets green and may be unavailable until its first
+deployment. If a custom domain is chosen later, review both URLs before publication.
+Team adoption and moving participant links are a later, separate cutover.
 
 ## Prepare a new snapshot
 
@@ -90,7 +96,7 @@ update and review the fixed manifest URL and local historical link before cutove
    of deployment. Record deployed and live-verified separately.
 
 Without GitHub CLI, all Git tag commands still work with ordinary Git credentials.
-Use https://github.com/superdyu/mbprototype_v1/actions/workflows/publish.yml to inspect
+Use https://github.com/MB-Prototype-Lab/public-prototype/actions/workflows/publish.yml to inspect
 run status and logs, and the Pages link to verify output. PR browser instructions are
 complete in docs/workflow.md. CLI users can inspect runs with `gh run list`/`gh run view`;
 CLI availability never changes the required evidence or authorization.

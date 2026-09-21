@@ -17,8 +17,10 @@ explicit request; merging main never deploys. Do not infer remote success.
 Keep `demo` as the pre-cutover fallback. Leave all PM/HoffDemo branches untouched;
 features will be deliberately ported into `app/` later. Never restore editable
 `versions/` copies. Historical builds are immutable hosted snapshots and Git history.
-During the collaboration/publishing implementation all work is local only until
-explicit remote authorization. Keep `branching.md` untracked; stage specific files.
+The organization repo is the green rehearsal destination; team cutover is pending.
+Current rollout scope permits branch pushes, PR creation and CI verification. Merge,
+repository settings and publication require separate authorization.
+Keep `branching.md` untracked; stage specific files.
 
 ## App conventions
 

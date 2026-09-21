@@ -4,7 +4,9 @@ Two PMs coordinate in Discord; GitHub Issues are optional. Start/sync manage wor
 ship integrates tested work into main, publish explicitly updates the live selector
 and optionally adds a snapshot. Either PM can request publication after coordination.
 Shipping does not authorize publication. A task's remote permissions must be explicit;
-the current implementation is local only, including no remote fetch until rollout.
+the organization rollout permits remote reads, task-branch pushes, PR creation and CI
+verification. Merge, repository settings and publication require separate authorization.
+The old repo/site remains the blue fallback; team cutover is pending.
 
 ## Start work
 
@@ -44,7 +46,7 @@ PM signoff and authorized shipping, `gh pr merge <number> --squash`. Confirm the
 merged commit before cleanup; update local main safely. Never delete dirty branches,
 local-only commits or another PM's work. Remote branch deletion needs separate scope.
 
-Without CLI, prepare https://github.com/superdyu/mbprototype_v1/compare/main...BRANCH
+Without CLI, prepare https://github.com/MB-Prototype-Lab/public-prototype/compare/main...BRANCH
 (URL-encode the branch), plus exact PR title/body in a file. After the authorized push:
 1. Open comparison; choose base `main`, compare the task branch; inspect Files changed.
 2. Click Create pull request, paste prepared title/body, and submit.

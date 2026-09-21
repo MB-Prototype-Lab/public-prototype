@@ -12,7 +12,7 @@ publish.require(ref.startswith('refs/tags/publish/'), 'not a publication ref')
 subprocess.run(['git', 'fetch', 'origin', 'main', '--tags'], check=True)
 publish.require(publish.git('rev-parse', ref+'^{commit}') == publish.git('rev-parse', 'HEAD'), 'publication tag no longer matches checked-out revision')
 # This URL deliberately stays fixed: do not accept a manifest from an arbitrary input.
-url = 'https://superdyu.github.io/mbprototype_v1/publication-manifest.json'
+url = 'https://mb-prototype-lab.github.io/public-prototype/publication-manifest.json'
 previous = None
 try:
     request = urllib.request.Request(url, headers={'Cache-Control': 'no-cache'})
