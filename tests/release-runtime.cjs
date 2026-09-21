@@ -13,12 +13,13 @@ for (const tracking of [false, true]) {
     let injected = 0, redirected;
     const context = vm.createContext({window:{}, URL,
       location:{protocol, href: protocol+'//example.test/versions/new/index.html?PROLIFIC_PID=p1&screen=home', replace:x=>redirected=x},
-      document:{createElement:()=>({}), head:{appendChild:()=>injected++}},
+      document:{createElement:()=>({}), body:{appendChild:()=>injected++}},
       history:{state:{}, replaceState:(st, title, url)=>context.location.href = new URL(url, context.location.href).href},
       performance:{getEntriesByType:()=>[{type:'reload'}]}});
     vm.runInContext(generated + read('app/js/config.js') + read('app/js/useberry.js') + read('app/js/screen-url.js'), context);
     assert.equal(context.useberryActive(), tracking && protocol !== 'file:');
-    context.useberryInit(); context.useberryInit();
+    assert.equal(context.useberryInit(), tracking && protocol !== 'file:');
+    assert.equal(context.useberryInit(), false);
     assert.equal(injected, tracking && protocol !== 'file:' ? 1 : 0);
     vm.runInContext(refresh, context);
     assert.equal(redirected, '../../index.html');
