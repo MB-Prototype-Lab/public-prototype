@@ -26,43 +26,46 @@ Prefer hidden for clutter removal. To retire, get an explicit PM request naming 
 build and acknowledging that its direct URL will stop opening the app. Record that
 request and any study-resolution decision in the catalog PR. Resolve ongoing_study
 before retiring or demoting an active build. A null value means unknown, never false;
-all unknown study statuses block deployment. Confirm with PMs before first cutover.
+all unknown study statuses block deployment. Confirm any new study status with PMs.
 Restoration changes state only; it serves the original bytes. Source tags stay forever.
 The shared selector intentionally changes, so refresh returns to the current selector.
 Guarantees cover hosted bytes and stable paths, not Useberry service behavior or
 already-loaded browser copies.
 
-## Provisional migration and first cutover
+## Green publication and migration baseline
 
-The local migration baseline is cached origin/demo:
-`6666b1a7cd27a1c63a2ee51bd5728a6fe9356791`. The organization demo ref still matches
-this SHA as of 2026-09-21; the actual blue serving revision still requires owner
-verification.
-Every original file from v1, v2, v3, v3.1 and v4 was exported and compared before
-removing editable copies. Digests and intended tags are in publication/migration.json.
-All intended `snapshot/v1`, `snapshot/v2`, `snapshot/v3`, `snapshot/v3.1`, `snapshot/v4`
-tags point to that SHA. No source tags have been created in this repository yet.
-Legacy v4 tracks; v1–v3.1 do not. Study status is intentionally unknown for every build.
+The first green publication succeeded on 2026-09-21. The owner confirmed in
+[PR #2](https://github.com/MB-Prototype-Lab/public-prototype/pull/2) that the blue
+site's main and demo refs and last successful Pages build used
+`6666b1a7cd27a1c63a2ee51bd5728a6fe9356791`. That is the catalog's migration
+baseline, and green `demo` remains there as a fallback. Before consolidation,
+every original file from v1, v2, v3, v3.1 and v4 was exported and compared with
+that commit. The digests and source identities remain in `publication/migration.json`.
+The immutable `snapshot/v1`, `snapshot/v2`, `snapshot/v3`, `snapshot/v3.1`, and
+`snapshot/v4` tags all point to the baseline commit.
 
-Before cutover, the owner verifies the actual blue Pages serving revision and
-compares its full SHA to the baseline. Matching green origin/demo alone is not
-verification of the blue site. If different, stop and regenerate
-the migration exports/catalog from the exact serving revision, compare all original
-bytes again, and review a new PR; no legacy baseline changes after first publication.
-Do not edit demo. Preserve it as fallback until live verification succeeds.
+The owner also confirmed that v4 is the only ongoing legacy study. The catalog
+records v4 as active, tracking on, and `ongoing_study: true`; v1–v3.1 are
+archived, tracking off, and `ongoing_study: false`. These are explicit study
+decisions, not inferences from tracking settings.
 
-Set `VERIFIED_MIGRATION_BASELINE` to the owner-verified SHA and
-`BOOTSTRAP_PUBLICATION_REF` to the exact initial `refs/tags/publish/<unique-id>` in
-repository Actions variables. These are administrator attestations, not automatically
-inferred values. First deployment accepts a missing manifest only on HTTP 404 and
-only for that exact approved tag and baseline. Other errors, malformed manifests or
-unknown study flags stop deployment. Clear the bootstrap variable immediately after
-successful deployment. Every later run must retrieve and validate the live manifest.
-Green uses project Pages at https://mb-prototype-lab.github.io/public-prototype/.
-Deployment validates against green's manifest, never the blue site's publication history.
-The local historical link already targets green and may be unavailable until its first
-deployment. If a custom domain is chosen later, review both URLs before publication.
-Team adoption and moving participant links are a later, separate cutover.
+The `publish/2026-09-21-green-01` tag points to main commit
+`572a47770ee41ff2f435c7aca6d42486064c4a62`. Its
+[publication run](https://github.com/MB-Prototype-Lab/public-prototype/actions/runs/35669399656)
+and GitHub Pages deployment succeeded. The live
+[green manifest](https://mb-prototype-lab.github.io/public-prototype/publication-manifest.json)
+reports that revision and all five legacy snapshots. The green selector and
+legacy entry URLs respond, but PM browser, media, deep-link and participant
+study-flow checks have not been recorded. The blue site remains the serving
+fallback; team adoption and participant-link changes are separate decisions.
+
+The initial deployment used a one-time bootstrap because green had no previous
+manifest. GitHub now has `VERIFIED_MIGRATION_BASELINE` set to the baseline SHA;
+`BOOTSTRAP_PUBLICATION_REF` has been removed. Do not restore the bootstrap
+variable for later publications. Every later run must retrieve and validate
+green's live manifest; a failed retrieval or invalid manifest stops deployment.
+Deployment never validates against blue's publication history. If a custom
+domain is chosen later, review both URLs before publication.
 
 ## Prepare a new snapshot
 
@@ -151,35 +154,32 @@ main changes during that final check. A later source-only merge does not invalid
 the bytes of an in-progress approved publication, but no newer publication can run
 concurrently. The previous manifest is also bound to its catalog revision in Git.
 
-## Administrator setup and authorized rollout
+## Verified setup and remaining rollout checks
 
-No setting below is considered done until its saved state has been inspected.
+GitHub settings inspected on 2026-09-22 show:
 
-1. After explicit remote authorization, refresh refs; reconcile the implementation
-   branch and migration baseline. Push only the implementation branch and supply the
-   comparison link and PR text. If credentials prevent pushing, create a local bundle
-   (`git bundle create /tmp/collaboration-publishing.bundle main..work/collaboration-publishing`)
-   for a collaborator who has the base. Get passing CI and applicable PM review before
-   an explicitly authorized squash merge. Keep demo and PM branches untouched.
-2. In Settings → Pages, record and verify the existing source. Enable Actions under
-   Settings → Actions → General and switch Pages source to GitHub Actions for cutover.
-3. Configure the github-pages environment to allow publication tags `publish/*`.
-   Do not restrict deployment solely to branch main: this workflow runs on tags.
-   Configure pages:write and id-token:write as in the workflow and check environment
-   access. Additional required deployment approval is an administrator choice.
-4. Protect main with PRs, zero required reviewer approvals, required `App checks` and
-   `Publication checks`, current-base validation, no force pushes or deletion, and
-   administrator enforcement/no routine bypass. Add required checks once their first
-   successful run establishes their names. Until then no merge is considered ready.
-5. Protect snapshot/* and publish/* tags against updates and deletion where the
-   repository's rulesets support it; allow authorized creation. Enable squash merging.
-6. Confirm studies and migration baseline, configure exact bootstrap variables, and
-   request explicit merge/cutover authority. No deployment is authorized by plan approval.
-7. Following an explicitly requested deployment, verify the manifest SHA, passcode,
-   v1/v2/v3/v3.1/v4 URLs, media and participant study flow. Clear bootstrap access and
-   document demo as retired from publishing only after verification; do not delete it.
+- Pages uses a GitHub Actions workflow with HTTPS at
+  https://mb-prototype-lab.github.io/public-prototype/. The `github-pages`
+  environment allows `publish/*` tags, and the first publication deployment
+  succeeded with the workflow's `pages: write` and `id-token: write` permissions.
+- The active `Protect main` ruleset requires PRs with squash merges, zero
+  approving reviews, current-base `App checks` and `Publication checks`, and
+  blocks deletion and non-fast-forward updates. The active `Immutable publication
+  tags` ruleset blocks updates and deletion under `snapshot/*` and `publish/*`.
+- The owner-verified `VERIFIED_MIGRATION_BASELINE` variable matches the catalog.
+  The one-time `BOOTSTRAP_PUBLICATION_REF` variable is absent. Source and
+  publication tags are present at the identities listed above.
+
+The deployment result and HTTP responses do not establish visual or participant
+study behavior. Before team cutover, PMs should record passcode and selector
+refresh, the v1/v2/v3/v3.1/v4 entry paths and media, narrow layouts and themes,
+deep links and participant parameters, and the active v4 study flow. Coordinate
+participant-link changes separately. Keep the blue site and `demo` as fallback
+until those checks and the cutover decision are complete; do not delete `demo`.
+For future settings changes, inspect the saved state again and obtain separate
+authorization. Future merges and publications also require their own authorization.
 
 Workflow syntax and Pages action wiring were checked against the official
 [custom Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
 and [concurrency documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency).
-Local tests do not verify administrator permissions or prove an Actions run succeeds.
+Local tests do not verify administrator permissions or prove a future Actions run succeeds.
