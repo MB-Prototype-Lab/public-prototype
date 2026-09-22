@@ -3760,3 +3760,401 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   line-height: 1.35;
 }
 .esf-label-note { color: var(--text-strong); opacity: 0.85; }
+
+/* ─── Ask Buddy — the ESF panel ──────────────────────────────────────────────
+   Renders from screens/buddy-panel.js into #buddyRoot, a SIBLING of #screenRoot
+   (index.html). The root is a fixed layer inside the phone frame, which is what
+   keeps the pill still while the simulated keypad adds and removes its 250px:
+   a button that moves mid-press never receives the click. Same arrangement
+   #keyboardRoot uses, one z-index below it — the keypad covers Buddy, because
+   when both are up the thing being typed into is the one that matters. */
+#buddyRoot {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  pointer-events: none;        /* an empty root must not eat taps on the screen */
+}
+#buddyRoot > * { pointer-events: auto; }
+
+
+/* ── The panel ───────────────────────────────────────────────────────────────
+   Roughly three-quarters of the frame, anchored to the bottom edge, in the SAME
+   rectangle on every ESF screen. The step header and progress pips stay visible
+   above it, so the user never loses where they are. */
+.esf-buddy-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(43, 39, 35, .34);
+}
+
+.esf-buddy {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 76%;
+  display: flex;
+  flex-direction: column;
+  background: var(--screen);
+  border-top: 1px solid var(--line);
+  border-radius: 22px 22px 28px 28px;
+  box-shadow: 0 -10px 34px rgba(43, 39, 35, .22);
+  animation: esfBuddyIn .2s cubic-bezier(.2, .7, .3, 1) both;
+  overflow: hidden;
+}
+
+@keyframes esfBuddyIn {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+
+/* THE ONE PLACE SCROLLING IS ALLOWED. Owner's ruling: every question and answer
+   stays on screen, stacked, and the user scrolls back through them rather than
+   clicking back to re-read. The ESF capture screens still do not scroll. */
+.esf-buddy-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.esf-buddy-prompt {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* ── The question list ───────────────────────────────────────────────────────
+   Where several rows sit on one screen the user must be able to pick which one
+   they are asking about, and get back to that list. Asked rows are ticked and
+   STILL TAPPABLE — an answer can always be changed. */
+.esf-buddy-list { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+
+.esf-buddy-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--card);
+  color: var(--text);          /* body copy is never --muted */
+  font-size: 13px;
+  font-weight: 700;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.esf-buddy-item:hover { border-color: var(--accent); background: var(--accent-soft); }
+.esf-buddy-item-mark  { flex: 0 0 auto; font-size: 14px; color: var(--muted); }
+.esf-buddy-item-done .esf-buddy-item-mark { color: var(--accent); font-weight: 900; }
+
+.esf-buddy-foot {
+  flex-shrink: 0;
+  border-top: 1px solid var(--line);
+  background: var(--card);
+  padding: 9px 16px 12px;
+  border-radius: 0 0 28px 28px;
+}
+.esf-buddy-chips { padding-bottom: 9px; }
+/* The two ways back read as navigation, not as an answer to the question. */
+.esf-buddy-chip-nav { background: transparent; color: var(--muted); font-weight: 600; }
+
+/* ── The bar: X bottom-left, inert input beside it ───────────────────────────
+   Everything the user touches lives in the lower half — the panel is
+   one-handed. The X sits away from the thumb's natural travel so it is not hit
+   by accident, and still inside reach. */
+.esf-buddy-bar { display: flex; gap: 9px; align-items: center; }
+
+.esf-buddy-x {
+  flex: 0 0 auto;
+  width: 44px; height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--text);
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+}
+.esf-buddy-x:hover { background: var(--accent-soft); border-color: var(--accent); }
+
+/* PRESENT, VISIBLE, INERT. Visibly greyed, no caret, no keyboard — `disabled`
+   is what guarantees the simulated keypad can never open from it. The wrapper
+   carries the click handler because a disabled input dispatches no events, and
+   the tap is the measurement we want. */
+.esf-buddy-inputwrap { flex: 1; min-width: 0; display: block; cursor: default; }
+.esf-buddy-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 11px 14px;
+  opacity: .62;
+  cursor: default;
+  pointer-events: none;        /* the wrapper takes the tap, not the field */
+}
+
+/* ── The disclosure note ─────────────────────────────────────────────────────
+   REPLACES the "Based on …" line, never joins it, so it is height-neutral —
+   see rule 3 in js/buddy-esf.js. It inherits .esf-based and only adds the
+   accent and the fact that it is tappable, which is rule 4: a user who
+   mis-taps "my rent covers utilities" can undo it without hunting. */
+button.esf-based {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+}
+.esf-disclosed { color: var(--accent); font-weight: 750; }
+.esf-disclosed:hover { text-decoration: underline; }
+
+/* ── The Ask button, in the footer ───────────────────────────────────────────
+   [Back] [Ask 🐶] [primary]. It floated above the footer at first, which cost
+   no vertical layout but covered whatever row sat under it. In the bar it
+   costs height once, shared with buttons that were already there.
+
+   `margin-left: auto` on the primary is what pins the three: Back hard left,
+   the primary hard right, Ask sitting between them. .journal-foot is
+   space-between, which would otherwise spread three children evenly and drift
+   Ask off-centre as the primary's label changes length.
+
+   AMBER, not the LEGO orange it started as -- that read as a warning light
+   beside a calm sage primary. Dark #2B1A0E on this amber is about 7.9:1, up
+   from the orange's 5.2:1, and both pass AA. White on either FAILS (2.9:1 on
+   the orange), so the dark text is not a style choice.
+
+   Literals rather than theme tokens on purpose: this is Buddy's own accent and
+   must not drift with the four themes, or it stops being his. */
+/* THREE EQUAL COLUMNS, so Ask is dead centre no matter how long the primary's
+   label is. .journal-foot is space-between, which spreads three children by
+   their own widths and drifts Ask off-centre as "Continue" becomes "See my
+   number". A grid ignores content width, which is the whole point.
+
+   The intro step has only two children (no primary). Ask still lands in column
+   two, so it stays centred there as well. */
+.journal-foot.esf-foot {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+/* Equal thirds are narrower than .button's defaults allow for the longest label
+   this footer carries. At 13px with 13px side padding "See my number" wants
+   112px in a 103px column and SPILLS — a button's overflow is visible, so the
+   text paints straight over the edge of its own pill rather than being cut.
+   Both the padding and one step of type size come off; 12px keeps a legible
+   label and the tap target is unchanged at 44px. */
+.journal-foot.esf-foot > .button,
+.journal-foot.esf-foot > .esf-ask {
+  width: 100%;
+  padding-left: 5px;
+  padding-right: 5px;
+  font-size: 12px;
+}
+
+/* Ask carries .button's metrics exactly — same padding, radius, type — so the
+   three read as one set. Only the colour and the dog differ. Its own padding is
+   tightened because the dog is doing some of the work a word would. */
+.esf-ask {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border: 1px solid #C97B0E;
+  border-radius: 13px;
+  background: #E9A227;
+  color: #2B1A0E;
+  font-size: 13px;
+  font-weight: 850;
+  font-family: Arial, Helvetica, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.esf-ask:hover { filter: brightness(1.05); }
+/* 22px, not 30 — the dog sized the button before, standing taller than the
+   type beside it and pushing Ask out of line with Back and Continue. */
+.esf-ask-face {
+  width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: block;
+  background: #FFF;                      /* the art's own ring, continued */
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .9);
+}
+.esf-ask-emoji { font-size: 17px; line-height: 1; }
+
+/* ── The panel header ────────────────────────────────────────────────────────
+   TYPE LEFT, BUDDY RIGHT, and as short as it can be. The picture is what says
+   "you are talking to someone" before a word is read — without it the header
+   was two lines of grey type and read as a settings pane.
+
+   He was briefly centred with the words underneath, which made him unmissable
+   and cost about 75px of a panel that is only three-quarters of a phone tall.
+   The transcript is what people opened this for, and the header was eating two
+   bubbles' worth of it.
+
+   He sits flush to the bottom edge with no padding under him, so the header is
+   only as tall as he is. Every pixel of chrome here comes out of the
+   conversation. */
+/* The title and Buddy are ONE centred group, not two things pinned to opposite
+   edges. Apart, the eye had to travel the width of the panel and they read as
+   a label on the left and a logo on the right; together they read as him
+   introducing himself. Still one row, so the header stays short. */
+.esf-buddy-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  padding: 4px 16px 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--accent-soft);
+  border-radius: 22px 22px 0 0;
+}
+.esf-buddy-title {
+  margin: 0 0 11px; font-size: 19px; font-weight: 900;
+  color: var(--text); letter-spacing: -.01em;
+}
+.esf-buddy-hero { width: 58px; height: auto; display: block; flex: 0 0 auto; margin-bottom: -1px; }
+
+/* ── Buddy's avatar on a run of bubbles ──────────────────────────────────────
+   ONE face per run, on the last bubble, with the bubbles above it tucked in.
+   Three stacked paragraphs each wearing the same face read as three people
+   talking. The empty span holds the gutter so the bubbles in a run stay in
+   one column. */
+.esf-buddy-row { display: flex; align-items: flex-end; gap: 7px; }
+.esf-buddy-avatar {
+  flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%;
+  overflow: hidden; background: transparent;
+}
+.esf-buddy-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.esf-buddy-row-end .esf-buddy-avatar { background: #FFF; box-shadow: 0 0 0 1px var(--line); }
+/* A bubble mid-run keeps its corner square on the side the tail will be, so a
+   run reads as one utterance broken over lines. */
+.esf-bubble-mid.chat-bubble-buddy { border-bottom-left-radius: 16px; }
+.esf-bubble-mid.chat-bubble-user  { border-bottom-right-radius: 16px; }
+.esf-buddy-thread .chat-row-user  { margin-left: 37px; }
+
+/* ── A lifestyle question, and the figure it reaches ─────────────────────────
+   THE OPTIONS LIVE INSIDE THE PANEL. A native <select> was the first build and
+   the owner's own ask, and on a real phone it is right — the options open as a
+   picker sheet. But this prototype is a phone FRAME inside a desktop browser,
+   and a select's option list is drawn by the operating system rather than laid
+   out by the page, so it ignores the frame and spills out of the bottom of the
+   phone. No CSS can contain it; the control has to change.
+
+   These are ordinary buttons, capped in height and scrolling inside the footer.
+   The cap is what guarantees it: six options at 40px would be 240px and the
+   footer would push the transcript out of the panel, so the list scrolls rather
+   than the panel growing. */
+.esf-buddy-q { padding-bottom: 9px; }
+.esf-buddy-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* About three and a half rows. Taller and the footer takes half the panel
+     and the transcript -- the thing they opened this for -- is squeezed to a
+     couple of bubbles. Only three questions in the pack exceed four options. */
+  max-height: 150px;
+  overflow-y: auto;
+  /* Room for the focus ring, which is drawn OUTSIDE the button and would be
+     clipped by the scroller otherwise. Matched padding keeps the content box
+     where it was. */
+  margin: 0 -4px;
+  padding: 2px 4px;
+}
+.esf-buddy-opt {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.esf-buddy-opt:hover { border-color: var(--accent); background: var(--accent-soft); }
+.esf-buddy-q-step {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: .6;
+}
+
+
+/* ── The menu: three buttons, one row, always the same three ─────────────────
+   [ Back to the list ]  [ Start over ]  [ Help me calculate this ]
+
+   A GRID, not a chip rack. Chips size themselves to their text and wrap, which
+   is exactly wrong here: these three moved position on nearly every screen and
+   spilled onto a second line, so the pattern had to be re-read each time.
+   Equal columns pin each action to a place the user can learn once.
+
+   A button that does not apply is disabled rather than removed — removing one
+   would shift the other two, which is the one thing this row exists to stop. */
+.esf-buddy-nav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding-bottom: 9px;
+}
+.esf-buddy-navbtn {
+  min-height: 44px;
+  padding: 6px 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.esf-buddy-navbtn:not(:disabled):hover { background: var(--accent-soft); border-color: var(--accent); }
+/* Visibly out of reach, still holding its column. */
+.esf-buddy-navbtn:disabled { opacity: .38; cursor: default; }
+/* The one that does something to the row behind the panel reads as the action
+   of the three, without competing with the figure when one is on offer. */
+.esf-buddy-navbtn-go:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* The figure gets a full-width row above the menu. It is THE action at that
+   moment; sitting it beside two ways out would make it one option of three. */
+.esf-buddy-applyrow { padding-bottom: 9px; }
+.esf-buddy-apply {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.esf-buddy-apply:hover { filter: brightness(1.06); }

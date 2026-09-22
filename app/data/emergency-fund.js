@@ -158,6 +158,148 @@ const EMERGENCY_FUND =
     "_dispersionNote": "STUB CALIBRATION, not a sourced figure. The county multiplier this scales is derived from RENTS, and home VALUES spread further than rents do — a metro renting at 2.4x national sells at more than 2.4x national. Without it San Francisco priced at about $850k, roughly half of what it is, and the tax estimate came out half as well. Replace the whole thing the moment county ZHVI is in the repo; this exists so the coastal figures are not visibly wrong in a demo."
   },
 
+  "lifestyleModifiers": {
+    "_note": "Buddy's lifestyle questions. THE MECHANIC IS A MULTIPLIER, NOT A CALCULATION: adjusted = the row's opening estimate x the product of every answer chosen. The ESF has already priced this row for their ZIP, income band and household, and these questions adjust that for how the person actually lives — they never rebuild the figure from scratch. Three reasons it works this way. The estimate stays the spine. It is a multiplier per option rather than a model per category, so it is far less content. And it can never disagree with the screen the way a from-scratch answer can, leaving the user with two numbers and no way to choose.",
+
+    "_midIsOne": "THE MID OPTION IS ALWAYS EXACTLY 1.00 and every set must contain one. Owner's ruling: we assume the peer benchmark describes somebody living in the middle, so the middle answer must not move the figure. This is a DOCUMENTED ASSUMPTION, NOT A SOURCED FACT — peer benchmarks are population averages, not mid-tier averages. It sits alongside valueDispersion in the known-stubs list: directionally sound, not defensible.",
+
+    "_prototype": true,
+    "_prototypeNote": "Every x below is invented. Reasoned rather than random — the direction and the RELATIVE SIZE of each is what has to survive a tester saying 'that seems about right' — but none is sourced. They live here rather than as literals in js/buddy-esf.js because a figure buried in a model is invisible, and a flagged entry in the data file is a to-do somebody can find.",
+
+    "_storeNames": "Brand names are in the option labels on purpose. 'Mid-tier grocery' does not land at a 5th-grade reading level; 'Kroger' does.",
+
+    "groceries": {
+      "opening": "Groceries means food you cook and eat at home. Not restaurants or takeout.",
+      "questions": [
+        { "id": "frequency", "ask": "How often do you shop for food?",
+          "options": [
+            { "id": "daily",    "label": "Most days",                   "short": "shopping most days",        "x": 1.15 },
+            { "id": "weekly34", "label": "Three or four times a week",  "short": "shopping three or four times a week", "x": 1.08 },
+            { "id": "weekly12", "label": "Once or twice a week",        "short": "shopping once or twice a week", "x": 1.00 },
+            { "id": "biweekly", "label": "Every two weeks",             "short": "shopping every two weeks",  "x": 0.95 },
+            { "id": "monthly",  "label": "About once a month",          "short": "shopping about once a month", "x": 0.90 }
+          ],
+          "_why": "More trips means more unplanned items. The spread is deliberately narrow — where you shop moves the bill far more than how often." },
+        { "id": "where", "ask": "Where do you shop most?",
+          "options": [
+            { "id": "warehouse", "label": "Warehouse clubs (Sam's, Costco)",  "short": "at warehouse clubs", "x": 0.85 },
+            { "id": "value",     "label": "Value stores (Walmart, Aldi)",     "short": "at value stores",    "x": 0.90 },
+            { "id": "midtier",   "label": "Regular grocery stores (Kroger, HEB)", "short": "at regular grocery stores", "x": 1.00 },
+            { "id": "premium",   "label": "Higher-end stores (Whole Foods)",  "short": "at higher-end stores", "x": 1.30 }
+          ],
+          "_why": "The widest lever in the set, which matches how people actually talk about their grocery bill." },
+        { "id": "diet", "ask": "Is anyone eating differently?",
+          "options": [
+            { "id": "same",    "label": "No, we all eat the same",   "short": "everyone eating the same", "x": 1.00 },
+            { "id": "special", "label": "Someone has a special diet", "short": "with a special diet in the house", "x": 1.12 },
+            { "id": "organic", "label": "We buy a lot of organic",    "short": "buying a lot of organic", "x": 1.15 }
+          ] }
+      ]
+    },
+
+    "power": {
+      "opening": "This is your water, gas and electricity together.",
+      "questions": [
+        { "id": "athome", "ask": "When is someone usually home?",
+          "options": [
+            { "id": "allday",   "label": "Someone's home all day",       "short": "with someone home all day",    "x": 1.18 },
+            { "id": "mix",      "label": "It's a mix",                   "short": "with people in and out",       "x": 1.08 },
+            { "id": "evenings", "label": "Mostly mornings and evenings", "short": "out most of the day",          "x": 1.00 }
+          ] },
+        { "id": "climate", "ask": "Do you run heat or air conditioning?",
+          "options": [
+            { "id": "most",   "label": "Most of the year",           "short": "running heat or air most of the year", "x": 1.25 },
+            { "id": "season", "label": "Just summer, or just winter", "short": "heating or cooling one season",        "x": 1.00 },
+            { "id": "rarely", "label": "Hardly ever",                 "short": "hardly using heat or air",             "x": 0.82 }
+          ] },
+        { "id": "cooking", "ask": "How often do you cook at home?",
+          "options": [
+            { "id": "most",   "label": "Most nights",        "short": "cooking most nights",       "x": 1.06 },
+            { "id": "some",   "label": "A few times a week", "short": "cooking a few times a week", "x": 1.00 },
+            { "id": "rarely", "label": "Hardly ever",        "short": "hardly cooking",             "x": 0.95 }
+          ],
+          "_why": "Barely moves it, on purpose. Heating and cooling are the biggest slice of a power bill and an oven is a small one — the relative size of these three is the part a tester will judge." }
+      ],
+      "_climateWhy": "The widest lever here, for the same reason: heating and cooling dominate the bill."
+    },
+
+    "connect": {
+      "opening": "This is your phone bill and your internet bill together.",
+      "questions": [
+        { "id": "lines", "ask": "How many phone lines are on your bill?",
+          "options": [
+            { "id": "one",   "label": "Just one",     "short": "one phone line",         "x": 0.58 },
+            { "id": "two",   "label": "Two",          "short": "two lines",              "x": 0.79 },
+            { "id": "three", "label": "Three",        "short": "three lines",            "x": 1.00 },
+            { "id": "four",  "label": "Four",         "short": "four lines",             "x": 1.17 },
+            { "id": "five",  "label": "Five or more", "short": "five or more lines",     "x": 1.32 }
+          ],
+          "_why": "Not linear, because carriers charge less per line as lines are added. Three is the mid option because the opening estimate counts a line for every adult and teenager, which lands near three for a typical household." },
+        { "id": "plans", "ask": "What kind of plans are they?",
+          "options": [
+            { "id": "unlimited", "label": "Unlimited data",        "short": "on unlimited data",   "x": 1.00 },
+            { "id": "mixed",     "label": "A mix",                 "short": "on a mix of plans",   "x": 0.90 },
+            { "id": "smaller",   "label": "Smaller data plans",    "short": "on smaller plans",    "x": 0.80 },
+            { "id": "basic",     "label": "Basic phones, no data", "short": "on basic phones",     "x": 0.62 }
+          ] },
+        { "id": "internet", "ask": "What about home internet?",
+          "options": [
+            { "id": "fast",  "label": "A fast plan",      "short": "with a fast internet plan",  "x": 1.12 },
+            { "id": "basic", "label": "A basic plan",     "short": "with a basic internet plan", "x": 1.00 },
+            { "id": "none",  "label": "I don't have one", "short": "with no home internet",      "x": 0.72 }
+          ] }
+      ]
+    },
+
+    "carCosts": {
+      "opening": "This is fuel, insurance and upkeep. Not your car payment.",
+      "questions": [
+        { "id": "miles", "ask": "How far do you drive on a normal day?",
+          "options": [
+            { "id": "over60", "label": "More than 60 miles", "short": "driving more than 60 miles a day", "x": 1.70 },
+            { "id": "m4060",  "label": "40 to 60 miles",     "short": "driving 40 to 60 miles a day",     "x": 1.45 },
+            { "id": "m2040",  "label": "20 to 40 miles",     "short": "driving 20 to 40 miles a day",     "x": 1.22 },
+            { "id": "m1020",  "label": "10 to 20 miles",     "short": "driving 10 to 20 miles a day",     "x": 1.00 },
+            { "id": "under10","label": "Under 10 miles",     "short": "driving under 10 miles a day",     "x": 0.85 },
+            { "id": "none",   "label": "I don't drive much at all", "short": "hardly driving",            "x": 0.62 }
+          ],
+          "_why": "Never reaches zero, and that is the point. Insurance is most of this row before a wheel turns, so driving nothing still costs most of the middle answer. A tester who drives five miles a day and sees the figure barely move will assume the model is broken unless the copy says why." },
+        { "id": "vehicle", "ask": "What do you drive?",
+          "options": [
+            { "id": "truck", "label": "A truck or van",     "short": "in a truck or van", "x": 1.28 },
+            { "id": "suv",   "label": "An SUV or crossover", "short": "in an SUV",         "x": 1.14 },
+            { "id": "sedan", "label": "A sedan",             "short": "in a sedan",        "x": 1.00 },
+            { "id": "small", "label": "A small car",         "short": "in a small car",    "x": 0.88 }
+          ] },
+        { "id": "fuel", "ask": "Gas or electric?",
+          "options": [
+            { "id": "gas",      "label": "Gas",      "short": "running on gas", "x": 1.00 },
+            { "id": "hybrid",   "label": "Hybrid",   "short": "a hybrid",       "x": 0.88 },
+            { "id": "electric", "label": "Electric", "short": "electric",       "x": 0.78 }
+          ] }
+      ]
+    },
+
+    "medical": {
+      "opening": "This is insurance, copays, prescriptions, dental and vision.",
+      "_note": "NOT about how often you see a doctor — that does not move a premium, and asking it would imply it does. The two levers here are the plan you would buy and whether anyone needs care all year. Neither is already in the model: the estimate prices a mid-level plan on the ages in the household, so household size and age must NOT appear here or they are counted twice.",
+      "questions": [
+        { "id": "plan", "ask": "What kind of plan would you buy?",
+          "options": [
+            { "id": "better", "label": "Better coverage, less to pay at the doctor",  "short": "on better coverage",   "x": 1.25 },
+            { "id": "mid",    "label": "Something in the middle",                     "short": "on a mid-level plan",  "x": 1.00 },
+            { "id": "basic",  "label": "The cheapest one, more to pay at the doctor", "short": "on the cheapest plan", "x": 0.80 }
+          ] },
+        { "id": "care", "ask": "Does anyone need care all year round?",
+          "options": [
+            { "id": "specialist", "label": "Someone sees a specialist",        "short": "with someone seeing a specialist",   "x": 1.15 },
+            { "id": "medication", "label": "Someone takes regular medication", "short": "with someone on regular medication", "x": 1.08 },
+            { "id": "none",       "label": "No, nothing regular",              "short": "with nobody needing regular care",   "x": 1.00 }
+          ] }
+      ]
+    }
+  },
+
   "crisis": {
     "_note": "What changes if the paycheck stops. The owner's ruling: ONLY health cover moves. Housing, debt, transport, food and utilities are all carried at their stated figures, and the tool states the adjustment rather than offering a choice about it — an emergency fund that assumes you keep your employer's insurance is not covering the emergency.",
     "replacementPremiumFrom": "helpMeOut:Health.marketplacePremium",

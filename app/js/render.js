@@ -277,6 +277,15 @@ function render() {
   }
   if (state.screen === "chat")   chatMountHook();   // pin the thread to the newest message
 
+  // The Ask Buddy layer. Painted every render like the screen itself, but into
+  // its OWN root outside screenRoot, so the keypad opening and closing cannot
+  // move the pill out from under a finger mid-press (screens/buddy-panel.js).
+  const buddyRoot = document.getElementById("buddyRoot");
+  if (buddyRoot) {
+    buddyRoot.innerHTML = (typeof renderEsfBuddyLayer === "function") ? renderEsfBuddyLayer() : "";
+    if (typeof esfBuddyMountHook === "function") esfBuddyMountHook();
+  }
+
   // The onboarding narrator is a timed surface like the lesson player, but it
   // drives its OWN re-render (onbVideoAdvance → render → onbVideoSpeak), so it
   // cannot use the stop-then-re-arm shape above: an unconditional stop here

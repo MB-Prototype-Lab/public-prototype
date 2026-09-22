@@ -397,20 +397,28 @@ function esfRenderGroup(group) {
   // ── Opt-in: estimated, but worth nothing until added ──────────────────────
   if (lead.optIn) {
     const added = esfRowAdded(lead.id);
+    // A disclosure can SUPPRESS an opt-in row: "that's already in your mortgage
+    // payment" means the Add-it button would be a double-count, so the note
+    // takes its place. It never locks the row — the note is tappable and
+    // unwinds the answer (rule 4 in js/buddy-esf.js).
+    const disclosed = typeof esfDisclosureFor === "function" ? esfDisclosureFor(lead.id) : null;
+    const suppressed = !!disclosed && disclosed.effect === "suppress";
     return `
       <div class="item-card esf-row ${added ? "esf-row-on" : ""}">
         <div class="esf-optin-head">
           <span class="esf-field-label">${h(lead.label)}${
             lead.labelNote ? `<span class="esf-label-note">${h(lead.labelNote)}</span>` : ""
           }</span>
+          ${suppressed ? "" : `
           <button type="button" class="${added ? "esf-added" : "esf-add"}"
                   aria-pressed="${added}" onclick="esfToggleRow('${lead.id}')">
             ${added ? "Added" : "Add it"}
             ${added || lead.startAtZero ? "" :
               `<span class="esf-add-figure">${h(esfMoney(esfRowMonthly(lead.id, true)))}/mo</span>`}
-          </button>
+          </button>`}
         </div>
-        ${added ? `<div class="esf-fields">${esfRenderRangeField(lead)}</div>` : ""}
+        ${suppressed ? esfDisclosureNote(lead.id) : ""}
+        ${added && !suppressed ? `<div class="esf-fields">${esfRenderRangeField(lead)}</div>` : ""}
       </div>`;
   }
 
@@ -428,12 +436,16 @@ function esfRenderGroup(group) {
         // its number box — rent and a car payment are figures people know.
         if (!r.prefill) return "";
         const based = esfBasedOn(r.id);
+        // A disclosure REPLACES the "Based on" line rather than joining it —
+        // height-neutral, which is what lets these screens stay off the
+        // scrollbar at 430x940 (rule 3 in js/buddy-esf.js).
+        const note = typeof esfDisclosureNote === "function" ? esfDisclosureNote(r.id) : "";
         return `<div class="esf-estimate">
           ${rows.length > 1 || !lead.groupLabel
             ? `<span class="esf-field-label">${h(r.label)}${
                 r.labelNote ? `<span class="esf-label-note">${h(r.labelNote)}</span>` : ""}</span>`
             : ""}
-          ${based ? `<p class="esf-based">${h(based)}</p>` : ""}
+          ${note ? note : (based ? `<p class="esf-based">${h(based)}</p>` : "")}
           <div class="esf-fields">${esfRenderRangeField(r)}</div>
         </div>`;
       }).join("")}
@@ -553,8 +565,9 @@ function renderEsfBuild() {
         `}
       </div>
 
-      <div class="journal-foot">
+      <div class="journal-foot esf-foot">
         <button class="button secondary" type="button" onclick="esfBack()">Back</button>
+        ${renderEsfBuddyButton()}
         ${intro ? "" : `
           <button class="button" type="button" onclick="esfNext()">
             ${last ? "See my number" : "Continue"}

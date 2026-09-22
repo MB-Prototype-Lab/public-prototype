@@ -40,6 +40,7 @@ global_for() {
     zip-cost-of-living) echo "ZIP_COST_OF_LIVING" ;;
     daily-scripts)     echo "DAILY_SCRIPTS" ;;
     buddy-responses)   echo "BUDDY_RESPONSES" ;;
+    buddy-esf)         echo "BUDDY_ESF" ;;
     lessons)           echo "LESSONS_V3" ;;   # not LESSONS — v2's state.lessons still exists
     *)                 echo "" ;;
   esac
