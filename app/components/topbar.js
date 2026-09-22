@@ -44,7 +44,10 @@ function renderTopBar() {
   let left = `<span class="topbar-slot"></span>`;
   if (depth > 1) {
     left = `<button class="topbar-btn" type="button" onclick="navBack()" aria-label="Back">‹</button>`;
-  } else if (!onHome && !fullBleed) {
+  } else if (!onHome && !fullBleed && !(typeof ESF_ONLY !== "undefined" && ESF_ONLY)) {
+    // The home icon is the one route out of the emergency-fund build and into
+    // the daily-loop screens, which the ESF-only build is not showing. Left in
+    // place it is a door to a room that has been taken off the map.
     left = `<button class="topbar-btn" type="button" onclick="navGoHome()" aria-label="Home">${TOPBAR_HOME_ICON}</button>`;
   } else if (fullBleed) {
     // Nav is hidden here, so back is the only exit. Depth 1 on a full-bleed

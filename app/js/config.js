@@ -45,3 +45,15 @@ const APP_VERSION = "v4";
 // Frozen publication setting; local development is untracked. Participant URLs
 // cannot override it. useberryActive additionally restricts injection to HTTP(S).
 const USEBERRY_TRACKING = window.MB_RELEASE.tracking === true;
+
+// ESF-ONLY BUILD — the prototype narrowed to the emergency fund.
+//
+//   true  -> onboarding asks only what the emergency fund reads, then opens it;
+//            the app shows Goals and the fund and nothing else
+//   false -> the full app, exactly as it was
+//
+// Hides, never deletes. Every other screen, renderer and step is still in the
+// code and still routed for the admin jump list; this only takes them out of
+// what a tester walks through. Same rule as the two flags above: flipping it
+// must not require unwinding anything else.
+const ESF_ONLY = true;

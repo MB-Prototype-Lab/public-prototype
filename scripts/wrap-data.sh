@@ -31,6 +31,7 @@ global_for() {
     journal-questions) echo "JOURNAL_QUESTIONS" ;;
     estimator-questions) echo "ESTIMATOR_QUESTIONS" ;;
     help-me-out)       echo "HELP_ME_OUT" ;;
+    emergency-fund)    echo "EMERGENCY_FUND" ;;
     test-profiles)     echo "TEST_PROFILES" ;;
     dog-breeds)        echo "DOG_BREEDS" ;;
     card-apr)          echo "CARD_APR" ;;

@@ -107,6 +107,15 @@ function navGoTabRoot(key) {
 
 // POP. At depth 1 there is nowhere to go — the top bar shows home instead.
 function navBack() {
+  // Onboarding is a multi-step flow living on ONE screen, so the nav stack
+  // knows nothing about which step is showing. Without this, the top-bar
+  // chevron popped straight out of onboarding (or did nothing) while the
+  // in-body Back button walked the steps — two controls with the same arrow
+  // doing different jobs. The step walk owns the chevron while it is up.
+  if (state.screen === "onboarding" && typeof onbBack === "function") {
+    onbBack();
+    return;
+  }
   const st = navStack();
   if (st.length <= 1) {
     if (state.nav.activeStack !== "home") navGoHome();
@@ -487,6 +496,10 @@ function navRouteTask(route) {
 
   // ── Flows from Home ──
   if (name === "money_journal")       { journalStart({}); taskGo("journalEntry"); return; }
+  // The emergency fund starts a session before it routes, the same shape as the
+  // journal above — the screen reads state.esf and there is nothing to render
+  // until esfStart() has built it.
+  if (name === "emergency_fund")      { esfStart(); return; }
   if (name === "subscription_confirm"){ journalStart({ focusQuestionId: "q_watched" }); taskGo("journalEntry"); return; }
 
   // ── Bookmarks into a tab ──
