@@ -22,7 +22,7 @@
      Natural Light  (no class — :root)    D36 cream + sage
      Natural Dark   .theme-natural-dark   D36 dimmed, warm
 
-   THE CONTRACT: each of the three classes must define ALL 40 colour tokens
+   THE CONTRACT: each of the three classes must define ALL 43 colour tokens
    that :root defines below, no more and no fewer. A missing one silently falls
    through to :root's cream and paints one stray warm patch into a cool theme —
    which is exactly the kind of bug that looks deliberate. `scripts/sweep.sh`

@@ -182,11 +182,9 @@ var THEME_FREE = ["--on-dark","--tier-copper","--radius-card","--radius-button",
   "--space-xs","--space-sm","--space-md","--space-lg","--space-xl","--topbar-h","--nav-h"];
 
 var CONTRACT = Object.keys(CSS[":root"]).filter(function (k) { return THEME_FREE.indexOf(k) === -1; });
-// --rail is v3.1 only (the band chart needs a rail edge; v3 has no band), so
-// the expected count differs by side. Stated rather than loosened to ">= 40" —
-// the point of this check is that a token cannot be added or dropped without
-// somebody noticing.
-var EXPECTED_TOKENS = CSS[":root"]["--rail"] ? 41 : 40;
+// The ESF merge adds --ink-strong and --text-strong to the 41-token app
+// contract. Keep an exact count so adding or dropping a token is reviewed.
+var EXPECTED_TOKENS = 43;
 chk(CONTRACT.length === EXPECTED_TOKENS,
     "contract is " + EXPECTED_TOKENS + " colour tokens", "got " + CONTRACT.length);
 
