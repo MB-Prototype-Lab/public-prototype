@@ -105,14 +105,25 @@ preview. A refresh returns to the selector. If you are using Claude Desktop,
 ask the agent to show you the file in the Code tab's browser pane or open it
 from the checkout folder in File Explorer.
 
+For an exact address to paste into your browser, ask your agent:
+
+> Show me the browser URL for this checkout.
+
+The agent runs `python3 scripts/local-variants.py url`. It detects WSL and prints a
+Windows browser URL using your actual distro name, or a native file URL when working
+directly in Windows/macOS/Linux. Spaces and special characters are handled for you.
+No `.env` file or manual distro-name lookup is needed. Creating alternatives also
+prints the selector URL and each option's URL.
+
 ## 4. Ask your agent to use the project skills
 
-The repository has four skills in `.claude/skills/`. Name the relevant skill in
+The repository has five skills in `.claude/skills/`. Name the relevant skill in
 your request; the agent reads its instructions and the linked project guides.
 
 | When you want to… | Ask for… | What the agent does |
 | --- | --- | --- |
 | Begin a task or resume unfinished work | [start-work](.claude/skills/start-work/SKILL.md) | Checks branches and uncommitted files, then starts or resumes a task branch without losing existing work. |
+| Compare local alternatives | [compare-local](.claude/skills/compare-local/SKILL.md) | Creates independent previews, keeps a chosen alternative, and cleans up only selected work. |
 | Bring in changes from `main` | [sync](.claude/skills/sync/SKILL.md) | Fetches and merges current `main` into your task branch, then checks affected work. |
 | Get tested work into a pull request | [ship](.claude/skills/ship/SKILL.md) | Reviews changes, runs checks, prepares the PR, and records your testing. A merge needs separate authorization. |
 | Update the live selector or add a snapshot | [publish](.claude/skills/publish/SKILL.md) | Follows the release procedure after an explicit publication request. Publication needs separate authorization. |
@@ -124,3 +135,18 @@ handles routine code changes and automated checks. See
 [Publishing](docs/publishing.md) for the full procedures. Merging code does not
 update the live site. A GitHub login does not itself authorize a merge,
 repository settings change, or publication.
+
+## Compare alternatives locally
+
+Ask your agent: “Make two alternatives.” It prepares named choices under **Local
+alternatives** in your existing selector. Use **Open in new tab** and arrange the
+windows side by side. Readable URL folders such as `variant-A` and `variant-B`
+help you identify the option; later comparisons may add a suffix such as `variant-A-2`.
+Each alternative runs independently; refresh returns to the
+primary selector. No server, package installation, or Git commands are needed from
+you.
+
+Continue with “Change option A,” then “Keep B” when you choose. The agent verifies
+and merges B into your task branch locally. Alternatives remain available to the
+agent until you explicitly ask “Clean up this comparison.” The ordinary selector
+returns when the comparison closes. See [local comparisons](docs/local-variants.md).

@@ -37,7 +37,8 @@ class PublicationTests(unittest.TestCase):
         self.row['digest'] = pub.digest(pub.package(self.row, self.repo, False))
         self.catalog = dict(schema=1, migration_baseline=self.sha, snapshots=[self.row])
         self.git('tag', 'snapshot/v1', self.sha)
-        self.assets = {'index.html': b'<div><!-- CATALOG --></div>', 'gate/gate.js': b'// gate', 'gate/style.css': b'/* gate */'}
+        self.assets = {'index.html': (Path(__file__).resolve().parents[1]/'index.html').read_bytes(),
+                       'gate/gate.js': b'// gate', 'gate/style.css': b'/* gate */'}
 
     def git(self, *args):
         return subprocess.check_output(['git', '-C', str(self.repo), *args], stderr=subprocess.PIPE, text=True).strip()
@@ -155,10 +156,28 @@ class PublicationTests(unittest.TestCase):
     def test_selector_order_and_tracking_independent(self):
         rows = self.catalog['snapshots']
         rows.extend([dict(self.row, id='second', source_tag='snapshot/second', source_dir='versions/second', public_path='versions/second/index.html', label='Second', order=3, tracking=True), dict(self.row, id='first', source_tag='snapshot/first', source_dir='versions/first', public_path='versions/first/index.html', label='First', order=1)])
-        page = pub.selector(self.catalog, '<!-- CATALOG -->', b'', b'')['index.html'].decode()
+        page = pub.selector(self.catalog, self.assets['index.html'].decode(), b'', b'')['index.html'].decode()
         self.assertLess(page.index('One'), page.index('First'))
         self.assertLess(page.index('First'), page.index('Second'))
         self.assertIn('Tracking on', page)
+
+    def test_published_selector_has_no_local_comparison(self):
+        page = self.build()['index.html'].decode()
+        for local_text in ('localPreview', 'localAlternatives', '.local-preview/',
+                           'local-variants.js', '.worktrees/', 'Current local app',
+                           'Live historical builds', 'LOCAL PREVIEW', 'LOCAL SCRIPTS'):
+            with self.subTest(local_text=local_text):
+                self.assertNotIn(local_text, page)
+        self.assertIn('versions/v1/index.html', page)
+        self.assertIn('gate/gate.js', page)
+        self.assertNotIn('gate/local-variants.js', self.build())
+
+    def test_local_selector_boundaries_are_required(self):
+        template = self.assets['index.html'].decode()
+        for marker in ('<!-- LOCAL PREVIEW START -->', '<!-- LOCAL PREVIEW END -->',
+                       '<!-- LOCAL SCRIPTS START -->', '<!-- LOCAL SCRIPTS END -->'):
+            with self.subTest(marker=marker), self.assertRaisesRegex(ValueError, 'boundary'):
+                pub.selector(self.catalog, template.replace(marker, ''), b'', b'')
 
     def test_missing_new_asset_fails(self):
         with self.assertRaisesRegex(ValueError, 'missing published asset'):

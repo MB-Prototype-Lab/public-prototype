@@ -1,11 +1,7 @@
 # Future work (not implemented)
 
-Agent-managed worktrees may live under the primary checkout's `.worktrees/`, which
-is ignored and excluded from artifacts and searches. Editable worktrees get distinct
-task branches; historical comparisons use detached snapshot revisions. Never create
-worktrees recursively. Inspect dirty files and local-only commits before cleanup and
-preserve unfinished work. Current workflow rules govern historical checkouts. A local
-comparison selector is optional future work.
+Agent-managed local alternatives are implemented in [local comparisons](local-variants.md).
+Historical detached snapshot comparisons remain future work.
 
 Leave HoffDemo, HoffDemo-Chat and HoffDemo-ESF branches untouched. Later compare chosen
 features against app/ and port only approved behavior with tests and PM review. Never

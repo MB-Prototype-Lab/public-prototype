@@ -151,8 +151,16 @@ def selector(catalog, template, gate_js, css):
     active = ''.join(card(r) for r in rows if r['state'] == 'active')
     archived = ''.join(card(r) for r in rows if r['state'] == 'archived')
     listing = active + ('<details><summary>Older versions</summary>' + archived + '</details>' if archived else '')
-    require('<!-- CATALOG -->' in template, 'selector template marker missing')
-    return {'index.html': re.sub(r'<div id="localPreview">.*?</div>', '', template, flags=re.S).replace('<!-- CATALOG -->', listing).encode(), 'gate/gate.js': gate_js, 'gate/style.css': css, '.nojekyll': b''}
+    require(template.count('<!-- CATALOG -->') == 1, 'selector template marker missing or repeated')
+    for start, end in (('<!-- LOCAL PREVIEW START -->', '<!-- LOCAL PREVIEW END -->'),
+                       ('<!-- LOCAL SCRIPTS START -->', '<!-- LOCAL SCRIPTS END -->')):
+        require(template.count(start) == 1 and template.count(end) == 1,
+                'local selector boundary missing or repeated')
+        first, last = template.index(start), template.index(end)
+        require(first < last, 'local selector boundary out of order')
+        template = template[:first] + template[last + len(end):]
+    return {'index.html': template.replace('<!-- CATALOG -->', listing).encode(),
+            'gate/gate.js': gate_js, 'gate/style.css': css, '.nojekyll': b''}
 
 
 def validate_assets(output, prefixes):

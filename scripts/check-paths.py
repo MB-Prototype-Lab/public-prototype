@@ -16,6 +16,11 @@ def check_tree(root):
         if not parsed.path or parsed.scheme or parsed.netloc or url.startswith('data:'):
             return
         target = (root/parsed.path.lstrip('/') if url.startswith('/') else source.parent/unquote(parsed.path)).resolve()
+        # These two files are generated only while a local comparison is active.
+        if (source.relative_to(root) == Path('index.html') and
+                url in ('.local-preview/variants.js', '.local-preview/return.js') and
+                not target.exists()):
+            return
         if not target.is_relative_to(root.resolve()) or not target.is_file():
             failures.append(f'{source.relative_to(root)} -> {url}')
     class References(HTMLParser):

@@ -32,6 +32,7 @@ jobs:
       - run: bash scripts/sweep.sh
       - run: python3 scripts/check-paths.py
       - run: node tests/release-runtime.cjs
+      - run: node tests/local-variants.cjs
       - run: python3 -m unittest discover -s tests -v
       - uses: actions/configure-pages@v5
       - name: Validate and build against the live manifest
