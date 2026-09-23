@@ -37,9 +37,35 @@ def records(root):
     return result
 
 
+def option_letter(number):
+    """One-based spreadsheet lettering: A through Z, then AA, AB, ..."""
+    letters = ''
+    while number:
+        number, remainder = divmod(number - 1, 26)
+        letters = chr(65 + remainder) + letters
+    return letters
+
+
+def available_names(root, count):
+    """Keep letters aligned across a comparison; never reuse retained branches."""
+    branches = {name.casefold() for name in git(root, 'for-each-ref', '--format=%(refname)', 'refs/heads').splitlines()}
+    registered = {path.casefold() for path in records(root)}
+    # Consult Git registration and exact candidate paths; never search worktrees.
+    directory = root / '.worktrees'
+    serial = 1
+    while True:
+        suffix = '' if serial == 1 else '-' + str(serial)
+        names = ['variant-' + option_letter(n) + suffix for n in range(1, count + 1)]
+        if all(not os.path.lexists(directory / name) and
+               str(directory / name).casefold() not in registered and
+               ('refs/heads/variant/' + name).casefold() not in branches for name in names):
+            return names
+        serial += 1
+
+
 def location(root, variant):
     ident = variant['id']
-    if not re.fullmatch(r'[a-z0-9][a-z0-9-]*', ident):
+    if not re.fullmatch(r'(?:[a-z0-9][a-z0-9-]*|variant-[A-Z]+(?:-[1-9][0-9]*)?)', ident):
         raise RuntimeError('Invalid managed variant identity')
     path = root / '.worktrees' / ident
     if path.resolve() != path or variant['branch'] != 'variant/' + ident:
@@ -120,12 +146,14 @@ def run(root, args):
             raise RuntimeError('Start from the current feature branch')
         if not args.option:
             raise RuntimeError('Supply at least one --option LABEL DESCRIPTION')
+        ident = uuid.uuid4().hex[:12]
+        if (directory / 'sessions' / (ident + '.json')).exists():
+            raise RuntimeError('Session identity collision; retry creation')
+        names = available_names(root, len(args.option))
         print(git(root, 'status', '--short'))
         checkpoint(root, args.file, 'Checkpoint local comparison task files')
-        ident = uuid.uuid4().hex[:12]
         state = {'id': ident, 'root': str(root), 'branch': branch, 'checkpoint': git(root, 'rev-parse', 'HEAD'), 'status': 'creating', 'variants': []}
-        for number, (label, description) in enumerate(args.option, 1):
-            vid = ident + '-' + str(number)
+        for vid, (label, description) in zip(names, args.option):
             variant = {'id': vid, 'label': label, 'description': description, 'branch': 'variant/' + vid}
             path = location(root, variant)
             if path.exists() or 'refs/heads/' + variant['branch'] in git(root, 'for-each-ref', '--format=%(refname)', 'refs/heads').splitlines():

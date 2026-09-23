@@ -132,6 +132,36 @@ class VariantsTest(unittest.TestCase):
         self.cli('--session', old['id'], 'cleanup', old['variants'][0]['id'])
         self.assertIn(current['variants'][0]['id'], (self.root / '.local-preview/variants.js').read_text())
 
+    def test_readable_names_and_retained_branch_collision(self):
+        state = self.create()
+        self.assertEqual([v['id'] for v in state['variants']], ['variant-A', 'variant-B'])
+        manifest = (self.root / '.local-preview/variants.js').read_text()
+        self.assertIn('.worktrees/variant-A/app/index.html', manifest)
+        self.cli('close')
+        self.cli('cleanup', *[v['id'] for v in state['variants']])
+        next_state = self.create()
+        self.assertEqual([v['id'] for v in next_state['variants']], ['variant-A-2', 'variant-B-2'])
+        self.cli('--session', state['id'], 'cleanup', 'variant-A')
+        self.assertTrue(self.path(next_state['variants'][0]).exists())
+        self.assertEqual(module.option_letter(26), 'Z')
+        self.assertEqual(module.option_letter(27), 'AA')
+        self.assertEqual(module.option_letter(52), 'AZ')
+        self.assertEqual(module.option_letter(53), 'BA')
+
+    def test_legacy_session_cleanup(self):
+        state = self.create()
+        self.cli('close')
+        self.cli('cleanup', *[v['id'] for v in state['variants']])
+        legacy = {'id': state['id'] + '-1', 'branch': 'variant/' + state['id'] + '-1',
+                  'label': 'Legacy', 'description': 'Existing comparison'}
+        self.git('worktree', 'add', '-b', legacy['branch'], str(self.path(legacy)), state['checkpoint'])
+        state['status'] = 'closed'
+        state['variants'] = [legacy]
+        module.save(self.root, state)
+        self.cli('cleanup', legacy['id'])
+        self.assertFalse(self.path(legacy).exists())
+        self.git('rev-parse', legacy['branch'])
+
     def test_literal_files_and_managed_path_collision(self):
         self.write('task*', 'literal star')
         self.write('task-other', 'unrelated')
@@ -141,13 +171,10 @@ class VariantsTest(unittest.TestCase):
         self.cli('close')
         import argparse
         args = argparse.Namespace(command='create', session=None, option=[('A', 'one')], file=[])
-        ident = 'b' * 12
-        self.write('.worktrees/' + ident + '-1/preserve', 'keep')
-        with patch.object(module.uuid, 'uuid4') as mocked:
-            mocked.return_value.hex = ident
-            with self.assertRaisesRegex(RuntimeError, 'collision'):
-                module.run(self.root, args)
-        self.assertEqual((self.root / '.worktrees' / (ident + '-1') / 'preserve').read_text(), 'keep')
+        self.write('.worktrees/variant-A-2/preserve', 'keep')
+        module.run(self.root, args)
+        self.assertEqual(self.state()['variants'][0]['id'], 'variant-A-3')
+        self.assertEqual((self.root / '.worktrees/variant-A-2/preserve').read_text(), 'keep')
 
     def test_partial_creation_records_intent_and_collision_preserves_work(self):
         import argparse
@@ -173,8 +200,7 @@ class VariantsTest(unittest.TestCase):
         for variant in state['variants']:
             self.assertEqual(self.git('rev-parse', 'HEAD', root=self.path(variant)), state['checkpoint'])
         self.cli('close')
-        ident = 'a' * 12
-        self.git('branch', 'variant/' + ident + '-1')
+        ident = state['id']
         with patch.object(module.uuid, 'uuid4') as mocked:
             mocked.return_value.hex = ident
             with self.assertRaisesRegex(RuntimeError, 'collision'):

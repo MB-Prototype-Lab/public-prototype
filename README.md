@@ -130,7 +130,9 @@ repository settings change, or publication.
 
 Ask your agent: “Make two alternatives.” It prepares named choices under **Local
 alternatives** in your existing selector. Use **Open in new tab** and arrange the
-windows side by side. Each alternative runs independently; refresh returns to the
+windows side by side. Readable URL folders such as `variant-A` and `variant-B`
+help you identify the option; later comparisons may add a suffix such as `variant-A-2`.
+Each alternative runs independently; refresh returns to the
 primary selector. No server, package installation, or Git commands are needed from
 you.
 

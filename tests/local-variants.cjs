@@ -76,10 +76,15 @@ assert.deepEqual(run(undefined, { href: windowsPrimary }, windowsVariant).redire
 for (const root of [primary, windowsPrimary,
   'file://wsl.localhost/Ubuntu/home/pm/My%20Project/index.html',
   'file://wsl$/Ubuntu/home/pm/My%20Project/index.html']) {
-  const variant = new URL('.worktrees/a/index.html', root).href;
+  const variant = new URL('.worktrees/variant-A/index.html', root).href;
   assert.deepEqual(run(undefined, { href: '../../index.html' }, variant).redirects, [root]);
   assert.deepEqual(run(undefined, { href: '../../../index.html' }, variant).redirects, []);
   assert.deepEqual(run(undefined, { href: '../../index.html' }, root).redirects, []);
+}
+
+for (const id of ['variant-A', 'variant-B', 'variant-AA', 'variant-A-2']) {
+  const result = run({ active: true, variants: [valid(id)] });
+  assert.equal(result.list.children[0].children[0].href, `.worktrees/${id}/app/index.html`);
 }
 
 console.log('Local selector manifest and return navigation verified.');
