@@ -31,7 +31,8 @@ provisional: owner verification is a separate cutover requirement.
 Local comparison tests use disposable repositories to check selective checkpointing,
 common starting commits, original-branch advancement, merge conflicts, interrupted
 creation, path/branch collisions, and preservation during cleanup. The Node selector
-test covers missing/invalid manifests and safe rendering. Publication tests assert
+test covers missing/invalid manifests, safe rendering, pane assignments and swaps,
+count changes, retained iframe identity, tools toggles, restart isolation, and exit. Publication tests assert
 local controls and metadata never appear in output.
 
 For comparison changes, manually check file:// in separate tabs/windows, independent
@@ -39,3 +40,10 @@ app state, and refresh from each app through its root selector to the primary
 selector. Check checkout paths with spaces on Windows and macOS. Automated DOM and
 Git tests do not substitute for these browser/platform checks; record unavailable
 checks explicitly.
+
+For the side-by-side workspace, browser-check file embedding early on Windows/WSL
+and macOS, including paths with spaces. Verify laptop and ultrawide layouts, all
+four app themes, keyboard scrolling and controls, input focus, independent progress,
+A+B → A+C → A+B, swaps, pane counts, tools widths, isolated restart, new tabs, refresh,
+and Back to versions. Hidden previews retain state and keep running audio; pause
+playback before hiding them. A frame load event alone does not prove the app loaded.

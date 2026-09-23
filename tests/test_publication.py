@@ -164,13 +164,14 @@ class PublicationTests(unittest.TestCase):
     def test_published_selector_has_no_local_comparison(self):
         page = self.build()['index.html'].decode()
         for local_text in ('localPreview', 'localAlternatives', '.local-preview/',
-                           'local-variants.js', '.worktrees/', 'Current local app',
+                           'local-variants.js', 'local-compare.css', 'localCompare', 'Compare side by side', '.worktrees/', 'Current local app',
                            'Live historical builds', 'LOCAL PREVIEW', 'LOCAL SCRIPTS'):
             with self.subTest(local_text=local_text):
                 self.assertNotIn(local_text, page)
         self.assertIn('versions/v1/index.html', page)
         self.assertIn('gate/gate.js', page)
         self.assertNotIn('gate/local-variants.js', self.build())
+        self.assertNotIn('gate/local-compare.css', self.build())
 
     def test_local_selector_boundaries_are_required(self):
         template = self.assets['index.html'].decode()

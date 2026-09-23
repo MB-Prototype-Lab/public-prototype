@@ -18,8 +18,11 @@ ownership is ambiguous. Start all options from the current feature branch's shar
 checkpoint. Do not run start-work inside a variant or create nested comparisons.
 
 Implement requested alternatives in their recorded worktrees, run affected checks,
-and refresh the manifest. Tell the PM the friendly labels and how to open separate
-tabs. A request to change A targets its registered checkout, not the primary app.
+and refresh the manifest. Tell the PM the friendly labels and how to choose **Compare side by side** after unlocking the selector.
+Explain that dropdowns and pane counts preserve progress until refresh or Back to
+versions, Show tools widens a pane, and Restart preview resets only that variant.
+Hidden previews keep running; pause audio before switching away. Standalone new-tab
+links remain available when local-file embedding fails. A request to change A targets its registered checkout, not the primary app.
 Never recursively search `.worktrees/` or include it in artifacts.
 
 For “Keep B,” review and commit only B's task files, check the original branch is
