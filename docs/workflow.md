@@ -22,7 +22,10 @@ unexplained base. Resume a matching task branch after checking its history, or c
 collisions before creating. Dirty or unrelated work stays intact: finish on its branch,
 or ask the operator how to separate it. Never silently stash, discard, or
 combine it.
-No worktrees yet. Concurrent operators use distinct task branches.
+Concurrent operators use distinct task branches. For alternatives within one task,
+use [compare-local](../.claude/skills/compare-local/SKILL.md) and the
+[local comparison procedure](local-variants.md). Comparisons start from the current
+feature branch checkpoint, not a new main-based task.
 
 ## Sync
 

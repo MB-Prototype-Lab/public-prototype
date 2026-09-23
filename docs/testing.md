@@ -7,6 +7,7 @@ bash scripts/check-syntax.sh
 bash scripts/sweep.sh
 python3 scripts/check-paths.py
 node tests/release-runtime.cjs
+node tests/local-variants.cjs
 python3 -m unittest discover -s tests -v
 python3 scripts/publish.py check
 ```
@@ -26,3 +27,15 @@ checks supplement PM testing. Re-run affected checks after material changes.
 Publication tests use disposable Git repositories and do not push. Historical exports
 are compared byte-for-byte before source consolidation. Initial cached migration is
 provisional: owner verification is a separate cutover requirement.
+
+Local comparison tests use disposable repositories to check selective checkpointing,
+common starting commits, original-branch advancement, merge conflicts, interrupted
+creation, path/branch collisions, and preservation during cleanup. The Node selector
+test covers missing/invalid manifests and safe rendering. Publication tests assert
+local controls and metadata never appear in output.
+
+For comparison changes, manually check file:// in separate tabs/windows, independent
+app state, and refresh from each app through its root selector to the primary
+selector. Check checkout paths with spaces on Windows and macOS. Automated DOM and
+Git tests do not substitute for these browser/platform checks; record unavailable
+checks explicitly.

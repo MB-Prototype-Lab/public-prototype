@@ -107,12 +107,13 @@ from the checkout folder in File Explorer.
 
 ## 4. Ask your agent to use the project skills
 
-The repository has four skills in `.claude/skills/`. Name the relevant skill in
+The repository has five skills in `.claude/skills/`. Name the relevant skill in
 your request; the agent reads its instructions and the linked project guides.
 
 | When you want to… | Ask for… | What the agent does |
 | --- | --- | --- |
 | Begin a task or resume unfinished work | [start-work](.claude/skills/start-work/SKILL.md) | Checks branches and uncommitted files, then starts or resumes a task branch without losing existing work. |
+| Compare local alternatives | [compare-local](.claude/skills/compare-local/SKILL.md) | Creates independent previews, keeps a chosen alternative, and cleans up only selected work. |
 | Bring in changes from `main` | [sync](.claude/skills/sync/SKILL.md) | Fetches and merges current `main` into your task branch, then checks affected work. |
 | Get tested work into a pull request | [ship](.claude/skills/ship/SKILL.md) | Reviews changes, runs checks, prepares the PR, and records your testing. A merge needs separate authorization. |
 | Update the live selector or add a snapshot | [publish](.claude/skills/publish/SKILL.md) | Follows the release procedure after an explicit publication request. Publication needs separate authorization. |
@@ -124,3 +125,16 @@ handles routine code changes and automated checks. See
 [Publishing](docs/publishing.md) for the full procedures. Merging code does not
 update the live site. A GitHub login does not itself authorize a merge,
 repository settings change, or publication.
+
+## Compare alternatives locally
+
+Ask your agent: “Make two alternatives.” It prepares named choices under **Local
+alternatives** in your existing selector. Use **Open in new tab** and arrange the
+windows side by side. Each alternative runs independently; refresh returns to the
+primary selector. No server, package installation, or Git commands are needed from
+you.
+
+Continue with “Change option A,” then “Keep B” when you choose. The agent verifies
+and merges B into your task branch locally. Alternatives remain available to the
+agent until you explicitly ask “Clean up this comparison.” The ordinary selector
+returns when the comparison closes. See [local comparisons](docs/local-variants.md).

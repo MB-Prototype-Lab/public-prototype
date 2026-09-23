@@ -23,13 +23,24 @@
     <h1 class="gate-title">Choose a version</h1>
     <div id="versionList" style="display:flex;flex-direction:column;gap:10px;">
       <!-- CATALOG -->
+      <!-- LOCAL PREVIEW START -->
       <div id="localPreview"><a class="gate-btn" href="app/index.html">Current local app · tracking off</a>
       <p><a href="https://mb-prototype-lab.github.io/public-prototype/">Live historical builds</a></p></div>
+      <section id="localAlternatives" class="local-alternatives" hidden aria-label="Local alternatives">
+        <h2>Local alternatives</h2>
+        <div id="localAlternativesList"></div>
+      </section>
+      <!-- LOCAL PREVIEW END -->
     </div>
   </div>
 
 </main>
 
+<!-- LOCAL SCRIPTS START -->
+<script src=".local-preview/variants.js"></script>
+<script src=".local-preview/return.js"></script>
+<script src="gate/local-variants.js"></script>
+<!-- LOCAL SCRIPTS END -->
 <script src="gate/gate.js"></script>
 </body>
 </html>
