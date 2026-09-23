@@ -6,6 +6,25 @@ comparison.” The agent handles Git and Python; the PM opens root `index.html`,
 comparison per primary checkout. Closing restores the ordinary selector and retains
 all alternative branches and worktrees. Published builds never contain local choices.
 
+## Browser address
+
+When a PM asks for their browser URL, run `python3 scripts/local-variants.py url`
+from the primary checkout and paste the exact output URL into your response as a
+code block. This works before any comparison exists and writes no local metadata.
+Create, status, and refresh also print the selector and available alternative URLs.
+
+In WSL, the tool uses `wslpath -w` to translate the path for Windows, including
+checkouts on mounted Windows drives. If translation is unavailable, it uses
+`WSL_DISTRO_NAME` to construct a `file://wsl.localhost/<distro>/...` address.
+Native Windows, macOS, and Linux use their local file URLs. All URLs encode spaces
+and special characters. Nothing is stored in `.env` or tracked configuration.
+
+If WSL is detected but its distro cannot be discovered, the tool explains the
+problem instead of offering a Linux-only URL to a Windows PM. The agent can obtain
+the name from the user's WSL terminal or `wsl --list --quiet` in Windows and run
+`python3 scripts/local-variants.py url --wsl-distro <name>` as a one-time fallback.
+The PM pastes the address into Brave or another browser, then enters `1337`.
+
 ## Agent procedure
 
 Read the compare-local skill. Run commands below from the primary checkout using

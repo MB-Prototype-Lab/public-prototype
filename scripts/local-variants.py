@@ -3,11 +3,53 @@
 import argparse
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import re
+import platform
+from urllib.parse import quote
 import subprocess
 import sys
 import uuid
+
+
+def browser_url(path, distro=None):
+    """Return a pasteable URL for the host browser without storing machine settings."""
+    if isinstance(path, PureWindowsPath):
+        return path.as_uri()
+    detected = os.environ.get('WSL_DISTRO_NAME')
+    in_wsl = bool(distro or detected or 'microsoft' in platform.release().lower())
+    if not in_wsl:
+        return path.as_uri()
+    if distro is None:
+        # Honors custom WSL drive mounts and translates both drive and Linux paths.
+        try:
+            result = subprocess.run(['wslpath', '-w', str(path)], capture_output=True, text=True)
+            windows_path = PureWindowsPath(result.stdout.strip())
+            if result.returncode == 0 and windows_path.is_absolute():
+                return windows_path.as_uri()
+        except OSError:
+            pass
+    distro = distro or detected
+    if not distro:
+        raise RuntimeError('WSL distro could not be detected. Run url --wsl-distro NAME once; no config file is needed.')
+    if any(char in distro for char in '/\\') or distro in ('.', '..'):
+        raise RuntimeError('Invalid WSL distro name')
+    return 'file://wsl.localhost/' + quote(distro, safe='') + quote(path.as_posix(), safe='/')
+
+
+def show_browser_urls(root, state=None, distro=None):
+    try:
+        print('Copy into your browser (Windows browser when using WSL):')
+        print('Selector: ' + browser_url(root / 'index.html', distro))
+        if state and state['status'] not in ('closed', 'creating'):
+            for variant in state['variants']:
+                if not variant.get('removed') and valid(root, variant):
+                    print(variant['label'] + ': ' + browser_url(location(root, variant) / 'app/index.html', distro))
+    except RuntimeError as error:
+        # URL discovery must not turn a successful Git operation into a failure.
+        print('Browser URL unavailable: ' + str(error), file=sys.stderr)
+        return False
+    return True
 
 
 def git(root, *args):
@@ -231,12 +273,15 @@ def run(root, args):
     if not active.exists() or active.read_text().strip() == state['id']:
         refresh(root, state)
     print(json.dumps(state, indent=2))
+    show_browser_urls(root, state)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--session', help='Archived session ID (status or cleanup)')
     sub = parser.add_subparsers(dest='command', required=True)
+    url = sub.add_parser('url', help='Print the selector URL, even without a comparison')
+    url.add_argument('--wsl-distro', help='One-time fallback if WSL distro detection is unavailable')
     create = sub.add_parser('create')
     create.add_argument('--option', nargs=2, action='append', metavar=('LABEL', 'DESCRIPTION'))
     create.add_argument('--file', action='append', default=[])
@@ -260,6 +305,8 @@ def main():
             raise RuntimeError('Run from the primary checkout; nested comparisons are not supported')
         if args.session and args.command not in ('status', 'cleanup'):
             raise RuntimeError('--session is only for status or cleanup')
+        if args.command == 'url':
+            return 0 if show_browser_urls(root, distro=args.wsl_distro) else 1
         directory = root / '.local-preview'
         directory.mkdir(exist_ok=True)
         if directory.is_symlink():

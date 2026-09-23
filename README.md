@@ -105,6 +105,16 @@ preview. A refresh returns to the selector. If you are using Claude Desktop,
 ask the agent to show you the file in the Code tab's browser pane or open it
 from the checkout folder in File Explorer.
 
+For an exact address to paste into your browser, ask your agent:
+
+> Show me the browser URL for this checkout.
+
+The agent runs `python3 scripts/local-variants.py url`. It detects WSL and prints a
+Windows browser URL using your actual distro name, or a native file URL when working
+directly in Windows/macOS/Linux. Spaces and special characters are handled for you.
+No `.env` file or manual distro-name lookup is needed. Creating alternatives also
+prints the selector URL and each option's URL.
+
 ## 4. Ask your agent to use the project skills
 
 The repository has five skills in `.claude/skills/`. Name the relevant skill in

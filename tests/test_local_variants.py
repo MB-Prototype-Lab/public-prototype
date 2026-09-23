@@ -1,6 +1,6 @@
 import importlib.util
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import subprocess
 import tempfile
 import unittest
@@ -51,6 +51,15 @@ class VariantsTest(unittest.TestCase):
 
     def path(self, variant):
         return self.root / '.worktrees' / variant['id']
+
+    def test_url_command_needs_no_session_or_metadata(self):
+        result = self.cli('url')
+        self.assertIn('Selector: file:', result.stdout)
+        self.assertFalse((self.root / '.local-preview').exists())
+        explicit = self.cli('url', '--wsl-distro', 'PM Ubuntu')
+        self.assertIn('file://wsl.localhost/PM%20Ubuntu/', explicit.stdout)
+        self.assertIn('local%20variants%20', explicit.stdout)
+        self.assertFalse((self.root / '.local-preview').exists())
 
     def test_checkpoint_preserves_unrelated_index_and_work(self):
         self.write('task', 'task change\n')
@@ -206,6 +215,40 @@ class VariantsTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'collision'):
                 module.run(self.root, args)
         self.assertEqual(self.state()['id'], state['id'])
+
+
+class BrowserUrlTests(unittest.TestCase):
+    def test_native_platform_paths(self):
+        with patch.dict(module.os.environ, {}, clear=True), patch.object(module.platform, 'release', return_value='Linux'):
+            self.assertEqual(module.browser_url(Path('/home/PM/My app #1/index.html')),
+                             'file:///home/PM/My%20app%20%231/index.html')
+        self.assertEqual(module.browser_url(PureWindowsPath('C:/Users/PM/My app #1/index.html')),
+                         'file:///C:/Users/PM/My%20app%20%231/index.html')
+        self.assertEqual(module.browser_url(PureWindowsPath('//server/share/My app/index.html')),
+                         'file://server/share/My%20app/index.html')
+
+    def test_wsl_uses_windows_translation(self):
+        for translated, expected in [
+            ('//wsl.localhost/Ubuntu-24.04/home/PM/My app/index.html',
+             'file://wsl.localhost/Ubuntu-24.04/home/PM/My%20app/index.html'),
+            ('D:/My app/index.html', 'file:///D:/My%20app/index.html')]:
+            with self.subTest(translated=translated), patch.dict(module.os.environ, {'WSL_DISTRO_NAME': 'Ubuntu-24.04'}, clear=True), patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, translated, '')) as run:
+                self.assertEqual(module.browser_url(Path('/home/PM/My app/index.html')), expected)
+                self.assertEqual(run.call_args.args[0], ['wslpath', '-w', '/home/PM/My app/index.html'])
+
+    def test_wsl_fallback_and_explicit_distro(self):
+        with patch.dict(module.os.environ, {'WSL_DISTRO_NAME': 'Ubuntu-24.04'}, clear=True), patch.object(module.subprocess, 'run', side_effect=FileNotFoundError):
+            self.assertEqual(module.browser_url(Path('/home/PM/café #1/index.html')),
+                             'file://wsl.localhost/Ubuntu-24.04/home/PM/caf%C3%A9%20%231/index.html')
+            self.assertEqual(module.browser_url(Path('/home/PM/index.html'), 'Another Distro'),
+                             'file://wsl.localhost/Another%20Distro/home/PM/index.html')
+            with self.assertRaisesRegex(RuntimeError, 'Invalid WSL'):
+                module.browser_url(Path('/home/PM/index.html'), '../escape')
+
+    def test_unknown_wsl_distro_does_not_print_linux_url(self):
+        with patch.dict(module.os.environ, {}, clear=True), patch.object(module.platform, 'release', return_value='microsoft-standard-WSL2'), patch.object(module.subprocess, 'run', side_effect=FileNotFoundError):
+            with self.assertRaisesRegex(RuntimeError, 'url --wsl-distro'):
+                module.browser_url(Path('/home/PM/index.html'))
 
 
 if __name__ == '__main__':
