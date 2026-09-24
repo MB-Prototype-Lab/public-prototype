@@ -2,9 +2,40 @@
 
 PMs ask “Make two alternatives,” “Change option A,” “Keep B,” or “Clean up this
 comparison.” The agent handles Git and Python; the PM opens root `index.html`, enters
-1337, and opens named alternatives in separate tabs or windows. There is one active
+1337, and chooses **Compare side by side** (or opens standalone alternatives). There is one active
 comparison per primary checkout. Closing restores the ordinary selector and retains
 all alternative branches and worktrees. Published builds never contain local choices.
+
+## Compare in one tab
+
+After unlocking the selector, choose **Compare side by side**. Two panes initially
+show the first two valid alternatives. **Visible panes** offers one through the
+number of choices, including **Current local app**, which is your current checkout
+and is not necessarily the original baseline.
+
+Each pane offers a variant dropdown, description, **Show tools**, **Restart preview**,
+and **Open in new tab**. Choosing an already visible variant swaps the two panes.
+Reducing the count hides the rightmost panes; increasing it restores their assignments.
+Switching A+B to A+C and back preserves B's progress. Phone previews are about 460px
+wide; Show tools widens one pane to 920px to expose the app's Admin Tools.
+If those tools are collapsed, use the app's expand arrow to open them. Scroll
+horizontally to see panes that exceed the browser width; the preview region is also
+keyboard focusable. Each preview is the full browser viewport height, just like
+opening that app standalone. Controls stay above the previews in normal page flow;
+scroll the page vertically to reach the preview bottoms. Long descriptions and
+Show tools do not reduce preview height. Scrolling inside the app still works normally.
+
+Progress lasts until refresh or exit through **Back to versions**. Restart resets
+only that variant; opening a new tab starts a separate session. Hidden previews
+remain running, including audio: pause playback before switching away. Refresh
+returns to the ordinary selector. Previews have independent documents and app state;
+the workspace never reads their contents. If your browser cannot embed a local file,
+use the standalone links. File embedding still needs Windows/WSL and macOS browser
+verification, including checkout paths with spaces.
+
+The workspace is local only, keeps its assignments in memory, and provides no
+adoption, cleanup, merge, or publication controls. The agent still handles these
+operations through the procedures below.
 
 ## Browser address
 
