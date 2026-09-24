@@ -603,7 +603,7 @@ function onbFinish() {
   // The trial pitch is out of the flow (see ONB_STEPS), so nobody answers it —
   // and state.trialAccepted gates diamonds (lrDiamondsForLesson) and the
   // subscriber section of the reward screen. Left null those would be
-  // unreachable. D31 says nothing is gated either way, so everyone gets the
+  // unreachable. D31 said nothing is gated either way, so everyone gets the
   // subscriber tier. Guarded rather than assigned, so onbTrial's answer still
   // wins if that step is ever put back into ONB_STEPS.
   if (state.trialAccepted == null) state.trialAccepted = true;
@@ -930,7 +930,10 @@ function onbStepBody(key, o) {
   if (key === "video") return onbVideoBody(o);
 
   // D32 — the trial popup still appears. Accept or decline, the experience
-  // afterward is identical. No paywalls, no gated features anywhere (D31).
+  // afterward is identical HERE. D31 ("no paywalls anywhere") is overridden
+  // for the Budget tab only — see plan.md §0 L27 and js/config.js — so this
+  // step's own promise had to change with it; the old closing line said
+  // nothing was locked, which the Budget tab now contradicts.
   return `
     <div class="card">
       <p class="pill" style="display:inline-block;font-size:9px;padding:3px 9px;margin-bottom:10px;">7 days free</p>
@@ -950,7 +953,7 @@ function onbStepBody(key, o) {
       <button class="button secondary full" type="button"
               onclick="onbTrial(false)">Not right now</button>
       <p class="helper" style="font-size:10px;margin:12px 0 0;">
-        Nothing is locked either way — this prototype has no paid features.
+        Answer either way — this step changes nothing on its own.
       </p>
     </div>`;
 }
@@ -1400,6 +1403,32 @@ function onbFilmSrc() {
   return ONB_FILM_DIR + "/" + entry.look + "/" + onbVideoScriptId() + ".mp4";
 }
 
+/**
+ * Paint the stage the film's own ground, so it stops framing the picture.
+ *
+ * The stage is 100:72 and so is the film, but a squeezed viewport still
+ * letterboxes -- and before this those bars were `--accent`, a green edge round
+ * a cream film. Matching them makes the leftover invisible, which is also what
+ * lets the stage shrink on a short screen without looking wrong.
+ *
+ * ⚠ ONLY WHEN A FILM IS PLAYING. The SVG fallback (tier 2) draws entirely in
+ * `--on-dark` -- the only colour token in components/hyperframes.js -- and
+ * paints no ground of its own, so it relies on `.lp-stage`'s accent. Painting
+ * the stage cream underneath it would be light ink on near-white: invisible,
+ * and only on the themes with no render, where it would read as the animation
+ * being broken rather than as a colour choice.
+ *
+ * Keyed on the LOOK that is playing, not the tester's theme. A dark theme with
+ * no dark render borrows the light film (ONB_FILM_ANY_LOOK), and the stage has
+ * to follow the film rather than the theme or it reintroduces the mismatch.
+ */
+function onbFilmGroundStyle() {
+  const entry = onbFilmEntry();
+  if (!entry || typeof ONBOARDING_FILM_GROUNDS === "undefined") return "";
+  const ground = ONBOARDING_FILM_GROUNDS[entry.look];
+  return ground ? ` style="background:${h(ground)}"` : "";
+}
+
 /** The <video> could not load — drop to tier 2 and repaint. */
 function onbFilmFailed(el) {
   if (onbFilmBroken) return;
@@ -1418,7 +1447,7 @@ function onbVideoStage(v) {
     // carries no audio and an unmuted autoplay element is refused by some
     // browsers.
     return `
-    <div class="lp-stage lp-stage-video onb-video-stage">
+    <div class="lp-stage lp-stage-video onb-video-stage"${onbFilmGroundStyle()}>
       <video class="onb-film" id="onb-film" muted playsinline preload="auto"
              data-look="${h((onbFilmEntry() || {}).look || "")}"
              src="${h(onbFilmSrc())}" onerror="onbFilmFailed(this)"></video>

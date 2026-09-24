@@ -88,7 +88,7 @@ Run this again whenever scope shifts. Last run: **2026-08-07, pre-build**
 
 | ID | Decision | Status | Where |
 |---|---|---|---|
-| D31 | No ads, no paywalls | ⬜ | Nothing to build. Reinforced by L16 — kibble gates nothing |
+| D31 | No ads, no paywalls | ⚠ | **Overridden for the Budget tab (L27).** No ads anywhere, and nothing else gates — lessons, topics and kibble are all open, so L16 stands |
 | D32 | Seven-day trial popup appears in first session | ✅ | P3 onboarding, after buddy creation |
 | D33 | Marketplace is a greyed-out, non-interactive tab | ✅ | P0b — regression from v2's working screens |
 

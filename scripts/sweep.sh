@@ -137,6 +137,13 @@ FILM_DEFAULT="$(sed -n 's/^const VERSION = process\.env\.MB_VERSION || "\(.*\)";
 printf '\nvar __FILM_TOOL_VERSION = "%s";\nvar __DEFAULT_VERSION = "%s";\n' \
   "$FILM_DEFAULT" "$MB_DEFAULT_VERSION" >> "$OUT"
 
+# The hyperframes viewBox, so §7c can check it against the CSS aspect-ratio and
+# the film canvas. Three declarations of the same 100:72 shape; if they drift the
+# stage frames the picture in accent colour, which is the bug this replaced.
+HF_W="$(sed -n 's/^const HF_VIEW_W = \([0-9]*\);/\1/p' "$APP/components/hyperframes.js")"
+HF_H="$(sed -n 's/^const HF_VIEW_H = \([0-9]*\);/\1/p' "$APP/components/hyperframes.js")"
+printf '\nvar __HF_VIEW = { w: %s, h: %s };\n' "${HF_W:-0}" "${HF_H:-0}" >> "$OUT"
+
 # js/render.js as a string. §7f needs the journal-mode class lists, and those
 # are toggle() arguments rather than a named constant -- there is nothing to
 # read at runtime because the DOM stub's classList does not record.

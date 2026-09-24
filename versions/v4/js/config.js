@@ -60,3 +60,25 @@ const APP_VERSION = "v4";
 // cannot read this value and keeps its own copy; scripts/sweep.js asserts the
 // two agree rather than trusting anyone to remember.
 const USEBERRY_TRACKING = true;
+
+// THE BUDGET TAB IS A PAYWALL.
+//
+// true  -> the Budget tab renders the Platinum wall (screens/budget-paywall.js)
+// false -> the real budget comes back, unchanged
+//
+// ⚠ THIS OVERRIDES A SPEC DECISION. D31 is "No ads and no paywalls appear",
+// and six places in v4 cited it. plan.md §0 L27 records the override; without
+// that record the next reader finds D31, calls this a bug, and removes it.
+//
+// A FLAG RATHER THAN A DELETION, for two reasons. "Do not delete unused code"
+// is a hard rule and flipping this back must unwind nothing. And a deleted call
+// site would orphan all ten functions in screens/budget-v3.js into sweep.sh
+// §7b's newly-unreferenced warning — the only fix for which is padding
+// DEAD_BASELINE with ten names that then misstate why they are there.
+//
+// ⚠ IT GUARDS THE TAB, NOT THE BUDGET. Owner's call, and deliberately narrow:
+// the daily task, the Home task, budget-update-confirm's Rebuild and two deep
+// links all reach budget screens without rendering the tab. They are listed in
+// CLAUDE.md as known. Widening it is moving renderBudgetPaywall's guard into
+// renderScreen() against a list of screen ids.
+const BUDGET_PAYWALL = true;

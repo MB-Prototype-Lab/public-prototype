@@ -57,7 +57,9 @@ function adminSubtitle() {
   if (state.screen === "lessonQuiz")     return "Quiz — lessons.json question first, topped up from v2's pool (L9).";
   if (state.screen === "lessonSimulation") return "Simulation — sandbox figures only, never the user's own.";
   if (state.screen === "lessonReward")   return "Reward — XP to every course the lesson belongs to.";
-  if (state.screen === "aboutMe")        return "Budget — 12 flat categories, plan vs what the journal says.";
+  if (state.screen === "aboutMe")        return (typeof BUDGET_PAYWALL !== "undefined" && BUDGET_PAYWALL)
+                                                 ? "Budget — PAYWALLED. The tab is the Platinum wall; D31 overridden (L27)."
+                                                 : "Budget — 12 flat categories, plan vs what the journal says.";
   if (state.screen === "profilePicker")   return "Starting profile — 3 cost-of-living tiers x 3 income levels. " +
                                                  "Shown on \"Skip all setup\"; PROFILE_PICKER turns it off.";
   if (state.screen === "helpMeOut")       return "Help me out — " +
@@ -169,7 +171,9 @@ function renderAdmin() {
   if (state.screen === "lesson")        return renderLessonAdmin();
   if (["lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen)) return renderLessonOutcomeAdmin();
   if (state.screen === "reward")        return renderRewardAdmin();
-  if (state.screen === "aboutMe")       return renderBudgetV3Admin();
+  if (state.screen === "aboutMe")       return (typeof BUDGET_PAYWALL !== "undefined" && BUDGET_PAYWALL)
+                                               ? renderBudgetPaywallAdmin()
+                                               : renderBudgetV3Admin();
   if (state.screen === "profilePicker")   return renderProfilePickerAdmin();
   if (state.screen === "helpMeOut")       return renderHelpMeOutAdmin();
   if (state.screen === "budgetBuild")     return renderBudgetBuildAdmin();

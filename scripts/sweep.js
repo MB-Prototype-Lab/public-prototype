@@ -1061,6 +1061,87 @@ if (!__FILM_MANIFEST) {
   chk(listed.length === 0, "the app's film index matches what was rendered",
       "listed but absent: " + listed.slice(0, 6).join(", "));
 
+  // ── the stage is the picture's shape, and the picture's colour ────────────
+  // Both tiers draw at 100:72 and the stage used to be free to be taller, so up
+  // to 85px of it could only ever be accent green around a cream film.
+  // v4 only -- onbFilmGroundStyle is the marker. v3 and v3.1 still have the
+  // fixed-height stage this replaced, and it is correct for them: they never
+  // paint it, so a box taller than the picture is just accent green by design.
+  if (typeof onbFilmGroundStyle === "function" &&
+      typeof __COMPONENTS_CSS === "string" && typeof __HF_VIEW === "object") {
+    var stageRule = /\.onb-video-stage\s*\{([\s\S]*?)\n\}/.exec(__COMPONENTS_CSS);
+    var stageBody = stageRule ? stageRule[1] : "";
+    var ar = /aspect-ratio:\s*(\d+)\s*\/\s*(\d+)/.exec(stageBody);
+    var cv = mf.canvas || {};
+    var cssR  = ar ? Number(ar[1]) / Number(ar[2]) : 0;
+    var hfR   = __HF_VIEW.h ? __HF_VIEW.w / __HF_VIEW.h : 0;
+    var filmR = cv.height ? cv.width / cv.height : 0;
+    var near = function (a, b) { return Math.abs(a - b) < 0.005; };
+    chk(!!ar && near(cssR, hfR) && near(cssR, filmR),
+        "the stage, the SVG viewBox and the film canvas are all 100:72",
+        "css " + (ar ? ar[1] + "/" + ar[2] : "none") + " · viewBox " +
+        __HF_VIEW.w + "/" + __HF_VIEW.h + " · canvas " + cv.width + "/" + cv.height +
+        "\n          they disagree, so the stage frames the picture in accent colour");
+    chk(!/max-height:/.test(stageBody) && !/(^|\s)height:\s*\d/.test(stageBody),
+        "nothing lets the stage outgrow the picture again",
+        "a fixed height or max-height on .onb-video-stage is what put the green " +
+        "bars there");
+  }
+
+  // Grounds: one per look, each a real colour, published by the build rather
+  // than guessed -- they are pushed past the app's tokens and derive from the
+  // NATURAL themes, so no app-side color-mix() can reproduce them.
+  if (typeof ONBOARDING_FILM_GROUNDS !== "undefined") {
+    var missingGround = (mf.looks || []).filter(function (l) {
+      return !/^#[0-9a-f]{6}$/i.test(ONBOARDING_FILM_GROUNDS[l] || "");
+    });
+    chk(missingGround.length === 0, "every look publishes the ground it renders on",
+        "no ground for: " + missingGround.join(", "));
+  }
+
+  // ── ⚠ ONLY A FILM GETS A PAINTED STAGE ────────────────────────────────────
+  // The SVG fallback draws entirely in --on-dark and paints no ground of its
+  // own, so it relies on .lp-stage's accent. Painting cream under it is light
+  // ink on near-white -- invisible, and only where no film plays, so it reads
+  // as the animation being broken rather than as a colour choice.
+  if (typeof onbFilmGroundStyle === "function" && typeof onbStart === "function") {
+    var _ob2 = state.onboarding, _sc2 = state.settings ? state.settings.colorMode : null;
+    onbStart();
+    state.onboarding.improveAreas = [];
+    onbFilmResetArt();
+    var withFilm = onbFilmGroundStyle();
+    var look = (onbFilmEntry() || {}).look;
+    onbFilmFailed({});                       // what the <video> onerror does
+    var withoutFilm = onbFilmGroundStyle();
+    onbFilmResetArt();
+    state.onboarding = _ob2;
+    if (_sc2 != null && state.settings) state.settings.colorMode = _sc2;
+
+    chk(withFilm.indexOf(ONBOARDING_FILM_GROUNDS[look] || "\u0000") !== -1,
+        "a playing film paints the stage its own ground", "got: " + withFilm);
+    chk(withoutFilm === "",
+        "the SVG fallback keeps the accent ground",
+        "it draws in --on-dark and would be invisible on a light one\n          got: " +
+        withoutFilm);
+
+    // AND THE MARKUP HAS TO CALL IT. Checking the helper alone missed a
+    // mutation that simply dropped it from the template -- a correct colour
+    // nobody interpolates is the same green stage with extra steps.
+    var _ob3 = state.onboarding;
+    onbStart();
+    state.onboarding.improveAreas = [];
+    state.onboarding.video = null;
+    onbFilmResetArt();
+    var stageHtml = "";
+    try { stageHtml = onbVideoStage(onbVideo()); } catch (e) { stageHtml = "threw: " + e.message; }
+    var lookNow = (onbFilmEntry() || {}).look;
+    state.onboarding = _ob3;
+    chk(stageHtml.indexOf("onb-video-stage") !== -1 &&
+        stageHtml.indexOf("background:" + (ONBOARDING_FILM_GROUNDS[lookNow] || "\u0000")) !== -1,
+        "the rendered stage actually carries that ground",
+        stageHtml.slice(0, 160));
+  }
+
   // ── the render tool writes into the version being swept ───────────────────
   // Six tools read MB_VERSION and this one was missed when v4 was created, so
   // `--render` encoded four films into v3.1 -- the A/B CONTROL -- while v4's
@@ -1643,6 +1724,99 @@ if (typeof onbBodyTypeControl === "function") {
       "both patch targets carry their ids",
       "uiPatchHTML looks them up by id -- rename one and typing silently stops filtering");
 }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v4 only — the Budget tab is a paywall (plan.md §0 L27, overriding D31).
+if (typeof BUDGET_PAYWALL !== "undefined") {
+section("7g. The Budget tab is walled");
+
+var _sc = state.screen, _ps = state.planStatus, _ta = state.trialAccepted;
+state.planStatus = "complete";          // the hardest case: a budget EXISTS
+var walled = renderBudgetV3();
+
+// BOTH WAYS, because the flag's whole promise is that flipping it unwinds
+// nothing. Asserting it is on would make the escape hatch fail the build, which
+// is how a flag quietly stops being flippable.
+if (BUDGET_PAYWALL) {
+  chk(/Platinum/.test(walled), "the Budget tab renders the wall");
+} else {
+  chk(!/Platinum/.test(walled) && /Rebuild/.test(walled),
+      "BUDGET_PAYWALL is off and the real Budget tab is back");
+}
+
+// ── ⚠ NOTHING BEHIND THE WALL MAY LEAK THROUGH IT ─────────────────────────
+// A wall that still prints the tester's own figures is worse than no wall: it
+// shows them exactly what they are being denied, and it would pass every check
+// that only asked "does the wall render".
+var leakedCats = BUDGET_PAYWALL
+  ? CATEGORIES.filter(function (c) { return walled.indexOf(c) !== -1; }) : [];
+chk(leakedCats.length === 0, "no category name reaches the walled tab",
+    leakedCats.slice(0, 5).join(", "));
+
+var figures = CATEGORIES.map(function (c) { return String(catValue(state.plan, c)); })
+                        .filter(function (v) { return v && v.length >= 3; });
+var leakedFigs = BUDGET_PAYWALL
+  ? figures.filter(function (v) { return walled.indexOf(v) !== -1; }) : [];
+chk(leakedFigs.length === 0, "no planned figure reaches it either",
+    leakedFigs.slice(0, 5).join(", "));
+
+chk(!BUDGET_PAYWALL || !/Planned|Left over|Built with/.test(walled),
+    "and none of the plan-vs-actual readout");
+
+// ── the CTA records a tap and changes nothing ─────────────────────────────
+// Strict, by owner's call: there is no route through. So it must not quietly
+// become one -- state.trialAccepted still means diamonds and the reward
+// screen's subscriber tier, and this screen has no business touching it.
+if (typeof budgetPaywallTap === "function") {
+  var beforeTap = JSON.stringify([state.trialAccepted, state.screen, state.planStatus]);
+  try { budgetPaywallTap(); } catch (e) {}
+  chk(JSON.stringify([state.trialAccepted, state.screen, state.planStatus]) === beforeTap,
+      "the CTA writes nothing and goes nowhere",
+      "it must not set trialAccepted, navigate, or unlock");
+}
+
+// ── no rendered copy still promises the opposite ──────────────────────────
+// D31's old line -- "Nothing is locked either way, this prototype has no paid
+// features" -- was copy a TESTER READS. Checked against rendered markup rather
+// than source, so a comment explaining why the line was removed does not trip
+// it.
+var promises = [];
+destinations.forEach(function (d) {
+  state.screen = d[0];
+  var html = "";
+  try { html = renderScreen(); } catch (e) { return; }
+  if (/no paid features|[Nn]othing is locked|no paywalls/.test(html)) promises.push(d[0]);
+});
+// THE TRIAL STEP IS DORMANT, NOT GONE. "trial" came out of ONB_STEPS in v3.1
+// and putting it back is a one-word edit, so renderScreen() never reaches it
+// and walking the screens cannot see its copy. Render the step directly, or the
+// sentence that contradicts the whole paywall sits there waiting to return.
+if (typeof onbStepBody === "function") {
+  var _ob4 = state.onboarding;
+  try {
+    if (typeof onbStart === "function") onbStart();
+    var trialHtml = onbStepBody("trial", state.onboarding);
+    if (/no paid features|[Nn]othing is locked/.test(trialHtml)) promises.push("onboarding/trial");
+  } catch (e) {}
+  state.onboarding = _ob4;
+}
+
+state.screen = _sc; state.planStatus = _ps; state.trialAccepted = _ta;
+chk(promises.length === 0,
+    "no screen still tells a tester nothing is locked",
+    "contradicted on: " + promises.join(", ") +
+    "\n          the trial step is dormant, not deleted -- putting \"trial\" back " +
+    "into ONB_STEPS is a one-word edit");
+
+// The flag is the only switch, and the admin says which way it is set --
+// a walled build that looks identical to an open one in the panel is a tester
+// session nobody can interpret afterwards.
+chk(!BUDGET_PAYWALL || /PAYWALL/i.test((function () {
+      var k = state.screen; state.screen = "aboutMe";
+      var sub = adminSubtitle(); state.screen = k; return sub;
+    })()),
+    "the admin subtitle says the tab is walled");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

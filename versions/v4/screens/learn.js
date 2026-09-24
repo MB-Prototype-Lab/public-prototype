@@ -7,7 +7,9 @@
 //                      while it has a query
 //   2. SUGGESTED     — at most two rows: a badge with a bonus lesson available,
 //                      and the last badge the tester actually opened
-//   3. BADGE BOARD   — every topic, always unlocked (L16/D31: nothing gates)
+//   3. BADGE BOARD   — every topic, always unlocked (L16/D31: nothing gates
+//      HERE. D31 is overridden for the Budget tab only — L27 — and lessons
+//      stay open; L16 is untouched.)
 //
 // ── WHERE THE CONTENT COMES FROM ─────────────────────────────────────────────
 // This screen renders the V2 catalog — `state.badges` and `state.lessons` — not

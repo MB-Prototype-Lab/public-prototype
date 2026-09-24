@@ -253,6 +253,87 @@ variation from a bug.
      it off the square alone made "two and a half rows" 2.3 and sliced the third
      row's labels; §7f asserts the row is built from its parts.
 
+8. **The film step stops framing itself in green.**
+   `.onb-video-stage` in `css/components.css`, `onbFilmGroundStyle()` in
+   `screens/onboarding.js`, `grounds` published by `tools/film/build-films.mjs`.
+   - **The box was free to be taller than the picture.** Both tiers draw at
+     **100:72** — the SVG engine is `xMidYMid meet` on a `0 0 100 72` viewBox and
+     the film canvas is 1000×720 — but the stage had `height: 210px;
+     max-height: 340px`. At 354px wide the picture is 255px tall, so up to 85px
+     of that box could only ever be `--accent`. The stage now carries
+     `aspect-ratio: 100 / 72`; §7c asserts all three declarations agree and that
+     no fixed height comes back.
+   - **⚠ THE COLOUR FOLLOWS THE TIER, NOT THE THEME.** The SVG fallback draws
+     entirely in `--on-dark` — the only colour token in
+     `components/hyperframes.js` — and paints no ground of its own, so it relies
+     on `.lp-stage`'s accent. Painting the stage cream underneath it is light ink
+     on near-white: invisible, and only on the themes with no render, where it
+     reads as the animation being broken rather than as a colour choice. A film
+     paints the stage; the fallback never does.
+   - **And it follows the LOOK, not the theme.** A dark theme with no dark render
+     borrows the light film (`ONB_FILM_ANY_LOOK`), so the stage takes the light
+     ground with it. Keying on the theme would reintroduce the mismatch it was
+     added to remove.
+   - **The grounds come from the build.** `#fdfbf7` / `#11100e`, computed in
+     `tools/film/themes.mjs` from `variables.css`. They cannot be derived
+     app-side: they are pushed past the app's tokens on purpose, and they derive
+     from the **Natural** themes specifically — a `color-mix()` on the live
+     `--cream` would be right on Natural Light/Dark and wrong on the other two.
+   - **The manifest is written on every run now, not only on `--render`.**
+     It used to live inside the render branch, so adding a field meant
+     re-encoding every film to publish two colour values. The merge with `prior`
+     and the prune of films missing from disk already made a dry run safe, so
+     `node film/build-films.mjs` refreshes metadata and encodes nothing.
+   - **Squeezing is safe now, which it was not before.** `flex-shrink` still
+     lets a short viewport take height from the stage — the point of the
+     original rule — and `object-fit: contain` letterboxes when it does, but
+     those bars are the film's own ground, so they are invisible. The colour fix
+     is what makes the sizing fix forgiving.
+
+9. **The Budget tab is a paywall, and D31 is overridden.**
+   `BUDGET_PAYWALL` in `js/config.js`, `screens/budget-paywall.js`, one guard at
+   the top of `renderBudgetV3()`. Recorded as **L27** in `plan.md` §0.
+   - **⚠ D31 says "No ads and no paywalls appear."** This is the first decision
+     here to contradict the spec on product substance rather than build
+     technique, so it is written down — unrecorded, the next reader finds D31,
+     calls the paywall a bug and removes it. **D31 still holds everywhere else:**
+     `learn.js` and `topic.js` keep their citations *with a qualifier* rather
+     than losing them, because lessons, topics and kibble still gate nothing and
+     L16 is untouched.
+   - **One line of copy had to die.** The trial pitch closed on *"Nothing is
+     locked either way — this prototype has no paid features."* That is a
+     sentence a tester reads, and it now states the opposite. `sweep.js` §7g
+     renders every screen and fails if it comes back — **including the dormant
+     trial step**, which `renderScreen()` never reaches because `"trial"` is out
+     of `ONB_STEPS` and putting it back is a one-word edit. Checking rendered
+     markup rather than source is deliberate: a comment quoting the removed line
+     must not trip it.
+   - **The copy is reused, not invented.** v3 asked this as onboarding's last
+     step and v3.1 left the renderer in place, so the terms, the pill and the
+     five bullets are already designed. The budget leads the list here; in
+     onboarding daily updates led, which was right there and wrong on this
+     screen.
+   - **Strict: the CTA never unlocks.** It says checkout is not built, writes
+     nothing — not `state.trialAccepted`, which still means diamonds and the
+     reward screen's subscriber tier — and the note is patched in, so there is
+     no leftover to reset. It is still a real button because tracking is on and
+     `js/ub-names.js` names every control: the tap records as intent-to-subscribe.
+   - **⚠ NOTHING BEHIND THE WALL MAY LEAK THROUGH IT.** A wall that still prints
+     the tester's own figures shows them exactly what they are denied, and would
+     pass any check that only asked "does the wall render". §7g asserts no
+     category name, no planned figure and no plan-vs-actual readout reaches the
+     walled tab — with `planStatus` forced to `complete`, the hardest case.
+   - **A flag, not a deletion**, and the sweep checks it **both ways** —
+     asserting it is on would make the escape hatch fail the build, which is how
+     a flag quietly stops being flippable. Deleting the call site would also
+     orphan all ten functions in `budget-v3.js` into §7b's warning.
+   - **⚠ IT GUARDS THE TAB, NOT THE BUDGET — owner's call, and these still get
+     through:** the "Set up your budget" daily task and the Home task (both
+     `bbStart()` → `budgetBuild`), budget-update-confirm's Rebuild,
+     `?screen=budget-build`, `?screen=comparison`, and the admin jump list.
+     Known and deliberate. Closing them is moving the guard into
+     `renderScreen()` against a list of screen ids.
+
 ### Inherited from v3.1 — how these differ from v3
 
 Everything in this list arrived with the copy. It is v4's behaviour now; it is

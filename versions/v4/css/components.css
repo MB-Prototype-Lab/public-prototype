@@ -2299,15 +2299,22 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    onboarding card it has to state its own height instead, or it collapses to
    its content. Rounded to match the buddy card it replaced. */
 .onb-video-stage {
-  /* The one child that flexes: it takes whatever the caption and transport do
-     not need. Capped because past ~255px the SVG stops growing — it is
-     xMidYMid meet on a 100x72 viewBox — and the extra height would be accent
-     colour rather than more picture. 340px also keeps it no taller than it is
-     wide (354px inside a 390px frame). */
-  flex: 1 1 210px;
-  height: 210px;
-  min-height: 110px;      /* the floor on a short viewport */
-  max-height: 340px;
+  /* THE BOX IS THE PICTURE'S SHAPE. Both tiers draw at 100:72 -- the SVG engine
+     is xMidYMid meet on a 0 0 100 72 viewBox, and the film canvas is 1000x720 --
+     and this box used to be free to be taller than that. At 354px wide the
+     picture is 255px tall, so the old 340px ceiling left up to 85px that could
+     never be anything but accent green. The rule's own comment said as much and
+     capped at 340 anyway.
+
+     Squeezing is safe now, which it was not before: flex-shrink still lets a
+     short viewport take height from the stage -- the point of the original rule
+     -- and object-fit letterboxes when it does, but those bars are the film's
+     own ground (onbFilmGroundStyle) rather than green, so they are invisible. */
+  width: 100%;
+  aspect-ratio: 100 / 72;
+  height: auto;
+  flex: 0 1 auto;
+  min-height: 0;
   border-radius: var(--radius-card);
   overflow: hidden;
 }

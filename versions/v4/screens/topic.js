@@ -83,7 +83,8 @@ function renderTopic() {
 
     <!-- ── Practice ──
          Deliberately NOT gated on finishing the lessons above. Nothing in the
-         prototype locks content behind progress (L16/D31), and a quiz you have
+         prototype locks content behind progress (L16/D31 — overridden for the
+         Budget tab only, L27; lessons gate nothing), and a quiz you have
          to earn would imply a progression system that does not exist.
 
          This button goes to the V2 quiz (screen "quiz"). The v3 lessons reach
