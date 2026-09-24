@@ -20,7 +20,10 @@ Switching A+B to A+C and back preserves B's progress. Phone previews are about 4
 wide; Show tools widens one pane to 920px to expose the app's Admin Tools.
 If those tools are collapsed, use the app's expand arrow to open them. Scroll
 horizontally to see panes that exceed the browser width; the preview region is also
-keyboard focusable.
+keyboard focusable. Each preview is the full browser viewport height, just like
+opening that app standalone. Controls stay above the previews in normal page flow;
+scroll the page vertically to reach the preview bottoms. Long descriptions and
+Show tools do not reduce preview height. Scrolling inside the app still works normally.
 
 Progress lasts until refresh or exit through **Back to versions**. Restart resets
 only that variant; opening a new tab starts a separate session. Hidden previews

@@ -47,3 +47,13 @@ four app themes, keyboard scrolling and controls, input focus, independent progr
 A+B → A+C → A+B, swaps, pane counts, tools widths, isolated restart, new tabs, refresh,
 and Back to versions. Hidden previews retain state and keep running audio; pause
 playback before hiding them. A frame load event alone does not prove the app loaded.
+
+For preview sizing, check 1366×768, 1440×900, and 3440×1440 with two and four panes.
+Each iframe should match the browser viewport height within rounding tolerance;
+compare the phone against the standalone app at the same viewport height (720px at
+768px, capped at 820px). Verify page scrolling reaches every preview bottom and
+the stage has no vertical scroll range. Check horizontal scrolling by trackpad,
+scrollbar, and keyboard, long descriptions, all four themes, and Show tools.
+Resizing, swaps, pane-count changes, and tools toggles must preserve input progress.
+Record Windows/WSL and macOS results separately; Linux browser checks do not verify
+compatibility with either platform.

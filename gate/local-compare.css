@@ -3,8 +3,8 @@
 body.local-comparing { display: block; padding: 0; }
 .local-comparing > .gate-wrap { display: none; }
 .local-compare-workspace {
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -27,9 +27,8 @@ body.local-comparing { display: block; padding: 0; }
 .local-compare-stage {
   display: grid;
   gap: 16px;
-  flex: 1;
-  min-height: 280px;
-  overflow: scroll;
+  /* Natural row height keeps vertical scrolling on the document. */
+  overflow-x: auto;
   scrollbar-width: auto;
   padding: 4px 4px 12px;
 }
@@ -51,4 +50,11 @@ body.local-comparing { display: block; padding: 0; }
 .local-compare-pane select { flex: 1; min-width: 0; }
 .local-compare-pane p { margin: 8px 0; font-size: 13px; overflow-wrap: anywhere; }
 .local-compare-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; }
-.local-compare-pane iframe { border: 0; width: 100%; flex: 1; min-height: 120px; background: var(--gate-bg); }
+.local-compare-pane iframe {
+  border: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  flex: none;
+  background: var(--gate-bg);
+}
