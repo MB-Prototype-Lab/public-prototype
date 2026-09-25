@@ -28,8 +28,29 @@
 // note is patched in (uiPatchHTML), so there is no leftover to reset and the
 // next repaint clears it on its own.
 
-const BUDGET_PAYWALL_PRICE = "$6.99 a month";
+// Prices are NUMBERS, and everything shown from them is computed: the
+// struck-through full year is monthly x 12, and the saving is rounded DOWN so
+// the button never claims more than the real discount. Change the monthly price
+// and the strikethrough and the percentage follow; nothing typed can go stale.
+const BUDGET_PAYWALL_MONTHLY = 14.99;
+const BUDGET_PAYWALL_ANNUAL  = 124.99;
 const BUDGET_PAYWALL_TRIAL = "Seven days free";
+
+/** $14.99 -- always cents, so a strikethrough reads as a real price. */
+function bpMoney(n) {
+  return "$" + (Math.round(n * 100) / 100).toFixed(2);
+}
+
+/** A full year at the monthly price: the honest "was" figure. */
+function bpFullYear() {
+  return Math.round(BUDGET_PAYWALL_MONTHLY * 12 * 100) / 100;
+}
+
+/** The saving, in whole percent, rounded DOWN (30.5 -> 30, never 31). */
+function bpSavePct() {
+  const full = bpFullYear();
+  return full > 0 ? Math.floor((full - BUDGET_PAYWALL_ANNUAL) / full * 100) : 0;
+}
 
 // What Platinum is said to carry. The budget leads, because the budget is what
 // the tester just tried to open — the original list opened on daily updates,
@@ -50,16 +71,31 @@ function renderBudgetPaywall() {
       <p class="pill" style="display:inline-block;font-size:9px;padding:3px 9px;margin-bottom:10px;">Platinum</p>
       <h2 class="title onb-title" style="margin:0 0 6px;">Your budget lives in Platinum</h2>
       <p class="task-desc" style="margin:0 0 12px;">
-        ${h(BUDGET_PAYWALL_TRIAL)}, then ${h(BUDGET_PAYWALL_PRICE)}. Cancel any time.
+        ${h(BUDGET_PAYWALL_TRIAL)} on either plan. Cancel any time.
       </p>
 
       <ul class="onb-trial-list">
         ${BUDGET_PAYWALL_INCLUDES.map(x => `<li>${h(x)}</li>`).join("")}
       </ul>
 
-      <button class="button full" type="button" onclick="budgetPaywallTap()">
-        Start free trial
-      </button>
+      <!-- Two plans. Annual is the filled one, and it sits LOWEST -- nearest
+           the thumb -- selling on one idea: 30% off. Monthly stays, outlined,
+           with its price, so the choice is a real one. -->
+      <div class="bp-plans">
+        <button class="button secondary full bp-plan bp-plan-monthly" type="button"
+                onclick="budgetPaywallTap('monthly')">
+          Start free trial
+          <span class="bp-plan-sub">${h(bpMoney(BUDGET_PAYWALL_MONTHLY))} a month</span>
+        </button>
+        <button class="button full bp-plan bp-plan-annual" type="button"
+                aria-label="Go yearly, ${h(bpMoney(BUDGET_PAYWALL_ANNUAL))} a year, was ${h(bpMoney(bpFullYear()))}, save ${bpSavePct()} percent"
+                onclick="budgetPaywallTap('annual')">
+          <span class="bp-plan-tag" aria-hidden="true">Save ${bpSavePct()}%</span>
+          Go yearly
+          <s class="bp-was" aria-hidden="true">${h(bpMoney(bpFullYear()))}</s>
+          <strong aria-hidden="true">${h(bpMoney(BUDGET_PAYWALL_ANNUAL))}</strong>
+        </button>
+      </div>
 
       <!-- Patched, not re-rendered: nothing is stored, so nothing has to be
            cleared and the next repaint takes the note away by itself. -->
@@ -75,7 +111,10 @@ function renderBudgetPaywall() {
  * telling us something, and the app's job is to record the tap and be honest
  * about the rest.
  */
-function budgetPaywallTap() {
+function budgetPaywallTap(plan) {
+  // `plan` is 'monthly' or 'annual'. Nothing here reads it: it exists so the
+  // two buttons carry different click names (budgetPaywallTap:monthly /
+  // :annual, js/ub-names.js) and the study can see which plan testers reach for.
   uiPatchHTML("bpNote",
     "Checkout isn't built into this prototype — nothing was charged, " +
     "and the budget stays where it is.");
@@ -97,6 +136,10 @@ function renderBudgetPaywallAdmin() {
           The CTA records the tap and says checkout is not built. It does not
           write <code>state.trialAccepted</code>, which still means what it
           always did: diamonds and the reward screen's subscriber section.
+          Monthly ${h(bpMoney(BUDGET_PAYWALL_MONTHLY))} · yearly
+          ${h(bpMoney(BUDGET_PAYWALL_ANNUAL))}, shown against
+          ${h(bpMoney(bpFullYear()))} (monthly × 12) as "save ${bpSavePct()}%",
+          rounded down. The two taps are tracked separately.
         </div>
       </div>
       <div class="input-group">

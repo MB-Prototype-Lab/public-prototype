@@ -1748,13 +1748,14 @@ onbSetStep(state.onboarding, buddyStep);
 var meetHtml = paintOnb();
 var stageAt = meetHtml.indexOf("onb-buddy-stage"), titleAt = meetHtml.indexOf("Meet your buddy!");
 var nameAt = meetHtml.indexOf("onbLiveInput('buddyName'"), proAt = meetHtml.indexOf("onbSetBuddy('pronouns'");
-chk(stageAt !== -1 && stageAt < titleAt && titleAt < nameAt && nameAt < proAt,
-    "one screen: the buddy, then the greeting, then name and pronouns",
+chk(titleAt !== -1 && titleAt < stageAt && stageAt < nameAt && nameAt < proAt &&
+    meetHtml.indexOf("Your buddy</p>") === -1,
+    "one screen: the greeting on top (no \"Your buddy\" counter), the buddy, then name and pronouns",
     "stage " + stageAt + ", title " + titleAt + ", name " + nameAt + ", pronouns " + proAt);
 
 // The line above the fields asks for the name (h() escapes the apostrophe).
 var askAt = meetHtml.indexOf(h("Let's give your buddy a name!"));
-chk(askAt !== -1 && titleAt < askAt && askAt < nameAt,
+chk(askAt !== -1 && stageAt < askAt && askAt < nameAt,
     "the greeting ends by asking for a name, above the fields", "at " + askAt);
 
 // Each field under its own visible label, linked by for/id.
@@ -1960,6 +1961,20 @@ state.onboarding = _o7; state.buddy = _b7; state.screen = _s7;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// v4 only — Home's task cards are two lines, so the third task peeks above the nav.
+if (typeof renderHomeTask === "function" && typeof BUDDY_SINGLE_ART !== "undefined") {
+section("7i. Home shows a hint of the third task");
+// The bones line used to be its own row under the title AND the button, so a
+// card was three lines tall for two lines of content and the third task sat
+// wholly below the fold. It belongs in the title's column, before the button.
+var taskHtml = renderHomeTask({ id: "t", label: "A task", kibble: 5, completed: false });
+var kibAt = taskHtml.indexOf("home-task-kibble"), openAt = taskHtml.indexOf(">Open<");
+chk(kibAt !== -1 && openAt !== -1 && kibAt < openAt,
+    "a task card's bones line sits under its title, beside the button",
+    "kibble at " + kibAt + ", button at " + openAt);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // v4 only — the Budget tab is a paywall (plan.md §0 L27, overriding D31).
 if (typeof BUDGET_PAYWALL !== "undefined") {
 section("7g. The Budget tab is walled");
@@ -2003,10 +2018,47 @@ chk(!BUDGET_PAYWALL || !/Planned|Left over|Built with/.test(walled),
 // screen's subscriber tier, and this screen has no business touching it.
 if (typeof budgetPaywallTap === "function") {
   var beforeTap = JSON.stringify([state.trialAccepted, state.screen, state.planStatus]);
-  try { budgetPaywallTap(); } catch (e) {}
+  try { budgetPaywallTap("monthly"); budgetPaywallTap("annual"); } catch (e) {}
   chk(JSON.stringify([state.trialAccepted, state.screen, state.planStatus]) === beforeTap,
-      "the CTA writes nothing and goes nowhere",
+      "neither plan's button writes anything or goes anywhere",
       "it must not set trialAccepted, navigate, or unlock");
+}
+
+// ── two plans, and the discount is honest ────────────────────────────────
+// Annual sells on "Save N%" against a struck-through full year. Both figures
+// must come from the prices -- a hardcoded "was" price is an invented discount
+// the day the monthly price moves -- and the percentage rounds DOWN.
+if (typeof BUDGET_PAYWALL_ANNUAL !== "undefined" && typeof renderBudgetPaywall === "function") {
+  var wallHtml = renderBudgetPaywall();
+  var monAt = wallHtml.indexOf("budgetPaywallTap('monthly')");
+  var annAt = wallHtml.indexOf("budgetPaywallTap('annual')");
+  var annBtn = /<button[^>]*bp-plan-annual[\s\S]*?<\/button>/.exec(wallHtml);
+  chk(monAt !== -1 && annAt !== -1 && monAt < annAt && !!annBtn &&
+      !/\bsecondary\b/.test(annBtn[0].split(">")[0]) && /bp-plan-tag/.test(annBtn[0]),
+      "monthly first, annual last -- and annual is the filled button with the pill");
+
+  var fullYear = Math.round(BUDGET_PAYWALL_MONTHLY * 12 * 100) / 100;
+  var pct = Math.floor((fullYear - BUDGET_PAYWALL_ANNUAL) / fullYear * 100);
+  var wasShown = annBtn ? (/<s class="bp-was"[^>]*>\s*\$([\d.,]+)\s*<\/s>/.exec(annBtn[0]) || [])[1] : null;
+  var pctShown = annBtn ? (/Save (\d+)%/.exec(annBtn[0]) || [])[1] : null;
+  chk(wasShown === fullYear.toFixed(2) && Number(pctShown) === pct,
+      "the struck-through price is monthly x 12 and \"Save " + pct + "%\" is rounded down",
+      "shown: was $" + wasShown + ", save " + pctShown + "% -- expected $" +
+      fullYear.toFixed(2) + ", " + pct + "%");
+  var paySrc = (typeof __PAYWALL_JS === "string") ? __PAYWALL_JS : "";
+  chk(paySrc && paySrc.indexOf(fullYear.toFixed(2)) === -1 && !/Save \d+%/.test(paySrc),
+      "neither figure is typed into the source",
+      "the was-price and the percentage must be computed from the two prices");
+  var ariaAnn = annBtn ? (/aria-label="([^"]*)"/.exec(annBtn[0]) || [])[1] : "";
+  chk(!!ariaAnn && ariaAnn.indexOf("$" + BUDGET_PAYWALL_ANNUAL.toFixed(2)) !== -1 &&
+      ariaAnn.indexOf("was $" + fullYear.toFixed(2)) !== -1,
+      "a screen reader hears the price and the was-price, not two bare numbers",
+      JSON.stringify(ariaAnn));
+
+  if (typeof ubActionName === "function") {
+    var nm = ubActionName("budgetPaywallTap('monthly')"), na = ubActionName("budgetPaywallTap('annual')");
+    chk(nm && na && nm !== na, "the two plans are separate clicks in Useberry", nm + " / " + na);
+  }
 }
 
 // ── no rendered copy still promises the opposite ──────────────────────────

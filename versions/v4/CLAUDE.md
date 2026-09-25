@@ -329,6 +329,14 @@ variation from a bug.
      asserting it is on would make the escape hatch fail the build, which is how
      a flag quietly stops being flippable. Deleting the call site would also
      orphan all ten functions in `budget-v3.js` into §7b's warning.
+   - **Two plans.** Monthly ($14.99, outlined) on top; **annual ($124.99,
+     filled) at the bottom, nearest the thumb**, selling on one idea — a
+     "Save 30%" pill and the full year struck through. The struck-through
+     price is **computed** (monthly × 12 = $179.88) and the percentage
+     **rounds down** (30.5 → 30): a typed "was" price becomes an invented
+     discount the day the monthly price moves. §7g reads the source to
+     enforce it. The taps are `budgetPaywallTap:monthly` / `:annual` in
+     Useberry, so a study shows which plan testers reach for.
    - **⚠ IT GUARDS THE TAB, NOT THE BUDGET — owner's call, and these still get
      through:** the "Set up your budget" daily task and the Home task (both
      `bbStart()` → `budgetBuild`), budget-update-confirm's Rebuild,

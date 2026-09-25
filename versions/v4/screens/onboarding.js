@@ -1064,15 +1064,15 @@ function onbBuddyStep(o) {
   const count = ONB_BUDDY_STEPS.length > 1
     ? `Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})` : "Your buddy";
 
-  // Meet: the whole buddy step on one screen. The portrait leads, the greeting
-  // follows, and the name and pronouns sit centred under it. Continue unlocks
-  // once both are filled (onbAnswered).
+  // Meet: the whole buddy step on one screen. The greeting heads it -- in the
+  // slot the small "Your buddy" counter used to hold -- then the portrait, the
+  // line asking for a name, and the name and pronouns centred under that.
+  // Continue unlocks once a pronoun is picked (onbAnswered).
   if (sub === "meet") {
     return `
     <div class="onb-buddy-step onb-buddy-step-meet">
-      <p class="helper onb-buddy-count">${h(count)}</p>
+      <h1 class="title onb-title">${h(copy[0])}</h1>
       ${renderBuddyStage({ square: true, cls: "onb-buddy-stage" })}
-      <h1 class="title onb-title" style="margin:0 0 6px;">${h(copy[0])}</h1>
       <p class="task-desc onb-buddy-sub" style="margin:0 0 14px;">${h(copy[1])}</p>
       ${onbBuddyNameFields(b)}
     </div>`;

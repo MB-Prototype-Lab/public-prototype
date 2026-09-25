@@ -150,6 +150,12 @@ printf '\nvar __HF_VIEW = { w: %s, h: %s };\n' "${HF_W:-0}" "${HF_H:-0}" >> "$OU
 printf '\nvar __RENDER_JS = ' >> "$OUT"
 python3 -c "import json,sys;print(json.dumps(open(sys.argv[1],encoding='utf-8').read())+';')" "$APP/js/render.js" >> "$OUT"
 
+# The paywall's source, v4 only. §7g checks the discount figures are COMPUTED
+# from the prices: a "was" price typed into the file would be an invented
+# discount the day the monthly price moves.
+printf '\nvar __PAYWALL_JS = ' >> "$OUT"
+python3 -c "import json,sys,os;p=sys.argv[1];print(json.dumps(open(p,encoding='utf-8').read() if os.path.exists(p) else '')+';')" "$APP/screens/budget-paywall.js" >> "$OUT"
+
 printf '\nvar __GATE_JS = ' >> "$OUT"
 python3 -c "import json,sys;print(json.dumps(open('gate/gate.js',encoding='utf-8').read())+';')" >> "$OUT"
 
