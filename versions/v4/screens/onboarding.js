@@ -1622,7 +1622,11 @@ function onbFilmSync() {
     } else if (el.playbackRate !== rate) {
       el.playbackRate = rate;
     }
-    if (playing && el.paused) { const p = el.play(); if (p && p.catch) p.catch(function () {}); }
+    // `!el.ended`: a film that ran out a few ms before the clock is also
+    // `paused`, and play() on an ENDED element restarts it from 0 (HTML
+    // standard) -- the film replayed itself at the finish. Its last frame is
+    // the right picture; a real seek above clears `ended` and play resumes.
+    if (playing && el.paused && !el.ended) { const p = el.play(); if (p && p.catch) p.catch(function () {}); }
     if (!playing && !el.paused) el.pause();
   } catch (e) { /* a detached element mid-repaint — the next tick catches up */ }
   return true;

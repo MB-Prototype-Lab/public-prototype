@@ -1061,6 +1061,35 @@ if (!__FILM_MANIFEST) {
   chk(listed.length === 0, "the app's film index matches what was rendered",
       "listed but absent: " + listed.slice(0, 6).join(", "));
 
+  // ── the film ends on its last frame, it does not replay ───────────────
+  // A film that runs out a few ms before the clock is `paused` AND `ended`,
+  // and play() on an ended element restarts it from 0 (HTML standard). A
+  // tester saw the intro replay itself at the finish. Driven for real: a stub
+  // element in exactly that state, and a control that still gets play().
+  if (typeof onbFilmSync === "function") {
+    var fsSaved = { video: state.onboarding.video, el: __e["onb-film"] };
+    var fsCalls = 0;
+    var fsEl = function (ended) {
+      return { paused: true, ended: ended, currentTime: 0, playbackRate: 1,
+               play: function () { fsCalls++; }, pause: function () {} };
+    };
+    state.onboarding.video = null;
+    var fsV = onbVideo();
+    fsV.playing = true; fsV.speechDriven = false;
+    fsV.elapsed = fsV.total - 0.05;
+    __e["onb-film"] = fsEl(true); __e["onb-film"].currentTime = fsV.total;
+    onbFilmSync();
+    var fsEnded = fsCalls;
+    fsCalls = 0;
+    __e["onb-film"] = fsEl(false); __e["onb-film"].currentTime = fsV.elapsed;
+    onbFilmSync();
+    chk(fsEnded === 0 && fsCalls === 1,
+        "a film that ran out just before the clock stays on its last frame (no replay from 0)",
+        "play() on ended: " + fsEnded + ", on merely paused: " + fsCalls);
+    state.onboarding.video = fsSaved.video;
+    if (fsSaved.el) __e["onb-film"] = fsSaved.el; else delete __e["onb-film"];
+  }
+
   // ── the stage is the picture's shape, and the picture's colour ────────────
   // Both tiers draw at 100:72 and the stage used to be free to be taller, so up
   // to 85px of it could only ever be accent green around a cream film.
