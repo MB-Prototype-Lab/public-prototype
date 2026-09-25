@@ -167,11 +167,14 @@ const ONB_GOALS_MAX = 3;
 // a string back here brings a screen back with nothing to rebuild.
 const ONB_BUDDY_STEPS = ["meet"];
 
-// The name the buddy screen opens on. Written on ENTERING the buddy step
-// (onbSetStep), never in onbStart(): js/profiles.js only fills in a profile's
-// buddy name when the name is empty, so seeding it at the start would silently
-// stop Skip all -> profile picker from naming the buddy. Only fills an empty
-// name -- a tester who typed their own, went on and came back keeps it.
+// The name a buddy gets when the tester leaves the box blank. It is shown as the
+// box's faded PLACEHOLDER while they are on the step -- a suggestion, cleared by
+// clicking -- and only becomes the name when they LEAVE the step forward
+// (Continue or Skip, via onbSetStep). Never written on arrival: a real value
+// in the box is exactly what read as pre-filled rather than suggested. Never in
+// onbStart() either: js/profiles.js only fills in a profile's buddy name when
+// the name is empty, so seeding it there would silently stop Skip all ->
+// profile picker from naming the buddy. Only fills a blank name.
 const ONB_BUDDY_DEFAULT_NAME = "Buddy";
 
 function onbBuddyNameDefault(o) {
@@ -182,25 +185,25 @@ function onbBuddyNameDefault(o) {
 }
 
 /**
+ * Move onboarding to step `i`, and run what moving between steps needs.
+ *
+ * EVERY step change goes through here -- Continue, Back, Skip, the deep link
+ * and the admin jump -- so a step-transition rule lives in one place. Today
+ * there is one: leaving the buddy step FORWARD with a blank name makes the
+ * buddy "Buddy". Back does not, so returning still shows the faded placeholder.
+ */
+function onbSetStep(o, i) {
+  if (!o) return;
+  const from = o.step;
+  o.step = Math.max(0, Math.min(ONB_STEPS.length - 1, Number(i) || 0));
+  if (ONB_STEPS[from] === "buddy" && o.step > from) onbBuddyNameDefault(o);
+}
+
+/**
  * The buddy sub-step worth its own page key, or "". Only the NAME screen: the
  * first sub-step shares the step's own key so existing links keep their meaning.
  * Read by scrollKey() (js/utils.js) and screenTitle() (js/screen-url.js).
  */
-/**
- * Move onboarding to step `i`, and run what entering that step needs.
- *
- * EVERY step change goes through here -- Continue, Back, Skip, the deep link
- * and the admin jump. It exists because the buddy step's name default has to
- * be written on ARRIVAL, and there are five ways to arrive; a default written
- * at only some of them is a name box that is sometimes blank for no reason a
- * tester could see.
- */
-function onbSetStep(o, i) {
-  if (!o) return;
-  o.step = Math.max(0, Math.min(ONB_STEPS.length - 1, Number(i) || 0));
-  if (ONB_STEPS[o.step] === "buddy") onbBuddyNameDefault(o);
-}
-
 function onbBuddySubKey(o) {
   if (!o || ONB_STEPS[o.step] !== "buddy" || !(o.buddyIndex > 0)) return "";
   return ONB_BUDDY_STEPS[o.buddyIndex] || "";
@@ -778,9 +781,9 @@ function onbAnswered(key, o) {
   // Same contract as the lesson player: Next unlocks when the piece ends.
   // Skip (top right) still exits at any point, so nothing is blocked (D09).
   if (key === "video")     return !!(o.video && o.video.finished);
-  // The buddy step needs a name AND pronouns -- the name has a default, the
-  // pronouns deliberately do not. Whole step, since it is one screen now.
-  if (key === "buddy")     return !!(o.buddy.name && o.buddy.name.trim() && o.buddy.pronouns);
+  // The buddy step needs pronouns, which deliberately have no default. A blank
+  // name is allowed: it MEANS "Buddy" (the placeholder), written on leaving.
+  if (key === "buddy")     return !!o.buddy.pronouns;
   return true;
 }
 
@@ -1043,7 +1046,8 @@ function onbSetBuddy(key, value) {
 // Reads the shared option lists from components/buddy.js at render time.
 const ONB_BUDDY_COPY = {
   meet:       ["Meet your buddy!",
-               "Buddy is here to help answer questions and take your financial journey with you!"],
+               "Buddy is here to help answer questions and join you on your financial journey! " +
+               "Let's give your buddy a name!"],
   bodyType:   ["Now the fun part — let's give me a look.", "Scroll to pick your buddy's body type"],
   breed:      ["Now the fun part — let's give me a look.", "Scroll and pick a breed."],
   furColor:   ["What colour is my coat?",                  "Tap a colour."],
@@ -1103,29 +1107,33 @@ function onbBuddyStep(o) {
 }
 
 /**
- * The name box and the pronouns dropdown.
+ * The name box and the pronouns dropdown, each under its own label.
  *
- * No visible labels: no other onboarding step has them, and the small bold
- * admin-style captions were part of what made these two boxes read heavier
- * than the rest of the app. The name box already says "Buddy"; the dropdown's
- * blank option DISPLAYS "Pronouns" but its value is "", so nothing is chosen
- * for the tester and Continue stays locked until they choose.
+ * "Buddy" is the name box's PLACEHOLDER, not its value: faded, and gone the
+ * moment the box is clicked (CSS, .onb-buddy-fields input:focus::placeholder)
+ * so the tester can type straight in. Left blank, the buddy becomes "Buddy"
+ * when they move on (onbSetStep). The dropdown's blank option has value "", so
+ * nothing is chosen for the tester and Continue stays locked until they choose.
  */
 function onbBuddyNameFields(b) {
   const pronouns = (typeof BUDDY_PRONOUNS !== "undefined") ? BUDDY_PRONOUNS : [];
   return `
     <div class="onb-buddy-fields">
       <div class="input-group">
-        <input placeholder="Name your buddy" value="${h(b.name || "")}" aria-label="Buddy's name"
+        <label for="onbBuddyName">Name</label>
+        <input id="onbBuddyName" placeholder="${h(ONB_BUDDY_DEFAULT_NAME)}" value="${h(b.name || "")}"
                oninput="onbLiveInput('buddyName', this.value)"
                onchange="onbLiveInput('buddyName', this.value, true)">
       </div>
-      <div class="input-group onb-buddy-select">
-        <select class="onb-buddy-pronouns ${b.pronouns ? "" : "is-blank"}"
-                onchange="onbSetBuddy('pronouns', this.value)" aria-label="Buddy's pronouns">
-          <option value="" ${b.pronouns ? "" : "selected"}>Pronouns</option>
-          ${pronouns.map(p => `<option value="${h(p.id)}" ${b.pronouns === p.id ? "selected" : ""}>${h(p.label)}</option>`).join("")}
-        </select>
+      <div class="input-group">
+        <label for="onbBuddyPronouns">Pronouns</label>
+        <span class="onb-buddy-select">
+          <select id="onbBuddyPronouns" class="onb-buddy-pronouns ${b.pronouns ? "" : "is-blank"}"
+                  onchange="onbSetBuddy('pronouns', this.value)">
+            <option value="" ${b.pronouns ? "" : "selected"}>Choose one</option>
+            ${pronouns.map(p => `<option value="${h(p.id)}" ${b.pronouns === p.id ? "selected" : ""}>${h(p.label)}</option>`).join("")}
+          </select>
+        </span>
       </div>
     </div>`;
 }

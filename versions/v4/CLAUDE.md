@@ -339,22 +339,29 @@ variation from a bug.
    `ONB_BUDDY_STEPS = ["meet"]` in `screens/onboarding.js`;
    `onbBuddyNameFields()`; `BUDDY_PRONOUNS` in `components/buddy.js`. Sweep §7h.
    - Briefly two screens (meet, then name) in `85be999`; folded into one.
-   - The prototype art, then *"Meet your buddy!"*, then the name box and a
-     **Pronouns** dropdown, **centred** (`.onb-buddy-fields`). The button says
-     **Continue** like every step, and unlocks on a non-blank name **and** a
-     pronoun. Top-right Skip still skips the whole step (D09), pronouns blank.
+   - The prototype art, then *"Meet your buddy!"*, then **Name** (label) over
+     the name box and **Pronouns** (label) over the dropdown, all **centred**
+     (`.onb-buddy-fields`). The button says **Continue** like every step and
+     unlocks on a **pronoun** — a blank name is allowed, because it means
+     "Buddy". Top-right Skip still skips the whole step (D09), pronouns blank.
+   - **"Buddy" is the name box's PLACEHOLDER, not its value** — faded in
+     `--muted`, and cleared the moment the box is clicked
+     (`input:focus::placeholder { color: transparent }`), back on blur if
+     nothing was typed.
    - **The boxes use the Name/ZIP steps' tokens exactly.** The owner saw them
      as harsher; headless Chrome computed identical colours, so the culprit
      was the browser's own drawing — the native `<select>` and the bold
-     admin-style labels. Labels are gone (aria-labels instead) and the select
-     is `appearance: none` with a caret in `--muted`. The blank option
-     *shows* "Pronouns" but its value is `""`.
-   - **⚠ The "Buddy" default is written on ARRIVAL at the step, by
-     `onbSetStep()` — the one function every step change goes through**
-     (Continue, Back, Skip, the deep link, the admin jump). Never in
-     `onbStart()`: `js/profiles.js` names the buddy from a profile only while
-     the name is empty. A bare `o.step++` anywhere in onboarding skips the
-     default; §7h walks all five ways in.
+     admin-style labels. The select is `appearance: none` with a caret in
+     `--muted`, and the labels (put back at the owner's request) are soft
+     captions — centred, muted, weight 600 — not the shared 850. The blank
+     option *shows* "Choose one" but its value is `""`.
+   - **⚠ A blank name becomes "Buddy" on LEAVING the step forward** (Continue
+     or Skip), in `onbSetStep()` — the one function every step change goes
+     through. Not on arrival (that made it a solid value, not a suggestion),
+     not on Back (returning must still show the placeholder), and never in
+     `onbStart()` (`js/profiles.js` names the buddy from a profile only while
+     the name is empty). A bare `o.step++` anywhere in onboarding skips it;
+     §7h walks every way in and out.
    - **One URL**, `?screen=onboarding-5`. The retired `onboarding-5-name` link
      still lands on the step (unknown suffixes fall back).
    - **Nothing reads `state.buddy.pronouns` yet** — the buddy speaks in the

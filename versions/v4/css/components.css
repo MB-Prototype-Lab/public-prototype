@@ -2197,7 +2197,21 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    bold admin-style labels, which are gone from the markup. `appearance: none`
    takes the native drawing away and the caret below is drawn in --muted. */
 .onb-buddy-fields { width: 100%; max-width: 260px; margin: 0 auto; }
-.onb-buddy-fields .input-group { margin: 0 0 10px; }
+.onb-buddy-fields .input-group { margin: 0 0 12px; }
+/* Captions, not a form header: centred, muted, normal weight. The shared
+   .input-group label is 11px at 850 -- the admin panel's voice, and part of
+   what made these boxes read harsh before. */
+.screen .onb-buddy-fields label {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+/* "Buddy" is a suggestion: faded while the box is idle, gone the moment it is
+   clicked so the tester types into a clean box. Back on blur if nothing typed. */
+.screen .onb-buddy-fields input::placeholder { color: var(--muted); opacity: 1; }
+.screen .onb-buddy-fields input:focus::placeholder { color: transparent; }
 .screen .onb-buddy-fields input,
 .screen .onb-buddy-fields select {
   text-align: center;
@@ -2217,7 +2231,9 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 /* The blank choice shows "Pronouns" as a placeholder does: muted, not text. */
 .screen .onb-buddy-fields select.is-blank { color: var(--muted); }
 .screen .onb-buddy-fields select option { color: var(--text); background: var(--card); }
-.onb-buddy-select { position: relative; }
+/* A wrapper around the select alone, so the caret centres on the box and not
+   on the box plus its label. */
+.onb-buddy-select { position: relative; display: block; }
 .onb-buddy-select::after {
   content: "";
   position: absolute; right: 14px; top: 50%;

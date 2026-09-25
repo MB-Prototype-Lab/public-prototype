@@ -1752,6 +1752,19 @@ chk(stageAt !== -1 && stageAt < titleAt && titleAt < nameAt && nameAt < proAt,
     "one screen: the buddy, then the greeting, then name and pronouns",
     "stage " + stageAt + ", title " + titleAt + ", name " + nameAt + ", pronouns " + proAt);
 
+// The line above the fields asks for the name (h() escapes the apostrophe).
+var askAt = meetHtml.indexOf(h("Let's give your buddy a name!"));
+chk(askAt !== -1 && titleAt < askAt && askAt < nameAt,
+    "the greeting ends by asking for a name, above the fields", "at " + askAt);
+
+// Each field under its own visible label, linked by for/id.
+var nameLbl = meetHtml.indexOf('<label for="onbBuddyName">Name</label>');
+var proLbl = meetHtml.indexOf('<label for="onbBuddyPronouns">Pronouns</label>');
+chk(nameLbl !== -1 && proLbl !== -1 && nameLbl < nameAt && nameAt < proLbl && proLbl < proAt &&
+    /<input id="onbBuddyName"/.test(meetHtml) && /<select id="onbBuddyPronouns"/.test(meetHtml),
+    "\"Name\" labels the name box and \"Pronouns\" the dropdown, each above its field",
+    "Name label " + nameLbl + ", Pronouns label " + proLbl);
+
 // Every step says Continue -- the buddy step included (owner's call).
 var notContinue = [];
 ONB_STEPS.forEach(function (k, i) {
@@ -1763,16 +1776,15 @@ chk(notContinue.length === 0 && /id="onbContinue"[^>]*>\s*Continue\s*</.test(mee
     "every step's button says Continue", notContinue.join(", "));
 
 // ── pronouns are required ─────────────────────────────────────────────────
+// A blank name MEANS "Buddy" (the placeholder), so only the pronoun can block.
 var o7 = state.onboarding;
-o7.buddy.name = "Buddy"; o7.buddy.pronouns = "";
+o7.buddy.name = "Rex"; o7.buddy.pronouns = "";
 var blankPro = onbAnswered("buddy", o7);
-o7.buddy.name = "  "; o7.buddy.pronouns = "they";
+o7.buddy.name = ""; o7.buddy.pronouns = "they";
 var blankName = onbAnswered("buddy", o7);
-o7.buddy.name = "Buddy";
-var both = onbAnswered("buddy", o7);
-chk(!blankPro && !blankName && both,
-    "Continue needs a name AND pronouns",
-    "blank pronouns " + blankPro + ", blank name " + blankName + ", both " + both);
+chk(!blankPro && blankName,
+    "Continue needs a pronoun; a blank name is allowed (it means Buddy)",
+    "blank pronoun unlocks: " + blankPro + ", blank name unlocks: " + blankName);
 
 o7.buddy.pronouns = ""; state.buddy.pronouns = "";
 var html7 = paintOnb();
@@ -1786,10 +1798,9 @@ chk(!!sel && opts.length === 1 + BUDDY_PRONOUNS.length &&
 chk(/id="onbContinue"[^>]*disabled/.test(html7),
     "Continue is disabled until pronouns are picked");
 
-// ── "Buddy" on arrival, by every way in ───────────────────────────────────
-// Written on ENTERING the step, never in onbStart() (js/profiles.js names the
-// buddy from a profile only while the name is empty). Five ways in; a default
-// that only some of them write is a box that is blank for no visible reason.
+// ── "Buddy" is a placeholder on arrival, and a name on leaving ───────────
+// Arriving must NOT write it -- a real value in the box is what read as
+// pre-filled. Five ways in; every one must show the faded placeholder.
 function arrive(how) {
   onbStart();
   var o = state.onboarding;
@@ -1808,20 +1819,31 @@ function arrive(how) {
     }
   } catch (e) { return "threw: " + e.message; }
   o = state.onboarding;
-  return o.step === buddyStep ? o.buddy.name : "landed on step " + o.step;
+  if (o.step !== buddyStep) return "landed on step " + o.step;
+  var box = /<input id="onbBuddyName"[^>]*>/.exec(paintOnb());
+  return JSON.stringify(o.buddy.name) + (box && /placeholder="Buddy"/.test(box[0]) &&
+         /value=""/.test(box[0]) ? " +placeholder" : " NO-placeholder");
 }
-var nameAtStart = (onbStart(), state.onboarding.buddy.name);
 var arrivals = ["continue", "skip", "back", "admin"].map(function (w) { return w + "=" + arrive(w); });
-chk(nameAtStart === "" && arrivals.every(function (a) { return /=Buddy$/.test(a); }),
-    "onbStart leaves the name empty; every way into the step fills in \"Buddy\"",
-    "at start " + JSON.stringify(nameAtStart) + "; " + arrivals.join(", "));
+chk(arrivals.every(function (a) { return /="" \+placeholder$/.test(a); }),
+    "every way into the step shows \"Buddy\" as a faded placeholder, not a value",
+    arrivals.join(", "));
 
-onbStart(); onbSetStep(state.onboarding, buddyStep);
-state.onboarding.buddy.name = "Rex"; state.buddy.name = "Rex";
-onbNext(); onbBack();
-chk(state.onboarding.step === buddyStep && state.onboarding.buddy.name === "Rex",
-    "a typed name survives going on and coming back",
-    "got " + JSON.stringify(state.onboarding.buddy.name));
+// Leaving: forward (Continue, Skip) makes a blank name "Buddy"; Back does not.
+// A typed name survives all three.
+function leave(how, typed) {
+  onbStart(); onbSetStep(state.onboarding, buddyStep);
+  state.onboarding.buddy.name = typed; state.buddy.name = typed;
+  state.onboarding.buddy.pronouns = "they";
+  if (how === "continue") onbNext(); else if (how === "skip") onbSkip(); else onbBack();
+  return how + "(" + JSON.stringify(typed) + ")=" + JSON.stringify(state.onboarding.buddy.name);
+}
+var leaves = [leave("continue", ""), leave("skip", "  "), leave("back", ""),
+              leave("continue", "Rex"), leave("skip", "Rex"), leave("back", "Rex")];
+chk(leaves.join(",") === 'continue("")="Buddy",skip("  ")="Buddy",back("")="",' +
+                         'continue("Rex")="Rex",skip("Rex")="Rex",back("Rex")="Rex"',
+    "leaving forward names a blank buddy \"Buddy\"; Back doesn't; a typed name always survives",
+    leaves.join(", "));
 
 // ── one URL, and the deep link arrives too ────────────────────────────────
 if (typeof URL !== "undefined") {
@@ -1849,7 +1871,7 @@ if (typeof URL !== "undefined") {
                buddyStep + suffix;
       var _nav7 = JSON.stringify(state.nav);
       screenLinkApply();
-      links.push(suffix + ":" + state.onboarding.step + ":" + state.onboarding.buddy.name);
+      links.push(suffix + ":" + state.onboarding.step + ":" + JSON.stringify(state.onboarding.buddy.name));
       state.nav = JSON.parse(_nav7);
     });
   } catch (e) { stepUrl = "threw: " + e.message; }
@@ -1857,8 +1879,8 @@ if (typeof URL !== "undefined") {
 
   chk(new RegExp("[?&]screen=onboarding-" + buddyStep + "(?:&|#|$)").test(stepUrl),
       "the buddy step is one URL, ?screen=onboarding-" + buddyStep, stepUrl);
-  chk(links.join(",") === ":" + buddyStep + ":Buddy,-name:" + buddyStep + ":Buddy",
-      "the deep link opens the step with \"Buddy\" filled in, and the old -name link still lands",
+  chk(links.join(",") === ":" + buddyStep + ':"",-name:' + buddyStep + ':""',
+      "the deep link opens the step (name still blank), and the old -name link still lands",
       links.join(", "));
 } else {
   warn("the buddy step's URL not checked — no URL implementation in this engine");
@@ -1898,6 +1920,10 @@ if (typeof __COMPONENTS_CSS === "string") {
   var selRule = fieldRules.filter(function (r) { return /select\s*\{/.test(r); })
                           .map(function (r) { return r; }).join("\n");
   var hex = fieldRules.filter(function (r) { return /#[0-9a-fA-F]{3,6}\b/.test(r.split("{")[1]); });
+  var allFields = fieldRules.join("\n");
+  chk(/:focus::placeholder\s*\{[^}]*color:\s*transparent/.test(allFields) &&
+      /input::placeholder\s*\{[^}]*var\(--muted\)/.test(allFields),
+      "the \"Buddy\" placeholder is faded, and clicking the box clears it");
   chk(/appearance:\s*none/.test(selRule) && hex.length === 0 &&
       /text-align:\s*center/.test(fieldRules.join("")),
       "the buddy boxes are centred, drop the native select chrome, and use theme tokens",
