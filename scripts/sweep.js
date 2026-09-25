@@ -2160,6 +2160,77 @@ chk(!BUDGET_PAYWALL || /PAYWALL/i.test((function () {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+section("7j. A value with an apostrophe still clicks");
+
+// An inline handler's argument must be escaped for JS FIRST, then for HTML.
+// The other way round, h() turns ' into &#039;, the JS escape finds nothing,
+// and the browser decodes it straight back: onbToggleGoal('... don't use') is
+// a syntax error, so "Cancel what I don't use" could not be picked and the
+// keyboard's ' and \ keys did nothing. Decoded here exactly as a browser does,
+// then compiled and run.
+function attrDecode(s) {
+  return String(s).replace(/&#0*39;/g, "'").replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+}
+function handlersIn(html, attr) {
+  var re = new RegExp(attr + '="([^"]*)"', "g"), out = [], m;
+  while ((m = re.exec(html))) out.push(attrDecode(m[1]));
+  return out;
+}
+// Direct eval, not new Function: the sweep's declarations are not global, so a
+// handler run through new Function cannot see onbToggleGoal or kbdKey.
+function runHandler(src, event) { try { eval(src); return true; } catch (e) { return false; } }
+function brokenHandlers(list) {
+  return list.filter(function (src) {
+    try { new Function("event", src); return false; } catch (e) { return true; }
+  });
+}
+// The control keeps the defect by the owner's choice (fixed in v4 + v3.1 only).
+var aposReport = /\/v3$/.test(typeof __APP_DIR === "string" ? __APP_DIR : "")
+  ? function (c, l, d) { c ? ok(l) : warn(l + " -- left unfixed in the v3 control", d); }
+  : chk;
+
+(function () {
+  var so = state.onboarding, ss = state.screen;
+  onbStart();
+  state.onboarding.step = ONB_STEPS.indexOf("goal");
+  state.screen = "onboarding";
+  var goalClicks = handlersIn(renderOnboarding(), "onclick")
+    .filter(function (s) { return /onbToggleGoal\(/.test(s); });
+  var bad = brokenHandlers(goalClicks);
+  var cancel = goalClicks.filter(function (s) { return /Cancel what I don/.test(s); })[0];
+  var picked = false;
+  if (cancel && bad.indexOf(cancel) === -1) {
+    runHandler(cancel, {});
+    picked = state.onboarding.improveAreas.indexOf("Cancel what I don't use") !== -1;
+  }
+  aposReport(goalClicks.length === ONB_GOALS.length && bad.length === 0 && picked,
+      "every goal can be picked, \"Cancel what I don't use\" included",
+      bad.length ? "does not compile: " + bad[0] : (cancel ? "clicked, not picked" : "button not found"));
+  state.onboarding = so; state.screen = ss;
+})();
+
+if (typeof kbdMarkup === "function" && typeof KBD_LAYERS === "object") {
+  var kSaved = JSON.stringify(state.kbd), kHtml = "";
+  state.kbd.open = true;
+  Object.keys(KBD_LAYERS).forEach(function (l) { state.kbd.layer = l; kHtml += kbdMarkup(); });
+  var kAll = handlersIn(kHtml, "onpointerdown");
+  var kBad = brokenHandlers(kAll);
+  // Run the ' and \ keys against a spy, so "compiles" also means "sends that key".
+  var kSent = [], kReal = kbdKey;
+  kbdKey = function (k) { kSent.push(k); };
+  kAll.forEach(function (src) {
+    if (kBad.indexOf(src) !== -1 || !/kbdKey\('(\\'|\\\\)'\)/.test(src)) return;
+    runHandler(src, { preventDefault: function () {} });
+  });
+  kbdKey = kReal;
+  state.kbd = JSON.parse(kSaved);
+  aposReport(kBad.length === 0 && kSent.indexOf("'") !== -1 && kSent.indexOf("\\") !== -1,
+      "every simulated-keyboard key works, ' and \\ included",
+      kBad.length ? "does not compile: " + kBad[0] : "sent: " + JSON.stringify(kSent));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 section("8. Cannot be checked here — needs the owner");
 print("  These are real Phase 6 items that no headless check can settle:");
 print("");

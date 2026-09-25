@@ -136,6 +136,9 @@ done < <(grep -o 'src="[^"]*\.js"' "$APP/index.html" | sed 's/src="//;s/"//')
 FILM_DEFAULT="$(sed -n 's/^const VERSION = process\.env\.MB_VERSION || "\(.*\)";/\1/p' tools/film/build-films.mjs)"
 printf '\nvar __FILM_TOOL_VERSION = "%s";\nvar __DEFAULT_VERSION = "%s";\n' \
   "$FILM_DEFAULT" "$MB_DEFAULT_VERSION" >> "$OUT"
+# Which folder is under test. §7j reports a defect deliberately left unfixed in
+# the v3 control as a warning there rather than a failure.
+printf '\nvar __APP_DIR = "%s";\n' "$APP" >> "$OUT"
 
 # The hyperframes viewBox, so §7c can check it against the CSS aspect-ratio and
 # the film canvas. Three declarations of the same 100:72 shape; if they drift the

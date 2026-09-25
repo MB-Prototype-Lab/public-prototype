@@ -899,7 +899,7 @@ function onbStepBody(key, o) {
         return `
         <button class="journal-opt opt-check ${on ? "picked" : ""} ${dim ? "opt-check-dim" : ""}" type="button"
                 ${dim ? "disabled" : ""}
-                onclick="onbToggleGoal('${h(g).replace(/'/g, "\\'")}')">
+                onclick="onbToggleGoal('${h(String(g).replace(/\\/g, "\\\\").replace(/'/g, "\\'"))}')">
           <span class="journal-opt-label">${h(g)}</span>
           <span class="opt-check-box" aria-hidden="true">${on ? "✓" : ""}</span>
         </button>`;
