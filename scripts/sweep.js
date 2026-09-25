@@ -2282,6 +2282,47 @@ if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "u
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+section("7l. A lost onend cannot freeze the narration");
+
+// The film held at the end of every sentence until the tester scrubbed: the
+// player waits for the voice's onend, and browsers lose it (a collected
+// utterance; Chrome's ~15s cut-off). narrationSpeak's watchdog delivers it once
+// the synth falls silent. Driven with a fake synth on the sweep's queued timers.
+if (typeof NARRATION_POLL_MS !== "undefined" && typeof window === "object") {
+  var nSaved = { synth: window.speechSynthesis, U: typeof SpeechSynthesisUtterance === "undefined" ? undefined : SpeechSynthesisUtterance };
+  var nSynth = { speaking: false, pending: false, last: null,
+    speak: function (u) { this.last = u; }, cancel: function () {}, getVoices: function () { return []; } };
+  window.speechSynthesis = nSynth;
+  SpeechSynthesisUtterance = function (t) { this.text = t; };
+  function nPump(n) { for (var i = 0; i < n; i++) flushTimers(); }
+  function nRun(script) {
+    var got = { end: 0, err: 0 };
+    __timers = [];
+    nSynth.speaking = false;
+    narrationSpeak("A line.", { onEnd: function () { got.end++; }, onError: function () { got.err++; } });
+    script(nSynth.last);
+    nPump(30);
+    return got;
+  }
+  // 1. It starts, speaks, falls silent -- and no onend ever comes.
+  var lost = nRun(function (u) { u.onstart(); nSynth.speaking = true; nPump(3); nSynth.speaking = false; });
+  // 2. The real onend arrives; the watchdog must not deliver a second one.
+  var real = nRun(function (u) { u.onstart(); nSynth.speaking = true; nPump(2); nSynth.speaking = false; u.onend(); u.onend(); });
+  // 3. Never starts at all: reported as an error, so the caller's clock takes over.
+  var never = nRun(function () {});
+  // 4. Superseded mid-line: neither callback -- not from the watchdog, and not
+  //    from the onend a browser still queues after cancel() (THE CANCEL TRAP).
+  var gone = nRun(function (u) { u.onstart(); nSynth.speaking = true; nPump(2); narrationCancel(); nSynth.speaking = false; u.onend(); });
+  chk(lost.end === 1 && lost.err === 0, "a line whose onend is lost still ends (once)", JSON.stringify(lost));
+  chk(real.end === 1 && real.err === 0, "a real onend is delivered once, never doubled by the watchdog", JSON.stringify(real));
+  chk(never.err === 1 && never.end === 0, "a line that never starts falls back to the clock", JSON.stringify(never));
+  chk(gone.end === 0 && gone.err === 0, "a cancelled line delivers nothing", JSON.stringify(gone));
+  __timers = [];
+  window.speechSynthesis = nSaved.synth;
+  SpeechSynthesisUtterance = nSaved.U;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 section("8. Cannot be checked here — needs the owner");
 print("  These are real Phase 6 items that no headless check can settle:");
 print("");
