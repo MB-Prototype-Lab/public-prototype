@@ -2245,6 +2245,40 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   transform: translateY(-70%) rotate(45deg);
   pointer-events: none;       /* the tap goes to the select underneath */
 }
+/* The OPEN list. Chrome draws a normal <select>'s list as an OS popup that
+   ignores text-align on <option>, so the choices hugged the left edge no
+   matter what the rules above said. `appearance: base-select` (Chrome 135+)
+   draws the list in the page instead, where it can be centred and themed.
+   Browsers without it skip this block and keep the native list; iOS shows
+   its own wheel, which is centred already. */
+@supports (appearance: base-select) {
+  .screen .onb-buddy-fields select,
+  .screen .onb-buddy-fields select::picker(select) { appearance: base-select; }
+  /* In this mode the closed box is a flex row, which text-align-last does
+     not reach -- centre its contents the flex way. */
+  .screen .onb-buddy-fields select { display: flex; align-items: center; justify-content: center; }
+  .screen .onb-buddy-fields select::picker-icon { display: none; }  /* the caret above is the one caret */
+  .screen .onb-buddy-fields select::picker(select) {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 4px;
+    margin-top: 4px;
+    width: anchor-size(width);
+  }
+  .screen .onb-buddy-fields select option {
+    justify-content: center;
+    text-align: center;
+    min-height: 44px;
+    border-radius: 8px;
+  }
+  .screen .onb-buddy-fields select option::checkmark { display: none; }  /* a tick would push the text off centre */
+  .screen .onb-buddy-fields select option:hover,
+  .screen .onb-buddy-fields select option:focus-visible,
+  .screen .onb-buddy-fields select option:checked { background: var(--accent-soft); }
+  .screen .onb-buddy-fields select option[value=""] { color: var(--muted); }
+}
 
 /* ─── Body-type step: buy the grid its rows ──────────────────────────────────
    Three claims on one 390px screen -- portrait, search field, 2.5 rows of tiles

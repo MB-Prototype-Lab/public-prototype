@@ -363,6 +363,12 @@ variation from a bug.
      `--muted`, and the labels (put back at the owner's request) are soft
      captions — centred, muted, weight 600 — not the shared 850. The blank
      option *shows* "Choose one" but its value is `""`.
+   - **The OPEN list is centred via `appearance: base-select`** (Chrome 135+),
+     inside `@supports`. Chrome's native popup ignores `text-align` on
+     `<option>`, so no plain CSS reaches it. In that mode the closed box is a
+     flex row (centred with `justify-content`, not `text-align-last`), the
+     option tick and Chrome's own picker icon are hidden, and other browsers
+     keep the native list.
    - **⚠ A blank name becomes "Buddy" on LEAVING the step forward** (Continue
      or Skip), in `onbSetStep()` — the one function every step change goes
      through. Not on arrival (that made it a solid value, not a suggestion),

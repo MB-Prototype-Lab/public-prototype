@@ -1931,6 +1931,32 @@ if (typeof __COMPONENTS_CSS === "string") {
       hex.length ? "hardcoded colour in: " + hex[0].trim().split("{")[0] : "");
 }
 
+// ── the OPEN pronoun list is centred too ──────────────────────────────────
+// Chrome's native popup ignores text-align on <option>, so the choices hugged
+// the left edge. base-select draws the list in the page where CSS reaches it;
+// it lives inside @supports so other browsers keep the native list untouched.
+if (typeof __COMPONENTS_CSS === "string") {
+  var cssNoCmt = __COMPONENTS_CSS.replace(/\/\*[\s\S]*?\*\//g, "");
+  var supM = /@supports\s*\(appearance:\s*base-select\)\s*\{([\s\S]*?)\n\}/.exec(cssNoCmt);
+  var sup = supM ? supM[1] : "";
+  var outside = supM ? cssNoCmt.replace(supM[0], "") : cssNoCmt;
+  // the rule that paints the list, not the shared `select, ::picker` switch-on
+  var pickerRule = (/[;}]\s*\.screen \.onb-buddy-fields select::picker\(select\)\s*\{([^}]*)\}/.exec(sup) || [])[1] || "";
+  var optRule = (/onb-buddy-fields select option\s*\{([^}]*)\}/.exec(sup) || [])[1] || "";
+  chk(!!supM && /select::picker\(select\)\s*\{\s*appearance:\s*base-select/.test(sup) &&
+      !/base-select/.test(outside),
+      "the styleable dropdown is switched on only where the browser supports it");
+  chk(/justify-content:\s*center/.test(optRule) && /text-align:\s*center/.test(optRule) &&
+      /select\s*\{[^}]*justify-content:\s*center/.test(sup),
+      "each pronoun choice is centred in the open list, and in the closed box");
+  chk(/option::checkmark\s*\{\s*display:\s*none/.test(sup) &&
+      /select::picker-icon\s*\{\s*display:\s*none/.test(sup),
+      "no tick pushes the text off centre, and there is one caret, not two");
+  chk(/background:\s*var\(--card\)/.test(pickerRule) && /var\(--line\)/.test(pickerRule) &&
+      !/#[0-9a-fA-F]{3,6}\b/.test(sup),
+      "the open list is drawn in theme tokens");
+}
+
 // ── one buddy, one picture ────────────────────────────────────────────────
 // Home drew a text card ("golden retriever · cream fur") for any buddy that was
 // not in prototype mode -- the persona, a profile, SKIP_ONBOARDING.
