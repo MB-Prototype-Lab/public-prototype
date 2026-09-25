@@ -2231,6 +2231,57 @@ if (typeof kbdMarkup === "function" && typeof KBD_LAYERS === "object") {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+section("7k. APR lesson: questions every time, a picture with no card");
+
+// A tester who once answered "no card" re-opened APR from Learn: the stored
+// answers skipped the questions, and a run with no card APR drew a blank green
+// stage -- the storyboard needs their rate, and the waveform stand-in is gone
+// (L10). Now Begin always asks, and a no-figure run plays the figure-free cut.
+if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "undefined") {
+  var aprL = LESSONS_V3.lessons.filter(function (l) { return l.id === "apr"; })[0];
+  var ffMap = aprL && aprL.visualTemplate && aprL.visualTemplate.figureFree;
+  var defScript = ffMap && lessonScriptFor(ffMap.script);
+  var inRange = !!(ffMap && defScript) && ffMap.beats.every(function (e) {
+    return e.lines[0] >= 0 && e.lines[1] >= e.lines[0] && e.lines[1] < defScript.length;
+  });
+  chk(inRange, "every line in the no-card cut's map exists in " + (ffMap ? ffMap.script : "its script"));
+
+  var k7 = { screen: state.screen, prof: state.lessonProfile, fr: state.lessonFraming };
+  // No card: the plan renders, one beat per map entry, timed to the no-card cues.
+  state.lessonProfile = { apr: { inputs: {}, figure: null, bucket: null, variantId: "apr_default" } };
+  lessonOpenPlayer(aprL, "apr_default");
+  var ffPlan = state.lessonVisualPlan;
+  var ffSb = ffPlan && ffPlan.storyboard;
+  var ffT = lpTimingFor("apr", defScript.length, defScript);
+  var timed = !!ffSb && ffSb.spine.length === ffMap.beats.length &&
+    ffMap.beats.every(function (e, i) {
+      var b = ffSb.spine[i];
+      var to = e.lines[1] + 1 < ffT.cues.length ? ffT.cues[e.lines[1] + 1] / ffT.total : 1;
+      return Math.abs(b.from - ffT.cues[e.lines[0]] / ffT.total) < 1e-9 && Math.abs(b.to - to) < 1e-9;
+    });
+  chk(hyperframesCanRender(ffPlan) && timed,
+      "with no card APR the stage plays the figure-free cut, timed to the no-card script");
+  var ffHtml = hyperframesMarkup(ffSb, ffPlan, ffT.total, {});
+  chk(!/\{\w+\}/.test(ffHtml) && ffHtml.indexOf("\u2014") === -1 && !/your card/i.test(ffHtml),
+      "the figure-free cut shows no unresolved figure, dash or \"your card\"");
+
+  // A card: untouched -- the full spine, figures required.
+  state.lessonProfile = { apr: { inputs: { enteredApr: 24 }, figure: 24, bucket: "slightly_above", variantId: "apr_slightly_above" } };
+  lessonOpenPlayer(aprL, "apr_slightly_above");
+  chk(state.lessonVisualPlan.storyboard === aprL.visualTemplate,
+      "a run with a card APR keeps the full storyboard");
+
+  // Re-open with stored answers: the questions come back.
+  state.lessonFraming = null;
+  lessonV3Start("apr");
+  chk(state.screen === "lessonFraming" && !!state.lessonFraming,
+      "re-opening APR with answers already stored asks the questions again");
+
+  state.screen = k7.screen; state.lessonProfile = k7.prof; state.lessonFraming = k7.fr;
+  if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 section("8. Cannot be checked here — needs the owner");
 print("  These are real Phase 6 items that no headless check can settle:");
 print("");

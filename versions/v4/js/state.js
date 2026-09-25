@@ -132,8 +132,9 @@ const state = {
   lessonVariantId: null,
   lessonVariantScript: null,
   // Per-lesson framing result for THIS session (answers, inferred figure,
-  // bucket, chosen variant). Skips re-asking on re-entry; cleared on refresh
-  // (D03 — in-memory only, no persistent cooldown).
+  // bucket, chosen variant). The LATEST answers only -- a re-open asks again
+  // (LESSON_REUSE_FRAMING, js/config.js). Cleared on refresh (D03 — in-memory
+  // only, no persistent cooldown).
   lessonProfile: {},
   // Parked hyperframe plan + runtime figures for the later staging-area video.
   lessonVisualPlan: null,
@@ -990,7 +991,8 @@ function resetUserData() {
   state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1, scrubWasPlaying: false };
   state.chat                 = { messages: [], bubbles: [] };
   // Lesson framing answers and the derived visual plan. Without these a reset
-  // re-seeds the figures but the lesson never re-asks its framing questions.
+  // keeps the last run's figures (and, with LESSON_REUSE_FRAMING on, the lesson
+  // would never re-ask its framing questions).
   state.lessonFraming        = null;
   state.lessonProfile        = {};
   state.lessonVisualPlan     = null;

@@ -30,8 +30,9 @@
 //   * unmatched tags falling through to the fallback is the DESIGN. Do not add
 //     variants to "cover" them.
 //
-// The result is cached per lesson for the session (state.lessonProfile), so
-// re-opening the same lesson replays the same variant rather than re-asking.
+// The result is kept per lesson for the session (state.lessonProfile), but a
+// re-open asks again: LESSON_REUSE_FRAMING in js/config.js is off (owner's call
+// -- a tester who once answered "no card" never saw the questions again).
 
 function renderLessonFraming() {
   const f = state.lessonFraming;

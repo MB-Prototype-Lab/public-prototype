@@ -101,6 +101,17 @@ const LESSONS_V3 =
             ]
           }
         ],
+        "figureFree": {
+          "_note": "The cut played when there is no card APR to plot (no card, rather-not-say, Skip) -- the apr_default script. Only the four education beats, which use no tokens, so nothing on screen claims a figure the viewer never gave. Timed at runtime from apr_default's OWN line cues (js/lessons-v3.js lessonFigureFreeStoryboard), so the fractions are not written here. `lines` are 0-based indexes into apr_default, inclusive; the closing entry replays `what` and holds. Recut when apr_default's lines change.",
+          "script": "apr_default",
+          "beats": [
+            { "beat": "what",        "lines": [0, 1] },
+            { "beat": "monthly",     "lines": [2, 2] },
+            { "beat": "paid_off",    "lines": [3, 3] },
+            { "beat": "compounding", "lines": [4, 5] },
+            { "beat": "what",        "lines": [6, 6], "hold": true, "as": "close" }
+          ]
+        },
         "bucketSegments": {
           "deeply_below": {
             "elements": [

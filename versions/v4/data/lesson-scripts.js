@@ -118,9 +118,10 @@ const LESSON_SCRIPTS = {
     "Up here what stays on the card grows faster, and each month's interest is worked out on a number that keeps getting bigger."
   ],
 
-  // apr_default · fallback — no card, or nothing to point at. Plays with the
-  // waveform rather than the video, since there is no figure to draw. Same
-  // education, minus the two lines that need a card to exist.
+  // apr_default · fallback — no card, or nothing to point at. Plays the
+  // figure-free cut of the video (lessons.json visualTemplate.figureFree), since
+  // there is no figure to draw. Same education, minus the two lines that need a
+  // card to exist. Recut that line map if these lines change.
   apr_default: [
     "APR is the one number that decides what carrying a balance costs you. We'll keep this general, since there's no particular card in front of us.",
     "It's the yearly price of borrowing, written as a percentage of what you owe.",

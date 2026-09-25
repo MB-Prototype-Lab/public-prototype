@@ -95,3 +95,11 @@ const BUDGET_PAYWALL = true;
 // as it was. The description card stays either way as the missing-image
 // fallback (L22) -- a broken file must degrade to words, never a blank stage.
 const BUDDY_SINGLE_ART = true;
+
+// ─── Lesson framing: ask every time ─────────────────────────────────────────
+// OFF (owner, 2026-09-25): every Begin on a framed lesson (APR) runs its card
+// questions again. ON restores the earlier behaviour -- a re-open replays the
+// variant from this session's stored answers without asking -- which left a
+// tester who once answered "no card" unable to see the questions at all.
+// state.lessonProfile is still written either way; the calculator seeds from it.
+const LESSON_REUSE_FRAMING = false;

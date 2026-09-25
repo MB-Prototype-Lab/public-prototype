@@ -31,3 +31,11 @@ const SKIP_ONBOARDING = false;
 // That flag exists to reach Home fast; stopping it for two questions defeats
 // the one thing it is for. Two skip paths, two intents.
 const PROFILE_PICKER = true;
+
+// ─── Lesson framing: ask every time ─────────────────────────────────────────
+// OFF (owner, 2026-09-25): every Begin on a framed lesson (APR) runs its card
+// questions again. ON restores the earlier behaviour -- a re-open replays the
+// variant from this session's stored answers without asking -- which left a
+// tester who once answered "no card" unable to see the questions at all.
+// state.lessonProfile is still written either way; the calculator seeds from it.
+const LESSON_REUSE_FRAMING = false;
