@@ -82,3 +82,16 @@ const USEBERRY_TRACKING = true;
 // CLAUDE.md as known. Widening it is moving renderBudgetPaywall's guard into
 // renderScreen() against a list of screen ids.
 const BUDGET_PAYWALL = true;
+
+// ─── One buddy, one picture ─────────────────────────────────────────────────
+// ON: every buddy stage (Home, onboarding, anywhere renderBuddyStage is called)
+// draws the one illustration there is, whatever state.buddy's appearance
+// attributes say. The creator no longer asks for breed, coat or eyes, but a
+// persona or profile buddy still carries them -- and without this, Home showed
+// a text card ("golden retriever · cream fur") instead of the dog.
+//
+// A flag, not a deletion: when there is art per breed, turn it off and the
+// attribute-driven stage (buddyIsPrototype() in components/buddy.js) comes back
+// as it was. The description card stays either way as the missing-image
+// fallback (L22) -- a broken file must degrade to words, never a blank stage.
+const BUDDY_SINGLE_ART = true;

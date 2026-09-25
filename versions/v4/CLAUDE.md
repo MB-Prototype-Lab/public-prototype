@@ -335,28 +335,43 @@ variation from a bug.
      `?screen=budget-build`, `?screen=comparison`, and the admin jump list.
      Known and deliberate. Closing them is moving the guard into
      `renderScreen()` against a list of screen ids.
-10. **The buddy step is two screens: meet, then name + pronouns.**
-   `ONB_BUDDY_STEPS = ["meet", "name"]` in `screens/onboarding.js`;
-   `BUDDY_PRONOUNS` in `components/buddy.js`. Sweep §7h.
-   - **Meet** paints the prototype art first, then *"Meet your buddy!"*; its
-     footer button reads **"Hi Buddy!"** (`onbContinueLabel`), every other
-     step's reads Continue.
-   - **Name** defaults to "Buddy" and needs **Pronouns** (blank by default,
-     He/Him · She/Her · They/Them) before Continue unlocks. Top-right Skip
-     still skips the whole step (D09), leaving pronouns blank.
-   - **⚠ The "Buddy" default is written on ENTERING the name screen
-     (`onbBuddyNameDefault`), never in `onbStart()`.** `js/profiles.js` names
-     the buddy from a profile only when the name is empty; seeding it at start
-     would silently break Skip all → profile picker.
-   - **Two URLs:** the meet screen keeps `?screen=onboarding-5`, the name
-     screen is `?screen=onboarding-5-name` (`onbBuddySubKey`, read by
-     `scrollKey()` and `screenTitle()`), and the deep-link parser accepts it.
+10. **The buddy step is ONE screen: art, greeting, name, pronouns.**
+   `ONB_BUDDY_STEPS = ["meet"]` in `screens/onboarding.js`;
+   `onbBuddyNameFields()`; `BUDDY_PRONOUNS` in `components/buddy.js`. Sweep §7h.
+   - Briefly two screens (meet, then name) in `85be999`; folded into one.
+   - The prototype art, then *"Meet your buddy!"*, then the name box and a
+     **Pronouns** dropdown, **centred** (`.onb-buddy-fields`). The button says
+     **Continue** like every step, and unlocks on a non-blank name **and** a
+     pronoun. Top-right Skip still skips the whole step (D09), pronouns blank.
+   - **The boxes use the Name/ZIP steps' tokens exactly.** The owner saw them
+     as harsher; headless Chrome computed identical colours, so the culprit
+     was the browser's own drawing — the native `<select>` and the bold
+     admin-style labels. Labels are gone (aria-labels instead) and the select
+     is `appearance: none` with a caret in `--muted`. The blank option
+     *shows* "Pronouns" but its value is `""`.
+   - **⚠ The "Buddy" default is written on ARRIVAL at the step, by
+     `onbSetStep()` — the one function every step change goes through**
+     (Continue, Back, Skip, the deep link, the admin jump). Never in
+     `onbStart()`: `js/profiles.js` names the buddy from a profile only while
+     the name is empty. A bare `o.step++` anywhere in onboarding skips the
+     default; §7h walks all five ways in.
+   - **One URL**, `?screen=onboarding-5`. The retired `onboarding-5-name` link
+     still lands on the step (unknown suffixes fall back).
    - **Nothing reads `state.buddy.pronouns` yet** — the buddy speaks in the
-     first person everywhere. It is stored, editable in the admin buddy card,
-     and recorded as `pro-he|she|they` in the setup value trail. Not lost; just
-     not used.
-   - The fur/eye/pattern/body-type sub-steps are **dormant branches** in
-     `onbBuddyStep()`, like `"trial"` in `ONB_STEPS` — not deleted.
+     first person. Stored, editable in the admin buddy card, and recorded as
+     `pro-he|she|they` in the setup value trail.
+   - The separate name screen and the fur/eye/pattern/body-type sub-steps are
+     **dormant branches** in `onbBuddyStep()`, like `"trial"` — not deleted.
+11. **One buddy, one picture — `BUDDY_SINGLE_ART`** (`js/config.js`).
+   - On: every stage (`renderBuddyStage` → `renderBuddyInner`) draws the one
+     illustration whatever `state.buddy`'s appearance says. Before it, Home
+     drew the text description card ("golden retriever · cream fur") for any
+     buddy not in prototype mode — the persona, a profile, `SKIP_ONBOARDING`.
+   - **A flag, not a deletion:** off brings back the attribute-driven stage
+     (`buddyIsPrototype()`) for the day there is art per breed. The admin
+     appearance dropdowns are inert while it is on.
+   - The description card survives as the **missing-image fallback** (L22):
+     a broken file degrades to words, never a blank stage. §7h asserts both.
 
 ### Inherited from v3.1 — how these differ from v3
 

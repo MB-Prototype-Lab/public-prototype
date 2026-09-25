@@ -2188,6 +2188,46 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .onb-buddy-step-meet .onb-title { font-size: 22px; line-height: 1.25; }
 .onb-buddy-step-meet .onb-buddy-sub { line-height: 1.5; }
 
+/* The name box and the pronouns dropdown, centred under the greeting.
+   Colours are deliberately the SAME tokens as the Name and ZIP steps' boxes
+   (--card fill, --line border, --text) -- those read right to the owner, these
+   read harsh. Headless Chrome computes identical colours for both, so the
+   difference was what the browser draws on its own: the native <select>
+   chrome (its own border, arrow and, in dark themes, its own fill) and the
+   bold admin-style labels, which are gone from the markup. `appearance: none`
+   takes the native drawing away and the caret below is drawn in --muted. */
+.onb-buddy-fields { width: 100%; max-width: 260px; margin: 0 auto; }
+.onb-buddy-fields .input-group { margin: 0 0 10px; }
+.screen .onb-buddy-fields input,
+.screen .onb-buddy-fields select {
+  text-align: center;
+  text-align-last: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--text);
+  min-height: 44px;           /* a tap target, like every other control here */
+}
+.screen .onb-buddy-fields select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-left: 32px;         /* balances the caret so the text stays centred */
+  padding-right: 32px;
+  cursor: pointer;
+}
+/* The blank choice shows "Pronouns" as a placeholder does: muted, not text. */
+.screen .onb-buddy-fields select.is-blank { color: var(--muted); }
+.screen .onb-buddy-fields select option { color: var(--text); background: var(--card); }
+.onb-buddy-select { position: relative; }
+.onb-buddy-select::after {
+  content: "";
+  position: absolute; right: 14px; top: 50%;
+  width: 7px; height: 7px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;       /* the tap goes to the select underneath */
+}
+
 /* ─── Body-type step: buy the grid its rows ──────────────────────────────────
    Three claims on one 390px screen -- portrait, search field, 2.5 rows of tiles
    -- and at the old sizes they need about 145px more than there is. Two levers,

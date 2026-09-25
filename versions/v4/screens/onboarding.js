@@ -159,18 +159,19 @@ const ONB_GOALS_MAX = 3;
 // `breed` still exists on the buddy and in the admin dropdowns; it is simply no
 // longer what this step asks for.
 //
-// THEN THE CREATOR WENT AWAY. The owner cut the five sub-steps to two: meet the
-// buddy, then name it and pick its pronouns. The body-type grid, the swatches
-// and the pattern list are NOT deleted -- their branches still sit in
-// onbBuddyStep(), dormant the way "trial" is dormant in ONB_STEPS, so putting a
-// string back here brings a screen back with nothing to rebuild.
-const ONB_BUDDY_STEPS = ["meet", "name"];
+// THEN THE CREATOR WENT AWAY. The owner cut the five sub-steps to two (meet the
+// buddy; name it and pick its pronouns), then folded those two into ONE screen:
+// art, greeting, name, pronouns. The body-type grid, the swatches, the pattern
+// list and the separate name screen are NOT deleted -- their branches still sit
+// in onbBuddyStep(), dormant the way "trial" is dormant in ONB_STEPS, so putting
+// a string back here brings a screen back with nothing to rebuild.
+const ONB_BUDDY_STEPS = ["meet"];
 
-// The name the name screen opens on. Written on ENTERING that screen, never in
-// onbStart(): js/profiles.js only fills in a profile's buddy name when the name
-// is empty, so seeding it at the start would silently stop Skip all -> profile
-// picker from naming the buddy. Only fills an empty name -- a tester who typed
-// their own, went back and came forward again keeps it.
+// The name the buddy screen opens on. Written on ENTERING the buddy step
+// (onbSetStep), never in onbStart(): js/profiles.js only fills in a profile's
+// buddy name when the name is empty, so seeding it at the start would silently
+// stop Skip all -> profile picker from naming the buddy. Only fills an empty
+// name -- a tester who typed their own, went on and came back keeps it.
 const ONB_BUDDY_DEFAULT_NAME = "Buddy";
 
 function onbBuddyNameDefault(o) {
@@ -185,6 +186,21 @@ function onbBuddyNameDefault(o) {
  * first sub-step shares the step's own key so existing links keep their meaning.
  * Read by scrollKey() (js/utils.js) and screenTitle() (js/screen-url.js).
  */
+/**
+ * Move onboarding to step `i`, and run what entering that step needs.
+ *
+ * EVERY step change goes through here -- Continue, Back, Skip, the deep link
+ * and the admin jump. It exists because the buddy step's name default has to
+ * be written on ARRIVAL, and there are five ways to arrive; a default written
+ * at only some of them is a name box that is sometimes blank for no reason a
+ * tester could see.
+ */
+function onbSetStep(o, i) {
+  if (!o) return;
+  o.step = Math.max(0, Math.min(ONB_STEPS.length - 1, Number(i) || 0));
+  if (ONB_STEPS[o.step] === "buddy") onbBuddyNameDefault(o);
+}
+
 function onbBuddySubKey(o) {
   if (!o || ONB_STEPS[o.step] !== "buddy" || !(o.buddyIndex > 0)) return "";
   return ONB_BUDDY_STEPS[o.buddyIndex] || "";
@@ -252,10 +268,9 @@ function onbNext() {
   // The buddy step is a multi-element creator — walk its sub-steps too.
   if (ONB_STEPS[o.step] === "buddy" && o.buddyIndex < ONB_BUDDY_STEPS.length - 1) {
     o.buddyIndex++;
-    if (ONB_BUDDY_STEPS[o.buddyIndex] === "name") onbBuddyNameDefault(o);
     render(); return;
   }
-  if (o.step < ONB_STEPS.length - 1) { o.step++; render(); return; }
+  if (o.step < ONB_STEPS.length - 1) { onbSetStep(o, o.step + 1); render(); return; }
   onbFinish();
 }
 
@@ -264,7 +279,7 @@ function onbBack() {
   if (ONB_STEPS[o.step] === "video") onbVideoStop();
   if (ONB_STEPS[o.step] === "lifestyle" && o.lwIndex > 0) { o.lwIndex--; render(); return; }
   if (ONB_STEPS[o.step] === "buddy" && o.buddyIndex > 0) { o.buddyIndex--; render(); return; }
-  if (o.step > 0) { o.step--; render(); return; }
+  if (o.step > 0) { onbSetStep(o, o.step - 1); render(); return; }
 }
 
 // Top-right Skip. Writes no value, so the persona fallback stands for the
@@ -276,7 +291,7 @@ function onbSkip() {
   if (key === "video") onbVideoStop();
   if (key === "name") { o.skipPrompt = true; render(); return; }
   o.lwIndex = 0;   // skip the entire lifestyle block in one go
-  if (o.step < ONB_STEPS.length - 1) { o.step++; render(); return; }
+  if (o.step < ONB_STEPS.length - 1) { onbSetStep(o, o.step + 1); render(); return; }
   onbFinish();
 }
 
@@ -285,7 +300,7 @@ function onbSkip() {
 function onbSkipName() {
   const o = state.onboarding;
   o.skipPrompt = false;
-  if (o.step < ONB_STEPS.length - 1) { o.step++; }
+  if (o.step < ONB_STEPS.length - 1) { onbSetStep(o, o.step + 1); }
   render();
 }
 
@@ -726,10 +741,10 @@ function renderOnboarding() {
   `;
 }
 
-// The footer button's words. "Continue" everywhere but the meet screen, where
-// the tester is answering the buddy rather than moving a form along.
+// The footer button's words.
 function onbContinueLabel(key, o) {
-  if (key === "buddy" && o && ONB_BUDDY_STEPS[o.buddyIndex] === "meet") return "Hi Buddy!";
+  // The one-screen buddy step reads "Continue" like every other step (owner's
+  // call). Kept as the single place a step could word its button differently.
   return "Continue";
 }
 
@@ -763,10 +778,9 @@ function onbAnswered(key, o) {
   // Same contract as the lesson player: Next unlocks when the piece ends.
   // Skip (top right) still exits at any point, so nothing is blocked (D09).
   if (key === "video")     return !!(o.video && o.video.finished);
-  // The meet screen has nothing to answer. The name screen needs a name AND
-  // pronouns -- the name has a default, the pronouns deliberately do not.
-  if (key === "buddy")     return ONB_BUDDY_STEPS[o.buddyIndex] !== "name"
-                                  || !!(o.buddy.name && o.buddy.name.trim() && o.buddy.pronouns);
+  // The buddy step needs a name AND pronouns -- the name has a default, the
+  // pronouns deliberately do not. Whole step, since it is one screen now.
+  if (key === "buddy")     return !!(o.buddy.name && o.buddy.name.trim() && o.buddy.pronouns);
   return true;
 }
 
@@ -1042,16 +1056,21 @@ function onbBuddyStep(o) {
   const sub = ONB_BUDDY_STEPS[o.buddyIndex];
   const b = o.buddy || {};
   const copy = ONB_BUDDY_COPY[sub] || ["Design your buddy", ""];
+  // "(1/5)" meant something with five screens. With one it is noise.
+  const count = ONB_BUDDY_STEPS.length > 1
+    ? `Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})` : "Your buddy";
 
-  // Meet: the portrait leads and the words follow. No control -- the footer
-  // button ("Hi Buddy!") is the answer.
+  // Meet: the whole buddy step on one screen. The portrait leads, the greeting
+  // follows, and the name and pronouns sit centred under it. Continue unlocks
+  // once both are filled (onbAnswered).
   if (sub === "meet") {
     return `
     <div class="onb-buddy-step onb-buddy-step-meet">
-      <p class="helper onb-buddy-count">Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})</p>
+      <p class="helper onb-buddy-count">${h(count)}</p>
       ${renderBuddyStage({ square: true, cls: "onb-buddy-stage" })}
       <h1 class="title onb-title" style="margin:0 0 6px;">${h(copy[0])}</h1>
-      <p class="task-desc onb-buddy-sub" style="margin:0;">${h(copy[1])}</p>
+      <p class="task-desc onb-buddy-sub" style="margin:0 0 14px;">${h(copy[1])}</p>
+      ${onbBuddyNameFields(b)}
     </div>`;
   }
 
@@ -1067,23 +1086,7 @@ function onbBuddyStep(o) {
   } else if (sub === "eyeColor") {
     control = onbBuddySwatches("eyeColor", BUDDY_EYE_COLORS, BUDDY_EYE_COLOR_CSS, b.eyeColor);
   } else {
-    // Pronouns start blank on purpose and are required: a pre-picked default
-    // would be the app choosing for the tester, and the choice is the point.
-    const pronouns = (typeof BUDDY_PRONOUNS !== "undefined") ? BUDDY_PRONOUNS : [];
-    control = `
-      <div class="input-group">
-        <label>Name</label>
-        <input placeholder="Name your buddy" value="${h(b.name || "")}"
-               oninput="onbLiveInput('buddyName', this.value)"
-               onchange="onbLiveInput('buddyName', this.value, true)">
-      </div>
-      <div class="input-group">
-        <label>Pronouns</label>
-        <select onchange="onbSetBuddy('pronouns', this.value)" aria-label="Buddy's pronouns">
-          <option value="" ${b.pronouns ? "" : "selected"}></option>
-          ${pronouns.map(p => `<option value="${h(p.id)}" ${b.pronouns === p.id ? "selected" : ""}>${h(p.label)}</option>`).join("")}
-        </select>
-      </div>`;
+    control = onbBuddyNameFields(b);
   }
 
   // Wrapped in a flex column so the control below the stage takes the space the
@@ -1091,11 +1094,39 @@ function onbBuddyStep(o) {
   // under it. See .onb-buddy-step in css/components.css.
   return `
     <div class="onb-buddy-step${sub === "bodyType" ? " onb-buddy-step-body" : ""}">
-      <p class="helper onb-buddy-count">Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})</p>
+      <p class="helper onb-buddy-count">${h(count)}</p>
       <h1 class="title onb-title" style="margin:0 0 6px;">${h(copy[0])}</h1>
       <p class="helper onb-buddy-sub" style="margin:0 0 12px;">${h(copy[1])}</p>
       ${renderBuddyStage({ square: true, cls: "onb-buddy-stage" })}
       ${control}
+    </div>`;
+}
+
+/**
+ * The name box and the pronouns dropdown.
+ *
+ * No visible labels: no other onboarding step has them, and the small bold
+ * admin-style captions were part of what made these two boxes read heavier
+ * than the rest of the app. The name box already says "Buddy"; the dropdown's
+ * blank option DISPLAYS "Pronouns" but its value is "", so nothing is chosen
+ * for the tester and Continue stays locked until they choose.
+ */
+function onbBuddyNameFields(b) {
+  const pronouns = (typeof BUDDY_PRONOUNS !== "undefined") ? BUDDY_PRONOUNS : [];
+  return `
+    <div class="onb-buddy-fields">
+      <div class="input-group">
+        <input placeholder="Name your buddy" value="${h(b.name || "")}" aria-label="Buddy's name"
+               oninput="onbLiveInput('buddyName', this.value)"
+               onchange="onbLiveInput('buddyName', this.value, true)">
+      </div>
+      <div class="input-group onb-buddy-select">
+        <select class="onb-buddy-pronouns ${b.pronouns ? "" : "is-blank"}"
+                onchange="onbSetBuddy('pronouns', this.value)" aria-label="Buddy's pronouns">
+          <option value="" ${b.pronouns ? "" : "selected"}>Pronouns</option>
+          ${pronouns.map(p => `<option value="${h(p.id)}" ${b.pronouns === p.id ? "selected" : ""}>${h(p.label)}</option>`).join("")}
+        </select>
+      </div>
     </div>`;
 }
 
@@ -2029,7 +2060,7 @@ function renderOnboardingAdmin() {
       ${!o ? `<p class="helper">Not running.</p>` : `
         <div class="input-group">
           <label>Step ${o.step + 1}/${ONB_STEPS.length} — ${h(ONB_STEPS[o.step])}</label>
-          <select onchange="state.onboarding.step=parseInt(this.value,10);state.onboarding.lwIndex=0;state.onboarding.buddyIndex=0;render()">
+          <select onchange="state.onboarding.lwIndex=0;state.onboarding.buddyIndex=0;onbSetStep(state.onboarding,parseInt(this.value,10));render()">
             ${ONB_STEPS.map((s, i) => `<option value="${i}" ${o.step === i ? "selected" : ""}>${i + 1}. ${h(s)}</option>`).join("")}
           </select>
         </div>

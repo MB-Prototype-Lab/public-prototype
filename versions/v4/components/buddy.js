@@ -281,7 +281,8 @@ function buddyIsPrototype() {
 // state.buddy are all untouched by art arriving.
 function renderBuddyInner() {
   const b = state.buddy || {};
-  if (buddyIsPrototype() && !buddyImgBroken) return renderBuddyImage(b);
+  const single = typeof BUDDY_SINGLE_ART !== "undefined" && BUDDY_SINGLE_ART;
+  if ((single || buddyIsPrototype()) && !buddyImgBroken) return renderBuddyImage(b);
   return renderBuddyDescription(b);
 }
 
@@ -325,6 +326,8 @@ function renderBuddyAdmin() {
         All attributes are live — D40 dropped eyes/nose only because raster
         sheets cannot recolour, and there are no sheets. The creator now asks
         only for a name and pronouns; every appearance attribute lives here.
+        <strong>While <code>BUDDY_SINGLE_ART</code> is on (js/config.js) these
+        dropdowns are inert</strong> — every stage draws the one illustration.
       </p>
       <p class="helper" style="margin-bottom:10px;">
         <strong>Body type:</strong> ${h(buddyBodyLabel(b.bodyType || BUDDY_PROTOTYPE))}.

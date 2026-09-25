@@ -1482,11 +1482,11 @@ var dots = BUDDY_BODY_TYPES.map(function (t) { return t.dot; });
 chk(Object.keys(dots.reduce(function (a, d) { a[d] = 1; return a; }, {})).length === dots.length,
     "every placeholder circle is a different size", dots.join(", "));
 
-// The creator is two screens now (meet, name). The grid below is DORMANT, not
+// The creator is one screen now (meet). The grid below is DORMANT, not
 // gone -- its branch still renders, and these gates keep it working for the day
 // "bodyType" goes back into the list.
-chk(ONB_BUDDY_STEPS.join(",") === "meet,name",
-    "the creator is two screens: meet, then name",
+chk(ONB_BUDDY_STEPS.join(",") === "meet",
+    "the buddy step is one screen",
     ONB_BUDDY_STEPS.join(", "));
 
 // ── ⚠ `breed` MUST NEVER HOLD A BODY-TYPE ID ─────────────────────────────
@@ -1730,9 +1730,9 @@ if (typeof onbBodyTypeControl === "function") {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// v4 only — the buddy step is "meet" then "name + pronouns".
-if (typeof BUDDY_PRONOUNS !== "undefined" && typeof onbBuddyNameDefault === "function") {
-section("7h. Meet your buddy, then name it");
+// v4 only — the buddy step is one screen: art, greeting, name, pronouns.
+if (typeof BUDDY_PRONOUNS !== "undefined" && typeof onbSetStep === "function") {
+section("7h. Meet your buddy — one screen");
 
 var _o7 = state.onboarding, _b7 = state.buddy, _s7 = state.screen;
 var buddyStep = ONB_STEPS.indexOf("buddy");
@@ -1744,39 +1744,23 @@ function paintOnb() {
 }
 
 onbStart();
-state.onboarding.step = buddyStep;
+onbSetStep(state.onboarding, buddyStep);
 var meetHtml = paintOnb();
 var stageAt = meetHtml.indexOf("onb-buddy-stage"), titleAt = meetHtml.indexOf("Meet your buddy!");
-chk(stageAt !== -1 && titleAt !== -1 && stageAt < titleAt,
-    "the meet screen paints the buddy BEFORE the greeting",
-    "stage at " + stageAt + ", title at " + titleAt);
-chk(/id="onbContinue"[^>]*>\s*Hi Buddy!\s*</.test(meetHtml),
-    "the meet screen's button says \"Hi Buddy!\"");
+var nameAt = meetHtml.indexOf("onbLiveInput('buddyName'"), proAt = meetHtml.indexOf("onbSetBuddy('pronouns'");
+chk(stageAt !== -1 && stageAt < titleAt && titleAt < nameAt && nameAt < proAt,
+    "one screen: the buddy, then the greeting, then name and pronouns",
+    "stage " + stageAt + ", title " + titleAt + ", name " + nameAt + ", pronouns " + proAt);
 
-// No other step may inherit the greeting.
-var leaked = [];
+// Every step says Continue -- the buddy step included (owner's call).
+var notContinue = [];
 ONB_STEPS.forEach(function (k, i) {
-  if (k === "buddy") return;
   var o = state.onboarding; o.step = i; o.buddyIndex = 0;
-  if (onbContinueLabel(k, o) !== "Continue") leaked.push(k);
+  if (onbContinueLabel(k, o) !== "Continue") notContinue.push(k);
 });
-state.onboarding.step = buddyStep;
-chk(leaked.length === 0, "every other step's button still says Continue", leaked.join(", "));
-
-// ── the name default, through onbNext ─────────────────────────────────────
-// Written on entering the name screen, NOT at start: js/profiles.js only
-// names the buddy from a profile when the name is empty.
-var nameAtStart = state.onboarding.buddy.name;
-onbNext();
-chk(nameAtStart === "" && state.onboarding.buddyIndex === 1 &&
-    state.onboarding.buddy.name === "Buddy" && state.buddy.name === "Buddy",
-    "onbStart leaves the name empty; arriving on the name screen fills in \"Buddy\"",
-    "at start " + JSON.stringify(nameAtStart) + ", after onbNext " +
-    JSON.stringify(state.onboarding.buddy.name));
-state.onboarding.buddy.name = "Rex"; state.buddy.name = "Rex";
-onbBack(); onbNext();
-chk(state.onboarding.buddy.name === "Rex", "a typed name survives going back and forward",
-    "got " + JSON.stringify(state.onboarding.buddy.name));
+onbSetStep(state.onboarding, buddyStep);
+chk(notContinue.length === 0 && /id="onbContinue"[^>]*>\s*Continue\s*</.test(meetHtml),
+    "every step's button says Continue", notContinue.join(", "));
 
 // ── pronouns are required ─────────────────────────────────────────────────
 var o7 = state.onboarding;
@@ -1791,19 +1775,55 @@ chk(!blankPro && !blankName && both,
     "blank pronouns " + blankPro + ", blank name " + blankName + ", both " + both);
 
 o7.buddy.pronouns = ""; state.buddy.pronouns = "";
-var nameHtml = paintOnb();
-var sel = /<select[^>]*onbSetBuddy\('pronouns'[\s\S]*?<\/select>/.exec(nameHtml);
+var html7 = paintOnb();
+var sel = /<select[^>]*onbSetBuddy\('pronouns'[\s\S]*?<\/select>/.exec(html7);
 var opts = sel ? sel[0].match(/<option /g) || [] : [];
 chk(!!sel && opts.length === 1 + BUDDY_PRONOUNS.length &&
     /<option value=""\s+selected>/.test(sel[0]) &&
     /He\/Him[\s\S]*She\/Her[\s\S]*They\/Them/.test(sel[0]),
-    "the pronouns dropdown opens blank, over He/Him, She/Her and They/Them",
-    sel ? opts.length + " options" : "no pronouns select on the name screen");
-chk(/id="onbContinue"[^>]*disabled/.test(nameHtml),
-    "the name screen's Continue is disabled until pronouns are picked");
+    "the pronouns dropdown opens on a blank value, over He/Him, She/Her and They/Them",
+    sel ? opts.length + " options" : "no pronouns select on the buddy screen");
+chk(/id="onbContinue"[^>]*disabled/.test(html7),
+    "Continue is disabled until pronouns are picked");
 
-// ── two screens, two URLs ─────────────────────────────────────────────────
-// Through render(), because the wiring is what broke last time.
+// ── "Buddy" on arrival, by every way in ───────────────────────────────────
+// Written on ENTERING the step, never in onbStart() (js/profiles.js names the
+// buddy from a profile only while the name is empty). Five ways in; a default
+// that only some of them write is a box that is blank for no visible reason.
+function arrive(how) {
+  onbStart();
+  var o = state.onboarding;
+  try {
+    if (how === "continue") { o.step = buddyStep - 1; onbNext(); }
+    else if (how === "skip") { o.step = buddyStep - 1; onbSkip(); }
+    else if (how === "back") { o.step = buddyStep + 1; onbBack(); }
+    else if (how === "admin") {
+      o.step = 0;
+      var adm = renderOnboardingAdmin();
+      var m = /<select onchange="([^"]*onbSetStep[^"]*)"/.exec(adm);
+      if (!m) return "no admin step select";
+      // Direct eval, so the handler sees top-level `state` the way a browser's
+      // inline handler does (new Function would not -- const is not a global).
+      eval(m[1].replace(/this\.value/g, JSON.stringify(String(buddyStep))));
+    }
+  } catch (e) { return "threw: " + e.message; }
+  o = state.onboarding;
+  return o.step === buddyStep ? o.buddy.name : "landed on step " + o.step;
+}
+var nameAtStart = (onbStart(), state.onboarding.buddy.name);
+var arrivals = ["continue", "skip", "back", "admin"].map(function (w) { return w + "=" + arrive(w); });
+chk(nameAtStart === "" && arrivals.every(function (a) { return /=Buddy$/.test(a); }),
+    "onbStart leaves the name empty; every way into the step fills in \"Buddy\"",
+    "at start " + JSON.stringify(nameAtStart) + "; " + arrivals.join(", "));
+
+onbStart(); onbSetStep(state.onboarding, buddyStep);
+state.onboarding.buddy.name = "Rex"; state.buddy.name = "Rex";
+onbNext(); onbBack();
+chk(state.onboarding.step === buddyStep && state.onboarding.buddy.name === "Rex",
+    "a typed name survives going on and coming back",
+    "got " + JSON.stringify(state.onboarding.buddy.name));
+
+// ── one URL, and the deep link arrives too ────────────────────────────────
 if (typeof URL !== "undefined") {
   var _loc7 = location, _hist7 = history, _painted7 = lastPaintedScreen;
   var _href7 = "https://example.github.io/versions/v4/index.html";
@@ -1815,35 +1835,33 @@ if (typeof URL !== "undefined") {
                 if (u) _href7 = new URL(u, "https://example.github.io").href;
               },
               back: function () {} };
-  var meetUrl = "", nameUrl = "", linked = null;
+  var stepUrl = "", links = [];
   try {
     lastPaintedScreen = null;
     onbStart(); state.screen = "onboarding";
-    state.onboarding.step = buddyStep;
-    render(); meetUrl = _href7;
-    onbNext(); nameUrl = _href7;
+    onbSetStep(state.onboarding, buddyStep);
+    render(); stepUrl = _href7;
 
-    // And back in cold, from the link.
-    onbStart();
-    _href7 = "https://example.github.io/versions/v4/index.html?screen=onboarding-" +
-             buddyStep + "-name";
-    var _nav7 = JSON.stringify(state.nav);
-    screenLinkApply();
-    linked = { idx: state.onboarding.buddyIndex, name: state.onboarding.buddy.name,
-               step: state.onboarding.step };
-    state.nav = JSON.parse(_nav7);
-  } catch (e) { meetUrl = "threw: " + e.message; }
+    // Cold, from a link -- and the retired "-name" link lands on the step too.
+    ["", "-name"].forEach(function (suffix) {
+      onbStart();
+      _href7 = "https://example.github.io/versions/v4/index.html?screen=onboarding-" +
+               buddyStep + suffix;
+      var _nav7 = JSON.stringify(state.nav);
+      screenLinkApply();
+      links.push(suffix + ":" + state.onboarding.step + ":" + state.onboarding.buddy.name);
+      state.nav = JSON.parse(_nav7);
+    });
+  } catch (e) { stepUrl = "threw: " + e.message; }
   location = _loc7; history = _hist7; lastPaintedScreen = _painted7;
 
-  chk(/[?&]screen=onboarding-\d+(?:&|#|$)/.test(meetUrl) &&
-      /[?&]screen=onboarding-\d+-name(?:&|#|$)/.test(nameUrl),
-      "meet and name are two URLs (onboarding-N, onboarding-N-name)",
-      meetUrl + "\n          " + nameUrl);
-  chk(!!linked && linked.step === buddyStep && linked.idx === 1 && linked.name === "Buddy",
-      "?screen=onboarding-N-name opens the name screen with \"Buddy\" filled in",
-      JSON.stringify(linked));
+  chk(new RegExp("[?&]screen=onboarding-" + buddyStep + "(?:&|#|$)").test(stepUrl),
+      "the buddy step is one URL, ?screen=onboarding-" + buddyStep, stepUrl);
+  chk(links.join(",") === ":" + buddyStep + ":Buddy,-name:" + buddyStep + ":Buddy",
+      "the deep link opens the step with \"Buddy\" filled in, and the old -name link still lands",
+      links.join(", "));
 } else {
-  warn("the buddy URL split not checked — no URL implementation in this engine");
+  warn("the buddy step's URL not checked — no URL implementation in this engine");
 }
 
 // ── the value trail, through onbFinish ────────────────────────────────────
@@ -1868,6 +1886,48 @@ if (snap7 && typeof onbFinish === "function") {
       "picked: " + withPro + "\n          skipped: " + withoutPro);
 } else {
   warn("the pronoun trail not checked — state would not snapshot");
+}
+
+// ── the boxes: the app's tokens, no native chrome ─────────────────────────
+// The owner saw these two boxes as harsher than the Name/ZIP boxes. Computed
+// colours were identical, so the difference is what the browser draws on its
+// own -- the native <select>. appearance:none removes it; the colours must stay
+// the shared tokens, never a hardcoded hex.
+if (typeof __COMPONENTS_CSS === "string") {
+  var fieldRules = __COMPONENTS_CSS.match(/[^{}]*\.onb-buddy-fields[^{}]*\{[^}]*\}/g) || [];
+  var selRule = fieldRules.filter(function (r) { return /select\s*\{/.test(r); })
+                          .map(function (r) { return r; }).join("\n");
+  var hex = fieldRules.filter(function (r) { return /#[0-9a-fA-F]{3,6}\b/.test(r.split("{")[1]); });
+  chk(/appearance:\s*none/.test(selRule) && hex.length === 0 &&
+      /text-align:\s*center/.test(fieldRules.join("")),
+      "the buddy boxes are centred, drop the native select chrome, and use theme tokens",
+      hex.length ? "hardcoded colour in: " + hex[0].trim().split("{")[0] : "");
+}
+
+// ── one buddy, one picture ────────────────────────────────────────────────
+// Home drew a text card ("golden retriever · cream fur") for any buddy that was
+// not in prototype mode -- the persona, a profile, SKIP_ONBOARDING.
+if (typeof BUDDY_SINGLE_ART !== "undefined") {
+  state.buddy = Object.assign({}, PERSONA.buddy, { breed: "golden_retriever",
+    furColor: "cream", furPattern: "solid", eyeColor: "brown", noseColor: "black", size: "medium" });
+  var nonProto = !buddyIsPrototype();
+  var homeStage = "";
+  try { state.screen = "home"; homeStage = renderScreen() || ""; } catch (e) { homeStage = "threw: " + e.message; }
+  var inner = renderBuddyInner();
+  chk(nonProto && (BUDDY_SINGLE_ART
+        ? /buddy-img/.test(inner) && /buddy-img/.test(homeStage) && !/buddy-desc/.test(homeStage)
+        : /buddy-desc/.test(inner)),
+      BUDDY_SINGLE_ART
+        ? "a non-prototype buddy still gets the one illustration, on Home too"
+        : "BUDDY_SINGLE_ART is off and the attribute-driven stage is back",
+      "stage: " + inner.replace(/\s+/g, " ").slice(0, 90));
+
+  // The missing-file fallback must survive the flag: words, never a blank stage.
+  var broken = "";
+  try { buddyImgBroken = true; broken = renderBuddyInner(); }
+  finally { buddyResetArt(); }
+  chk(/buddy-desc/.test(broken) && !/buddy-img/.test(broken),
+      "a missing image still falls back to the description card");
 }
 
 state.onboarding = _o7; state.buddy = _b7; state.screen = _s7;

@@ -206,15 +206,13 @@ function screenLinkOnboarding(step, sub) {
   if (typeof onbStart === "function") onbStart();
   const o = state.onboarding;
   if (o && typeof ONB_STEPS !== "undefined") {
-    const max = ONB_STEPS.length - 1;
-    o.step = Math.max(0, Math.min(max, Number(step) || 0));
+    // Through onbSetStep, not a bare write: arriving cold is still arriving,
+    // and the buddy step's name default is written on arrival.
+    if (typeof onbSetStep === "function") onbSetStep(o, step);
+    else o.step = Math.max(0, Math.min(ONB_STEPS.length - 1, Number(step) || 0));
     if (sub && ONB_STEPS[o.step] === "buddy" && typeof ONB_BUDDY_STEPS !== "undefined") {
       const i = ONB_BUDDY_STEPS.indexOf(sub);
-      if (i > 0) {
-        o.buddyIndex = i;
-        // Arriving cold is still arriving: the name screen opens on its default.
-        if (sub === "name" && typeof onbBuddyNameDefault === "function") onbBuddyNameDefault(o);
-      }
+      if (i > 0) o.buddyIndex = i;
     }
   }
   return "onboarding";
