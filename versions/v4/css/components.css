@@ -2180,6 +2180,14 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .onb-buddy-step .buddy-swatch-row,
 .onb-buddy-step .input-group { margin-top: 4px; }
 
+/* --- Meet your buddy ---
+   The portrait leads and the words sit under it; there is no control, so the
+   stage keeps its full square and never gives up height to anything. The title
+   is the greeting, so it gets the size a greeting deserves. */
+.onb-buddy-step-meet .onb-buddy-stage { flex-shrink: 0; margin: 4px 0 18px; }
+.onb-buddy-step-meet .onb-title { font-size: 22px; line-height: 1.25; }
+.onb-buddy-step-meet .onb-buddy-sub { line-height: 1.5; }
+
 /* ─── Body-type step: buy the grid its rows ──────────────────────────────────
    Three claims on one 390px screen -- portrait, search field, 2.5 rows of tiles
    -- and at the old sizes they need about 145px more than there is. Two levers,

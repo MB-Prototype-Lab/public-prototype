@@ -159,7 +159,9 @@ variation from a bug.
      user-entered data that *leaves*, and one tester's figures surviving into
      the next session on a shared browser is a leak.
 
-5. **The buddy creator opens on a body-type grid, with a breed search.**
+5. **The buddy creator opened on a body-type grid, with a breed search.**
+   **⚠ DORMANT since #10** — nothing in `ONB_BUDDY_STEPS` reaches it. Kept, and
+   §7f keeps testing it, so it comes back by putting `"bodyType"` in the list.
    `ONB_BUDDY_STEPS[0]` is `bodyType`; `BUDDY_BODY_TYPES` in
    `components/buddy.js`, `data/dog-breeds.json`, `js/breed-search.js`.
    - **Nine tiles, 3×3, two-and-a-half rows.** It replaced a vertical list of
@@ -223,7 +225,7 @@ variation from a bug.
      `render.js` and fails if a second screen joins both — otherwise it would
      silently take its own strip back.
 
-7. **The body-type step has a search mode.**
+7. **The body-type step has a search mode.** *(Dormant with #5.)*
    `onbBodySearchOpen` / `onbBodySearchKey` / `onbBodySearchClose` in
    `screens/onboarding.js`, `.onb-buddy-step-body.searching` in
    `css/components.css`.
@@ -333,6 +335,28 @@ variation from a bug.
      `?screen=budget-build`, `?screen=comparison`, and the admin jump list.
      Known and deliberate. Closing them is moving the guard into
      `renderScreen()` against a list of screen ids.
+10. **The buddy step is two screens: meet, then name + pronouns.**
+   `ONB_BUDDY_STEPS = ["meet", "name"]` in `screens/onboarding.js`;
+   `BUDDY_PRONOUNS` in `components/buddy.js`. Sweep §7h.
+   - **Meet** paints the prototype art first, then *"Meet your buddy!"*; its
+     footer button reads **"Hi Buddy!"** (`onbContinueLabel`), every other
+     step's reads Continue.
+   - **Name** defaults to "Buddy" and needs **Pronouns** (blank by default,
+     He/Him · She/Her · They/Them) before Continue unlocks. Top-right Skip
+     still skips the whole step (D09), leaving pronouns blank.
+   - **⚠ The "Buddy" default is written on ENTERING the name screen
+     (`onbBuddyNameDefault`), never in `onbStart()`.** `js/profiles.js` names
+     the buddy from a profile only when the name is empty; seeding it at start
+     would silently break Skip all → profile picker.
+   - **Two URLs:** the meet screen keeps `?screen=onboarding-5`, the name
+     screen is `?screen=onboarding-5-name` (`onbBuddySubKey`, read by
+     `scrollKey()` and `screenTitle()`), and the deep-link parser accepts it.
+   - **Nothing reads `state.buddy.pronouns` yet** — the buddy speaks in the
+     first person everywhere. It is stored, editable in the admin buddy card,
+     and recorded as `pro-he|she|they` in the setup value trail. Not lost; just
+     not used.
+   - The fur/eye/pattern/body-type sub-steps are **dormant branches** in
+     `onbBuddyStep()`, like `"trial"` in `ONB_STEPS` — not deleted.
 
 ### Inherited from v3.1 — how these differ from v3
 

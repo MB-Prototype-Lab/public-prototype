@@ -68,6 +68,7 @@ about.
 ?screen=home                Home
 ?screen=onboarding          Onboarding from the top
 ?screen=onboarding-3        Onboarding at a given step (0–6)
+?screen=onboarding-5-name   The buddy step's second screen (name + pronouns)
 ?screen=budget-build        The three-step budget builder
 ?screen=about-me            Budget tab
 ?screen=comparison          Where it's going
@@ -145,6 +146,8 @@ land on:
   purpose: guessed-versus-computed is the most interesting comparison in the
   trail, and one overwriting the other would destroy it.
 - `jgro-64` — from a journal checkpoint: Groceries logged, summed for the session
+- `pro-they` — on the setup checkpoint: the buddy's pronouns (`he` / `she` /
+  `they`). Absent when the buddy step was skipped.
 
 Keys are the first three letters of the category. A drag records where it came
 to **rest**, not every tick.

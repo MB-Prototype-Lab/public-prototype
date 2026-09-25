@@ -117,6 +117,16 @@ const BUDDY_EYE_COLORS = [BUDDY_PROTOTYPE, "brown", "amber", "blue", "green"];
 const BUDDY_NOSE_COLORS = [BUDDY_PROTOTYPE, "black", "brown", "pink"];
 const BUDDY_SIZES = [BUDDY_PROTOTYPE, "small", "medium", "large"];
 
+// Pronouns, asked on the creator's name screen. Stored as the id; the label is
+// what a tester reads. Ids stay one short word because they ride in the Useberry
+// value trail (js/value-trail.js, key "pro") -- a fixed list, never free text.
+// Nothing reads them yet: the buddy speaks in the first person everywhere.
+const BUDDY_PRONOUNS = [
+  { id: "he",   label: "He/Him" },
+  { id: "she",  label: "She/Her" },
+  { id: "they", label: "They/Them" }
+];
+
 // value → CSS background for the circular swatches. Multi-tone coats use a
 // gradient so the swatch still reads as that coat.
 const BUDDY_FUR_COLOR_CSS = {
@@ -313,12 +323,12 @@ function renderBuddyAdmin() {
       <p class="admin-card-title">Buddy (L15 → L22)</p>
       <p class="helper" style="margin-bottom:10px;">
         All attributes are live — D40 dropped eyes/nose only because raster
-        sheets cannot recolour, and there are no sheets. The creator sets breed,
-        fur colour, pattern, eyes and name; nose and size live here.
+        sheets cannot recolour, and there are no sheets. The creator now asks
+        only for a name and pronouns; every appearance attribute lives here.
       </p>
       <p class="helper" style="margin-bottom:10px;">
         <strong>Body type:</strong> ${h(buddyBodyLabel(b.bodyType || BUDDY_PROTOTYPE))}.
-        The creator's first step sets it. It is deliberately INERT — eight of the
+        The creator no longer asks for it (its grid is dormant). It is deliberately INERT — eight of the
         nine have no art, so picking one changes nothing on the stage. It is also
         kept out of <code>breed</code> on purpose: buddyIsPrototype() turns false
         on any non-prototype attribute, so storing it there would swap the
@@ -327,6 +337,13 @@ function renderBuddyAdmin() {
       <div class="input-group">
         <label>Name</label>
         <input value="${h(b.name || "")}" onchange="state.buddy.name=this.value;render()">
+      </div>
+      <div class="input-group">
+        <label>Pronouns</label>
+        <select onchange="state.buddy.pronouns=this.value;render()">
+          <option value="" ${b.pronouns ? "" : "selected"}>— not chosen —</option>
+          ${BUDDY_PRONOUNS.map(p => `<option value="${h(p.id)}" ${b.pronouns === p.id ? "selected" : ""}>${h(p.label)}</option>`).join("")}
+        </select>
       </div>
       ${fields.map(([key, opts]) => `
         <div class="input-group">
