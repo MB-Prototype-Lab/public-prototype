@@ -287,13 +287,24 @@ function lessonFigureFreeStoryboard(lesson, sentences) {
   const ff = vt && vt.figureFree;
   if (!ff || !Array.isArray(sentences) || !sentences.length) return null;
   if (ff.script && lessonScriptFor(ff.script) !== sentences) return null;
+  return lessonCutStoryboard(vt, ff.beats, lesson.id, sentences);
+}
+
+/**
+ * Cut `vt`'s spine to a line map: each entry plays one of its beats across the
+ * given script lines, timed from those lines' cues (lpTimingFor -- the same
+ * call the player makes, so picture and voice share one clock). Figure-free
+ * by contract: callers only map beats that carry no {tokens}.
+ */
+function lessonCutStoryboard(vt, beats, lessonId, sentences) {
+  if (!vt || !Array.isArray(beats) || !Array.isArray(sentences) || !sentences.length) return null;
   if (typeof lpTimingFor !== "function") return null;
-  const t = lpTimingFor(lesson.id, sentences.length, sentences);
+  const t = lpTimingFor(lessonId, sentences.length, sentences);
   const total = Math.max(0.001, t.total);
   const byId = {};
   (vt.spine || []).forEach(b => { byId[b.id] = b; });
   const spine = [];
-  (ff.beats || []).forEach(entry => {
+  beats.forEach(entry => {
     const src = byId[entry.beat];
     const first = entry.lines[0], last = entry.lines[1];
     if (!src || !(src.elements || []).length || first < 0 || last >= sentences.length) return;
@@ -306,6 +317,22 @@ function lessonFigureFreeStoryboard(lesson, sentences) {
     });
   });
   return spine.length ? { kind: vt.kind, requiresFigures: false, spine: spine } : null;
+}
+
+/**
+ * The stage plan for an older lesson that borrows another's beats
+ * (LP_BORROWED_VISUALS, screens/lesson.js), or null. Without one the stage is
+ * plain -- the older lessons never had a storyboard of their own.
+ */
+function lessonBorrowedVisualPlan(lessonId) {
+  if (typeof LP_BORROWED_VISUALS === "undefined" || typeof LP_SCRIPTS === "undefined") return null;
+  const map = LP_BORROWED_VISUALS[lessonId];
+  const donor = map && lessonV3(map.from);
+  const sentences = LP_SCRIPTS[lessonId];
+  if (!donor || !donor.visualTemplate || !sentences) return null;
+  const storyboard = lessonCutStoryboard(donor.visualTemplate, map.beats, lessonId, sentences);
+  return storyboard ? { lessonId: lessonId, userFigure: null, marketAvg: null, bucket: null,
+                        storyboard: storyboard } : null;
 }
 
 /**

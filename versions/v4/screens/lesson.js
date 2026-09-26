@@ -188,6 +188,27 @@ const LP_AUDIO = {
   "interest-builds": "assets/audio/interest-builds.wav"
 };
 
+// Lessons with no storyboard of their own that play another lesson's
+// FIGURE-FREE beats (the ones with no {tokens}), cut to their own lines.
+// "How Interest Builds" was a plain green stage: the older lessons never had a
+// video. It narrates the same mechanics as the APR lesson's opening, so it
+// borrows those four beats -- no personal figures, since it asks for none.
+// `lines` are 0-based LP_SCRIPTS indexes, inclusive, in order; `as` renames a
+// reused beat. Timed from LP_TIMINGS (the measured narration) via lpTimingFor.
+// Recut when that lesson's lines change. Built by lessonBorrowedVisualPlan.
+const LP_BORROWED_VISUALS = {
+  "interest-builds": {
+    from: "apr",
+    beats: [
+      { beat: "what",        lines: [0, 0] },   // interest is the cost of borrowing
+      { beat: "monthly",     lines: [1, 1] },   // charged on what you owe
+      { beat: "compounding", lines: [2, 5] },   // interest on interest, $20 a month, a year of minimums
+      { beat: "paid_off",    lines: [6, 6] },   // pay it down early
+      { beat: "what",        lines: [7, 7], hold: true, as: "close" }
+    ]
+  }
+};
+
 function lpHasAudio() {
   return !!LP_AUDIO[state.lessonPlayback.currentLessonId];
 }

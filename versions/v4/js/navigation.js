@@ -233,6 +233,11 @@ function selectLesson(id) {
 function startCurrentLesson() {
   const lesson = state.currentLesson;
   if (lesson && lesson.isV3) { lessonV3Start(lesson.id); return; }
+  // An older lesson may borrow the APR lesson's figure-free beats; without that
+  // its stage is plain green (LP_BORROWED_VISUALS, screens/lesson.js).
+  if (lesson && typeof lessonBorrowedVisualPlan === "function") {
+    state.lessonVisualPlan = lessonBorrowedVisualPlan(lesson.id);
+  }
   go("lesson");
 }
 

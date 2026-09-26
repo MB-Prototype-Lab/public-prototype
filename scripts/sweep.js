@@ -2323,6 +2323,47 @@ if (typeof NARRATION_POLL_MS !== "undefined" && typeof window === "object") {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+section("7m. Older lessons that borrow the APR beats");
+
+// "How Interest Builds" -- the one the owner opened as "the APR lesson" -- had
+// no storyboard, so its stage was plain green. It now plays the APR lesson's
+// figure-free beats, cut to its own lines and timed to its measured narration.
+if (typeof lessonBorrowedVisualPlan === "function" && typeof LP_BORROWED_VISUALS === "object") {
+  Object.keys(LP_BORROWED_VISUALS).forEach(function (id) {
+    var map = LP_BORROWED_VISUALS[id], lines = LP_SCRIPTS[id] || [];
+    var plan = lessonBorrowedVisualPlan(id);
+    var t = lpTimingFor(id, lines.length, lines);
+    var sb = plan && plan.storyboard;
+    var ordered = map.beats.every(function (e, i) {
+      return e.lines[0] <= e.lines[1] && e.lines[1] < lines.length &&
+             (i === 0 ? e.lines[0] === 0 : e.lines[0] === map.beats[i - 1].lines[1] + 1);
+    }) && map.beats[map.beats.length - 1].lines[1] === lines.length - 1;
+    chk(ordered, id + ": the beat map covers every line once, in order");
+    var timed = !!sb && sb.spine.length === map.beats.length && map.beats.every(function (e, i) {
+      var to = e.lines[1] + 1 < t.cues.length ? t.cues[e.lines[1] + 1] / t.total : 1;
+      return Math.abs(sb.spine[i].from - t.cues[e.lines[0]] / t.total) < 1e-9 &&
+             Math.abs(sb.spine[i].to - to) < 1e-9;
+    });
+    chk(hyperframesCanRender(plan) && timed, id + ": renders, each beat timed to its own narration lines");
+    var html = hyperframesMarkup(sb, plan, t.total, {});
+    chk(!/\{\w+\}/.test(html) && html.indexOf("\u2014") === -1,
+        id + ": nothing on its stage waits for a figure it never asked for");
+  });
+  var ibSaved = { cur: state.currentLesson, screen: state.screen };
+  state.currentLesson = state.lessons.filter(function (l) { return l.id === "interest-builds"; })[0];
+  lessonV3ClearSession();
+  startCurrentLesson();
+  var ibPlan = state.lessonVisualPlan;
+  state.currentLesson = state.lessons.filter(function (l) { return l.id === "interest-refresher"; })[0];
+  lessonV3ClearSession();
+  startCurrentLesson();
+  chk(!!ibPlan && hyperframesCanRender(ibPlan) && state.lessonVisualPlan === null,
+      "Begin on How Interest Builds sets its stage; a lesson with no map still gets none");
+  lessonV3ClearSession();
+  state.currentLesson = ibSaved.cur; state.screen = ibSaved.screen;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 section("8. Cannot be checked here — needs the owner");
 print("  These are real Phase 6 items that no headless check can settle:");
 print("");
