@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "migration_baseline": "6666b1a7cd27a1c63a2ee51bd5728a6fe9356791",
+  "snapshots": [
+    {
+      "id": "v1",
+      "source_tag": "snapshot/v1",
+      "commit": "6666b1a7cd27a1c63a2ee51bd5728a6fe9356791",
+      "source_dir": "versions/v1",
+      "public_path": "versions/v1/index.html",
+      "format": "legacy-v1",
+      "tracking": false,
+      "digest": "2a97ff7f1959ee0c0d8428876c1007917d69360d964eba77d3da8d91ccb0987a",
+      "label": "v1",
+      "description": "",
+      "order": 0,
+      "state": "archived",
+      "ongoing_study": false
+    },
+    {
+      "id": "v2",
+      "source_tag": "snapshot/v2",
+      "commit": "6666b1a7cd27a1c63a2ee51bd5728a6fe9356791",
+      "source_dir": "versions/v2",
+      "public_path": "versions/v2/index.html",
+      "format": "legacy-v1",
+      "tracking": false,
+      "digest": "97834afee30480e1aaecf0cce3b10049c8b68442b57ef06b785428fa9c11afad",
+      "label": "v2",
+      "description": "",
+      "order": 1,
+      "state": "archived",
+      "ongoing_study": false
+    },
+    {
+      "id": "v3",
+      "source_tag": "snapshot/v3",
+      "commit": "6666b1a7cd27a1c63a2ee51bd5728a6fe9356791",
+      "source_dir": "versions/v3",
+      "public_path": "versions/v3/index.html",
+      "format": "legacy-v1",
+      "tracking": false,
+      "digest": "398f90fc6bbec997d2448c0532813850d750a469f374c13847a1902e8c418052",
+      "label": "v3",
+      "description": "",
+      "order": 2,
+      "state": "archived",
+      "ongoing_study": false
+    },
+    {
+      "id": "v3.1",
+      "source_tag": "snapshot/v3.1",
+      "commit": "6666b1a7cd27a1c63a2ee51bd5728a6fe9356791",
+      "source_dir": "versions/v3.1",
+      "public_path": "versions/v3.1/index.html",
+      "format": "legacy-v1",
+      "tracking": false,
+      "digest": "cef762697669c7736b2bcb94c6fc572c24ef39bf32032bc0631427af1ca8342e",
+      "label": "v3.1",
+      "description": "",
+      "order": 3,
+      "state": "archived",
+      "ongoing_study": false
+    },
+    {
+      "id": "v4",
+      "source_tag": "snapshot/v4",
+      "commit": "6666b1a7cd27a1c63a2ee51bd5728a6fe9356791",
+      "source_dir": "versions/v4",
+      "public_path": "versions/v4/index.html",
+      "format": "legacy-v1",
+      "tracking": true,
+      "digest": "8af9ebff6459f34210ab5ef55e34238d450fb59ea7a3762811636f6a5b9bc885",
+      "label": "v4 (current)",
+      "description": "",
+      "order": 4,
+      "state": "active",
+      "ongoing_study": true
+    }
+  ]
+}

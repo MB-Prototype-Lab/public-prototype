@@ -4,8 +4,8 @@
 //   node film/build-films.mjs --render   # ...and render them to MP4
 //   node film/build-films.mjs --only dark:onboarding_intro --render
 //
-// Output: versions/<ver>/assets/video/onboarding/<themeId>/<scriptId>.mp4
-//         versions/<ver>/assets/video/onboarding/manifest.json
+// Output: app/assets/video/onboarding/<themeId>/<scriptId>.mp4
+//         app/assets/video/onboarding/manifest.json
 //
 // ── THE ONE THING THAT MUST NOT DRIFT ────────────────────────────────────────
 // Segment durations here have to equal screens/onboarding.js's onbVideoSegMs.
@@ -26,15 +26,10 @@ import { composition, CANVAS } from "./composition.mjs";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const TOOLS = path.resolve(HERE, "..");
 const REPO = path.resolve(TOOLS, "..");
-// Same MB_VERSION switch as scripts/sweep.sh, wrap-data.sh, gen-audio.sh and
-// build-cost-of-living.py. IT WAS MISSED when v4 was created -- five tools were
-// repointed and this one was not, so a render silently encoded four films into
-// versions/v3.1/ (the A/B control) while the sweep for v4 went on reporting
-// "1 of 10 rendered". Nothing failed; the files simply landed in the wrong
-// version. scripts/sweep.js now asserts this default matches the version being
-// swept, so the next one cannot go quiet the same way.
-const VERSION = process.env.MB_VERSION || "v4";
-const APP = path.join(REPO, "versions", VERSION);
+if (Object.hasOwn(process.env, "MB_VERSION")) {
+  throw new Error("MB_VERSION is retired; tooling uses app/");
+}
+const APP = path.join(REPO, "app");
 const BUILD = path.join(TOOLS, "build");
 const OUT = path.join(APP, "assets", "video", "onboarding");
 

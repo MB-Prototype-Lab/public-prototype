@@ -1,6 +1,10 @@
 # Emergency Savings Fund (ESF) Tool — Feature Spec
 
-**Status:** Built and running in `versions/v3.1/`
+**Status:** Integrated in `app/` from HoffDemo-Chat `ddee54e`.
+**Integration:** The full app runs with `ESF_ONLY = false`. Current behavior and
+user-approved exceptions are in [app contracts](app-contracts.md), including
+immediate budget replacement on every ESF save. The source prototype assumptions
+and limitations below are retained for PM acceptance; this is not a new task queue.
 **Scope:** Tool only. Education layer is owned separately.
 **Supersedes:** all earlier versions of this file, including the 2026-09-17 rewrite
 **Date:** 2026-09-19

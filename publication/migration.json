@@ -1,0 +1,26 @@
+{
+  "baseline": "6666b1a7cd27a1c63a2ee51bd5728a6fe9356791",
+  "verification": "provisional cached origin/demo; owner must verify before cutover",
+  "snapshots": {
+    "v1": {
+      "source_tag": "snapshot/v1",
+      "digest": "2a97ff7f1959ee0c0d8428876c1007917d69360d964eba77d3da8d91ccb0987a"
+    },
+    "v2": {
+      "source_tag": "snapshot/v2",
+      "digest": "97834afee30480e1aaecf0cce3b10049c8b68442b57ef06b785428fa9c11afad"
+    },
+    "v3": {
+      "source_tag": "snapshot/v3",
+      "digest": "398f90fc6bbec997d2448c0532813850d750a469f374c13847a1902e8c418052"
+    },
+    "v3.1": {
+      "source_tag": "snapshot/v3.1",
+      "digest": "cef762697669c7736b2bcb94c6fc572c24ef39bf32032bc0631427af1ca8342e"
+    },
+    "v4": {
+      "source_tag": "snapshot/v4",
+      "digest": "8af9ebff6459f34210ab5ef55e34238d450fb59ea7a3762811636f6a5b9bc885"
+    }
+  }
+}

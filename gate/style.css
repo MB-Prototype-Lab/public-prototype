@@ -137,6 +137,21 @@ body {
 
 .gate-btn-primary:hover { filter: brightness(1.06); }
 
+.local-alternatives {
+  border-top: 1px solid var(--gate-line);
+  margin-top: 8px;
+  padding-top: 12px;
+  text-align: left;
+}
+
+.local-alternatives[hidden] { display: none; }
+.local-alternatives h2 { font-size: 16px; margin: 0 0 12px; }
+#localAlternativesList { display: flex; flex-direction: column; gap: 12px; }
+.local-alternative { display: flex; flex-direction: column; gap: 6px; }
+.local-alternative .gate-btn { display: block; text-decoration: none; }
+.local-alternative p { color: var(--gate-muted); font-size: 13px; margin: 0; }
+.local-open-new-tab { font-size: 13px; }
+
 /* Mobile-style scroll indicators (thin rounded thumb, no track/arrows) */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }

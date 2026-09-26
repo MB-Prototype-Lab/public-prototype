@@ -186,7 +186,7 @@ var CONTRACT = Object.keys(CSS[":root"]).filter(function (k) { return THEME_FREE
 // the expected count differs by side. Stated rather than loosened to ">= 40" —
 // the point of this check is that a token cannot be added or dropped without
 // somebody noticing.
-var EXPECTED_TOKENS = CSS[":root"]["--rail"] ? 41 : 40;
+var EXPECTED_TOKENS = 43; // Includes ESF strong-ink/text tokens in every theme.
 chk(CONTRACT.length === EXPECTED_TOKENS,
     "contract is " + EXPECTED_TOKENS + " colour tokens", "got " + CONTRACT.length);
 
@@ -924,6 +924,11 @@ var DEAD_BASELINE = [
   // step 4. Kept because putting the correction back (most naturally on step 4,
   // beside the rows it controls) is a markup change, not a rewrite.
   "esfToggleOwns",
+  // Retained from the pinned PM prototype. Its band/dropdown and Buddy flows
+  // replaced these earlier bill, typed-buffer, explanation and help surfaces.
+  "esfBillsTotal", "esfMaintenanceEstimate", "esfPickChoice", "esfRowSource",
+  "esfRunHelp", "esfSetBufferRaw", "esfToggleExplain", "esfUtilitiesSplit",
+  "onbColHousingLine",
   // The ZIP-only entry point to the cost-of-living predicate. benchColIndex
   // already holds a resolved lookup and uses benchColSupported, so calling this
   // instead would repeat the lookup. Kept as the module's public
@@ -1375,22 +1380,10 @@ if (typeof USEBERRY_TRACKING !== "undefined" && USEBERRY_TRACKING) {
 chk(typeof useberryActive === "function" && useberryActive() === false,
     "the tracker stays inert off http/https");
 
-// ── the gate's copy agrees with the real flag ──────────────────────────────
-// The gate cannot read USEBERRY_TRACKING (it never loads a version's scripts),
-// so it keeps a duplicate. A build observed while the gate says it is not is
-// the one outcome nobody could see from either file alone.
-if (typeof __GATE_JS === "string" && typeof APP_VERSION !== "undefined") {
-  var esc = APP_VERSION.replace(/\./g, "\\.");
-  var row = new RegExp('id:\\s*"' + esc + '"[^}]*tracking:\\s*(true|false)');
-  var m = __GATE_JS.match(row);
-  chk(!!m, "the gate lists " + APP_VERSION + " with a tracking flag",
-      "add tracking: true|false to its VERSIONS entry in gate/gate.js");
-  if (m) {
-    chk((m[1] === "true") === (USEBERRY_TRACKING === true),
-        "the gate's tracking flag matches this build's",
-        "gate says " + m[1] + ", js/config.js says " + USEBERRY_TRACKING);
-  }
-}
+// Development defaults and published settings are tested independently.
+chk(window.MB_RELEASE.tracking === false && USEBERRY_TRACKING === false,
+    "development tracking is off");
+chk(window.MB_RELEASE.selector === "../index.html", "local refresh returns to root");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2397,6 +2390,144 @@ if (typeof NAV_NO_RESUME !== "undefined") {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Cross-source regressions: run with the real ordered app scripts and DOM stub.
+section("7n. Full app integration: onboarding, ESF and Buddy");
+(function () {
+  var saved = JSON.parse(JSON.stringify(state));
+  var oldConfirm = confirm;
+  try {
+    chk(ESF_ONLY === false && BUDGET_PAYWALL === true && BUDDY_SINGLE_ART === true &&
+        LESSON_REUSE_FRAMING === false && USEBERRY_TRACKING === false,
+        "combined development flags retain the full app and disable tracking");
+    onbStart();
+    var o = state.onboarding;
+    chk(ONB_STEPS.join(",") === "name,goal,zip,household,place,income,coverage,miles,buddy,video",
+        "full onboarding contains both profile refinements and Buddy/film steps");
+    onbLiveInput("name", "Combined tester");
+    onbLiveInput("zip", "37203");
+    onbSetAdults(2); onbSetAdultAge(0, "26-34"); onbSetAdultAge(1, "35-44");
+    onbStepKids("under13", 1);
+    onbPick("placeType", "condo"); onbPick("coverage", "employer"); onbPick("miles", "5to15");
+    onbSetIncomeTyped("83,400");
+    onbSetStep(o, ONB_STEPS.indexOf("buddy"));
+    chk(!onbAnswered("buddy", o), "Buddy setup waits for a pronoun choice");
+    onbSetBuddy("pronouns", BUDDY_PRONOUNS[0].id);
+    onbLiveInput("buddyName", "Scout");
+    chk(onbAnswered("buddy", o) && /onbBuddyPronouns/.test(renderOnboarding()),
+        "single-picture Buddy setup accepts name and pronouns");
+    ONB_STEPS.forEach(function (step, i) {
+      onbSetStep(o, i);
+      chk(renderOnboarding().length > 100, "combined onboarding renders " + step);
+    });
+    onbFinish();
+    chk(state.screen === "home" && state.profile.zip === "37203" &&
+        state.profile.incomeAnnual === 83400 && state.profile.householdSize === 3 &&
+        state.profile.adults.length === 2 && state.profile.kids.under13 === 1 &&
+        state.profile.placeType === "condo" && state.profile.coverage === "employer" &&
+        state.profile.milesPerDay === 10 && state.buddy.name === "Scout",
+        "onboarding carries both sources' answers into the full app and ends at Home");
+    ["home", "learn", "aboutMe", "goals"].forEach(function (tab) {
+      navGoTabRoot(tab);
+      chk(state.screen === tab && renderScreen().length > 100, "full app tab remains available: " + tab);
+    });
+    chk(BUDGET_PAYWALL_MONTHLY === 14.99 && BUDGET_PAYWALL_ANNUAL === 124.99,
+        "paywall retains the agreed monthly and annual prices");
+    navRouteTask("budget");
+    chk(state.screen === "aboutMe" && /Platinum/.test(renderScreen()),
+        "legacy budget bookmark still routes through the walled tab");
+    bbStart();
+    chk(state.screen === "budgetBuild" && !/Platinum/.test(renderScreen()),
+        "direct builder entry still bypasses the tab-only wall");
+    navGoHome(); navRouteTask("emergency_fund");
+    chk(state.screen === "esfBuild" && !!state.esf, "Home emergency-fund task initializes the capture flow");
+    ESF_STEPS.forEach(function (_, i) {
+      state.esf.step = i;
+      chk(renderEsfBuild().length > 100 && renderEsfBuildAdmin().length > 100,
+          "ESF capture and admin render step " + i);
+    });
+    state.esf.step = 1;
+    esfSetRange("rent", 1250);
+    var expected = esfToBaseline().monthly;
+    var confirms = 0;
+    confirm = function () { confirms++; return false; };
+    state.planStatus = "complete";
+    state.plan.Housing = 9876;
+    state.pendingBaseline = { monthly: { Housing: 9999 } };
+    esfCommit();
+    chk(state.screen === "goals" && confirms === 0 && state.pendingBaseline === null &&
+        CATEGORIES.every(function (c) { return catValue(state.plan, c) === catValue(expected, c); }),
+        "ESF immediately replaces an existing budget and clears stale proposals without confirmation");
+    chk(state.tacticalGoals.filter(esfLooksLikeEsfGoal).length === 1 && !!state.expenses,
+        "first ESF save creates one goal and the saved expense set");
+    var firstTarget = state.esfGoal.target;
+    esfReopen();
+    chk(state.screen === "esfBuild" && state.esf.step === 0 && esfRowValue("rent") === 1250,
+        "reopening the goal preserves entered expenses");
+    esfSetRange("rent", 2250); esfCommit(); esfReopen(); esfCommit();
+    chk(state.tacticalGoals.filter(esfLooksLikeEsfGoal).length === 1 &&
+        state.esfGoal.target > firstTarget && state.screen === "goals" && confirms === 0,
+        "editing and repeat saves update one ESF goal and return to Goals");
+    // Standard builders retain their confirmation contract.
+    submitBudgetBaseline({ source: "budgetBuild", monthly: expected });
+    chk(state.screen === "budgetUpdateConfirm" && !!state.pendingBaseline,
+        "ordinary budget replacement still asks for confirmation");
+
+    esfStart(); state.esf.step = 1;
+    ["rent", "mortgage", "carPayment"].forEach(function (row) {
+      esfBuddyOpen(); esfBuddyPick(row);
+      chk(esfBuddy().thread.some(function (line) { return /your share only/i.test(line.text); }),
+          "Buddy explains the user's share for " + row);
+    });
+    var power = state.esf.opening.power;
+    esfApplyDisclosure("rentIncludesUtilities", true);
+    chk(esfRowValue("power") === 0 && esfDisclosureFor("power").effect === "zero",
+        "rent including utilities removes the second power charge");
+    esfApplyDisclosure("rentIncludesUtilities", false);
+    chk(esfRowValue("power") === power, "undoing rent disclosure restores its opening estimate");
+    esfSetRange("power", 75); esfApplyDisclosure("rentIncludesUtilities", true);
+    chk(esfRowValue("power") === 75 && esfDisclosureFor("power") === null,
+        "a tester's explicit amount wins over Buddy's defaults");
+    state.esf.added.propertyTax = true; state.esf.added.homeInsurance = true;
+    esfApplyDisclosure("mortgageIncludesEscrow", true);
+    chk(esfRowMonthly("propertyTax") === 0 && esfRowMonthly("homeInsurance") === 0 &&
+        !state.esf.added.propertyTax && !state.esf.added.homeInsurance,
+        "mortgage escrow removes both opt-in annual bills from the total");
+    esfApplyDisclosure("noCarAtAll", true);
+    chk(esfRowValue("carCosts") === 0, "no-car disclosure removes running costs");
+    Object.keys(esfData().lifestyleModifiers).forEach(function (row) {
+      var set = esfLifestyleSet(row);
+      if (!set.questions) return;
+      var answers = {}, expectedAmount = esfLifestyleBase(row);
+      var before = esfRowValue(row);
+      esfBuddyAskLifestyle(row);
+      set.questions.forEach(function (q) {
+        var opt = q.options[q.options.length - 1];
+        answers[q.id] = opt.id; expectedAmount *= Number(opt.x) || 1;
+        esfBuddyAnswerLifestyle(opt.id);
+      });
+      chk(esfBuddyPendingFigure() === esfRound(expectedAmount) && esfRowValue(row) === before,
+          "Buddy proposes an opening-based estimate before applying: " + row);
+      var proposed = esfBuddyPendingFigure();
+      esfBuddyApplyFigure();
+      chk(esfRowValue(row) === Math.round(esfBandFor(proposed, esfRow(row)).mid) && state.esf.touched[row] &&
+          esfLifestyleResult(row, answers) === proposed,
+          "Buddy applies the matching band without compounding on repeat answers: " + row);
+    });
+    go("esfPlan");
+    chk(renderEsfPlan().length > 100 && esfBuddyAvailable(), "plan screen and Buddy remain wired");
+    resetUserData();
+    chk(state.esf === null && state.esfGoal === null && state.expenses === null &&
+        state.esfEvents.length === 0 && state.esfSelfReported === null,
+        "reset clears all ESF state and chat disclosures for the next tester");
+  } catch (e) {
+    bad("combined app flow runs without exceptions", e.stack || String(e));
+  } finally {
+    confirm = oldConfirm;
+    Object.keys(state).forEach(function (k) { delete state[k]; });
+    Object.assign(state, saved);
+  }
+})();
+
 section("8. Cannot be checked here — needs the owner");
 print("  These are real Phase 6 items that no headless check can settle:");
 print("");
