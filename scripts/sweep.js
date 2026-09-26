@@ -2364,6 +2364,33 @@ if (typeof lessonBorrowedVisualPlan === "function" && typeof LP_BORROWED_VISUALS
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+section("7n. A finished lesson's reward screen stays finished");
+
+// Finish a lesson, Return Home, tap Learn: the reward screen came back, because
+// a tab tap resumes the top of that tab's stack. And its back arrow reopened
+// the lesson player. The reward now sits alone on the Learn root, and a tab
+// never resumes onto it.
+if (typeof NAV_NO_RESUME !== "undefined") {
+  var rwSaved = JSON.stringify(state.nav), rwScreen = state.screen, rwLessons = JSON.stringify(state.lessons), rwBadges = JSON.stringify(state.badges);
+  function rwFinish() {
+    navGoTabRoot("learn"); selectBadge("Credit Cards"); selectLesson("interest-builds");
+    startCurrentLesson(); completeLesson();
+  }
+  rwFinish();
+  chk(state.screen === "reward" && JSON.stringify(state.nav.stacks.learn) === JSON.stringify(["learn", "reward"]),
+      "a finished lesson leaves only the reward on top of Learn's front page",
+      JSON.stringify(state.nav.stacks.learn));
+  navBack();
+  chk(state.screen === "learn", "back from the reward lands on Learn, not in the lesson", state.screen);
+  rwFinish(); navGoHome(); navGoTab("learn");
+  chk(state.screen === "learn", "Return Home, then the Learn tab, does not reopen the reward", state.screen);
+  navGoTabRoot("learn"); selectBadge("Credit Cards"); navGoTab("home"); navGoTab("learn");
+  chk(state.screen === "topic", "a tab still resumes any screen that is not a finished flow's end", state.screen);
+  state.nav = JSON.parse(rwSaved); state.screen = rwScreen;
+  state.lessons = JSON.parse(rwLessons); state.badges = JSON.parse(rwBadges);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 section("8. Cannot be checked here — needs the owner");
 print("  These are real Phase 6 items that no headless check can settle:");
 print("");

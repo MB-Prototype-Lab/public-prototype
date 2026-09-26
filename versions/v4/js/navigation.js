@@ -67,9 +67,18 @@ function go(screen) {
 
 // SWITCH stacks — does not push. Returning to a tab resumes it where you left
 // off, which is the behaviour that makes per-stack history worth having.
+//
+// EXCEPT onto the end of a finished flow. A lesson's reward screen is the last
+// thing that lesson shows; resuming onto it made it reappear every time the
+// tester came back to Learn (finish → Return Home → tap Learn = the reward
+// again). A tab whose top is on this list starts over at its root instead.
+const NAV_NO_RESUME = ["reward"];
+
 function navGoTab(key) {
   if (!state.nav.stacks[key]) return;
   state.nav.activeStack = key;
+  const st = state.nav.stacks[key];
+  if (NAV_NO_RESUME.indexOf(st[st.length - 1]) !== -1) state.nav.stacks[key] = [key];
   navCommit(navCurrent());
 }
 
@@ -386,7 +395,13 @@ function completeLesson() {
   // Same for the v3 side — this is the one funnel every lesson exits through.
   if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
 
-  go("reward");
+  // The lesson is over, so nothing it showed is somewhere to go back to. A plain
+  // go() left [..., "lesson", "reward"] on the stack: the back arrow reopened
+  // the player. Reset the tab to its root under the reward, so back lands on
+  // the tab's front page (owner's call: Learn's front page, not the topic).
+  const tab = state.nav.activeStack;
+  state.nav.stacks[tab] = [tab, "reward"];
+  navCommit("reward");
 }
 
 // ─── Navigation contract ──────────────────────────────────────────────────────
