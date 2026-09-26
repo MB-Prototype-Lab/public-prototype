@@ -489,9 +489,16 @@
 .stat-val { font-size: 13px; font-weight: 700; }
 .caption  { font-size: 11px; color: var(--muted); }
 
+/* Body copy is DARK. --muted is reserved for genuine chrome — axis labels,
+   counters, timestamps — not for sentences the tester is meant to read. It
+   measures well against --card on a contrast checker and still reads as
+   greyed-out next to a bold header, which is why every "make this darker"
+   pass on a screen kept appearing to do nothing: the text was already the
+   colour it was designed to be, and the design was wrong.
+   Standing rule from the owner: text is dark unless specifically stated. */
 .helper {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-strong);
   line-height: 1.35;
 }
 
@@ -711,9 +718,10 @@
   margin: 0 0 4px;
 }
 
+/* Dark, for the same reason as .helper above. */
 .task-desc {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-strong);
   line-height: 1.35;
   margin: 0;
 }
@@ -1967,6 +1975,154 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 .onb-col-text { text-align: left; margin: 0; }
 
+/* The ZIP step's answer, now that the bar chart is gone. It is the payoff for
+   handing over the field, so it is set as body copy rather than as a caption
+   under something — .helper's 11.5px was sized to sit beneath a chart that no
+   longer exists. Dark, roomy, and the widest measure on the screen. */
+.onb-col-lead {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-strong);
+  font-weight: 400;
+}
+
+/* "Maybe share later" — the named way past the ZIP step. Deliberately quiet:
+   it is a real choice, not the one being encouraged, so it reads as a link
+   rather than competing with Continue. The note under it states what the
+   tester gets instead, in their own voice. */
+.onb-zip-later { margin-top: 20px; text-align: center; }
+
+/* Button-shaped, but NOT the call to action. On the accent fill it read as the
+   thing to press, which inverted the screen: the step's job is to get a ZIP,
+   and the way out was the loudest control on it. Pale neutral fill, ordinary
+   outline, dark label — unmistakably pressable, clearly the second choice.
+   Inline-block rather than block so .onb-zip-step's centring positions it. */
+/* Specificity, twice over. `.screen .button:not(.secondary)` sets the accent
+   fill and is (0,3,0) — `:not()` contributes its argument's weight, so the
+   negation counts as a class. A bare `.onb-zip-later-btn` (0,1,0) loses, and
+   so does `.screen .onb-zip-later-btn` (0,2,0), which is the version that
+   looked correct and silently kept rendering green. Matching (0,3,0) and
+   sitting later in the file is what actually wins it. */
+.onb-zip-later-btn {
+  display: inline-block;
+  width: 100%;
+  max-width: 260px;
+  white-space: normal;
+}
+.screen .button.onb-zip-later-btn,
+.screen .button.onb-zip-later-btn:hover {
+  padding: 12px 14px;
+  background: var(--soft);
+  border-color: var(--line);
+  color: var(--text-strong);
+  font-weight: 700;
+  filter: none;
+}
+.onb-zip-later-note {
+  text-align: center;
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-strong);
+}
+
+/* One sentence per line. A block span rather than a <br> so a sentence wider
+   than the column wraps under ITSELF and the rhythm survives — a <br> would
+   let one long sentence push a fragment onto the next line and every sentence
+   after it would read as starting mid-thought. */
+.onb-line { display: block; }
+
+/* The confirmation under the field. It carries .task-desc so it is set in the
+   same face and size as the "How this helps" card below it — the two are the
+   same kind of remark and were reading as two different voices. This rule adds
+   only the placement: it sits INSIDE .onb-zip-ask, so it needs its own top gap
+   and a rule separating it from the input. */
+.onb-zip-result {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+/* The ask — the reason and the field it is asking for, boxed together. They
+   were two loose blocks with the explanation card below competing for the same
+   attention, so the one thing the step actually wants was the quietest element
+   on it. */
+.onb-zip-ask {
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 16px;
+  padding: 14px 14px 16px;
+  margin: 0 0 16px;
+}
+
+/* The field itself. `.screen input` is (0,1,1) and sets the background and a
+   card radius, so a bare class loses to it — every property that has to win
+   here is repeated under a .screen-qualified selector below. */
+.onb-zip-input { text-align: center; }
+.screen .onb-zip-input {
+  border: 2px solid var(--accent);
+  /* The field stays --card. The GREEN is the surrounding ask box, so the field
+     has to read as the writable well cut into it — same wash on both would
+     flatten the two into one shape. */
+  background: var(--card);
+  /* Capped BELOW .onb-title's 18px. The field was 20px, which made the thing
+     being filled in louder than the question asking for it. */
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 8px 14px;
+  color: var(--text-strong);
+}
+/* Bold placeholder, because "ZIP code" IS the label — there is no separate
+   one, so at rest this is the only thing naming the field. */
+.screen .onb-zip-input::placeholder {
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--rail);
+  opacity: 1;
+}
+
+/* Income step. Six bands plus a slider card have to clear 940px without a
+   scroll, so the rows are tightened here rather than by touching .journal-opt,
+   which every other option list in the app uses. */
+.onb-income-step .journal-options { gap: 6px; }
+.onb-income-step .journal-opt { padding: 9px 12px; }
+.onb-income-card { margin-top: 10px; padding: 10px 12px; }
+
+/* The typed figure, beside the slider that shows the same number. Both write
+   the same state; uiSetValue keeps them in step without a repaint. */
+.onb-income-typed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.onb-income-typed label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+.screen .onb-income-typed input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+  color: var(--text-strong);
+}
+
+/* The whole ZIP step is centred. Scoped to the step, not to onboarding: the
+   other steps are option lists and tile grids, where a centred label under a
+   left-aligned row would look like a mistake. */
+.onb-zip-step { text-align: center; }
+.onb-zip-step .onb-col-text,
+.onb-zip-step .task-desc,
+.onb-zip-step .task-title { text-align: center; }
+
 /* Multi-select checkbox — the shared affordance for "pick as many as apply".
    A .journal-opt on its own looks identical whether one or many are allowed,
    so every multi-select in the app carries this box: the onboarding goal step
@@ -2895,3 +3051,964 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 /* The income figure beside a profile option — a fact about the choice, not the
    choice itself, so it sits under the label rather than competing with it. */
 .pp-figure { display: block; margin-top: 2px; font-size: 11px; color: var(--muted); }
+
+/* ─── Emergency fund ───────────────────────────────────────────────────────
+   The builder next door is sliders; this is typed values plus percentage
+   steppers, on the owner's call — a slider gets you close but not precise, and
+   these are survival figures.
+
+   EVERY input rule below carries `.screen`. `.screen input` is (0,1,1) and sets
+   both a background and a radius, so a bare component class is (0,1,0) and
+   silently loses — which is invisible until it is not. Same trap the band
+   slider hit. */
+.esf-row-label { font-weight: 600; color: var(--text); }
+.esf-row-help  { margin: 4px 0 0; }
+
+.esf-row-off   { opacity: 0.62; }
+/* Must out-specify `.screen .item-card.esf-row` below, or an added bill keeps
+   the plain field background and nothing on the row says it was added. */
+.screen .item-card.esf-row.esf-row-on {
+  border-color: var(--good-border); background: var(--good-bg);
+}
+
+/* A disclosure, not a control — it explains a figure rather than changing one,
+   so it reads as text with an underline, not as a button. */
+.esf-link {
+  background: none; border: 0; padding: 6px 0;
+  font: inherit; font-size: 12px; color: var(--accent);
+  text-decoration: underline; cursor: pointer; min-height: 32px;
+}
+.esf-source { margin: 8px 0 0; font-size: 11px; }
+
+.screen .esf-amount {
+  width: 110px; padding: 10px 12px; min-height: 44px;
+  font-size: 15px; font-weight: 600;
+  color: var(--text); background: var(--card);
+  border: 1px solid var(--rail); border-radius: 10px;
+}
+.screen .esf-extra-label {
+  flex: 1 1 120px; min-width: 0; padding: 10px 12px; min-height: 44px;
+  font-size: 14px; color: var(--text); background: var(--card);
+  border: 1px solid var(--rail); border-radius: 10px;
+}
+.screen .esf-select, .screen .esf-date {
+  padding: 10px 12px; min-height: 44px; font-size: 14px;
+  color: var(--text); background: var(--card);
+  border: 1px solid var(--rail); border-radius: 10px;
+}
+
+/* Percentage rather than dollars, so one control works on a $2,195 housing
+   figure and a $60 phone bill alike. */
+.esf-step {
+  padding: 10px 12px; min-height: 44px; min-width: 64px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  color: var(--text); background: var(--soft);
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.esf-step:hover { background: var(--accent-soft); border-color: var(--accent-border); }
+
+.esf-add, .esf-added {
+  padding: 10px 16px; min-height: 44px;
+  font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 10px;
+}
+.esf-add {
+  color: var(--accent); background: var(--card);
+  border: 1px solid var(--accent-border);
+}
+.esf-added {
+  color: var(--accent-fill-text); background: var(--accent-fill);
+  border: 1px solid var(--accent-fill);
+}
+
+.esf-chip {
+  padding: 10px 14px; min-height: 44px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  color: var(--text); background: var(--card);
+  border: 1px solid var(--line); border-radius: 999px;
+}
+.esf-chip.on {
+  color: var(--accent-fill-text); background: var(--accent-fill);
+  border-color: var(--accent-fill);
+}
+
+/* `.screen .item-card` is already --soft, so a row that wants to read as a
+   FIELD has to lift off it. Without this every card on the screen is the same
+   colour and there is no hierarchy — which is what it looked like before this
+   rule existed. */
+.screen .item-card.esf-row { background: var(--card); }
+
+/* The bank-connect offer. It is an offer, not a gate, so it gets one control
+   and no card around it — it used to be a full card with a heading and two
+   lines of explanation, which gave the one thing nobody has to do more weight
+   than the fields they do. Inert here: there is no integration behind it. */
+.esf-offer { margin-bottom: 12px; }
+.esf-plaid {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; min-height: 44px; padding: 11px 14px;
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  color: var(--text); background: var(--card);
+  border: 1px solid var(--rail); border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.esf-plaid:hover { background: var(--soft); }
+.esf-plaid svg { flex: 0 0 auto; }
+
+/* The one-line note under an irregular bill. It carries the whole
+   double-count defence: step 1 asks only for the monthly housing payment, so
+   whether property tax is already inside it is decided HERE, at the row, with
+   a statement of fact rather than a question. Zero taps either way. */
+.esf-qualifier { margin: 6px 0 0; font-size: 11px; font-style: italic; }
+
+/* ── ESF restructure ──────────────────────────────────────────────────────── */
+
+/* The header is the FEATURE's name on every step, so it has to sit at a size
+   that survives two lines in a 390px frame without pushing the first field
+   below the fold. */
+.esf-title { font-size: 19px; line-height: 1.25; margin: 10px 0 0; }
+
+/* Buddy, edge to edge, at half height. The art is roughly square and the frame
+   is not, so `cover` takes a horizontal BAND out of the middle and scales it to
+   the full width — which is what carries the fence and the bushes out to both
+   edges. `object-position` favours the upper middle so the crop keeps the dog's
+   face rather than centring on its paws. Purely decorative, so it is empty-alt
+   and hidden from assistive tech. */
+.esf-banner {
+  height: 132px; overflow: hidden; background: var(--soft);
+  /* Bleeds past .journal-shell's 18px side padding so the art reaches both
+     edges of the frame. `width: auto` rather than 100% — with the negative
+     margins, 100% would resolve against the padded box and overflow by 36px. */
+  margin: 10px -18px 0; width: auto;
+}
+.esf-banner img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center 32%;
+  display: block;
+}
+
+/* Boxes at roughly three quarters of what they were: the padding came down,
+   the label dropped to the field's own size, and the gaps between rows closed
+   up. The screen carries five boxes now where it carried two. */
+.screen .item-card.esf-row { padding: 11px 12px; margin-bottom: 8px; }
+.esf-row-help, .esf-qualifier { margin: 6px 0 0; font-size: 11px; }
+
+/* Two fields share a box when they are one question with two answers — Rent and
+   Mortgage, or a car payment and a transit pass. They wrap rather than shrink,
+   because a money field narrower than about 110px cannot show four digits. */
+.esf-fields { display: flex; gap: 10px; flex-wrap: wrap; }
+.esf-field { flex: 1 1 128px; min-width: 0; }
+.esf-field-label {
+  display: block; font-size: 13px; font-weight: 600;
+  color: var(--text); margin-bottom: 5px;
+}
+.esf-field .esf-amount { width: 100%; }
+.esf-field-unit {
+  display: block; margin-top: 4px; font-size: 11px; color: var(--muted);
+}
+
+/* The disclosure sits above the fields and right-aligned, so it never competes
+   with a label for the start of a line. */
+.esf-explain { display: block; margin: 0 0 2px auto; padding: 0 0 4px; }
+
+/* ── ESF: fit the whole first step on one screen ──────────────────────────── */
+
+/* The title breaks after the product name so "Emergency Savings Fund" reads as
+   the thing and the rest as its description, rather than one long run-on. */
+.esf-title { font-size: 20px; line-height: 1.2; margin: 8px 0 0; }
+.esf-title-sub {
+  display: block; margin-top: 2px;
+  font-size: 14px; font-weight: 500; color: var(--muted);
+}
+
+/* Buddy stops at the boxes' own edges — no longer bleeding past the shell's
+   padding — and lost a third of its height to buy room below the fold. */
+.esf-banner {
+  height: 92px; overflow: hidden; background: var(--soft);
+  margin: 0 0 12px; width: 100%; border-radius: 10px;
+}
+
+.esf-plaid { margin-bottom: 14px; }
+
+/* States once, at the top, so no field has to repeat "a month" underneath. */
+.esf-lead { margin: 0 0 10px; font-size: 14px; color: var(--text); }
+.esf-lead strong { font-weight: 700; }
+
+/* Boxes again tighter. Five of them plus a banner and two headers have to clear
+   a 390px frame without the first field falling below the fold. */
+.screen .item-card.esf-row { padding: 9px 11px; margin-bottom: 7px; }
+.esf-row-help, .esf-qualifier { margin: 5px 0 0; font-size: 11px; }
+.esf-qualifier { font-style: italic; }
+
+.esf-group-label {
+  margin: 0 0 7px; font-size: 13px; font-weight: 600; color: var(--text);
+}
+.esf-field-label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--text); margin-bottom: 4px;
+}
+.esf-field-unit {
+  display: block; margin-top: 3px; font-size: 10.5px;
+  line-height: 1.3; color: var(--muted);
+}
+
+/* Money fields are sized to their CONTENT, not to the box. A rent figure needs
+   room for five digits and nothing more; stretching it the full width just
+   pushed the next box down the screen. */
+.screen .esf-amount { padding: 8px 10px; min-height: 40px; font-size: 14px; }
+.esf-field { flex: 0 1 auto; min-width: 0; }
+.esf-field .esf-amount { width: 108px; }
+
+/* Three across, so the car box stays one line on a 390px frame. */
+.esf-fields-narrow .esf-field { flex: 1 1 0; }
+.esf-fields-narrow .esf-field .esf-amount { width: 100%; }
+
+/* ── ESF: the last pass to clear the fold ─────────────────────────────────────
+   Step 1 carries five boxes, a banner, a header and a button, and the whole
+   point of the restructure was that a tester sees all of it without scrolling.
+   Everything below is that budget being spent deliberately rather than each
+   element taking what it likes. */
+.journal-shell .esf-title { font-size: 18px; }
+.journal-shell .esf-title-sub { font-size: 13px; }
+.esf-banner { height: 58px; margin-bottom: 9px; }
+.esf-plaid  { min-height: 40px; padding: 8px 12px; font-size: 12.5px; line-height: 1.25; margin-bottom: 10px; }
+.esf-lead   { margin-bottom: 8px; font-size: 13px; }
+.screen .item-card.esf-row { padding: 7px 10px; margin-bottom: 5px; }
+.esf-group-label { margin-bottom: 5px; font-size: 12px; }
+.esf-field-label { font-size: 11.5px; margin-bottom: 3px; }
+.screen .esf-amount { min-height: 36px; padding: 6px 9px; font-size: 13.5px; }
+.esf-field-unit { font-size: 10px; line-height: 1.2; margin-top: 2px; }
+.esf-row-help, .esf-qualifier { margin-top: 3px; font-size: 10.5px; line-height: 1.3; }
+
+/* Buddy gets the room that moving property tax, the HOA fee and the car running
+   costs off step 1 freed up — measured at 240px spare, and this spends most of
+   it while leaving a margin for font rendering that differs by machine.
+   At this height the frame is close to the art's own 1.4:1, so `cover` barely
+   crops: near enough the whole illustration, fence and bushes included. The
+   banner only renders on step 1 now, so nothing else has to pay for it. */
+.esf-banner { height: 208px; margin-bottom: 12px; }
+
+/* ── ESF: segmented picker ────────────────────────────────────────────────────
+   Rent-or-mortgage and car-or-transit are one question each, so they get one
+   field with a two-way switch above it. Four boxes where two are always empty
+   was both busier and more work than this. */
+.esf-seg {
+  display: flex; gap: 0; margin-bottom: 8px;
+  border: 1px solid var(--line); border-radius: 9px;
+  overflow: hidden; background: var(--soft);
+}
+.esf-seg-btn {
+  flex: 1 1 0; min-width: 0; min-height: 34px; padding: 7px 8px;
+  font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  color: var(--muted); background: transparent; border: 0;
+}
+/* A 1px divider between the two halves, drawn only between them so the
+   rounded ends stay clean. */
+.esf-seg-btn + .esf-seg-btn { border-left: 1px solid var(--line); }
+.esf-seg-btn.on {
+  color: var(--accent-fill-text); background: var(--accent-fill);
+}
+
+/* The field under a picker takes the box, since nothing sits beside it. */
+.esf-field-wide { flex: 1 1 100%; }
+.esf-field-wide .esf-amount { width: 100%; }
+
+/* The step-2 intro is two lines: the instruction, then the reassurance under
+   it at a quieter weight. One paragraph ran them together and the "we can
+   revise later" — the part that lowers the stakes of guessing — got lost in
+   the middle of a sentence. */
+.esf-lead { margin-bottom: 2px; }
+.esf-lead-sub { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+
+/* Box headlines are BOLD, not semibold. Applies to the utilities label too, so
+   every box heading reads at the same weight — it plays the same role as
+   "Staying Connected" even though it is worded as a description. */
+.esf-group-label { font-weight: 700; }
+
+/* Centre the crop. The step art is roughly 4:3 in a ~1.5:1 frame, so `cover`
+   trims about 14% of the height — splitting that evenly between the sky above
+   and the grass below keeps the whole scene, where favouring the top cut the
+   dog and the cars off at the wheels. */
+.esf-banner img { object-position: center 50%; }
+
+/* The step art is authored WIDE (about 2.36:1) for this exact slot, so the
+   banner takes the art's own aspect instead of a fixed height. At a fixed
+   208px the frame was 1.55:1 and `cover` cropped roughly a third of the width
+   away — the "Home" sign and the trees went with it. Sizing by ratio shows the
+   whole scene and gives back about 70px of vertical space as a bonus. */
+.esf-banner { height: auto; aspect-ratio: 2.36 / 1; }
+
+/* ── ESF: tint the boxes ──────────────────────────────────────────────────────
+   The cards were plain white on an off-white page, which read as sterile. A
+   soft accent wash with a matching edge gives them presence.
+
+   The FIELDS deliberately stay --card. Tinted card against a white input is
+   what makes the enterable thing obvious at a glance — tinting both would
+   flatten the box back into one undifferentiated block.
+
+   Semantic tokens only, so all four themes come along: --accent-soft and
+   --accent-border are the same pair the peer band and the chips already use.
+   Colour-coding each box by category was the other option and was rejected —
+   the palette only resolves to three distinct tints, which is fewer than there
+   are box types, so the hues would have carried no meaning. */
+.screen .item-card.esf-row {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+
+/* ── ESF: centred header, intro step, goal figure ─────────────────────────── */
+
+/* The title is now the only thing in the header, centred and larger — the
+   "a cushion for hard times" line moved into the intro step, where it has room
+   to be a sentence rather than a subtitle. */
+.journal-shell .esf-title {
+  text-align: center; font-size: 23px; line-height: 1.2; margin: 10px 0 2px;
+}
+
+/* The intro has no fields, so it centres in whatever height is left rather
+   than stacking from the top with dead space underneath. */
+.esf-body-intro { display: flex; flex-direction: column; justify-content: center; }
+.esf-intro { text-align: center; padding: 0 6px; }
+.esf-intro p { margin: 0 0 18px; font-size: 14.5px; line-height: 1.5; color: var(--text); }
+.esf-intro p:last-child { margin-bottom: 0; }
+
+/* Names what this step is about, above its picture. */
+.esf-step-heading {
+  margin: 0 0 8px; font-size: 15px; font-weight: 700;
+  color: var(--text); text-align: center;
+}
+
+/* The goal figure is the whole point of the plan screen, so it is the largest
+   thing on it. */
+.esf-goal-figure {
+  margin: 12px 0 2px; text-align: center;
+  font-size: 34px; font-weight: 700; line-height: 1.1; color: var(--accent);
+}
+
+/* The big figure is what is LEFT to save, so it needs a caption — on its own,
+   a bare number next to a "Months of expenses covered" control reads as the
+   size of the fund, which is a different figure and the one the control moves.
+   Naming both here is what keeps the coverage and buffer rows legible. */
+.esf-goal-sub {
+  margin: 0 0 12px; text-align: center;
+  font-size: 12px; font-weight: 600; color: var(--text-strong);
+}
+
+/* An annual figure and its monthly conversion sit on one line. */
+.esf-input-row { display: flex; align-items: center; gap: 8px; }
+.esf-field-inline { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* Expense names are bold — they are what the tester scans for. */
+.esf-field-label { font-weight: 700; }
+
+/* A derived figure is shown, not typed. */
+.screen .esf-amount[readonly] { background: var(--soft); color: var(--muted); }
+
+/* Near-square art is sized by HEIGHT and centred at its natural width. Letting
+   it fill the frame would make it 322px tall on a 390px phone, and cropping it
+   to a banner cuts the labelled drawers and the money in the case — which is
+   the entire content of those two illustrations. Whole and small beats partial
+   and large. */
+.esf-banner-tall {
+  aspect-ratio: auto !important;
+  height: 168px; width: auto;
+  display: flex; justify-content: center;
+  background: transparent;
+}
+.esf-banner-tall img { width: auto; height: 100%; object-fit: contain; }
+
+/* 168px was too generous on the densest screen — five boxes plus a heading
+   pushed the footer off. 124 still reads as an illustration rather than an
+   icon, and it is what makes step 4 fit. */
+.esf-banner-tall { height: 124px; margin-bottom: 10px; }
+
+/* Cap how tall a banner can get. The living-expenses and safe illustrations are
+   1.79:1, which at full frame width is 180px — fine on a light screen, too much
+   on the one carrying five boxes. Capping the height crops the sides instead,
+   and both are composed with Buddy centred and empty ground at the edges, so
+   the sides are the part that can go. */
+.esf-banner { max-height: 140px; }
+
+/* ── ESF: even field distribution, and the label caveat ───────────────────── */
+
+/* Fields SHARE the box width evenly. They used to be a fixed 108px each, which
+   left a two-field box with a ragged gap on the right and a three-field box
+   tight. Equal columns read as one question with N answers, which is what they
+   are. */
+.esf-field { flex: 1 1 0; min-width: 0; }
+.esf-field .esf-amount { width: 100%; }
+
+/* The caveat beside a bold label — lighter, and wrapping under it when the pair
+   is too long for one line. */
+.esf-label-note {
+  font-weight: 400; color: var(--muted); font-size: 10.5px;
+  margin-left: 4px; white-space: nowrap;
+}
+
+/* The banner's cap is set per step inline; this keeps the earlier blanket cap
+   from overriding it. */
+.esf-banner { max-height: none; }
+
+/* The emergency fund's goal card reopens the tool, so it has to LOOK like it
+   does something — a clickable card with no affordance is a card nobody clicks. */
+.goal-card-open { cursor: pointer; }
+.goal-card-open:hover { border-color: var(--accent-border); background: var(--accent-soft); }
+.goal-card-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── Onboarding: who lives with you ───────────────────────────────────────────
+   Adults are a 2x2 of tiles, ages are dropdowns, kids are counters. Nothing on
+   this step is typed. Every control clears the 44px tap-target floor. */
+.onb-adults { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.onb-adult-opt { justify-content: center; }
+
+.onb-ages { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.onb-age { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--text); }
+/* Carries .screen: `.screen select` sets its own background and radius and
+   outranks a bare component class. */
+.screen .onb-select {
+  width: 100%; min-height: 44px; padding: 8px 10px; font-size: 14px;
+  color: var(--text); background: var(--card);
+  border: 1px solid var(--rail); border-radius: 10px;
+}
+
+.onb-subhead { margin: 18px 0 8px; font-size: 14px; font-weight: 700; color: var(--text); }
+.onb-kids { display: flex; flex-direction: column; gap: 6px; }
+.onb-count {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 4px 4px 12px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--card);
+}
+.onb-count-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.onb-count-ctl { display: flex; align-items: center; gap: 6px; }
+.onb-count-btn {
+  width: 44px; height: 44px; font: inherit; font-size: 20px; font-weight: 700;
+  cursor: pointer; color: var(--accent); background: var(--soft);
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.onb-count-btn:disabled { opacity: 0.4; cursor: default; }
+.onb-count-n { min-width: 22px; text-align: center; font-size: 16px; font-weight: 700; color: var(--text); }
+
+/* ── ESF: range dropdowns and opt-in rows ─────────────────────────────────────
+   Estimated figures are picked from ranges, never typed. The description line
+   above each one is BLACK, not gray: an estimate that shows its drivers earns
+   an override, an unexplained one gets a shrug — so it is not secondary text. */
+.esf-estimate + .esf-estimate { margin-top: 12px; }
+.esf-based {
+  margin: 3px 0 6px; font-size: 11px; line-height: 1.35; color: var(--text);
+}
+.screen .esf-range {
+  width: 100%; min-height: 44px; padding: 9px 10px;
+  font-size: 14px; font-weight: 600;
+  color: var(--text); background: var(--card);
+  border: 1px solid var(--rail); border-radius: 10px;
+}
+
+/* Opt-in rows sit flat until added, then lift to the added treatment. */
+.esf-optin-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; flex-wrap: wrap;
+}
+
+/* Range rows are taller than the number boxes they replaced — a label, a
+   description and a 44px control each. These two screens carry four and six of
+   them, so the spacing between them is as tight as it goes before the blocks
+   stop reading as separate questions. */
+.esf-estimate + .esf-estimate { margin-top: 8px; }
+.esf-based { margin: 2px 0 4px; }
+.screen .item-card.esf-row { padding: 8px 10px; margin-bottom: 6px; }
+.esf-optin-head { min-height: 44px; }
+
+/* The Add-it button sits BESIDE its label, not under it. The label plus its
+   caveat is long enough to wrap the flex line, which pushed the button onto a
+   row of its own and cost ~40px on a screen that has two of these. */
+.esf-optin-head { flex-wrap: nowrap; align-items: center; }
+.esf-optin-head .esf-field-label { flex: 1 1 auto; min-width: 0; }
+.esf-optin-head .esf-add,
+.esf-optin-head .esf-added { flex: 0 0 auto; padding: 10px 14px; }
+.esf-optin-head .esf-label-note { display: block; margin-left: 0; white-space: normal; }
+
+/* The last few pixels on the two range screens. Six boxes of label +
+   description + a 44px control leave nothing spare, and the control itself is
+   at the tap-target floor and cannot shrink — so the space comes out of the
+   gaps around it rather than the thing being tapped. */
+.screen .item-card.esf-row { padding: 7px 10px; margin-bottom: 5px; }
+.esf-group-label { margin-bottom: 3px; }
+.esf-based { margin: 1px 0 4px; font-size: 10.5px; }
+.esf-estimate + .esf-estimate { margin-top: 6px; }
+.esf-lead { margin-bottom: 1px; }
+.esf-lead-sub { margin-bottom: 6px; }
+
+/* The two escrow rows are a label and a button — no description, no control —
+   so they do not need a full card's breathing room. */
+.esf-optin-head { min-height: 40px; }
+.screen .item-card.esf-row:has(.esf-optin-head) { padding: 4px 10px; }
+
+/* ── Height comes out of the CONTROLS, not the pictures ───────────────────────
+   Buddy is the reason these screens read as a tool rather than a tax form, so
+   the banners are no longer cropped to buy space. The dropdowns and number
+   boxes give it back instead: they were sized at the 44px tap-target floor and
+   are now 36, which is the deliberate trade — this is a desktop-reviewed
+   prototype, and the owner asked for no scrolling over the floor. Revisit if it
+   ever ships to a phone. */
+.screen .esf-range,
+.screen .esf-amount,
+.screen .esf-select,
+.screen .esf-date { min-height: 36px; padding: 5px 9px; font-size: 13.5px; }
+
+/* The figure rides inside the Add-it button, so the row stays one line. */
+.esf-add, .esf-added { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.1; }
+.esf-add-figure { font-size: 10px; font-weight: 600; opacity: 0.75; }
+
+/* CONTAIN, not cover. Capping the height used to crop the sides off — the
+   "Home" sign, the cabinet labels, the money in the case, which is the part
+   that carries the meaning. Scaling the whole picture down instead keeps every
+   one of them; the card's own ground fills the space either side, so it reads
+   as a framed illustration rather than a trimmed one. */
+.esf-banner img { object-fit: contain; }
+.esf-banner { background: var(--soft); border-radius: 10px; }
+
+/* The last 13px on the owner's living-expenses screen — six boxes is the
+   densest the flow gets, and this is the gap between them rather than anything
+   inside them. */
+.screen .item-card.esf-row { margin-bottom: 4px; }
+
+/* Controls down another 20% — 36px to 29. Owner's call, and the third time
+   this floor has moved: fitting five screens with no scrolling and keeping a
+   44px tap target are not both possible at this row count. Recorded rather
+   than quietly absorbed. */
+.screen .esf-range,
+.screen .esf-amount,
+.screen .esf-select,
+.screen .esf-date { min-height: 29px; padding: 3px 9px; font-size: 13px; }
+.esf-add, .esf-added { padding: 6px 12px; min-height: 29px; }
+.esf-optin-head { min-height: 29px; }
+
+/* ── ESF: readable descriptions, aligned controls ─────────────────────────────
+   Every explanatory line under a heading is FULL text colour. They inherited
+   .helper's muted gray, which is right for incidental chrome and wrong for a
+   sentence explaining where somebody's money figure came from — that sentence
+   is the thing that earns an override. */
+.esf-row-help, .esf-qualifier, .esf-based, .esf-lead-sub, .esf-field-unit {
+  color: var(--text);
+}
+.esf-label-note { color: var(--text); opacity: 0.7; }
+
+/* A control and the figure it produces, on one line, aligned. The two used to
+   be separate labelled fields of different widths sitting far apart, which
+   read as two questions rather than one setting and its consequence. */
+.esf-inline { display: flex; align-items: center; gap: 10px; }
+.esf-inline-ctl { flex: 0 0 auto; width: 120px; }
+.esf-inline-note { font-size: 13px; font-weight: 600; color: var(--text); }
+
+/* The intro's two doors, stacked and full width. */
+.esf-intro-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+
+/* ── The explanation lines read as BLACK ──────────────────────────────────────
+   --text is #3D3A36, a warm dark gray. At 10.5px it reads washed out, which is
+   why "make the text darker" kept not landing: it was already --text. These
+   lines carry the reason a figure exists, so they get --text-strong (a token
+   added for them, defined in all four themes) plus a size and weight that hold
+   up at this scale. */
+.esf-based, .esf-row-help, .esf-qualifier, .esf-lead-sub, .esf-inline-note {
+  color: var(--text-strong);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.esf-label-note { color: var(--text-strong); opacity: 0.85; }
+
+/* ─── Ask Buddy — the ESF panel ──────────────────────────────────────────────
+   Renders from screens/buddy-panel.js into #buddyRoot, a SIBLING of #screenRoot
+   (index.html). The root is a fixed layer inside the phone frame, which is what
+   keeps the pill still while the simulated keypad adds and removes its 250px:
+   a button that moves mid-press never receives the click. Same arrangement
+   #keyboardRoot uses, one z-index below it — the keypad covers Buddy, because
+   when both are up the thing being typed into is the one that matters. */
+#buddyRoot {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  pointer-events: none;        /* an empty root must not eat taps on the screen */
+}
+#buddyRoot > * { pointer-events: auto; }
+
+
+/* ── The panel ───────────────────────────────────────────────────────────────
+   Roughly three-quarters of the frame, anchored to the bottom edge, in the SAME
+   rectangle on every ESF screen. The step header and progress pips stay visible
+   above it, so the user never loses where they are. */
+.esf-buddy-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(43, 39, 35, .34);
+}
+
+.esf-buddy {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 76%;
+  display: flex;
+  flex-direction: column;
+  background: var(--screen);
+  border-top: 1px solid var(--line);
+  border-radius: 22px 22px 28px 28px;
+  box-shadow: 0 -10px 34px rgba(43, 39, 35, .22);
+  animation: esfBuddyIn .2s cubic-bezier(.2, .7, .3, 1) both;
+  overflow: hidden;
+}
+
+@keyframes esfBuddyIn {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+
+/* THE ONE PLACE SCROLLING IS ALLOWED. Owner's ruling: every question and answer
+   stays on screen, stacked, and the user scrolls back through them rather than
+   clicking back to re-read. The ESF capture screens still do not scroll. */
+.esf-buddy-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.esf-buddy-prompt {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* ── The question list ───────────────────────────────────────────────────────
+   Where several rows sit on one screen the user must be able to pick which one
+   they are asking about, and get back to that list. Asked rows are ticked and
+   STILL TAPPABLE — an answer can always be changed. */
+.esf-buddy-list { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+
+.esf-buddy-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--card);
+  color: var(--text);          /* body copy is never --muted */
+  font-size: 13px;
+  font-weight: 700;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.esf-buddy-item:hover { border-color: var(--accent); background: var(--accent-soft); }
+.esf-buddy-item-mark  { flex: 0 0 auto; font-size: 14px; color: var(--muted); }
+.esf-buddy-item-done .esf-buddy-item-mark { color: var(--accent); font-weight: 900; }
+
+.esf-buddy-foot {
+  flex-shrink: 0;
+  border-top: 1px solid var(--line);
+  background: var(--card);
+  padding: 9px 16px 12px;
+  border-radius: 0 0 28px 28px;
+}
+.esf-buddy-chips { padding-bottom: 9px; }
+/* The two ways back read as navigation, not as an answer to the question. */
+.esf-buddy-chip-nav { background: transparent; color: var(--muted); font-weight: 600; }
+
+/* ── The bar: X bottom-left, inert input beside it ───────────────────────────
+   Everything the user touches lives in the lower half — the panel is
+   one-handed. The X sits away from the thumb's natural travel so it is not hit
+   by accident, and still inside reach. */
+.esf-buddy-bar { display: flex; gap: 9px; align-items: center; }
+
+.esf-buddy-x {
+  flex: 0 0 auto;
+  width: 44px; height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--text);
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+}
+.esf-buddy-x:hover { background: var(--accent-soft); border-color: var(--accent); }
+
+/* PRESENT, VISIBLE, INERT. Visibly greyed, no caret, no keyboard — `disabled`
+   is what guarantees the simulated keypad can never open from it. The wrapper
+   carries the click handler because a disabled input dispatches no events, and
+   the tap is the measurement we want. */
+.esf-buddy-inputwrap { flex: 1; min-width: 0; display: block; cursor: default; }
+.esf-buddy-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 11px 14px;
+  opacity: .62;
+  cursor: default;
+  pointer-events: none;        /* the wrapper takes the tap, not the field */
+}
+
+/* ── The disclosure note ─────────────────────────────────────────────────────
+   REPLACES the "Based on …" line, never joins it, so it is height-neutral —
+   see rule 3 in js/buddy-esf.js. It inherits .esf-based and only adds the
+   accent and the fact that it is tappable, which is rule 4: a user who
+   mis-taps "my rent covers utilities" can undo it without hunting. */
+button.esf-based {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+}
+.esf-disclosed { color: var(--accent); font-weight: 750; }
+.esf-disclosed:hover { text-decoration: underline; }
+
+/* ── The Ask button, in the footer ───────────────────────────────────────────
+   [Back] [Ask 🐶] [primary]. It floated above the footer at first, which cost
+   no vertical layout but covered whatever row sat under it. In the bar it
+   costs height once, shared with buttons that were already there.
+
+   `margin-left: auto` on the primary is what pins the three: Back hard left,
+   the primary hard right, Ask sitting between them. .journal-foot is
+   space-between, which would otherwise spread three children evenly and drift
+   Ask off-centre as the primary's label changes length.
+
+   AMBER, not the LEGO orange it started as -- that read as a warning light
+   beside a calm sage primary. Dark #2B1A0E on this amber is about 7.9:1, up
+   from the orange's 5.2:1, and both pass AA. White on either FAILS (2.9:1 on
+   the orange), so the dark text is not a style choice.
+
+   Literals rather than theme tokens on purpose: this is Buddy's own accent and
+   must not drift with the four themes, or it stops being his. */
+/* THREE EQUAL COLUMNS, so Ask is dead centre no matter how long the primary's
+   label is. .journal-foot is space-between, which spreads three children by
+   their own widths and drifts Ask off-centre as "Continue" becomes "See my
+   number". A grid ignores content width, which is the whole point.
+
+   The intro step has only two children (no primary). Ask still lands in column
+   two, so it stays centred there as well. */
+.journal-foot.esf-foot {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+/* Equal thirds are narrower than .button's defaults allow for the longest label
+   this footer carries. At 13px with 13px side padding "See my number" wants
+   112px in a 103px column and SPILLS — a button's overflow is visible, so the
+   text paints straight over the edge of its own pill rather than being cut.
+   Both the padding and one step of type size come off; 12px keeps a legible
+   label and the tap target is unchanged at 44px. */
+.journal-foot.esf-foot > .button,
+.journal-foot.esf-foot > .esf-ask {
+  width: 100%;
+  padding-left: 5px;
+  padding-right: 5px;
+  font-size: 12px;
+}
+
+/* Ask carries .button's metrics exactly — same padding, radius, type — so the
+   three read as one set. Only the colour and the dog differ. Its own padding is
+   tightened because the dog is doing some of the work a word would. */
+.esf-ask {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border: 1px solid #C97B0E;
+  border-radius: 13px;
+  background: #E9A227;
+  color: #2B1A0E;
+  font-size: 13px;
+  font-weight: 850;
+  font-family: Arial, Helvetica, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.esf-ask:hover { filter: brightness(1.05); }
+/* 22px, not 30 — the dog sized the button before, standing taller than the
+   type beside it and pushing Ask out of line with Back and Continue. */
+.esf-ask-face {
+  width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: block;
+  background: #FFF;                      /* the art's own ring, continued */
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .9);
+}
+.esf-ask-emoji { font-size: 17px; line-height: 1; }
+
+/* ── The panel header ────────────────────────────────────────────────────────
+   TYPE LEFT, BUDDY RIGHT, and as short as it can be. The picture is what says
+   "you are talking to someone" before a word is read — without it the header
+   was two lines of grey type and read as a settings pane.
+
+   He was briefly centred with the words underneath, which made him unmissable
+   and cost about 75px of a panel that is only three-quarters of a phone tall.
+   The transcript is what people opened this for, and the header was eating two
+   bubbles' worth of it.
+
+   He sits flush to the bottom edge with no padding under him, so the header is
+   only as tall as he is. Every pixel of chrome here comes out of the
+   conversation. */
+/* The title and Buddy are ONE centred group, not two things pinned to opposite
+   edges. Apart, the eye had to travel the width of the panel and they read as
+   a label on the left and a logo on the right; together they read as him
+   introducing himself. Still one row, so the header stays short. */
+.esf-buddy-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  padding: 4px 16px 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--accent-soft);
+  border-radius: 22px 22px 0 0;
+}
+.esf-buddy-title {
+  margin: 0 0 11px; font-size: 19px; font-weight: 900;
+  color: var(--text); letter-spacing: -.01em;
+}
+.esf-buddy-hero { width: 58px; height: auto; display: block; flex: 0 0 auto; margin-bottom: -1px; }
+
+/* ── Buddy's avatar on a run of bubbles ──────────────────────────────────────
+   ONE face per run, on the last bubble, with the bubbles above it tucked in.
+   Three stacked paragraphs each wearing the same face read as three people
+   talking. The empty span holds the gutter so the bubbles in a run stay in
+   one column. */
+.esf-buddy-row { display: flex; align-items: flex-end; gap: 7px; }
+.esf-buddy-avatar {
+  flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%;
+  overflow: hidden; background: transparent;
+}
+.esf-buddy-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.esf-buddy-row-end .esf-buddy-avatar { background: #FFF; box-shadow: 0 0 0 1px var(--line); }
+/* A bubble mid-run keeps its corner square on the side the tail will be, so a
+   run reads as one utterance broken over lines. */
+.esf-bubble-mid.chat-bubble-buddy { border-bottom-left-radius: 16px; }
+.esf-bubble-mid.chat-bubble-user  { border-bottom-right-radius: 16px; }
+.esf-buddy-thread .chat-row-user  { margin-left: 37px; }
+
+/* ── A lifestyle question, and the figure it reaches ─────────────────────────
+   THE OPTIONS LIVE INSIDE THE PANEL. A native <select> was the first build and
+   the owner's own ask, and on a real phone it is right — the options open as a
+   picker sheet. But this prototype is a phone FRAME inside a desktop browser,
+   and a select's option list is drawn by the operating system rather than laid
+   out by the page, so it ignores the frame and spills out of the bottom of the
+   phone. No CSS can contain it; the control has to change.
+
+   These are ordinary buttons, capped in height and scrolling inside the footer.
+   The cap is what guarantees it: six options at 40px would be 240px and the
+   footer would push the transcript out of the panel, so the list scrolls rather
+   than the panel growing. */
+.esf-buddy-q { padding-bottom: 9px; }
+.esf-buddy-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* About three and a half rows. Taller and the footer takes half the panel
+     and the transcript -- the thing they opened this for -- is squeezed to a
+     couple of bubbles. Only three questions in the pack exceed four options. */
+  max-height: 150px;
+  overflow-y: auto;
+  /* Room for the focus ring, which is drawn OUTSIDE the button and would be
+     clipped by the scroller otherwise. Matched padding keeps the content box
+     where it was. */
+  margin: 0 -4px;
+  padding: 2px 4px;
+}
+.esf-buddy-opt {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.esf-buddy-opt:hover { border-color: var(--accent); background: var(--accent-soft); }
+.esf-buddy-q-step {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: .6;
+}
+
+
+/* ── The menu: three buttons, one row, always the same three ─────────────────
+   [ Back to the list ]  [ Start over ]  [ Help me calculate this ]
+
+   A GRID, not a chip rack. Chips size themselves to their text and wrap, which
+   is exactly wrong here: these three moved position on nearly every screen and
+   spilled onto a second line, so the pattern had to be re-read each time.
+   Equal columns pin each action to a place the user can learn once.
+
+   A button that does not apply is disabled rather than removed — removing one
+   would shift the other two, which is the one thing this row exists to stop. */
+.esf-buddy-nav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding-bottom: 9px;
+}
+.esf-buddy-navbtn {
+  min-height: 44px;
+  padding: 6px 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.esf-buddy-navbtn:not(:disabled):hover { background: var(--accent-soft); border-color: var(--accent); }
+/* Visibly out of reach, still holding its column. */
+.esf-buddy-navbtn:disabled { opacity: .38; cursor: default; }
+/* The one that does something to the row behind the panel reads as the action
+   of the three, without competing with the figure when one is on offer. */
+.esf-buddy-navbtn-go:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* The figure gets a full-width row above the menu. It is THE action at that
+   moment; sitting it beside two ways out would make it one option of three. */
+.esf-buddy-applyrow { padding-bottom: 9px; }
+.esf-buddy-apply {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.esf-buddy-apply:hover { filter: brightness(1.06); }

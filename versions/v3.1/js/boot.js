@@ -89,7 +89,13 @@ function bootV3() {
   // spend-limit goal is a monthly ceiling (>100% is bad). The seed uses two
   // different status words for exactly that reason — "behind" vs "over".
   state.strategicGoal = v3Clone(PERSONA.goals.strategic);
-  state.tacticalGoals = v3Clone(PERSONA.goals.tactical);
+  // The seeded "Build a $3,000 emergency fund" is dropped: the ESF tool owns
+  // that goal now, and a pre-existing one is a fund the tester never created,
+  // sitting next to the one they did with a different target. Filtered HERE
+  // rather than edited out of persona.json — that file stays byte-identical to
+  // the spec copy, the same reason the L11 observation is reframed in state.
+  state.tacticalGoals = v3Clone(PERSONA.goals.tactical)
+    .filter(g => !/emergency\s*(savings\s*)?fund/i.test(String((g && g.label) || "")));
   // Shape the seed the same way the L11 observation reframe does — in state, so
   // data/*.json stays verbatim. A spend-limit goal needs its category to track
   // month-to-date live, and a savings goal needs a start date to compute pace.

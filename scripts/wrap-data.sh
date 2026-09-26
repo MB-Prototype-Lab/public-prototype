@@ -32,6 +32,7 @@ global_for() {
     journal-questions) echo "JOURNAL_QUESTIONS" ;;
     estimator-questions) echo "ESTIMATOR_QUESTIONS" ;;
     help-me-out)       echo "HELP_ME_OUT" ;;
+    emergency-fund)    echo "EMERGENCY_FUND" ;;
     test-profiles)     echo "TEST_PROFILES" ;;
     dog-breeds)        echo "DOG_BREEDS" ;;
     card-apr)          echo "CARD_APR" ;;
@@ -40,6 +41,7 @@ global_for() {
     zip-cost-of-living) echo "ZIP_COST_OF_LIVING" ;;
     daily-scripts)     echo "DAILY_SCRIPTS" ;;
     buddy-responses)   echo "BUDDY_RESPONSES" ;;
+    buddy-esf)         echo "BUDDY_ESF" ;;
     lessons)           echo "LESSONS_V3" ;;   # not LESSONS — v2's state.lessons still exists
     *)                 echo "" ;;
   esac

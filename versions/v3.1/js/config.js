@@ -39,3 +39,14 @@ const PROFILE_PICKER = true;
 // tester who once answered "no card" unable to see the questions at all.
 // state.lessonProfile is still written either way; the calculator seeds from it.
 const LESSON_REUSE_FRAMING = false;
+// ESF-ONLY BUILD — the prototype narrowed to the emergency fund.
+//
+//   true  -> onboarding asks only what the emergency fund reads, then opens it;
+//            the app shows Goals and the fund and nothing else
+//   false -> the full app, exactly as it was
+//
+// Hides, never deletes. Every other screen, renderer and step is still in the
+// code and still routed for the admin jump list; this only takes them out of
+// what a tester walks through. Same rule as the two flags above: flipping it
+// must not require unwinding anything else.
+const ESF_ONLY = false;
