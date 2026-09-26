@@ -28,6 +28,8 @@ const destinations = [
   ["journalDone",    "Journal: Done"],
   ["aboutMe",        "Budget"],
   ["budgetBuild",    "Budget: Build (3 steps)"],
+  ["esfBuild",       "Emergency fund: Capture (4 steps)"],
+  ["esfPlan",        "Emergency fund: The number"],
   ["helpMeOut",      "Budget: Help me out"],
   ["profilePicker",  "Starting profile"],
   ["spendingProfile","Budget: Spending Profile"],
@@ -132,8 +134,9 @@ const state = {
   lessonVariantId: null,
   lessonVariantScript: null,
   // Per-lesson framing result for THIS session (answers, inferred figure,
-  // bucket, chosen variant). Skips re-asking on re-entry; cleared on refresh
-  // (D03 — in-memory only, no persistent cooldown).
+  // bucket, chosen variant). The LATEST answers only -- a re-open asks again
+  // (LESSON_REUSE_FRAMING, js/config.js). Cleared on refresh (D03 — in-memory
+  // only, no persistent cooldown).
   lessonProfile: {},
   // Parked hyperframe plan + runtime figures for the later staging-area video.
   lessonVisualPlan: null,
@@ -190,6 +193,24 @@ const state = {
   // The Help-me-out run for ONE category: its answers, its stage, and the
   // figure they land on. The queue of categories lives on budgetBuild.
   helpMeOut: null,
+
+  // ── Emergency fund ────────────────────────────────────────────────────────
+  // esf        the in-flight run: rows, buffer, coverage, screen-4 answers
+  // expenses   the SAVED survival expense set, keyed on the taxonomy. Written
+  //            by esfCommit and deliberately not ESF-local — the permanent
+  //            expenses list reads it without re-running the wizard (spec §12)
+  // esfGoal    the tactical savings goal the run created, kept by reference so
+  //            an edit can find it again without matching on the label
+  // esfEvents  session log for a moderated test. In-memory by design (D03):
+  //            what one tester did in one sitting, read off the admin panel
+  esf: null,
+  expenses: null,
+  esfGoal: null,
+  esfEvents: [],
+  // Set when the tester says they already have a fund and does not want to
+  // build one. No figure, no goal — just a record that the question has been
+  // answered, so the task is not put to them again.
+  esfSelfReported: null,
   // Which of the nine starting profiles is applied, or null for the persona
   // seed. Written only by profileApply().
   activeProfileId: null,
@@ -278,11 +299,11 @@ const state = {
 
   tasks: [
     {
-      title: "Build your starter budget",
-      description: "Create a rough first budget without connecting accounts.",
+      title: "Saving for an emergency",
+      description: "Work out what a month of survival costs, and what to save toward.",
       cta: "Start",
-      tab: "aboutMe",
-      destination: "budgetBuild",
+      tab: "goals",
+      destination: "esfBuild",
       completed: false
     },
     {
@@ -987,10 +1008,16 @@ function resetUserData() {
   state.monthlyUpdateGap     = null;
   state.editingGoalId        = null;
   state.pendingBaseline      = null;
+  state.esf                  = null;
+  state.expenses             = null;
+  state.esfGoal              = null;
+  state.esfEvents            = [];
+  state.esfSelfReported      = null;
   state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1, scrubWasPlaying: false };
   state.chat                 = { messages: [], bubbles: [] };
   // Lesson framing answers and the derived visual plan. Without these a reset
-  // re-seeds the figures but the lesson never re-asks its framing questions.
+  // keeps the last run's figures (and, with LESSON_REUSE_FRAMING on, the lesson
+  // would never re-ask its framing questions).
   state.lessonFraming        = null;
   state.lessonProfile        = {};
   state.lessonVisualPlan     = null;

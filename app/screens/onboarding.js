@@ -30,7 +30,81 @@
 // (onbCommuteDetail, onbSetLifestyle, onbTransportMonthly, ONB_CAR_CLASSES and
 // the rest), and putting a step back is a one-word edit this way. Do not
 // "clean up" the branches below on the grounds that nothing reaches them.
-const ONB_STEPS = ["name", "goal", "zip", "household", "income", "buddy", "video"];
+// Two step lists, chosen by the ESF_ONLY flag in js/config.js (which loads
+// first). The full list is the v3.1 onboarding plus the three questions the
+// emergency fund needs; the ESF list is only what the fund reads, in the order
+// the ESF spec asks it. Nothing is deleted either way — a step outside the
+// active list keeps its renderer and simply isn't walked.
+const ONB_STEPS_FULL = ["name", "goal", "zip", "household", "place", "income",
+                        "coverage", "miles", "buddy", "video"];
+const ONB_STEPS_ESF  = ["zip", "income", "household", "place", "coverage", "miles"];
+const ONB_STEPS = (typeof ESF_ONLY !== "undefined" && ESF_ONLY) ? ONB_STEPS_ESF : ONB_STEPS_FULL;
+
+// ── Who lives with you ───────────────────────────────────────────────────────
+// Adults are asked by AGE RANGE, not typed ages: the owner's rule for this flow
+// is ranges everywhere, and the marketplace-premium estimate only needs an age
+// close enough to land on the right step of the ACA age curve. `age` is the
+// figure a range stands for when a model needs one number.
+const ONB_ADULT_AGES = [
+  { id: "18-25", label: "18–25", age: 23 },
+  { id: "26-34", label: "26–34", age: 30 },
+  { id: "35-44", label: "35–44", age: 40 },
+  { id: "45-54", label: "45–54", age: 50 },
+  { id: "55-64", label: "55–64", age: 60 },
+  { id: "65+",   label: "65 or older", age: 67 }
+];
+const ONB_MAX_ADULTS = 4;
+
+// Kids by the three buckets the ESF spec names. The buckets are chosen by what
+// they change: 13 is when a kid gets their own phone line, 18 is when a
+// "kid" starts costing like an adult at the grocery store.
+// No 18+ bucket: someone over 18 living at home is an adult, and the adult
+// count above already has them. Counting them twice would inflate household
+// size, and with it groceries, utilities and the premium estimate.
+const ONB_KID_BUCKETS = [
+  { id: "under13", label: "Kids 0–12" },
+  { id: "teen",    label: "Kids 13–17" }
+];
+const ONB_MAX_KIDS_PER_BUCKET = 6;
+
+// ── Your place ───────────────────────────────────────────────────────────────
+// Type only — rent or own is read off the two housing fields on the fund's first
+// screen, which can say "both" where a question here could not. `hoa` is the
+// branch the HOA estimate takes; `home` is the help-me-out utilities key.
+// `short` is for prose, where the tile label is too long to sit in a sentence:
+// "Based on apartment · studio or 1 bedroom in 37203 with 1 person." wrapped to
+// two lines and put the ESF's utilities step 6px over the no-scroll budget.
+// The tiles keep the full label — there it is a heading with room around it.
+const ONB_PLACE_TYPES = [
+  { id: "aptSmall",   label: "Apartment · studio or 1 bedroom", short: "a small apartment", hoa: "none",  home: "apt1" },
+  { id: "aptLarge",   label: "Apartment · 2 or more bedrooms",  short: "a 2-bed apartment",           hoa: "none",  home: "apt2" },
+  { id: "condo",      label: "Condo or townhome",               short: "a condo or townhome",         hoa: "condo", home: "apt2" },
+  { id: "houseSmall", label: "House · 2–3 bedrooms",            short: "a 2–3 bed house",             hoa: "house", home: "house2" },
+  { id: "houseLarge", label: "House · 4 or more bedrooms",      short: "a 4-bed house",               hoa: "house", home: "house4" }
+];
+
+// ── Health coverage ──────────────────────────────────────────────────────────
+// "employer" is the one answer the fund treats differently: it is the only
+// coverage that ends with the paycheck, so it is the only one that gets an
+// unemployed-insurance estimate.
+const ONB_COVERAGE = [
+  { id: "employer", label: "Through my job" },
+  { id: "self",     label: "I buy it myself" },
+  { id: "public",   label: "Medicaid or Medicare" },
+  { id: "none",     label: "No coverage" }
+];
+
+// ── Miles a day ──────────────────────────────────────────────────────────────
+// `miles` is the figure a range stands for. "I don't drive" is an answer, not a
+// skip: without it a tester with no car would be charged fuel and upkeep for
+// the smallest range.
+const ONB_MILES = [
+  { id: "none",   label: "I don't drive", miles: 0 },
+  { id: "lt5",    label: "Under 5 miles",  miles: 3 },
+  { id: "5to15",  label: "5–15 miles",     miles: 10 },
+  { id: "15to30", label: "15–30 miles",    miles: 22 },
+  { id: "30plus", label: "More than 30 miles", miles: 40 }
+];
 
 // Onboarding asks only the install-relevant lifestyle dimensions. The full six
 // live in the standalone lifestyle wizard (LW_QUESTIONS); the dims not asked
@@ -111,21 +185,44 @@ function onbLifestyleQuestions() {
 // therefore cannot change — the slider refines the FIGURE inside a band, it
 // does not add bands.
 //
-// b5's data max is 999999999. A slider cannot express that without making the
-// usable part of the track a couple of pixels wide, so it stops at 400k and the
-// top of the track reads as open.
+// THESE IDS ARE UI-LOCAL. They look like the peer model's b1–b5 and are not
+// the same thing: benchIncomeBand() derives the lookup band from the FIGURE,
+// never from this id, so splitting "Over $140,000" into two display bands
+// costs the peer model nothing — both still resolve to its b5. Nothing reads
+// `o.incomeBand` except this screen and the admin panel.
+//
+// The top band is open. Its data max is 999999999, which a slider cannot
+// express without leaving two usable pixels of track, so it stops at a figure
+// the track can draw and reads as open above it.
+//
+// `step` is PER BAND, so the grid is fine where the money is and coarse where
+// dragging $1,000 at a time would be absurd. Every seed below is the band's
+// own midpoint snapped to its own step — see onbIncomeSeed(). A seed that is
+// not a valid stop makes the browser snap the thumb the instant it is touched,
+// so the figure shown before the drag is unreachable after it. Deriving it
+// removes that whole class of bug rather than asking each row to get it right.
 const ONB_INCOME_BANDS = [
-  { id: "b1", label: "Under $35,000",      annual: 25000,  min: 0,      max: 35000 },
-  { id: "b2", label: "$35,000 – $60,000",  annual: 47500,  min: 35000,  max: 60000 },
-  { id: "b3", label: "$60,000 – $90,000",  annual: 75000,  min: 60000,  max: 90000 },
-  { id: "b4", label: "$90,000 – $140,000", annual: 115000, min: 90000,  max: 140000 },
-  { id: "b5", label: "Over $140,000",      annual: 175000, min: 140000, max: 400000, openTop: true }
+  { id: "b1", label: "Under $35,000",        min: 0,      max: 35000,   step: 1000 },
+  { id: "b2", label: "$35,000 – $60,000",    min: 35000,  max: 60000,   step: 1000 },
+  { id: "b3", label: "$60,000 – $90,000",    min: 60000,  max: 90000,   step: 2500 },
+  { id: "b4", label: "$90,000 – $140,000",   min: 90000,  max: 140000,  step: 2500 },
+  { id: "b5", label: "$140,000 – $300,000",  min: 140000, max: 300000,  step: 10000 },
+  { id: "b6", label: "$300,000+",            min: 300000, max: 1000000, step: 50000, openTop: true }
 ];
-// 500, not 1000: b2 seeds at 47,500. On a 1,000 grid that figure is not a valid
-// stop, so the browser would snap the thumb the moment you touched it and the
-// number shown before the drag would not be reachable after it. Every band's
-// min and seed divides by 500.
-const ONB_INCOME_STEP = 500;
+
+/**
+ * The figure a band opens on: its midpoint, snapped to its own step.
+ *
+ * An open-topped band has no midpoint worth using — half of "$300,000+" as
+ * drawn is $650,000, which is not a neutral guess about anyone. It opens on
+ * its floor instead, and the copy says the slider is there to correct it.
+ */
+function onbIncomeSeed(band) {
+  if (!band) return null;
+  if (band.openTop) return band.min;
+  const mid = (band.min + band.max) / 2;
+  return Math.round(mid / band.step) * band.step;
+}
 
 // "If you could improve one thing about your money…" — multi-select, max 3,
 // presets only. Folds into the single state.strategicGoal the app expects.
@@ -141,10 +238,7 @@ const ONB_GOALS = [
   "Just understand where it goes",
   "Spend less on eating out",
   "Cancel what I don't use",
-  "Be ready for a surprise bill",
-  "Save for something big",
-  "Stop worrying about money",
-  "Put money aside for a trip"
+  "Be ready for a surprise bill"
 ];
 const ONB_GOALS_MAX = 3;
 
@@ -158,7 +252,56 @@ const ONB_GOALS_MAX = 3;
 // thinks in: they know their dog is a husky-corgi, not which silhouette that is.
 // `breed` still exists on the buddy and in the admin dropdowns; it is simply no
 // longer what this step asks for.
-const ONB_BUDDY_STEPS = ["bodyType", "furColor", "furPattern", "eyeColor", "name"];
+//
+// THEN THE CREATOR WENT AWAY. The owner cut the five sub-steps to two (meet the
+// buddy; name it and pick its pronouns), then folded those two into ONE screen:
+// art, greeting, name, pronouns. The body-type grid, the swatches, the pattern
+// list and the separate name screen are NOT deleted -- their branches still sit
+// in onbBuddyStep(), dormant the way "trial" is dormant in ONB_STEPS, so putting
+// a string back here brings a screen back with nothing to rebuild.
+const ONB_BUDDY_STEPS = ["meet"];
+
+// The name a buddy gets when the tester leaves the box blank. It is shown as the
+// box's faded PLACEHOLDER while they are on the step -- a suggestion, cleared by
+// clicking -- and only becomes the name when they LEAVE the step forward
+// (Continue or Skip, via onbSetStep). Never written on arrival: a real value
+// in the box is exactly what read as pre-filled rather than suggested. Never in
+// onbStart() either: js/profiles.js only fills in a profile's buddy name when
+// the name is empty, so seeding it there would silently stop Skip all ->
+// profile picker from naming the buddy. Only fills a blank name.
+const ONB_BUDDY_DEFAULT_NAME = "Buddy";
+
+function onbBuddyNameDefault(o) {
+  if (!o || !o.buddy) return;
+  if (o.buddy.name && String(o.buddy.name).trim()) return;
+  o.buddy.name = ONB_BUDDY_DEFAULT_NAME;
+  if (state.buddy) state.buddy.name = ONB_BUDDY_DEFAULT_NAME;
+}
+
+/**
+ * Move onboarding to step `i`, and run what moving between steps needs.
+ *
+ * EVERY step change goes through here -- Continue, Back, Skip, the deep link
+ * and the admin jump -- so a step-transition rule lives in one place. Today
+ * there is one: leaving the buddy step FORWARD with a blank name makes the
+ * buddy "Buddy". Back does not, so returning still shows the faded placeholder.
+ */
+function onbSetStep(o, i) {
+  if (!o) return;
+  const from = o.step;
+  o.step = Math.max(0, Math.min(ONB_STEPS.length - 1, Number(i) || 0));
+  if (ONB_STEPS[from] === "buddy" && o.step > from) onbBuddyNameDefault(o);
+}
+
+/**
+ * The buddy sub-step worth its own page key, or "". Only the NAME screen: the
+ * first sub-step shares the step's own key so existing links keep their meaning.
+ * Read by scrollKey() (js/utils.js) and screenTitle() (js/screen-url.js).
+ */
+function onbBuddySubKey(o) {
+  if (!o || ONB_STEPS[o.step] !== "buddy" || !(o.buddyIndex > 0)) return "";
+  return ONB_BUDDY_STEPS[o.buddyIndex] || "";
+}
 
 function onbStart() {
   state.onboarding = {
@@ -169,7 +312,14 @@ function onbStart() {
     skipPrompt: false,     // name-step "skip this / skip all" confirmation
     name: "",
     zip: "",
-    householdSize: null,
+    zipDeclined: false,    // "Maybe share later" — national figures, on request
+    householdSize: null,   // derived from adults + kids; kept because the peer model reads it
+    adultCount: null,
+    adultAges: [],         // one ONB_ADULT_AGES id per adult, in order
+    kids: { under13: 0, teen: 0 },
+    placeType: null,
+    coverage: null,
+    miles: null,
     incomeBand: null,
     incomeExact: null,     // slider refinement inside the picked band
     lifestyle: Object.assign({}, PERSONA.lifestyle),   // persona is the fallback
@@ -201,6 +351,8 @@ function onbStart() {
   // carry over from the persona; the new pattern attribute gets a default so the
   // stage is never blank.
   state.onboarding.buddy.name = "";
+  // Required on the name screen and deliberately without a default.
+  state.onboarding.buddy.pronouns = "";
   state.onboarding.buddy.furPattern = state.onboarding.buddy.furPattern || "solid";
   // Mirror onto state.buddy, which is what the stage actually renders from
   // (renderBuddyInner). Without this the draft says prototype while the stage
@@ -208,6 +360,46 @@ function onbStart() {
   // effect once the tester taps something.
   state.buddy = Object.assign({}, state.onboarding.buddy);
   return state.onboarding;
+}
+
+// ── Who lives with you — handlers ────────────────────────────────────────────
+
+/** Household size follows from the answers; it is never asked separately. */
+function onbSyncHousehold(o) {
+  const kids = o.kids || {};
+  const n = (o.adultCount || 0) + (kids.under13 || 0) + (kids.teen || 0);
+  o.householdSize = n > 0 ? n : null;
+}
+
+function onbSetAdults(n) {
+  const o = state.onboarding;
+  o.adultCount = n;
+  // Keep ages already chosen; trim or pad to the new count. A new adult opens
+  // unanswered rather than on a guessed age.
+  o.adultAges = (o.adultAges || []).slice(0, n);
+  while (o.adultAges.length < n) o.adultAges.push(null);
+  onbSyncHousehold(o);
+  render();
+}
+
+function onbSetAdultAge(i, id) {
+  const o = state.onboarding;
+  if (!o.adultAges) o.adultAges = [];
+  o.adultAges[i] = id || null;
+  render();
+}
+
+function onbStepKids(bucket, delta) {
+  const o = state.onboarding;
+  const cur = (o.kids && o.kids[bucket]) || 0;
+  o.kids[bucket] = Math.max(0, Math.min(ONB_MAX_KIDS_PER_BUCKET, cur + delta));
+  onbSyncHousehold(o);
+  render();
+}
+
+function onbPick(field, id) {
+  state.onboarding[field] = id;
+  render();
 }
 
 function onbNext() {
@@ -219,9 +411,10 @@ function onbNext() {
   }
   // The buddy step is a multi-element creator — walk its sub-steps too.
   if (ONB_STEPS[o.step] === "buddy" && o.buddyIndex < ONB_BUDDY_STEPS.length - 1) {
-    o.buddyIndex++; render(); return;
+    o.buddyIndex++;
+    render(); return;
   }
-  if (o.step < ONB_STEPS.length - 1) { o.step++; render(); return; }
+  if (o.step < ONB_STEPS.length - 1) { onbSetStep(o, o.step + 1); render(); return; }
   onbFinish();
 }
 
@@ -230,8 +423,23 @@ function onbBack() {
   if (ONB_STEPS[o.step] === "video") onbVideoStop();
   if (ONB_STEPS[o.step] === "lifestyle" && o.lwIndex > 0) { o.lwIndex--; render(); return; }
   if (ONB_STEPS[o.step] === "buddy" && o.buddyIndex > 0) { o.buddyIndex--; render(); return; }
-  if (o.step > 0) { o.step--; render(); return; }
+  if (o.step > 0) { onbSetStep(o, o.step - 1); render(); return; }
+  // On the FIRST step there is nowhere back to, and a chevron that does
+  // nothing reads as a broken control — the tester presses it, the screen
+  // holds still, and there is no way to tell that from a hang. So it clears
+  // the step instead: start over, which is the only backwards move left.
+  onbResetStep();
 }
+
+// Wipe whatever the current step collected, leaving the tester on it. Only the
+// first step's chevron uses this today; it is written per-step rather than as
+// "clear the ZIP" so the next step to need it does not have to special-case.
+function onbResetStep() {
+  const o = state.onboarding;
+  const key = ONB_STEPS[o.step];
+  if (key === "zip") { o.zip = ""; o.zipDeclined = false; }
+  if (key === "name") o.name = "";
+  render();}
 
 // Top-right Skip. Writes no value, so the persona fallback stands for the
 // financial fields. The name step is special — it opens a confirmation instead
@@ -240,9 +448,20 @@ function onbSkip() {
   const o = state.onboarding;
   const key = ONB_STEPS[o.step];
   if (key === "video") onbVideoStop();
+  // ESF-only: Skip means skip the WHOLE setup, straight into the fund. There is
+  // no "just this screen" choice and no profile picker in between — both were
+  // screens the tester had to get through to reach the thing being tested.
+  if (typeof ESF_ONLY !== "undefined" && ESF_ONLY) {
+    if (typeof profileDefault === "function") {
+      const d = profileDefault();
+      if (d && !state.activeProfileId) profileApply(d.id);
+    }
+    onbFinish();
+    return;
+  }
   if (key === "name") { o.skipPrompt = true; render(); return; }
   o.lwIndex = 0;   // skip the entire lifestyle block in one go
-  if (o.step < ONB_STEPS.length - 1) { o.step++; render(); return; }
+  if (o.step < ONB_STEPS.length - 1) { onbSetStep(o, o.step + 1); render(); return; }
   onbFinish();
 }
 
@@ -251,7 +470,7 @@ function onbSkip() {
 function onbSkipName() {
   const o = state.onboarding;
   o.skipPrompt = false;
-  if (o.step < ONB_STEPS.length - 1) { o.step++; }
+  if (o.step < ONB_STEPS.length - 1) { onbSetStep(o, o.step + 1); }
   render();
 }
 
@@ -307,7 +526,21 @@ function onbLiveInput(field, value, commit) {
   if (commit) { render(); return; }
 
   uiSetEnabled("onbContinue", onbAnswered(ONB_STEPS[o.step], o));
-  if (field === "zip") uiPatchHTML("onbColChart", onbColChart(value));
+  if (field === "zip") {
+    uiPatchHTML("onbColChart", onbColChart(value));
+    // A ZIP is exactly five digits, so the field knows it is finished before
+    // the tester does. Put the keypad away rather than making them dismiss it
+    // to reach a Continue button it is sitting on top of.
+    //
+    // kbdCommit() rather than kbdClose(): close alone leaves the field focused
+    // and fires no `change`, so the value is committed only by this `input`
+    // pass and the field still looks active under a keyboard that has gone.
+    // Commit blurs and dispatches change, which is what a real Done does.
+    if (String(value).replace(/\D/g, "").length >= 5 &&
+        typeof kbdCommit === "function" && state.kbd && state.kbd.open) {
+      kbdCommit();
+    }
+  }
 }
 
 // ── Income: a band, then a slider inside it ──────────────────────────────────
@@ -325,7 +558,7 @@ function onbIncomeBand(id) {
 function onbIncomeValue(o) {
   const band = onbIncomeBand(o.incomeBand);
   if (!band) return null;
-  return o.incomeExact != null ? o.incomeExact : band.annual;
+  return o.incomeExact != null ? o.incomeExact : onbIncomeSeed(band);
 }
 
 function onbSetIncomeBand(id) {
@@ -335,19 +568,49 @@ function onbSetIncomeBand(id) {
   // Re-seed on every band change. Carrying the old figure over would leave the
   // slider outside its own track, which the browser silently clamps — so the
   // number shown and the number stored would disagree.
-  o.incomeExact = band ? band.annual : null;
+  o.incomeExact = onbIncomeSeed(band);
   render();
 }
 
+/**
+ * Slider. Snaps to the band's own step and patches the label only — a render()
+ * here would replace the <input> the pointer is captured on and the thumb
+ * would stop tracking mid-drag.
+ */
 function onbSetIncomeExact(value) {
   const o = state.onboarding;
   const band = onbIncomeBand(o.incomeBand);
   if (!band) return;
-  const n = Math.round((Number(value) || 0) / ONB_INCOME_STEP) * ONB_INCOME_STEP;
+  const n = Math.round((Number(value) || 0) / band.step) * band.step;
   o.incomeExact = Math.max(band.min, Math.min(band.max, n));
-  // Patch the label only. A render() here would replace the <input> the pointer
-  // is captured on and the thumb would stop tracking mid-drag.
   uiPatchHTML("onbIncomeLabel", onbIncomeLabelText(o));
+  uiSetValue("onbIncomeTyped", onbIncomeTypedText(o.incomeExact));
+}
+
+/** Grouped digits, no currency mark — the box is a field, not a readout. */
+function onbIncomeTypedText(v) {
+  return v == null ? "" : Number(v).toLocaleString("en-US");
+}
+
+/**
+ * Typed figure. Deliberately NOT snapped to the band's step: someone who types
+ * 83,400 means 83,400, and rounding it to the nearest 2,500 would overwrite an
+ * exact answer with a worse one. The slider is the thing with a grid.
+ *
+ * It does move the band when the figure belongs to a different one, rather than
+ * clamping — typing 250,000 under "Under $35,000" is a picked band that is
+ * simply wrong, and silently storing 35,000 would be the screen lying about
+ * what it was told.
+ */
+function onbSetIncomeTyped(value) {
+  const o = state.onboarding;
+  const n = Math.max(0, Math.round(Number(String(value).replace(/[^0-9.]/g, "")) || 0));
+  if (!n) { render(); return; }
+  const band = ONB_INCOME_BANDS.find(b => n >= b.min && n < b.max) ||
+               ONB_INCOME_BANDS[ONB_INCOME_BANDS.length - 1];
+  o.incomeBand = band.id;
+  o.incomeExact = Math.min(n, band.max);
+  render();
 }
 
 function onbIncomeLabelText(o) {
@@ -366,17 +629,22 @@ function onbIncomeSlider(o) {
   if (!band) return "";
   const v = onbIncomeValue(o);
   return `
-    <div class="card" style="margin-top:14px;">
+    <div class="card onb-income-card">
       <p class="slider-readout" id="onbIncomeLabel">${onbIncomeLabelText(o)}</p>
       <input class="journal-slider" type="range"
-             min="${band.min}" max="${band.max}" step="${ONB_INCOME_STEP}"
+             min="${band.min}" max="${band.max}" step="${band.step}"
              value="${v}"
              oninput="onbSetIncomeExact(this.value)"
              aria-label="Annual income">
-      <p class="helper" style="margin:8px 0 0;font-size:11px;">
-        ${band.openTop
-          ? "Drag to your figure — the top of the track covers anything above it."
-          : "Drag to your figure. This is what the budget works from."}
+      <div class="onb-income-typed">
+        <label for="onbIncomeTyped">Or type it</label>
+        <input id="onbIncomeTyped" inputmode="numeric" value="${onbIncomeTypedText(v)}"
+               onchange="onbSetIncomeTyped(this.value)"
+               aria-label="Annual income, typed">
+      </div>
+      <p class="task-desc" style="margin:8px 0 0;">
+        <span class="onb-line">Slide the scale if you want to be more accurate.</span>
+        <span class="onb-line">Otherwise we'll use the middle of the range.</span>
       </p>
     </div>`;
 }
@@ -560,7 +828,33 @@ function onbFinish() {
 
   state.profile.name = o.name || (fallback ? fallback.name : "Me");
   if (o.zip) state.profile.zip = o.zip;
+  // "Maybe share later" is an ANSWER, not a skip: it asks for national
+  // figures. The default profile applied above carries its own ZIP, so the
+  // request has to be honoured explicitly or it is silently ignored — and an
+  // empty ZIP is exactly what benchColMultipliers() reads as "no local
+  // adjustment".
+  if (o.zipDeclined) state.profile.zip = "";
   if (o.householdSize) state.profile.householdSize = o.householdSize;
+
+  // ── What the emergency fund reads ─────────────────────────────────────────
+  // Guarded like everything else here: an unanswered question must not
+  // overwrite a profile's value with nothing. The fund's models fall back to
+  // household size when these are absent, so a skipped tester still gets
+  // figures (D19).
+  if (o.adultCount) {
+    state.profile.adults = (o.adultAges || []).map(id => {
+      const band = ONB_ADULT_AGES.find(a => a.id === id);
+      return { ageRange: id, age: band ? band.age : null };
+    });
+    state.profile.kids = Object.assign({ under13: 0, teen: 0 }, o.kids);
+  }
+  if (o.placeType) state.profile.placeType = o.placeType;
+  if (o.coverage)  state.profile.coverage = o.coverage;
+  if (o.miles) {
+    const m = ONB_MILES.find(x => x.id === o.miles);
+    state.profile.milesRange = o.miles;
+    state.profile.milesPerDay = m ? m.miles : null;
+  }
   // The slider's figure if they moved it, else the band's seed. This also
   // drives the budget's monthly figure — which until now was frozen at the
   // seeded persona's $4,390 no matter which band you picked, so "Under $35,000"
@@ -603,7 +897,7 @@ function onbFinish() {
   // The trial pitch is out of the flow (see ONB_STEPS), so nobody answers it —
   // and state.trialAccepted gates diamonds (lrDiamondsForLesson) and the
   // subscriber section of the reward screen. Left null those would be
-  // unreachable. D31 says nothing is gated either way, so everyone gets the
+  // unreachable. D31 said nothing is gated either way, so everyone gets the
   // subscriber tier. Guarded rather than assigned, so onbTrial's answer still
   // wins if that step is ever put back into ONB_STEPS.
   if (state.trialAccepted == null) state.trialAccepted = true;
@@ -623,6 +917,9 @@ function onbFinish() {
     ubTrailRecord("goal", areas.length ? areas[0] : "");
     // The buddy's SPECIES, not the name the tester typed for it.
     ubTrailRecord("buddy", (state.buddy && state.buddy.animal) || "");
+    // One of three fixed ids (BUDDY_PRONOUNS), never typed -- so it may ride
+    // in the URL. Blank when the buddy step was skipped, and then not recorded.
+    ubTrailRecord("pro", (state.buddy && state.buddy.pronouns) || "");
     if (transport != null) ubTrailRecord("comm", transport);
     ubTrailCheckpoint("setup");
   }
@@ -630,6 +927,16 @@ function onbFinish() {
   state.streak = PERSONA.state.streakDaysIfOnboarded;   // 1 day (D06)
   state.onboarding = null;
   observationsRecompute();
+
+  // ESF-only: onboarding hands straight to the fund. It sits on the Goals
+  // stack because that is where the goal it creates will live, so Back from the
+  // fund's first screen has somewhere sensible to go.
+  if (typeof ESF_ONLY !== "undefined" && ESF_ONLY && typeof esfStart === "function") {
+    state.nav.stacks.goals = ["goals"];
+    state.nav.activeStack = "goals";
+    esfStart();
+    return;
+  }
 
   state.nav.stacks.home = ["home"];
   state.nav.activeStack = "home";
@@ -681,7 +988,7 @@ function renderOnboarding() {
           : `<span></span>`}
         ${showControls
           ? `<button class="button" type="button" id="onbContinue" onclick="onbNext()"
-                     ${onbAnswered(key, o) ? "" : "disabled"}>Continue</button>`
+                     ${onbAnswered(key, o) ? "" : "disabled"}>${h(onbContinueLabel(key, o))}</button>`
           : ""}
       </div>
     </div>
@@ -689,14 +996,26 @@ function renderOnboarding() {
   `;
 }
 
+// The footer button's words.
+function onbContinueLabel(key, o) {
+  // The one-screen buddy step reads "Continue" like every other step (owner's
+  // call). Kept as the single place a step could word its button differently.
+  return "Continue";
+}
+
 // Name-step skip confirmation. Reuses the shared .ls-modal-bg scrim.
 function onbSkipPrompt() {
+  const onName = ONB_STEPS[(state.onboarding || {}).step] === "name";
+  const title = onName ? "No name, no problem" : "Skip this one?";
+  const body = onName
+    ? "I can just call you Buddy. Want to skip only this, or the whole setup?"
+    : "Want to skip only this question, or the whole setup?";
   return `
     <div class="ls-modal-bg" onclick="onbSkipCancel()">
       <div class="card" style="max-width:300px;" onclick="event.stopPropagation()">
-        <h1 class="title onb-title" style="margin:0 0 6px;">No name, no problem</h1>
+        <h1 class="title onb-title" style="margin:0 0 6px;">${h(title)}</h1>
         <p class="task-desc" style="margin:0 0 14px;">
-          I can just call you Buddy. Want to skip only this, or the whole setup?
+          ${h(body)}
         </p>
         <button class="button full" style="margin-bottom:8px;" type="button"
                 onclick="onbSkipName()">Just this screen</button>
@@ -713,15 +1032,22 @@ function onbSkipPrompt() {
 function onbAnswered(key, o) {
   if (key === "name")      return !!o.name;
   if (key === "zip")       return !!o.zip;
-  if (key === "household") return !!o.householdSize;
+  // Every adult needs an age range — the unemployed-insurance estimate is priced
+  // per person by age, and a blank one would silently price that adult at zero.
+  if (key === "household") return !!o.adultCount &&
+                                  (o.adultAges || []).length === o.adultCount &&
+                                  o.adultAges.every(Boolean);
+  if (key === "place")     return !!o.placeType;
+  if (key === "coverage")  return !!o.coverage;
+  if (key === "miles")     return !!o.miles;
   if (key === "income")    return !!o.incomeBand;
   if (key === "goal")      return o.improveAreas.length > 0;
   // Same contract as the lesson player: Next unlocks when the piece ends.
   // Skip (top right) still exits at any point, so nothing is blocked (D09).
   if (key === "video")     return !!(o.video && o.video.finished);
-  // Attribute sub-steps always have a default; only naming the buddy is required.
-  if (key === "buddy")     return ONB_BUDDY_STEPS[o.buddyIndex] !== "name"
-                                  || !!(o.buddy.name && o.buddy.name.trim());
+  // The buddy step needs pronouns, which deliberately have no default. A blank
+  // name is allowed: it MEANS "Buddy" (the placeholder), written on leaving.
+  if (key === "buddy")     return !!o.buddy.pronouns;
   return true;
 }
 
@@ -734,8 +1060,11 @@ function onbColChart(zip) {
   // Wait for the whole ZIP. It used to draw at three digits, which was the old
   // prefix model showing through — three digits named a tier. A ZIP now
   // resolves to its county, and four digits of a five-digit code identify
-  // nothing, so a partial chart would be a figure for somewhere else.
-  if (digits.length < 5) return onbColTeaser(digits.length);
+  // nothing, so a partial result would name somewhere else.
+  //
+  // Nothing at all until then: "How this helps" is rendered by the step body
+  // now and stands on its own, so this slot no longer has to fill the gap.
+  if (digits.length < 5) return "";
 
   const col = benchColIndex(zip);
 
@@ -745,45 +1074,26 @@ function onbColChart(zip) {
   if (!col.supported) {
     return `
     <div class="note" style="margin-top:16px;">
-      I don't recognise that one, so I'll use the national average for now. Your peer numbers still work — they're just not tuned to local costs.
+      I don't know that one, so I'll use the national average for now. You'll still see what people like you spend — it just won't be tuned to your area.
     </div>`;
   }
 
-  const zipPct    = 100 + col.pct;
-  const nationPct = 100;
-  const scaleMax  = Math.max(nationPct, zipPct);
-  const nationW   = nationPct / scaleMax * 100;
-  const zipW      = zipPct / scaleMax * 100;
-  const markerX   = Math.max(6, Math.min(94, nationPct / scaleMax * 100));
-
   const where = col.place ? h(col.place) : "your area";
 
-  let text;
-  if (col.pct > 0) {
-    text = `Compared to the national average, the cost of living in ${where} is <strong>${col.pct}% higher</strong>. This helps put your spending in context next to your peers.`;
-  } else if (col.pct < 0) {
-    text = `Compared to the national average, the cost of living in ${where} is <strong>${Math.abs(col.pct)}% lower</strong>. This helps put your spending in context next to your peers.`;
-  } else {
-    text = `The cost of living in ${where} is <strong>about the same</strong> as the national average. This helps put your spending in context next to your peers.`;
-  }
-
+  // Two lines, and they sit directly under the field rather than below the
+  // card. This slot has now been three different things: a two-bar
+  // cost-of-living chart, then a paragraph explaining the peer method. Both
+  // answered a question the tester had not asked at the moment they finished
+  // typing five digits. What they want to know then is "did that work, and
+  // what happens next" — so it confirms the place and says more is coming.
+  //
+  // The chart markup and the method paragraph are gone rather than commented
+  // out; the reasoning is what is worth keeping and it belongs in prose.
+  // `onb-col-chart`, `onb-col-row`, `onb-col-head`, `onb-col-baseline` and
+  // `onb-col-axis` stay in components.css — v3 renders the same chart from its
+  // own copy of this file.
   return `
-    <div class="onb-col-chart">
-      <div class="onb-col-row">
-        <div class="onb-col-head"><span>Nation</span><span>${nationPct}%</span></div>
-        <div class="cmp-bar"><span style="width:${nationW}%;background:var(--muted);"></span></div>
-      </div>
-      <div class="onb-col-row">
-        <div class="onb-col-head"><span>Your ZIP</span><span>${zipPct}%</span></div>
-        <div class="cmp-bar"><span style="width:${zipW}%;background:var(--accent);"></span></div>
-      </div>
-      <div class="onb-col-baseline" style="left:${markerX}%;" aria-hidden="true"></div>
-      <!-- No label on the line: the axis caption below already names it, and
-           two "national average" strings a few pixels apart read as a bug. -->
-      <p class="onb-col-axis">Cost of living · national average = 100%</p>
-    </div>
-    <p class="helper onb-col-text">${text}</p>
-    ${onbColHousingLine(col)}`;
+    <p class="task-desc onb-zip-result">We'll use people like you in ${where}.</p>`;
 }
 
 // The composite is a weighted basket, and most of that basket is priced
@@ -791,38 +1101,131 @@ function onbColChart(zip) {
 // anyone who knows what their own rent is. Housing is where nearly all the
 // variation actually lives, so name it.
 function onbColHousingLine(col) {
-  const h1 = col.housingIndex;
-  if (!h1 || !isFinite(h1)) return "";
-  const mult = Math.round(h1 * 10) / 10;
-  let phrase;
-  if (h1 >= 1.15)      phrase = `runs about <strong>${mult}× the national average</strong>`;
-  else if (h1 <= 0.85) phrase = `runs about <strong>${mult}× the national average</strong>`;
-  else                 phrase = `is <strong>close to the national average</strong>`;
   return `
-    <p class="helper onb-col-text" style="margin-top:8px;">
-      Housing there ${phrase} — that's where most of the difference sits. The rest
-      of a budget, from groceries to streaming, is priced much the same everywhere.
+    <p class="onb-col-text onb-col-lead" style="margin-top:16px;">
+      <span class="onb-line">Housing is usually the biggest one, then food, then getting around.</span>
+      <span class="onb-line">Those three are worth getting right.</span>
     </p>`;
+}
+
+// The declared way out of the ZIP step. The top-bar Skip already leaves the
+// field empty, but it is a generic control that says nothing about what
+// happens next — so a tester who is simply unsure about handing over a ZIP has
+// only an unlabelled escape hatch. This one names the consequence and says the
+// door stays open, which is the honest version of the same action.
+//
+// Hidden once a full ZIP is in: at that point the answer is on screen and an
+// offer to withhold it is noise.
+function onbZipLater(o) {
+  const digits = String(o.zip == null ? "" : o.zip).replace(/\D/g, "");
+  if (digits.length >= 5) return "";
+  return `
+    <div class="onb-zip-later">
+      <button type="button" class="button onb-zip-later-btn" onclick="onbZipDecline()">Maybe share later</button>
+      <p class="onb-zip-later-note">
+        <span class="onb-line">Use the national average for now.</span>
+        <span class="onb-line">I understand it may not show my area.</span>
+      </p>
+    </div>`;
+}
+
+// Leaves the field empty AND records the choice, because those are two
+// different things downstream. onbFinish() applies a default profile to any
+// unanswered field — that profile carries a real ZIP, so without this flag
+// "use the national average" would quietly price the tester in Nashville.
+function onbZipDecline() {
+  const o = state.onboarding;
+  o.zip = "";
+  o.zipDeclined = true;
+  onbNext();
 }
 
 // Before there is anything to chart. The step was a bare input with no reason
 // to fill it in; this says what typing it buys.
 function onbColTeaser(typed) {
-  if (typed > 0) {
-    return `
-    <p class="helper onb-col-teaser">
-      ${5 - typed} more digit${5 - typed === 1 ? "" : "s"} and I'll show you the comparison.
-    </p>`;
-  }
+  // A half-typed ZIP used to get a "2 more digits" nudge, which is a progress
+  // bar for a three-second task — and it REPLACED the card explaining why the
+  // field is there, so the reason vanished on the first keystroke and came
+  // back if you deleted a digit. The card now holds until there is a real
+  // answer to show. `typed` is kept in the signature; the caller has it and a
+  // later state may want it.
   return `
     <div class="note onb-col-teaser-card">
-      <p class="task-title" style="margin:0 0 4px;font-size:13px;">There's a number waiting behind this one</p>
-      <p class="task-desc" style="margin:0;">
-        Type your ZIP and I'll show you how your corner of the country compares
-        to the rest of it. Some places run a third above the national average,
-        some a fifth below — and housing swings further than that.
+      <p class="task-title" style="margin:0 0 6px;font-size:13px;">How this helps</p>
+      <p class="task-desc" style="margin:0 0 8px;">
+        <span class="onb-line">Costs are different depending on where you live.</span>
+        <span class="onb-line">If you enter your ZIP code, I can show you what people like you spend on rent, food, and everything else.</span>
       </p>
+      <p class="task-desc" style="margin:0;font-style:italic;">You decide how to use it</p>
     </div>`;
+}
+
+/** A single-choice tile question — the shape three of the new steps share. */
+function onbTileStep(o, field, options, title, help) {
+  return `
+    <h1 class="title onb-title" style="margin:0 0 6px;">${h(title)}</h1>
+    <p class="helper" style="margin:0 0 14px;">${h(help)}</p>
+    <div class="journal-options">
+      ${options.map(opt => `
+        <button class="journal-opt ${o[field] === opt.id ? "picked" : ""}" type="button"
+                aria-pressed="${o[field] === opt.id}"
+                onclick="onbPick('${field}','${opt.id}')">
+          <span class="journal-opt-label">${h(opt.label)}</span>
+        </button>`).join("")}
+    </div>`;
+}
+
+/**
+ * Who lives with you: how many adults, each adult's age range, and kids by
+ * age group. Adults are tiles, ages are dropdowns, kids are counters — each
+ * control matched to the kind of answer, and nothing here is typed.
+ */
+function onbHouseholdBody(o) {
+  const kids = o.kids || {};
+  const adultLabel = n => n === 1 ? "Just me" : n + " adults";
+
+  const agePickers = (o.adultAges || []).map((picked, i) => `
+    <label class="onb-age">
+      <span>${i === 0 ? "Your age" : "Adult " + (i + 1)}</span>
+      <select class="onb-select" onchange="onbSetAdultAge(${i}, this.value)"
+              aria-label="${i === 0 ? "Your age" : "Age of adult " + (i + 1)}">
+        <option value="" ${picked ? "" : "selected"} disabled>Pick a range</option>
+        ${ONB_ADULT_AGES.map(a => `
+          <option value="${a.id}" ${picked === a.id ? "selected" : ""}>${h(a.label)}</option>`).join("")}
+      </select>
+    </label>`).join("");
+
+  const kidRows = ONB_KID_BUCKETS.map(b => {
+    const n = kids[b.id] || 0;
+    return `
+    <div class="onb-count">
+      <span class="onb-count-label">${h(b.label)}</span>
+      <span class="onb-count-ctl">
+        <button type="button" class="onb-count-btn" onclick="onbStepKids('${b.id}', -1)"
+                ${n === 0 ? "disabled" : ""} aria-label="Fewer ${h(b.label)}">&minus;</button>
+        <span class="onb-count-n" aria-live="polite">${n}</span>
+        <button type="button" class="onb-count-btn" onclick="onbStepKids('${b.id}', 1)"
+                ${n >= ONB_MAX_KIDS_PER_BUCKET ? "disabled" : ""} aria-label="More ${h(b.label)}">+</button>
+      </span>
+    </div>`;
+  }).join("");
+
+  return `
+    <h1 class="title onb-title" style="margin:0 0 6px;">Who lives with you?</h1>
+    <p class="helper" style="margin:0 0 12px;">Count yourself as one of the adults.</p>
+
+    <div class="onb-adults" role="group" aria-label="Number of adults">
+      ${[1, 2, 3, 4].slice(0, ONB_MAX_ADULTS).map(n => `
+        <button class="journal-opt onb-adult-opt ${o.adultCount === n ? "picked" : ""}" type="button"
+                aria-pressed="${o.adultCount === n}" onclick="onbSetAdults(${n})">
+          <span class="journal-opt-label">${adultLabel(n)}</span>
+        </button>`).join("")}
+    </div>
+
+    ${agePickers ? `<div class="onb-ages">${agePickers}</div>` : ""}
+
+    <p class="onb-subhead">Any kids at home?</p>
+    <div class="onb-kids">${kidRows}</div>`;
 }
 
 function onbStepBody(key, o) {
@@ -837,46 +1240,60 @@ function onbStepBody(key, o) {
              onchange="onbLiveInput('name', this.value)">
     </div>`;
 
+  // Centred, one sentence per line. Each sentence is its own block rather than
+  // a <br>, so a sentence too long for the width wraps under itself instead of
+  // breaking the one-per-line rhythm for every line after it.
   if (key === "zip") return `
-    <h1 class="title onb-title" style="margin:0 0 6px;">Where are you these days?</h1>
-    <p class="helper" style="margin:0 0 14px;">
-      A ZIP is plenty — it just helps me learn what things cost near you. Nothing gets shared.
-    </p>
-    <div class="input-group">
-      <input inputmode="numeric" maxlength="5" placeholder="ZIP code" value="${h(o.zip)}"
-             oninput="onbLiveInput('zip', this.value)"
-             onchange="onbLiveInput('zip', this.value)">
-    </div>
-    <div id="onbColChart">${onbColChart(o.zip)}</div>`;
+    <div class="onb-zip-step">
+      <h1 class="title onb-title" style="margin:0 0 8px;">What's your ZIP code?</h1>
+      <div class="onb-zip-ask">
+        <p class="helper" style="margin:0 0 12px;">
+          <span class="onb-line">It's how I find people like you and near you.</span>
+          <span class="onb-line">Seeing how they spend may help you relate to how you spend.</span>
+          <span class="onb-line">That's all I use it for and it's never shared.</span>
+        </p>
+        <div class="input-group" style="margin:0;">
+          <input class="onb-zip-input" inputmode="numeric" maxlength="5"
+                 placeholder="ZIP code" value="${h(o.zip)}"
+                 oninput="onbLiveInput('zip', this.value)"
+                 onchange="onbLiveInput('zip', this.value)">
+        </div>
+        <div id="onbColChart">${onbColChart(o.zip)}</div>
+      </div>
+      ${onbColTeaser(0)}
+      ${onbZipLater(o)}
+    </div>`;
 
-  if (key === "household") {
-    const HH_LABELS = { 1: "Only me", 2: "2 people", 3: "3 people", 4: "4 or more people" };
-    return `
-    <h1 class="title onb-title" style="margin:0 0 6px;">Who's in your corner?</h1>
-    <p class="helper" style="margin:0 0 14px;">How many people share your place, counting you?</p>
-    <div class="journal-options">
-      ${[1, 2, 3, 4].map(n => `
-        <button class="journal-opt ${o.householdSize === n ? "picked" : ""}" type="button"
-                onclick="state.onboarding.householdSize=${n};render()">
-          <span class="journal-opt-label">${HH_LABELS[n]}</span>
-        </button>`).join("")}
-    </div>
-    <p class="helper" style="margin:14px 0 0;">
-      This helps me size things up — costs like groceries and utilities shift a lot depending on how many people share a home.
-    </p>`;
-  }
+  if (key === "household") return onbHouseholdBody(o);
+
+  if (key === "place") return onbTileStep(o, "placeType", ONB_PLACE_TYPES,
+    "What kind of place do you live in?",
+    "Home size changes what power and water cost. Condos and townhomes usually have a monthly fee too.");
+
+  if (key === "coverage") return onbTileStep(o, "coverage", ONB_COVERAGE,
+    "Where does your health insurance come from?",
+    "If it comes through your job, it would stop if your job did. We'll plan for that.");
+
+  if (key === "miles") return onbTileStep(o, "miles", ONB_MILES,
+    "How far do you drive on a normal day?",
+    "Driving more means more gas or charging, and more wear on the car.");
 
   if (key === "income") return `
-    <h1 class="title onb-title" style="margin:0 0 6px;">Roughly what comes in each year?</h1>
-    <p class="helper" style="margin:0 0 14px;">Pick the band that fits, then nudge it to your figure.</p>
-    <div class="journal-options">
-      ${ONB_INCOME_BANDS.map(b => `
-        <button class="journal-opt ${o.incomeBand === b.id ? "picked" : ""}" type="button"
-                onclick="onbSetIncomeBand('${b.id}')">
-          <span class="journal-opt-label">${h(b.label)}</span>
-        </button>`).join("")}
-    </div>
-    ${onbIncomeSlider(o)}`;
+    <div class="onb-income-step">
+      <h1 class="title onb-title" style="margin:0 0 8px;">How much do you make each year?</h1>
+      <p class="helper" style="margin:0 0 12px;">
+        <span class="onb-line">Start with your income range.</span>
+        <span class="onb-line">Sharing your income range helps to fine tune finding people like you.</span>
+      </p>
+      <div class="journal-options">
+        ${ONB_INCOME_BANDS.map(b => `
+          <button class="journal-opt ${o.incomeBand === b.id ? "picked" : ""}" type="button"
+                  onclick="onbSetIncomeBand('${b.id}')">
+            <span class="journal-opt-label">${h(b.label)}</span>
+          </button>`).join("")}
+      </div>
+      ${onbIncomeSlider(o)}
+    </div>`;
 
   // A subset of the standalone budget builder's questions — same dimensions and
   // keys, so an answer means the same thing either way; onboarding just asks the
@@ -917,7 +1334,7 @@ function onbStepBody(key, o) {
         return `
         <button class="journal-opt opt-check ${on ? "picked" : ""} ${dim ? "opt-check-dim" : ""}" type="button"
                 ${dim ? "disabled" : ""}
-                onclick="onbToggleGoal('${h(g).replace(/'/g, "\\'")}')">
+                onclick="onbToggleGoal('${h(String(g).replace(/\\/g, "\\\\").replace(/'/g, "\\'"))}')">
           <span class="journal-opt-label">${h(g)}</span>
           <span class="opt-check-box" aria-hidden="true">${on ? "✓" : ""}</span>
         </button>`;
@@ -930,7 +1347,10 @@ function onbStepBody(key, o) {
   if (key === "video") return onbVideoBody(o);
 
   // D32 — the trial popup still appears. Accept or decline, the experience
-  // afterward is identical. No paywalls, no gated features anywhere (D31).
+  // afterward is identical HERE. D31 ("no paywalls anywhere") is overridden
+  // for the Budget tab only — see plan.md §0 L27 and js/config.js — so this
+  // step's own promise had to change with it; the old closing line said
+  // nothing was locked, which the Budget tab now contradicts.
   return `
     <div class="card">
       <p class="pill" style="display:inline-block;font-size:9px;padding:3px 9px;margin-bottom:10px;">7 days free</p>
@@ -950,7 +1370,7 @@ function onbStepBody(key, o) {
       <button class="button secondary full" type="button"
               onclick="onbTrial(false)">Not right now</button>
       <p class="helper" style="font-size:10px;margin:12px 0 0;">
-        Nothing is locked either way — this prototype has no paid features.
+        Answer either way — this step changes nothing on its own.
       </p>
     </div>`;
 }
@@ -980,18 +1400,38 @@ function onbSetBuddy(key, value) {
 // ─── Character creator (one element per sub-step, Mii/Nintendogs style) ───────
 // Reads the shared option lists from components/buddy.js at render time.
 const ONB_BUDDY_COPY = {
+  meet:       ["Meet your buddy!",
+               "Buddy is here to help answer questions and join you on your financial journey! " +
+               "Let's give your buddy a name!"],
   bodyType:   ["Now the fun part — let's give me a look.", "Scroll to pick your buddy's body type"],
   breed:      ["Now the fun part — let's give me a look.", "Scroll and pick a breed."],
   furColor:   ["What colour is my coat?",                  "Tap a colour."],
   furPattern: ["Any markings?",                            "Scroll and pick a pattern."],
   eyeColor:   ["And my eyes?",                             "Tap a colour."],
-  name:       ["Last thing — what's my name?",             "Naming me is required."]
+  name:       ["What should you call me?",                 "Pick a name and my pronouns."]
 };
 
 function onbBuddyStep(o) {
   const sub = ONB_BUDDY_STEPS[o.buddyIndex];
   const b = o.buddy || {};
   const copy = ONB_BUDDY_COPY[sub] || ["Design your buddy", ""];
+  // "(1/5)" meant something with five screens. With one it is noise.
+  const count = ONB_BUDDY_STEPS.length > 1
+    ? `Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})` : "Your buddy";
+
+  // Meet: the whole buddy step on one screen. The greeting heads it -- in the
+  // slot the small "Your buddy" counter used to hold -- then the portrait, the
+  // line asking for a name, and the name and pronouns centred under that.
+  // Continue unlocks once a pronoun is picked (onbAnswered).
+  if (sub === "meet") {
+    return `
+    <div class="onb-buddy-step onb-buddy-step-meet">
+      <h1 class="title onb-title">${h(copy[0])}</h1>
+      ${renderBuddyStage({ square: true, cls: "onb-buddy-stage" })}
+      <p class="task-desc onb-buddy-sub" style="margin:0 0 14px;">${h(copy[1])}</p>
+      ${onbBuddyNameFields(b)}
+    </div>`;
+  }
 
   let control;
   if (sub === "bodyType") {
@@ -1005,12 +1445,7 @@ function onbBuddyStep(o) {
   } else if (sub === "eyeColor") {
     control = onbBuddySwatches("eyeColor", BUDDY_EYE_COLORS, BUDDY_EYE_COLOR_CSS, b.eyeColor);
   } else {
-    control = `
-      <div class="input-group">
-        <input placeholder="Name your buddy" value="${h(b.name || "")}"
-               oninput="onbLiveInput('buddyName', this.value)"
-               onchange="onbLiveInput('buddyName', this.value, true)">
-      </div>`;
+    control = onbBuddyNameFields(b);
   }
 
   // Wrapped in a flex column so the control below the stage takes the space the
@@ -1018,11 +1453,43 @@ function onbBuddyStep(o) {
   // under it. See .onb-buddy-step in css/components.css.
   return `
     <div class="onb-buddy-step${sub === "bodyType" ? " onb-buddy-step-body" : ""}">
-      <p class="helper onb-buddy-count">Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})</p>
+      <p class="helper onb-buddy-count">${h(count)}</p>
       <h1 class="title onb-title" style="margin:0 0 6px;">${h(copy[0])}</h1>
       <p class="helper onb-buddy-sub" style="margin:0 0 12px;">${h(copy[1])}</p>
       ${renderBuddyStage({ square: true, cls: "onb-buddy-stage" })}
       ${control}
+    </div>`;
+}
+
+/**
+ * The name box and the pronouns dropdown, each under its own label.
+ *
+ * "Buddy" is the name box's PLACEHOLDER, not its value: faded, and gone the
+ * moment the box is clicked (CSS, .onb-buddy-fields input:focus::placeholder)
+ * so the tester can type straight in. Left blank, the buddy becomes "Buddy"
+ * when they move on (onbSetStep). The dropdown's blank option has value "", so
+ * nothing is chosen for the tester and Continue stays locked until they choose.
+ */
+function onbBuddyNameFields(b) {
+  const pronouns = (typeof BUDDY_PRONOUNS !== "undefined") ? BUDDY_PRONOUNS : [];
+  return `
+    <div class="onb-buddy-fields">
+      <div class="input-group">
+        <label for="onbBuddyName">Name</label>
+        <input id="onbBuddyName" placeholder="${h(ONB_BUDDY_DEFAULT_NAME)}" value="${h(b.name || "")}"
+               oninput="onbLiveInput('buddyName', this.value)"
+               onchange="onbLiveInput('buddyName', this.value, true)">
+      </div>
+      <div class="input-group">
+        <label for="onbBuddyPronouns">Pronouns</label>
+        <span class="onb-buddy-select">
+          <select id="onbBuddyPronouns" class="onb-buddy-pronouns ${b.pronouns ? "" : "is-blank"}"
+                  onchange="onbSetBuddy('pronouns', this.value)">
+            <option value="" ${b.pronouns ? "" : "selected"}>Choose one</option>
+            ${pronouns.map(p => `<option value="${h(p.id)}" ${b.pronouns === p.id ? "selected" : ""}>${h(p.label)}</option>`).join("")}
+          </select>
+        </span>
+      </div>
     </div>`;
 }
 
@@ -1400,6 +1867,32 @@ function onbFilmSrc() {
   return ONB_FILM_DIR + "/" + entry.look + "/" + onbVideoScriptId() + ".mp4";
 }
 
+/**
+ * Paint the stage the film's own ground, so it stops framing the picture.
+ *
+ * The stage is 100:72 and so is the film, but a squeezed viewport still
+ * letterboxes -- and before this those bars were `--accent`, a green edge round
+ * a cream film. Matching them makes the leftover invisible, which is also what
+ * lets the stage shrink on a short screen without looking wrong.
+ *
+ * ⚠ ONLY WHEN A FILM IS PLAYING. The SVG fallback (tier 2) draws entirely in
+ * `--on-dark` -- the only colour token in components/hyperframes.js -- and
+ * paints no ground of its own, so it relies on `.lp-stage`'s accent. Painting
+ * the stage cream underneath it would be light ink on near-white: invisible,
+ * and only on the themes with no render, where it would read as the animation
+ * being broken rather than as a colour choice.
+ *
+ * Keyed on the LOOK that is playing, not the tester's theme. A dark theme with
+ * no dark render borrows the light film (ONB_FILM_ANY_LOOK), and the stage has
+ * to follow the film rather than the theme or it reintroduces the mismatch.
+ */
+function onbFilmGroundStyle() {
+  const entry = onbFilmEntry();
+  if (!entry || typeof ONBOARDING_FILM_GROUNDS === "undefined") return "";
+  const ground = ONBOARDING_FILM_GROUNDS[entry.look];
+  return ground ? ` style="background:${h(ground)}"` : "";
+}
+
 /** The <video> could not load — drop to tier 2 and repaint. */
 function onbFilmFailed(el) {
   if (onbFilmBroken) return;
@@ -1418,7 +1911,7 @@ function onbVideoStage(v) {
     // carries no audio and an unmuted autoplay element is refused by some
     // browsers.
     return `
-    <div class="lp-stage lp-stage-video onb-video-stage">
+    <div class="lp-stage lp-stage-video onb-video-stage"${onbFilmGroundStyle()}>
       <video class="onb-film" id="onb-film" muted playsinline preload="auto"
              data-look="${h((onbFilmEntry() || {}).look || "")}"
              src="${h(onbFilmSrc())}" onerror="onbFilmFailed(this)"></video>
@@ -1484,7 +1977,11 @@ function onbFilmSync() {
     } else if (el.playbackRate !== rate) {
       el.playbackRate = rate;
     }
-    if (playing && el.paused) { const p = el.play(); if (p && p.catch) p.catch(function () {}); }
+    // `!el.ended`: a film that ran out a few ms before the clock is also
+    // `paused`, and play() on an ENDED element restarts it from 0 (HTML
+    // standard) -- the film replayed itself at the finish. Its last frame is
+    // the right picture; a real seek above clears `ended` and play resumes.
+    if (playing && el.paused && !el.ended) { const p = el.play(); if (p && p.catch) p.catch(function () {}); }
     if (!playing && !el.paused) el.pause();
   } catch (e) { /* a detached element mid-repaint — the next tick catches up */ }
   return true;
@@ -1930,7 +2427,7 @@ function renderOnboardingAdmin() {
       ${!o ? `<p class="helper">Not running.</p>` : `
         <div class="input-group">
           <label>Step ${o.step + 1}/${ONB_STEPS.length} — ${h(ONB_STEPS[o.step])}</label>
-          <select onchange="state.onboarding.step=parseInt(this.value,10);state.onboarding.lwIndex=0;state.onboarding.buddyIndex=0;render()">
+          <select onchange="state.onboarding.lwIndex=0;state.onboarding.buddyIndex=0;onbSetStep(state.onboarding,parseInt(this.value,10));render()">
             ${ONB_STEPS.map((s, i) => `<option value="${i}" ${o.step === i ? "selected" : ""}>${i + 1}. ${h(s)}</option>`).join("")}
           </select>
         </div>

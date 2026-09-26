@@ -66,6 +66,9 @@ if (typeof print === "undefined") {
 }
 function El(i){this.id=i;this.style={};this.dataset={};this.innerHTML="";this.textContent="";this.value="";
  this.scrollTop=0;this.src="";this.onended=null;
+ this.attributes={};this.setAttribute=function(k,v){this.attributes[k]=String(v);};
+ this.removeAttribute=function(k){delete this.attributes[k];};
+ this.getAttribute=function(k){return this.attributes[k] == null ? null : this.attributes[k];};
  this.play=function(){return {catch:function(){}};};this.pause=function(){};
  this.classList={toggle:function(){},add:function(){},remove:function(){},contains:function(){return false;}};
  this.focus=function(){};this.setSelectionRange=function(){};this.addEventListener=function(){};
@@ -121,12 +124,28 @@ done < <(grep -o 'src="[^"]*\.js"' "$APP/index.html" | sed 's/src="//;s/"//')
 # Assert the film tool's output root against the one editable app.
 FILM_DEFAULT="$(sed -n 's/^const APP = path.join(REPO, "\(.*\)");/\1/p' tools/film/build-films.mjs)"
 printf '\nvar __FILM_TOOL_VERSION = "%s";\nvar __DEFAULT_VERSION = "app";\n' "$FILM_DEFAULT" >> "$OUT"
+# Which folder is under test. §7j reports a defect deliberately left unfixed in
+# the v3 control as a warning there rather than a failure.
+printf '\nvar __APP_DIR = "%s";\n' "$APP" >> "$OUT"
+
+# The hyperframes viewBox, so §7c can check it against the CSS aspect-ratio and
+# the film canvas. Three declarations of the same 100:72 shape; if they drift the
+# stage frames the picture in accent colour, which is the bug this replaced.
+HF_W="$(sed -n 's/^const HF_VIEW_W = \([0-9]*\);/\1/p' "$APP/components/hyperframes.js")"
+HF_H="$(sed -n 's/^const HF_VIEW_H = \([0-9]*\);/\1/p' "$APP/components/hyperframes.js")"
+printf '\nvar __HF_VIEW = { w: %s, h: %s };\n' "${HF_W:-0}" "${HF_H:-0}" >> "$OUT"
 
 # js/render.js as a string. §7f needs the journal-mode class lists, and those
 # are toggle() arguments rather than a named constant -- there is nothing to
 # read at runtime because the DOM stub's classList does not record.
 printf '\nvar __RENDER_JS = ' >> "$OUT"
 python3 -c "import json,sys;print(json.dumps(open(sys.argv[1],encoding='utf-8').read())+';')" "$APP/js/render.js" >> "$OUT"
+
+# The paywall's source, v4 only. §7g checks the discount figures are COMPUTED
+# from the prices: a "was" price typed into the file would be an invented
+# discount the day the monthly price moves.
+printf '\nvar __PAYWALL_JS = ' >> "$OUT"
+python3 -c "import json,sys,os;p=sys.argv[1];print(json.dumps(open(p,encoding='utf-8').read() if os.path.exists(p) else '')+';')" "$APP/screens/budget-paywall.js" >> "$OUT"
 
 printf '\nvar __GATE_JS = ' >> "$OUT"
 python3 -c "import json,sys;print(json.dumps(open('gate/gate.js',encoding='utf-8').read())+';')" >> "$OUT"

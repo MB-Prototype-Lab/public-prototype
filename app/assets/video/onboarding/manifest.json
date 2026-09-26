@@ -17,6 +17,10 @@
     "light": "light",
     "naturalLight": "light"
   },
+  "grounds": {
+    "dark": "#11100e",
+    "light": "#fdfbf7"
+  },
   "films": {
     "light__onboarding_intro": {
       "look": "light",

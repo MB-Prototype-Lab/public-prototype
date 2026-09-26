@@ -45,3 +45,58 @@ const APP_VERSION = "v4";
 // Frozen publication setting; local development is untracked. Participant URLs
 // cannot override it. useberryActive additionally restricts injection to HTTP(S).
 const USEBERRY_TRACKING = window.MB_RELEASE.tracking === true;
+
+// THE BUDGET TAB IS A PAYWALL.
+//
+// true  -> the Budget tab renders the Platinum wall (screens/budget-paywall.js)
+// false -> the real budget comes back, unchanged
+//
+// ⚠ THIS OVERRIDES A SPEC DECISION. D31 is "No ads and no paywalls appear",
+// and six places in v4 cited it. plan.md §0 L27 records the override; without
+// that record the next reader finds D31, calls this a bug, and removes it.
+//
+// A FLAG RATHER THAN A DELETION, for two reasons. "Do not delete unused code"
+// is a hard rule and flipping this back must unwind nothing. And a deleted call
+// site would orphan all ten functions in screens/budget-v3.js into sweep.sh
+// §7b's newly-unreferenced warning — the only fix for which is padding
+// DEAD_BASELINE with ten names that then misstate why they are there.
+//
+// ⚠ IT GUARDS THE TAB, NOT THE BUDGET. Owner's call, and deliberately narrow:
+// the daily task, the Home task, budget-update-confirm's Rebuild and two deep
+// links all reach budget screens without rendering the tab. They are listed in
+// CLAUDE.md as known. Widening it is moving renderBudgetPaywall's guard into
+// renderScreen() against a list of screen ids.
+const BUDGET_PAYWALL = true;
+
+// ─── One buddy, one picture ─────────────────────────────────────────────────
+// ON: every buddy stage (Home, onboarding, anywhere renderBuddyStage is called)
+// draws the one illustration there is, whatever state.buddy's appearance
+// attributes say. The creator no longer asks for breed, coat or eyes, but a
+// persona or profile buddy still carries them -- and without this, Home showed
+// a text card ("golden retriever · cream fur") instead of the dog.
+//
+// A flag, not a deletion: when there is art per breed, turn it off and the
+// attribute-driven stage (buddyIsPrototype() in components/buddy.js) comes back
+// as it was. The description card stays either way as the missing-image
+// fallback (L22) -- a broken file must degrade to words, never a blank stage.
+const BUDDY_SINGLE_ART = true;
+
+// ─── Lesson framing: ask every time ─────────────────────────────────────────
+// OFF (owner, 2026-09-25): every Begin on a framed lesson (APR) runs its card
+// questions again. ON restores the earlier behaviour -- a re-open replays the
+// variant from this session's stored answers without asking -- which left a
+// tester who once answered "no card" unable to see the questions at all.
+// state.lessonProfile is still written either way; the calculator seeds from it.
+const LESSON_REUSE_FRAMING = false;
+
+// ESF-ONLY BUILD — the prototype narrowed to the emergency fund.
+//
+//   true  -> onboarding asks only what the emergency fund reads, then opens it;
+//            the app shows Goals and the fund and nothing else
+//   false -> the full app, exactly as it was
+//
+// Hides, never deletes. Every other screen, renderer and step is still in the
+// code and still routed for the admin jump list; this only takes them out of
+// what a tester walks through. Same rule as the two flags above: flipping it
+// must not require unwinding anything else.
+const ESF_ONLY = false;

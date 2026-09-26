@@ -57,3 +57,16 @@ scrollbar, and keyboard, long descriptions, all four themes, and Show tools.
 Resizing, swaps, pane-count changes, and tools toggles must preserve input progress.
 Record Windows/WSL and macOS results separately; Linux browser checks do not verify
 compatibility with either platform.
+
+The combined-app sweep also exercises full onboarding through Home, Buddy setup,
+ESF task entry/reopening/repeat saves, immediate budget replacement without
+confirmation, shared-payment guidance, disclosure undo and double-count prevention,
+and Buddy estimates applied to bands. Incoming blue checks cover paywall prices
+and placeholders, repeated lesson framing, no-card visuals, narration recovery,
+finished rewards and film replay. Python app-structure checks require matching
+JSON wrappers, dependency ordering and no editable legacy directories.
+
+For this integration, PM acceptance must also cover ESF and Buddy on narrow
+layouts, all four themes, and affected onboarding/lesson audio and video. The
+source ESF spec records small tap targets, car/coverage assumptions and prototype
+estimates; record acceptance or remaining concerns in the integration PR.

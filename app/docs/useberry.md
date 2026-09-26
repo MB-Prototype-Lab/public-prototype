@@ -120,6 +120,8 @@ land on:
   purpose: guessed-versus-computed is the most interesting comparison in the
   trail, and one overwriting the other would destroy it.
 - `jgro-64` — from a journal checkpoint: Groceries logged, summed for the session
+- `pro-they` — on the setup checkpoint: the buddy's pronouns (`he` / `she` /
+  `they`). Absent when the buddy step was skipped.
 
 Keys are the first three letters of the category. A drag records where it came
 to **rest**, not every tick.

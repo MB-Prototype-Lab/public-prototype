@@ -30,3 +30,16 @@ const ONBOARDING_FILMS = {
     ]
   }
 };
+
+// The ground each LOOK is rendered on, so the app can paint the film's stage to
+// match instead of framing it in accent green. Keyed by look, not by theme: a
+// theme with no render of its own borrows another look's film (see
+// ONB_FILM_ANY_LOOK in screens/onboarding.js), and the stage has to follow the
+// film that is actually playing.
+//
+// ⚠ ONLY when a film is playing. The SVG fallback draws in --on-dark and paints
+// no ground of its own, so on one of these it would be light ink on near-white.
+const ONBOARDING_FILM_GROUNDS = {
+  "dark": "#11100e",
+  "light": "#fdfbf7"
+};

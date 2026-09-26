@@ -2,6 +2,36 @@
 
 Read alongside app/docs/architecture.md. docs/workflow.md governs operations; progress logs are historical. Tracking is now frozen by release configuration; see docs/publishing.md.
 
+## Combined prototype behavior
+
+The single editable `app/` combines blue `b9e0332` with HoffDemo-Chat `ddee54e`
+(including HoffDemo/ESF `8c7a252`). `ESF_ONLY = false`: onboarding ends at Home,
+all tabs remain available, and emergency savings is reached from tasks and Goals.
+Onboarding combines ZIP/income refinement, household ages/kids, housing type,
+coverage and driving questions with the single Buddy picture and name/pronouns.
+
+`BUDGET_PAYWALL = true`: the Budget tab shows $14.99 monthly / $124.99 annual.
+Both checkout buttons are placeholders. This is a tab-only gate; task, builder,
+category and supported deep-link routes can still reach budget features.
+`BUDDY_SINGLE_ART = true`; `LESSON_REUSE_FRAMING = false` asks framing questions
+on every lesson entry. Missing film looks retain the supplied SVG fallback.
+
+### ESF budget exception (user approved)
+
+Ordinary builders use `submitBudgetBaseline()` and confirm replacement of an
+existing budget. **Creating or editing the ESF goal immediately replaces the
+budget through `applyBudgetBaseline()` and returns to Goals, without a replacement
+confirmation.** This also discards an older pending builder proposal. Repeated
+saves leave exactly one emergency-fund goal; reopening keeps the session's figures.
+No separate confirmation or preservation of the previous budget is intended.
+
+ESF keeps the source expense calculations and prototype assumptions. Buddy's ESF
+panel is a local question tree: shared-payment guidance counts the user's share;
+disclosures prevent rent/utilities and mortgage/escrow double counting; lifestyle
+answers scale the opening estimate and apply a selected band only on confirmation.
+The existing Home chat remains a keyword matcher. No backend, API or persistence
+is added. Development tracking remains off; releases control tracking.
+
 ## Traps that fail silently
 
 Each of these produces a plausible-looking wrong result rather than an error.
