@@ -240,7 +240,7 @@ function kbdMarkup() {
           ${row.map(key => `
             <button class="${kbdKeyClass(key)}" type="button"
                     aria-label="${h(key === KBD_SPACE ? "space" : key)}"
-                    onpointerdown="event.preventDefault();kbdKey('${h(key).replace(/'/g, "\\'")}')">${h(kbdKeyLabel(key))}</button>
+                    onpointerdown="event.preventDefault();kbdKey('${h(String(key).replace(/\\/g, "\\\\").replace(/'/g, "\\'"))}')">${h(kbdKeyLabel(key))}</button>
           `).join("")}
         </div>
       `).join("")}

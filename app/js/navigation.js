@@ -67,9 +67,18 @@ function go(screen) {
 
 // SWITCH stacks — does not push. Returning to a tab resumes it where you left
 // off, which is the behaviour that makes per-stack history worth having.
+//
+// EXCEPT onto the end of a finished flow. A lesson's reward screen is the last
+// thing that lesson shows; resuming onto it made it reappear every time the
+// tester came back to Learn (finish → Return Home → tap Learn = the reward
+// again). A tab whose top is on this list starts over at its root instead.
+const NAV_NO_RESUME = ["reward"];
+
 function navGoTab(key) {
   if (!state.nav.stacks[key]) return;
   state.nav.activeStack = key;
+  const st = state.nav.stacks[key];
+  if (NAV_NO_RESUME.indexOf(st[st.length - 1]) !== -1) state.nav.stacks[key] = [key];
   navCommit(navCurrent());
 }
 
@@ -107,6 +116,15 @@ function navGoTabRoot(key) {
 
 // POP. At depth 1 there is nowhere to go — the top bar shows home instead.
 function navBack() {
+  // Onboarding is a multi-step flow living on ONE screen, so the nav stack
+  // knows nothing about which step is showing. Without this, the top-bar
+  // chevron popped straight out of onboarding (or did nothing) while the
+  // in-body Back button walked the steps — two controls with the same arrow
+  // doing different jobs. The step walk owns the chevron while it is up.
+  if (state.screen === "onboarding" && typeof onbBack === "function") {
+    onbBack();
+    return;
+  }
   const st = navStack();
   if (st.length <= 1) {
     if (state.nav.activeStack !== "home") navGoHome();
@@ -233,6 +251,11 @@ function selectLesson(id) {
 function startCurrentLesson() {
   const lesson = state.currentLesson;
   if (lesson && lesson.isV3) { lessonV3Start(lesson.id); return; }
+  // An older lesson may borrow the APR lesson's figure-free beats; without that
+  // its stage is plain green (LP_BORROWED_VISUALS, screens/lesson.js).
+  if (lesson && typeof lessonBorrowedVisualPlan === "function") {
+    state.lessonVisualPlan = lessonBorrowedVisualPlan(lesson.id);
+  }
   go("lesson");
 }
 
@@ -381,7 +404,13 @@ function completeLesson() {
   // Same for the v3 side — this is the one funnel every lesson exits through.
   if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
 
-  go("reward");
+  // The lesson is over, so nothing it showed is somewhere to go back to. A plain
+  // go() left [..., "lesson", "reward"] on the stack: the back arrow reopened
+  // the player. Reset the tab to its root under the reward, so back lands on
+  // the tab's front page (owner's call: Learn's front page, not the topic).
+  const tab = state.nav.activeStack;
+  state.nav.stacks[tab] = [tab, "reward"];
+  navCommit("reward");
 }
 
 // ─── Navigation contract ──────────────────────────────────────────────────────
@@ -487,6 +516,10 @@ function navRouteTask(route) {
 
   // ── Flows from Home ──
   if (name === "money_journal")       { journalStart({}); taskGo("journalEntry"); return; }
+  // The emergency fund starts a session before it routes, the same shape as the
+  // journal above — the screen reads state.esf and there is nothing to render
+  // until esfStart() has built it.
+  if (name === "emergency_fund")      { esfStart(); return; }
   if (name === "subscription_confirm"){ journalStart({ focusQuestionId: "q_watched" }); taskGo("journalEntry"); return; }
 
   // ── Bookmarks into a tab ──

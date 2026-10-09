@@ -44,7 +44,8 @@
 
 // Keys allowed to carry a short label instead of a number. Every one is a
 // choice from a fixed list the app drew, never anything the tester typed.
-const UB_TRAIL_ENUMS = ["goal", "buddy", "tier", "level"];
+// "pro" is the buddy's pronouns -- one of the three ids in BUDDY_PRONOUNS.
+const UB_TRAIL_ENUMS = ["goal", "buddy", "tier", "level", "pro"];
 
 const UB_TRAIL_MAX_VALUE = 16;    // characters, for an enum value
 const UB_TRAIL_MAX_URL   = 1600;  // leave room under the ~2000 ceiling

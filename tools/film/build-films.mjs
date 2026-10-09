@@ -84,6 +84,8 @@ function stageAssets() {
 }
 
 // ── Generate ─────────────────────────────────────────────────────────────────
+const VARS_CSS = path.join(APP, "css", "variables.css");
+
 const scriptJson = JSON.parse(
   fs.readFileSync(path.join(APP, "data", "onboarding-script.json"), "utf8")
 );
@@ -95,7 +97,7 @@ function buildOne(lookId, scriptId) {
   const durationsSec = script.segments.map(s => segMs(s.text) / 1000);
   const totalSec = durationsSec.reduce((a, b) => a + b, 0);
   const beats = beatsFor(scriptId, script.segments, durationsSec);
-  const theme = look(path.join(APP, "css", "variables.css"), lookId);
+  const theme = look(VARS_CSS, lookId);
   const compositionId = `${lookId}__${scriptId}`;
 
   const file = path.join(BUILD, "compositions", `${compositionId}.html`);
@@ -153,16 +155,29 @@ log(`generated ${jobs.length} composition(s) → ${path.relative(REPO, BUILD)}`)
 log(`  canvas ${CANVAS.W}x${CANVAS.H}, crossfade ${CANVAS.CROSSFADE}s`);
 for (const j of jobs) log(`  ${j.compositionId}  ${j.totalSec}s`);
 
+fs.mkdirSync(OUT, { recursive: true });
+
+let bytes = 0, biggest = 0;
 if (doRender) {
-  fs.mkdirSync(OUT, { recursive: true });
-  let bytes = 0, biggest = 0;
   for (const j of jobs) {
     const dest = render(j);
     const size = fs.statSync(dest).size;
     bytes += size; biggest = Math.max(biggest, size);
     log(`  rendered ${path.relative(APP, dest)}  ${(size / 1024).toFixed(0)} KB`);
   }
+}
 
+// ── Manifest + app index: written on EVERY run, render or not ────────────────
+// They used to be written only when encoding, which made re-encoding the only
+// way to change a field in them -- so adding the film grounds below would have
+// meant re-rendering every film to publish two colour values.
+//
+// A dry run is already safe here: the merge with `prior` keeps films this run
+// did not touch, and the prune drops any whose .mp4 is not on disk. So a dry
+// run lands on exactly the films that exist, with fresh metadata and not one
+// byte re-encoded. Byte totals and the size budget stay inside the render
+// branch, because on a dry run there is nothing to total.
+{
   // MERGED, not replaced. A `--only` run renders one film, and rewriting the
   // manifest from just that job would delete every other film's entry — the
   // files would still be on disk but the app would stop asking for them, which
@@ -179,6 +194,14 @@ if (doRender) {
     segmentFloorMs: SEG_FLOOR_MS,
     looks: LOOKS,
     lookForTheme: LOOK_FOR_THEME,
+    // ── THE GROUND EACH LOOK IS PAINTED ON ──────────────────────────────────
+    // Published so the app can paint the film's STAGE the same colour and stop
+    // framing a cream film in accent green. It cannot be derived app-side: the
+    // grounds are pushed past the app's tokens on purpose (see themes.mjs), and
+    // they come from the NATURAL themes specifically -- a color-mix() on the
+    // live --cream would be right on Natural Light/Dark and wrong on the other
+    // two. Hardcoding them in CSS would drift the first time a token moved.
+    grounds: Object.fromEntries(LOOKS.map(id => [id, look(VARS_CSS, id).ground])),
     films: Object.assign({}, prior, Object.fromEntries(jobs.map(j => [j.compositionId, {
       look: j.lookId, script: j.scriptId, totalSec: j.totalSec,
       segmentIds: j.segmentIds, segmentMs: j.segmentMs
@@ -192,12 +215,14 @@ if (doRender) {
   }
   fs.writeFileSync(path.join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
   writeFilmIndex(manifest);
+}
 
+if (doRender) {
   log(`\ntotal ${(bytes / 1048576).toFixed(2)} MB · largest ${(biggest / 1024).toFixed(0)} KB`);
   if (biggest > 800 * 1024) log(`  ⚠ over the 800 KB per-file budget — raise --crf`);
   if (bytes > 12 * 1048576) log(`  ⚠ over the 12 MB total budget`);
 } else {
-  log(`\n(dry run — pass --render to encode)`);
+  log(`\n(dry run — metadata refreshed, nothing encoded; pass --render to encode)`);
 }
 
 /**
@@ -233,6 +258,16 @@ function writeFilmIndex(manifest) {
 // onbFilmSrc() knows whether to ask for an .mp4 at all. A theme or script
 // missing here simply falls back to the live SVG engine.
 const ONBOARDING_FILMS = ${JSON.stringify(index, null, 2)};
+
+// The ground each LOOK is rendered on, so the app can paint the film's stage to
+// match instead of framing it in accent green. Keyed by look, not by theme: a
+// theme with no render of its own borrows another look's film (see
+// ONB_FILM_ANY_LOOK in screens/onboarding.js), and the stage has to follow the
+// film that is actually playing.
+//
+// ⚠ ONLY when a film is playing. The SVG fallback draws in --on-dark and paints
+// no ground of its own, so on one of these it would be light ink on near-white.
+const ONBOARDING_FILM_GROUNDS = ${JSON.stringify(manifest.grounds || {}, null, 2)};
 `;
   fs.writeFileSync(path.join(APP, "data", "onboarding-films.js"), body);
   log(`  wrote data/onboarding-films.js (${Object.keys(index).length} theme(s) → ${LOOKS.length} look(s))`);

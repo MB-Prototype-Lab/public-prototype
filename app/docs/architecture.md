@@ -1463,3 +1463,11 @@ Deliberately deferred to per-phase docs, written just before each phase:
 
 Design detail has a shelf life. Writing Phase 5's screens before Phase 1 has
 taught us what a journal entry actually looks like produces fiction.
+
+## Combined app integration
+
+Current flags, ESF task routing, Buddy question-tree behavior, the tab-only paywall,
+and the user-approved immediate ESF budget replacement exception are specified in
+[the current app contracts](../../docs/app-contracts.md#combined-prototype-behavior).
+ESF model/data load after the baseline seam, Buddy ESF logic follows the model,
+and ESF/Buddy renderers load with the screens. JSON wrappers support `file://`.

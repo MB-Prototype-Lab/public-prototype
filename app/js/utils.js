@@ -50,6 +50,19 @@ function uiPatchHTML(id, html) {
 }
 
 /**
+ * Write a field's value without a render(), for the same reason as the two
+ * above: when a slider and a number box show the same figure, dragging one has
+ * to move the other, and a repaint mid-drag destroys the element the pointer
+ * is captured on. Skips the element if it is the one being typed in, so this
+ * can never fight a caret.
+ */
+function uiSetValue(id, value) {
+  const el = document.getElementById(id);
+  if (!el || el === document.activeElement) return;
+  el.value = value;
+}
+
+/**
  * What "the same view" means for holding scroll position.
  *
  * render() keeps the scroll offset when this string is unchanged and resets to
@@ -84,6 +97,7 @@ function scrollKey() {
     return s;
   }
   if (s === "budgetBuild" && state.budgetBuild) return s + ":" + state.budgetBuild.step;
+  if (s === "esfBuild" && state.esf) return s + ":" + state.esf.step;
   // Category AND stage, but never the answers: revealing the next question is
   // the same view growing, and holding position is what keeps it readable.
   if (s === "helpMeOut" && state.helpMeOut) {
@@ -94,7 +108,14 @@ function scrollKey() {
     return s + ":" + state.estimator.stage + ":" + state.estimator.qIndex;
   }
   if (s === "journalEntry" && state.journalSession) return s + ":" + state.journalSession.qIndex;
-  if (s === "onboarding" && state.onboarding) return s + ":" + state.onboarding.step;
+  if (s === "onboarding" && state.onboarding) {
+    // The buddy step is two screens to a tester -- meet, then name -- so the name
+    // screen gets its own key. The meet screen keeps the bare step, so an old
+    // ?screen=onboarding-5 link still means "the start of the buddy step".
+    const o = state.onboarding;
+    const sub = (typeof onbBuddySubKey === "function") ? onbBuddySubKey(o) : "";
+    return s + ":" + o.step + (sub ? ":" + sub : "");
+  }
   return s;
 }
 
@@ -225,6 +246,9 @@ function activeTabFor(screen) {
   if (screen === "goals")             return "goals";    // v3: Goals is its own tab (D34)
   if (["profilePicker"].includes(screen)) return "home";
   if (["budgetBuild", "helpMeOut", "spendingProfile", "budgetCompare", "lifestyleWizard","budgetDone"].includes(screen)) return "aboutMe";
+  // The emergency fund lives under Goals — it ends in one, even though it seeds
+  // the budget on the way through.
+  if (["esfBuild", "esfPlan"].includes(screen)) return "goals";
   if (screen === "myDebts")           return "aboutMe";
   if (screen === "debtAnalyzer")      return "aboutMe";
   if (screen === "comparison")        return "aboutMe";

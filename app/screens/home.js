@@ -75,17 +75,21 @@ function renderHomeTask(task) {
   const obs = task.observationId ? observationById(task.observationId) : null;
   return `
     <div class="card home-task ${task.completed ? "home-task-done" : ""}">
-      <div class="row" style="align-items:flex-start;gap:10px;">
+      <!-- The bones line sits UNDER THE TITLE, beside the button. It used to be
+           its own row below both, so every card was three lines tall for two
+           lines of content -- and on Home that pushed the third task entirely
+           below the fold. -->
+      <div class="row" style="align-items:center;gap:10px;">
         <div style="flex:1;">
           <p class="task-title" style="margin:0 0 2px;">${h(task.label)}</p>
           ${obs ? `<p class="helper" style="margin:0;">${h(observationDetail(obs))}</p>` : ""}
+          <p class="home-task-kibble">🦴 ${task.kibble} bones</p>
         </div>
         ${task.completed
           ? `<span class="pill pill-good" style="font-size:9px;padding:3px 8px;">Done</span>`
           : `<button class="button" style="font-size:12px;padding:8px 14px;" type="button"
                      onclick="homeDoTask('${h(task.id)}')">Open</button>`}
       </div>
-      <p class="home-task-kibble">🦴 ${task.kibble} bones</p>
     </div>
   `;
 }

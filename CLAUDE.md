@@ -15,7 +15,7 @@ reviewed PR and passing CI with applicable PM testing. Publishing is a separate,
 explicit request; merging main never deploys. Do not infer remote success.
 
 Keep `demo` as the pre-cutover fallback. Leave all PM/HoffDemo branches untouched;
-features will be deliberately ported into `app/` later. Never restore editable
+the approved blue/PM features are integrated in `app/`. Never restore editable
 `versions/` copies. Historical builds are immutable hosted snapshots and Git history.
 The organization repo is the green rehearsal destination; team cutover is pending.
 Current rollout scope permits branch pushes, PR creation and CI verification. Merge,
@@ -52,6 +52,8 @@ App files: `js/state.js`, `js/render.js`, `js/navigation.js`; `screens/` rendere
 and layout; `assets/` audio/video/images. Paths in this paragraph are under `app/`.
 For new screens wire script order, render/admin switches, tab mapping and destinations.
 The budget seam is `submitBudgetBaseline()`; builders never write state.budget directly.
+ESF is the approved exception: `esfCommit()` calls `applyBudgetBaseline()` to
+replace the budget immediately and return to Goals, including on repeat saves.
 
 Explain decisions in product terms to the two PMs. Record scope and testing in PR
 text, not historical progress logs. Material changes after signoff require repeating

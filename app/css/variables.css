@@ -48,6 +48,7 @@
   --clay:      #C98B7E;   /* attention — never alarm red */
   --ink:       #3D3A36;   /* text */
   --ink-soft:  #7A736B;   /* secondary text */
+  --ink-strong: #17140F;  /* explanatory copy that must read as black */
 
   /* ── App surfaces ───────────────────────────────────────────────────────── */
   /* No pure white anywhere: cards are a warm off-white lifted off the cream. */
@@ -55,6 +56,7 @@
   --card:      #FFFDF9;
   --soft:      #F4EEE4;
   --text:      var(--ink);
+  --text-strong: var(--ink-strong);
   --muted:     var(--ink-soft);
   --line:      #E7DFD3;
   --bar:       #DCD2C4;
@@ -190,7 +192,9 @@
   --soft:      #35302A;
   --ink:       #EFE9E0;
   --ink-soft:  #A79E93;
+  --ink-strong: #FFFFFF;
   --text:      var(--ink);
+  --text-strong: var(--ink-strong);
   --muted:     var(--ink-soft);
   --line:      #3E3830;
   --bar:       #4A4339;
@@ -247,7 +251,9 @@
   --soft:      #F2F4F7;
   --ink:       #172033;
   --ink-soft:  #667085;
+  --ink-strong: #0B0F1A;
   --text:      var(--ink);
+  --text-strong: var(--ink-strong);
   --muted:     var(--ink-soft);
   --line:      #D9DEE8;
   --bar:       #D0D5DD;
@@ -304,7 +310,9 @@
   --soft:      #23272F;
   --ink:       #E3E6EF;
   --ink-soft:  #8B95A8;
+  --ink-strong: #FFFFFF;
   --text:      var(--ink);
+  --text-strong: var(--ink-strong);
   --muted:     var(--ink-soft);
   --line:      #343844;
   --bar:       #3D4251;

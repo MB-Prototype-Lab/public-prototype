@@ -123,7 +123,13 @@ function hmoAccept() {
   const s = hmoSession();
   if (!s) return;
   hmoApplyLifestyle(s.category, s.answers);
-  if (typeof bbApplyHelp === "function") bbApplyHelp(s.category, s.value);
+  // Two callers now. `target` already carried which flow asked, so it decides
+  // where the figure goes rather than a second flag meaning the same thing.
+  if (s.target === "esf") {
+    if (typeof esfApplyHelp === "function") esfApplyHelp(s.category, s.value);
+  } else if (typeof bbApplyHelp === "function") {
+    bbApplyHelp(s.category, s.value);
+  }
   state.helpMeOut = null;
   hmoAdvanceQueue();
 }
@@ -132,8 +138,13 @@ function hmoAccept() {
 function hmoCancel() {
   const s = hmoSession();
   if (!s) return;
-  const b = state.budgetBuild;
-  if (b && b.help && b.help[s.category]) delete b.help[s.category];
+  if (s.target === "esf") {
+    const e = state.esf;
+    if (e && e.help && e.help[s.category]) delete e.help[s.category];
+  } else {
+    const b = state.budgetBuild;
+    if (b && b.help && b.help[s.category]) delete b.help[s.category];
+  }
   state.helpMeOut = null;
   hmoAdvanceQueue();
 }
@@ -147,6 +158,15 @@ function hmoCancel() {
  * been made once per line already.
  */
 function hmoAdvanceQueue() {
+  // The emergency fund hands over one line at a time rather than queueing a
+  // step's worth, so it goes straight back to the screen it left. It never
+  // advances the step: unlike the builder, a tester who asked for help with
+  // groceries still has three other rows on that screen to look at.
+  if (state.esf && state.esf.returnTo === "esf") {
+    state.esf.returnTo = null;
+    go("esfBuild");
+    return;
+  }
   const b = state.budgetBuild;
   if (!b) { navGoTabRoot("aboutMe"); return; }
   const next = bbPendingHelp();

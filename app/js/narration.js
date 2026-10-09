@@ -23,8 +23,25 @@
 // a playlist it starts a second loop that eats the script. Every utterance here
 // therefore captures a generation, and a callback whose generation is stale is
 // dropped. Callers never have to know.
+//
+// ── THE LOST onend ───────────────────────────────────────────────────────────
+// The opposite failure: the line finishes and onend NEVER arrives. Chrome and
+// Safari drop the events of an utterance that has been garbage-collected (it
+// was only ever a local here), and Chrome stops some voices after ~15s without
+// firing anything. Every voice-clocked player waits for onEnd before the next
+// line, so a lost one froze the onboarding film at the end of a sentence until
+// the tester dragged the scrub bar. Two guards: the utterance is held in a
+// module variable until it is done, and a watchdog polls the synth -- once the
+// line has started and the synth has been silent for two polls, it delivers
+// onEnd itself. A line that never starts at all is reported as onError, which
+// every caller already treats as "hand the clock back to the estimate". Either
+// way the callback fires once: whichever of the real event and the watchdog
+// comes first wins, and a superseded line (generation) gets neither.
 
 let narrationGen = 0;
+let narrationUtterance = null;           // held so the browser cannot collect it
+const NARRATION_POLL_MS = 250;
+const NARRATION_START_GRACE_MS = 3000;
 
 function narrationAvailable() {
   return !!(typeof window !== "undefined" &&
@@ -101,10 +118,33 @@ function narrationSpeak(text, opts) {
     u.pitch = 1;
     const v = narrationVoice();
     if (v) u.voice = v;
-    u.onstart = function () { if (gen === narrationGen && opts.onStart) opts.onStart(); };
-    u.onend   = function () { if (gen === narrationGen && opts.onEnd)   opts.onEnd(); };
-    u.onerror = function () { if (gen === narrationGen && opts.onError) opts.onError(); };
+    let started = false, done = false, silent = 0, waited = 0;
+    // One exit for the real events and the watchdog alike: first caller wins.
+    const finish = function (cb) {
+      if (done) return;
+      done = true;
+      if (narrationUtterance === u) narrationUtterance = null;
+      if (gen === narrationGen && cb) cb();
+    };
+    u.onstart = function () { started = true; if (gen === narrationGen && opts.onStart) opts.onStart(); };
+    u.onend   = function () { finish(opts.onEnd); };
+    u.onerror = function () { finish(opts.onError); };
+    narrationUtterance = u;
     window.speechSynthesis.speak(u);
+
+    const watch = function () {
+      if (done) return;
+      if (gen !== narrationGen) { done = true; if (narrationUtterance === u) narrationUtterance = null; return; }
+      let busy = true;
+      try { busy = !!(window.speechSynthesis.speaking || window.speechSynthesis.pending); } catch (e) {}
+      if (busy) { started = true; silent = 0; }
+      else if (started) { silent++; }
+      waited += NARRATION_POLL_MS;
+      if (started && silent >= 2) { finish(opts.onEnd); return; }        // ended, event lost
+      if (!started && waited >= NARRATION_START_GRACE_MS) { finish(opts.onError); return; }  // never spoke
+      setTimeout(watch, NARRATION_POLL_MS);
+    };
+    setTimeout(watch, NARRATION_POLL_MS);
     return true;
   } catch (e) {
     return false;

@@ -2,6 +2,7 @@
 // Every budget builder converts its flow into ONE normalized baseline and saves
 // through submitBudgetBaseline(). Latest save wins, and an update over an
 // existing budget is gated by the shared old→new confirm screen.
+// Exception: esfCommit applies immediately and returns to Goals (owner-approved).
 //
 // Builders never write state.plan directly. That is the whole point of the
 // seam: v2 had two builders behind it, v3 has one (L6), and a third could be
@@ -21,7 +22,8 @@
  */
 const BUDGET_BUILDER_LABELS = {
   lifestyleWizard: "Lifestyle wizard",   // v3's builder; v3.1 keeps the id readable
-  budgetBuild: "Budget builder"
+  budgetBuild: "Budget builder",
+  emergencyFund: "Emergency fund"        // seeds the budget; runs before it
 };
 
 /** Build a baseline from the current plan — powers builder re-entry. */
@@ -41,7 +43,7 @@ function planToBaseline() {
   };
 }
 
-/** Commit a baseline. Only called by submitBudgetBaseline / the confirm screen. */
+/** Commit a baseline: submit/confirm, or the approved immediate ESF save. */
 function applyBudgetBaseline(baseline) {
   if (!baseline || !baseline.monthly) return;
 
@@ -73,22 +75,27 @@ function applyBudgetBaseline(baseline) {
   // The plan moved, so every plan-derived figure is stale.
   observationsRecompute();
 
-  // Mark any daily task that pointed at building a budget.
+  // Mark any task that pointed at whatever built this baseline.
+  //
+  // The standalone budget task is gone — the emergency fund runs first and
+  // seeds the budget, so "Saving for an emergency" is the task that completes
+  // when a baseline lands. budgetBuild stays matched because the builder is
+  // still admin-reachable and can still commit.
   (state.tasks || []).forEach(t => {
-    if (t.destination === "budgetBuild") t.completed = true;
+    if (t.destination === "budgetBuild" || t.destination === "esfBuild") t.completed = true;
   });
   // Route through homeCompleteTask rather than setting the flag directly —
   // doing it by hand marked the task done but skipped the Charity Points it
   // pays, so building a budget silently earned nothing.
   (state.dailyTasks || []).forEach(t => {
-    if (t.route !== "budget") return;
+    if (t.route !== "budget" && t.route !== "emergency_fund") return;
     if (typeof homeCompleteTask === "function") homeCompleteTask(t.id);
     else t.completed = true;
   });
 }
 
 /**
- * The only way a builder saves.
+ * Standard budget-builder save; ESF uses the documented immediate-save exception.
  *   no existing budget → apply immediately
  *   existing budget    → park it and route to the old→new confirm gate
  */

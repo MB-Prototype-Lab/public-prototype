@@ -271,6 +271,71 @@ function lessonScriptFor(variantId) {
 }
 
 /**
+ * The APR animation with nothing personal in it, for a run with no card APR.
+ *
+ * Without this the stage was plain green: the full storyboard needs the
+ * viewer's own rate, and the waveform that used to stand in was retired (L10).
+ * The four education beats use no figures at all, so they play here, each
+ * spanning the no-card script's lines that tell the same thing
+ * (visualTemplate.figureFree in lessons.json). Timed from THAT script's cues --
+ * the same lpTimingFor call renderLesson makes -- so the picture and the voice
+ * run off one clock. Returns null when the lesson has no such cut, or the
+ * script in hand is not the one the map was written against.
+ */
+function lessonFigureFreeStoryboard(lesson, sentences) {
+  const vt = lesson && lesson.visualTemplate;
+  const ff = vt && vt.figureFree;
+  if (!ff || !Array.isArray(sentences) || !sentences.length) return null;
+  if (ff.script && lessonScriptFor(ff.script) !== sentences) return null;
+  return lessonCutStoryboard(vt, ff.beats, lesson.id, sentences);
+}
+
+/**
+ * Cut `vt`'s spine to a line map: each entry plays one of its beats across the
+ * given script lines, timed from those lines' cues (lpTimingFor -- the same
+ * call the player makes, so picture and voice share one clock). Figure-free
+ * by contract: callers only map beats that carry no {tokens}.
+ */
+function lessonCutStoryboard(vt, beats, lessonId, sentences) {
+  if (!vt || !Array.isArray(beats) || !Array.isArray(sentences) || !sentences.length) return null;
+  if (typeof lpTimingFor !== "function") return null;
+  const t = lpTimingFor(lessonId, sentences.length, sentences);
+  const total = Math.max(0.001, t.total);
+  const byId = {};
+  (vt.spine || []).forEach(b => { byId[b.id] = b; });
+  const spine = [];
+  beats.forEach(entry => {
+    const src = byId[entry.beat];
+    const first = entry.lines[0], last = entry.lines[1];
+    if (!src || !(src.elements || []).length || first < 0 || last >= sentences.length) return;
+    spine.push({
+      id: entry.as || entry.beat,
+      from: (t.cues[first] || 0) / total,
+      to: last + 1 < t.cues.length ? t.cues[last + 1] / total : 1,
+      hold: !!entry.hold,
+      elements: src.elements
+    });
+  });
+  return spine.length ? { kind: vt.kind, requiresFigures: false, spine: spine } : null;
+}
+
+/**
+ * The stage plan for an older lesson that borrows another's beats
+ * (LP_BORROWED_VISUALS, screens/lesson.js), or null. Without one the stage is
+ * plain -- the older lessons never had a storyboard of their own.
+ */
+function lessonBorrowedVisualPlan(lessonId) {
+  if (typeof LP_BORROWED_VISUALS === "undefined" || typeof LP_SCRIPTS === "undefined") return null;
+  const map = LP_BORROWED_VISUALS[lessonId];
+  const donor = map && lessonV3(map.from);
+  const sentences = LP_SCRIPTS[lessonId];
+  if (!donor || !donor.visualTemplate || !sentences) return null;
+  const storyboard = lessonCutStoryboard(donor.visualTemplate, map.beats, lessonId, sentences);
+  return storyboard ? { lessonId: lessonId, userFigure: null, marketAvg: null, bucket: null,
+                        storyboard: storyboard } : null;
+}
+
+/**
  * Hand off to v2's player. The ONLY thing v3 changes is which sentence array it
  * plays — everything else about the player is untouched (D38).
  */
@@ -294,6 +359,12 @@ function lessonOpenPlayer(lesson, variantId) {
     cardName: lessonCardName(inputs),
     storyboard: lesson.visualTemplate
   } : null;
+  // No figure to plot (no card, rather-not-say, Skip): play the figure-free cut
+  // instead of a blank stage. A card run is untouched -- same spine as before.
+  if (state.lessonVisualPlan && state.lessonVisualPlan.userFigure == null) {
+    const cut = lessonFigureFreeStoryboard(lesson, state.lessonVariantScript);
+    if (cut) state.lessonVisualPlan.storyboard = cut;
+  }
 
   // v2's player keys its content off state.currentLesson. The lesson is in the
   // shared catalog now, so PREFER that row — it carries the real badge names.
@@ -353,7 +424,8 @@ function lessonV3Start(lessonId) {
   const lesson = lessonV3(lessonId);
   if (!lesson) return;
   const prof = state.lessonProfile && state.lessonProfile[lessonId];
-  if (prof && prof.variantId) { lessonOpenPlayer(lesson, prof.variantId); return; }
+  const reuse = typeof LESSON_REUSE_FRAMING !== "undefined" && LESSON_REUSE_FRAMING;
+  if (reuse && prof && prof.variantId) { lessonOpenPlayer(lesson, prof.variantId); return; }
   lessonFramingStart(lessonId);
   go("lessonFraming");
 }
@@ -414,9 +486,10 @@ function lessonV3LearnRow(lesson) {
  * outcome chain, where a stale `lessonFraming.lessonId` handed them APR's quiz
  * and APR's calculator too.
  *
- * `state.lessonProfile` is deliberately NOT cleared: the framing answers are
- * durable for the prototype's lifetime, so re-opening a lesson does not re-ask
- * (owner's decision). Only resetUserData() drops those.
+ * `state.lessonProfile` is deliberately NOT cleared: it holds the latest
+ * framing answers, which the calculator seeds from. Re-opening a lesson asks
+ * again all the same (LESSON_REUSE_FRAMING, js/config.js -- owner's decision,
+ * reversing the earlier "don't re-ask"). Only resetUserData() drops them.
  */
 function lessonV3ClearSession() {
   state.lessonVariantId     = null;
