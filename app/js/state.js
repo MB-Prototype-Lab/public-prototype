@@ -30,6 +30,15 @@ const destinations = [
   ["budgetBuild",    "Budget: Build (3 steps)"],
   ["esfBuild",       "Emergency fund: Capture (4 steps)"],
   ["esfPlan",        "Emergency fund: The number"],
+  ["bpLanding",      "Big purchase: Landing"],
+  ["bpFinder",       "Big purchase: Find your car"],
+  ["bpYourCar",      "Big purchase: Your car (pay and plan)"],
+  ["bpSetup",        "Big purchase: What you're buying"],
+  ["bpQuiz",         "Big purchase: Help me pick"],
+  ["bpCost",         "Big purchase: Hidden costs"],
+  ["bpOptions",      "Big purchase: Ways to spend less"],
+  ["bpFinance",      "Big purchase: Paying for it"],
+  ["bpCommit",       "Big purchase: Plan for it"],
   ["helpMeOut",      "Budget: Help me out"],
   ["profilePicker",  "Starting profile"],
   ["spendingProfile","Budget: Spending Profile"],
@@ -211,6 +220,16 @@ const state = {
   // build one. No figure, no goal — just a record that the question has been
   // answered, so the task is not put to them again.
   esfSelfReported: null,
+
+  // ── Big purchase calculator (v3.1c) ───────────────────────────────────────
+  // bp           the in-flight run: setup answers, financing, per-card overrides,
+  //              the selected card, sheets, Buddy. Cleared by bpStart()
+  // bigPurchase  the SAVED plan bpCommit() writes: the chosen card, its stack at
+  //              3 and 5 years, the goal id, the reminder and its figure
+  // bpEvents     session log (spec §12), in-memory under D03
+  bp: null,
+  bigPurchase: null,
+  bpEvents: [],
   // Which of the nine starting profiles is applied, or null for the persona
   // seed. Written only by profileApply().
   activeProfileId: null,

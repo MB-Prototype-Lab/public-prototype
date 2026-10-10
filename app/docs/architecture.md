@@ -1471,3 +1471,8 @@ and the user-approved immediate ESF budget replacement exception are specified i
 [the current app contracts](../../docs/app-contracts.md#combined-prototype-behavior).
 ESF model/data load after the baseline seam, Buddy ESF logic follows the model,
 and ESF/Buddy renderers load with the screens. JSON wrappers support `file://`.
+Big Purchase data loads with the other data wrappers. `js/bp-engine.js` is
+category-blind; `js/bp-vehicle.js` registers the vehicle category with it and reads
+ESF insurance and fuel figures at call time, so it loads after `js/esf.js`. Finder,
+lease and Buddy models follow, and `screens/bp-*.js` load after the ESF Buddy panel.
+`render()` fills `#buddyRoot` from both `renderEsfBuddyLayer()` and `renderBpLayer()`.

@@ -22,6 +22,8 @@ function renderGoalsV3() {
         <p class="goal-strategic-label">${h(strat.label)}</p>
       </div>` : ""}
 
+    ${typeof renderBpGoalsCards === "function" ? renderBpGoalsCards() : ""}
+
     ${applied ? `
       <div class="card obs-card">
         <p class="helper" style="margin:0;">

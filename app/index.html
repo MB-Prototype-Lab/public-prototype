@@ -127,6 +127,10 @@ window.onunhandledrejection = function(e) {
      buddy-responses.json: that is the keyword matcher's response library and
      this is a tapped tree. Two shapes, two files. -->
 <script src="data/buddy-esf.js"></script>
+<!-- v3.1c: the Big Purchase Calculator's figures (every one sourced or flagged
+     _prototype) and Buddy's copy for it. docs/big-purchase-spec.md §13 / §11. -->
+<script src="data/big-purchase.js"></script>
+<script src="data/buddy-bp.js"></script>
 <script src="data/lessons.js"></script>
 <!-- AUTHORED in 5c — lessons.json ships no script bodies (L8) -->
 <script src="data/lesson-scripts.js"></script>
@@ -162,6 +166,14 @@ window.onunhandledrejection = function(e) {
 <!-- The Ask Buddy panel's model: disclosures, navigation, logging. Loads AFTER
      js/esf.js -- it reads esfSession(), esfRow() and esfLog() at call time. -->
 <script src="js/buddy-esf.js"></script>
+<!-- Big Purchase: the category-blind ENGINE first, then the Vehicle config that
+     registers itself with it, then Buddy's model. None touch the DOM. The
+     vehicle config reads the ESF's insurance and fuel figures at call time. -->
+<script src="js/bp-engine.js"></script>
+<script src="js/bp-vehicle.js"></script>
+<script src="js/bp-finder.js"></script>
+<script src="js/bp-lease.js"></script>
+<script src="js/buddy-bp.js"></script>
 <!-- Reads the profile table above plus benchIncomeBand; profile-picker.js renders it -->
 <script src="js/profiles.js"></script>
 
@@ -200,6 +212,19 @@ window.onunhandledrejection = function(e) {
 <script src="screens/esf-plan.js"></script>
 <!-- Renders the pill and the overlay for both ESF screens above. -->
 <script src="screens/buddy-panel.js"></script>
+<!-- Big Purchase: landing + fund check, the three steps, the in-frame sheets,
+     and the Buddy panel drawn with the ESF panel's own classes. -->
+<script src="screens/bp-landing.js"></script>
+<script src="screens/bp-finder.js"></script>
+<script src="screens/bp-setup.js"></script>
+<script src="screens/bp-quiz.js"></script>
+<script src="screens/bp-cost.js"></script>
+<script src="screens/bp-options.js"></script>
+<script src="screens/bp-finance.js"></script>
+<script src="screens/bp-commit.js"></script>
+<script src="screens/bp-yourcar.js"></script>
+<script src="screens/bp-sheet.js"></script>
+<script src="screens/bp-buddy.js"></script>
 <script src="screens/budget-category.js"></script>
 <script src="screens/spend-estimator.js"></script>
 <script src="screens/lifestyle-wizard.js"></script>

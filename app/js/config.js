@@ -100,3 +100,18 @@ const LESSON_REUSE_FRAMING = false;
 // what a tester walks through. Same rule as the two flags above: flipping it
 // must not require unwinding anything else.
 const ESF_ONLY = false;
+
+// BIG PURCHASE ENTRY — ported from blue's v3.1 (C) build, off in this app.
+//
+//   true  -> onboarding asks only ZIP, income and miles (docked, tap-to-advance)
+//            and hands over to the Big Purchase Calculator instead of the
+//            emergency fund. The fund is still one tap away: the calculator's
+//            own "Do you have an emergency fund?" check opens it
+//   false -> onboarding is untouched; the calculator opens from the Goals tab's
+//            "Estimate a big purchase" card and the admin jump list
+//
+// Sits on top of ESF_ONLY rather than replacing it: the hand-over lives inside
+// onbFinish()'s ESF_ONLY branch, so blue's entry flow is BP_ENTRY = true WITH
+// ESF_ONLY = true. Turning this on alone shortens onboarding without the
+// hand-over.
+const BP_ENTRY = false;

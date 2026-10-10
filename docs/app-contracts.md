@@ -32,6 +32,24 @@ answers scale the opening estimate and apply a selected band only on confirmatio
 The existing Home chat remains a keyword matcher. No backend, API or persistence
 is added. Development tracking remains off; releases control tracking.
 
+### Big Purchase Calculator
+
+Ported from blue `HoffDemo-BigPurchase` (`f84f142`, `b4abe14`); see
+docs/big-purchase-spec.md and docs/history/big-purchase-notes.md. `BP_ENTRY = false`:
+onboarding and Home are unchanged, and the calculator opens from the Goals tab's
+"Estimate a big purchase" card (`bpOpen()`) and the admin jump list. Blue's
+calculator-first entry is `BP_ENTRY = true` **with** `ESF_ONLY = true`; the hand-over
+sits inside `onbFinish()`'s ESF_ONLY branch, so `BP_ENTRY` alone only shortens
+onboarding. All docked onboarding behavior is gated on `BP_ENTRY`.
+
+The calculator writes `state.bp` (in-flight run, reset by `bpStart()`),
+`state.bigPurchase` (the saved plan) and `state.bpEvents` (session log). Commit
+creates at most one `purchaseSaving` goal and replaces it on repeat; it never writes
+the budget. "Start mine first" opens the ESF with `state.bp.esfReturn`, so Back from
+the fund returns to the calculator rather than onboarding. The `bp`/`bpf` prefix
+belongs to the calculator; the Budget paywall uses `paywall*` names. Figures marked
+`_prototype` in data/big-purchase.json are estimates, not quotes.
+
 ## Traps that fail silently
 
 Each of these produces a plausible-looking wrong result rather than an error.
