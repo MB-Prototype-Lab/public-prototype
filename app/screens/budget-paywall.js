@@ -37,18 +37,18 @@ const BUDGET_PAYWALL_ANNUAL  = 124.99;
 const BUDGET_PAYWALL_TRIAL = "Seven days free";
 
 /** $14.99 -- always cents, so a strikethrough reads as a real price. */
-function bpMoney(n) {
+function paywallMoney(n) {
   return "$" + (Math.round(n * 100) / 100).toFixed(2);
 }
 
 /** A full year at the monthly price: the honest "was" figure. */
-function bpFullYear() {
+function paywallFullYear() {
   return Math.round(BUDGET_PAYWALL_MONTHLY * 12 * 100) / 100;
 }
 
 /** The saving, in whole percent, rounded DOWN (30.5 -> 30, never 31). */
-function bpSavePct() {
-  const full = bpFullYear();
+function paywallSavePct() {
+  const full = paywallFullYear();
   return full > 0 ? Math.floor((full - BUDGET_PAYWALL_ANNUAL) / full * 100) : 0;
 }
 
@@ -81,25 +81,25 @@ function renderBudgetPaywall() {
       <!-- Two plans. Annual is the filled one, and it sits LOWEST -- nearest
            the thumb -- selling on one idea: 30% off. Monthly stays, outlined,
            with its price, so the choice is a real one. -->
-      <div class="bp-plans">
-        <button class="button secondary full bp-plan bp-plan-monthly" type="button"
+      <div class="paywall-plans">
+        <button class="button secondary full paywall-plan paywall-plan-monthly" type="button"
                 onclick="budgetPaywallTap('monthly')">
           Start free trial
-          <span class="bp-plan-sub">${h(bpMoney(BUDGET_PAYWALL_MONTHLY))} a month</span>
+          <span class="paywall-plan-sub">${h(paywallMoney(BUDGET_PAYWALL_MONTHLY))} a month</span>
         </button>
-        <button class="button full bp-plan bp-plan-annual" type="button"
-                aria-label="Go yearly, ${h(bpMoney(BUDGET_PAYWALL_ANNUAL))} a year, was ${h(bpMoney(bpFullYear()))}, save ${bpSavePct()} percent"
+        <button class="button full paywall-plan paywall-plan-annual" type="button"
+                aria-label="Go yearly, ${h(paywallMoney(BUDGET_PAYWALL_ANNUAL))} a year, was ${h(paywallMoney(paywallFullYear()))}, save ${paywallSavePct()} percent"
                 onclick="budgetPaywallTap('annual')">
-          <span class="bp-plan-tag" aria-hidden="true">Save ${bpSavePct()}%</span>
+          <span class="paywall-plan-tag" aria-hidden="true">Save ${paywallSavePct()}%</span>
           Go yearly
-          <s class="bp-was" aria-hidden="true">${h(bpMoney(bpFullYear()))}</s>
-          <strong aria-hidden="true">${h(bpMoney(BUDGET_PAYWALL_ANNUAL))}</strong>
+          <s class="paywall-was" aria-hidden="true">${h(paywallMoney(paywallFullYear()))}</s>
+          <strong aria-hidden="true">${h(paywallMoney(BUDGET_PAYWALL_ANNUAL))}</strong>
         </button>
       </div>
 
       <!-- Patched, not re-rendered: nothing is stored, so nothing has to be
            cleared and the next repaint takes the note away by itself. -->
-      <p class="helper" id="bpNote" style="font-size:11px;margin:12px 0 0;min-height:16px;"></p>
+      <p class="helper" id="paywallNote" style="font-size:11px;margin:12px 0 0;min-height:16px;"></p>
     </div>
   `;
 }
@@ -115,7 +115,7 @@ function budgetPaywallTap(plan) {
   // `plan` is 'monthly' or 'annual'. Nothing here reads it: it exists so the
   // two buttons carry different click names (budgetPaywallTap:monthly /
   // :annual, js/ub-names.js) and the study can see which plan testers reach for.
-  uiPatchHTML("bpNote",
+  uiPatchHTML("paywallNote",
     "Checkout isn't built into this prototype — nothing was charged, " +
     "and the budget stays where it is.");
 }
@@ -136,9 +136,9 @@ function renderBudgetPaywallAdmin() {
           The CTA records the tap and says checkout is not built. It does not
           write <code>state.trialAccepted</code>, which still means what it
           always did: diamonds and the reward screen's subscriber section.
-          Monthly ${h(bpMoney(BUDGET_PAYWALL_MONTHLY))} · yearly
-          ${h(bpMoney(BUDGET_PAYWALL_ANNUAL))}, shown against
-          ${h(bpMoney(bpFullYear()))} (monthly × 12) as "save ${bpSavePct()}%",
+          Monthly ${h(paywallMoney(BUDGET_PAYWALL_MONTHLY))} · yearly
+          ${h(paywallMoney(BUDGET_PAYWALL_ANNUAL))}, shown against
+          ${h(paywallMoney(paywallFullYear()))} (monthly × 12) as "save ${paywallSavePct()}%",
           rounded down. The two taps are tracked separately.
         </div>
       </div>

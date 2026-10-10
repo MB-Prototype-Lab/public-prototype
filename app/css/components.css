@@ -591,7 +591,7 @@
   color: var(--text);
   font-size: 13px;
   padding: 9px;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   outline: none;
 }
 
@@ -1269,7 +1269,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   color: var(--text);
   font-size: 13px;
   padding: 11px 14px;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   outline: none;
 }
 
@@ -2613,18 +2613,18 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    Annual is the filled button and the one that sells: a "Save 30%" pill on its
    top edge and the full year struck through beside the real price. Monthly is
    outlined and keeps its price. Tokens only, so all four themes follow. */
-.bp-plans { display: flex; flex-direction: column; gap: 18px; margin-bottom: 4px; }
-.screen .bp-plan {
+.paywall-plans { display: flex; flex-direction: column; gap: 18px; margin-bottom: 4px; }
+.screen .paywall-plan {
   white-space: normal;        /* .button is nowrap; these carry two lines */
   min-height: 52px;
   line-height: 1.3;
   font-size: 14px;
 }
-.bp-plan-sub { display: block; font-size: 12px; font-weight: 600; opacity: .8; margin-top: 2px; }
-.screen .bp-plan-annual { position: relative; padding-top: 14px; padding-bottom: 12px; font-size: 15px; }
-.bp-plan-annual strong { font-size: 17px; font-weight: 900; }
-.bp-was { opacity: .7; font-weight: 600; margin: 0 4px 0 6px; }
-.bp-plan-tag {
+.paywall-plan-sub { display: block; font-size: 12px; font-weight: 600; opacity: .8; margin-top: 2px; }
+.screen .paywall-plan-annual { position: relative; padding-top: 14px; padding-bottom: 12px; font-size: 15px; }
+.paywall-plan-annual strong { font-size: 17px; font-weight: 900; }
+.paywall-was { opacity: .7; font-weight: 600; margin: 0 4px 0 6px; }
+.paywall-plan-tag {
   position: absolute; top: 0; left: 50%;
   transform: translate(-50%, -55%);
   background: var(--card);
@@ -3981,7 +3981,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   color: var(--text);          /* body copy is never --muted */
   font-size: 13px;
   font-weight: 700;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   text-align: left;
   cursor: pointer;
 }
@@ -4031,7 +4031,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   background: var(--soft);
   color: var(--muted);
   font-size: 13px;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   padding: 11px 14px;
   opacity: .62;
   cursor: default;
@@ -4050,7 +4050,7 @@ button.esf-based {
   background: none;
   padding: 0;
   text-align: left;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   cursor: pointer;
 }
 .esf-disclosed { color: var(--accent); font-weight: 750; }
@@ -4115,7 +4115,7 @@ button.esf-based {
   color: #2B1A0E;
   font-size: 13px;
   font-weight: 850;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -4218,7 +4218,7 @@ button.esf-based {
   border-radius: 12px;
   background: var(--card);
   color: var(--text);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 700;
   text-align: left;
@@ -4260,7 +4260,7 @@ button.esf-based {
   border-radius: 12px;
   background: var(--soft);
   color: var(--text);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   font-size: 11.5px;
   font-weight: 800;
   line-height: 1.2;
@@ -4287,9 +4287,2308 @@ button.esf-based {
   border-radius: 12px;
   background: var(--accent);
   color: var(--on-accent);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 850;
   cursor: pointer;
 }
 .esf-buddy-apply:hover { filter: brightness(1.06); }
+
+/* ═══ Big Purchase Calculator (v3.1c) ═══════════════════════════════════════
+   docs/big-purchase-spec.md. Scrolling is allowed on these screens, so the
+   ESF's 29px compromise does NOT carry over: every control is 44px (§1.8).
+   Theme tokens only; the one literal pair is Buddy's amber on the 💡 chips,
+   the same pair .esf-ask uses and for the same reason — it is his colour and
+   must not drift with the themes. Dark #2B1A0E on #E9A227 is ~7.9:1. */
+
+.bp-lead { margin: 0 0 10px; font-size: 14px; line-height: 1.45; color: var(--text-strong); }
+.bp-stack { display: flex; flex-direction: column; gap: 8px; }
+.bp-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* Landing category rows. Disabled rows stay visible — "coming soon" is a
+   promise, and a hidden row cannot make one. */
+.bp-cat, .bp-entry {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; min-height: 48px; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: 13px;
+  background: var(--card); color: var(--text-strong);
+  font: inherit; font-size: 15px; font-weight: 700; text-align: left; cursor: pointer;
+}
+.bp-cat:disabled { cursor: default; color: var(--muted); background: var(--soft); }
+.bp-cat-mark { font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.bp-cat:not(:disabled) .bp-cat-mark { font-size: 20px; color: var(--accent); }
+.bp-entry { margin-top: 12px; }
+.bp-entry .bp-cat-mark { font-size: 20px; color: var(--accent); }
+.bp-goal-card { margin-bottom: 12px; }
+
+/* ── Questions and tiles ─────────────────────────────────────────────────── */
+.bp-q { margin: 0 0 16px; }
+.bp-q-label { margin: 0 0 7px; font-size: 13px; font-weight: 800; color: var(--text-strong); }
+.bp-q-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
+.bp-q-row:first-child { margin-top: 0; }
+.bp-q-row .bp-q-label { margin: 0; }
+.bp-unit { font-weight: 600; color: var(--muted); }
+.bp-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.bp-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(62px, 1fr)); gap: 6px; }
+.bp-tiles-wrap { grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); }
+.bp-tiles-2 { grid-template-columns: 1fr 1fr; margin-bottom: 14px; }
+.bp-tiles-3 { grid-template-columns: repeat(3, 1fr); margin: 10px 0; }
+.bp-tiles-4 { grid-template-columns: repeat(4, 1fr); }
+.bp-tiles-list { grid-template-columns: 1fr; }
+
+.bp-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 44px; padding: 8px 6px;
+  border: 1px solid var(--rail); border-radius: 11px;
+  background: var(--card); color: var(--text-strong);
+  font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center;
+}
+.bp-tiles-list .bp-tile { align-items: flex-start; text-align: left; padding: 9px 12px; }
+.bp-tile.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.bp-tile-sub { font-size: 11px; font-weight: 500; color: var(--text); }
+.bp-tile-inline { flex: 0 0 auto; padding: 8px 14px; }
+
+.screen .bp-price, .screen .bp-zip, .screen .bp-rate, .screen .bp-row-input {
+  min-height: 44px; font-size: 16px;
+}
+.screen .bp-price { width: 100%; }
+.screen .bp-zip { width: 120px; }
+.screen .bp-rate { width: 110px; }
+.screen .bp-row-input { width: 120px; text-align: right; }
+
+.bp-link {
+  min-height: 44px; padding: 0 4px; border: 0; background: none;
+  color: var(--accent); font: inherit; font-size: 13px; font-weight: 700;
+  text-decoration: underline; cursor: pointer;
+}
+
+/* ── Pinned headline ─────────────────────────────────────────────────────── */
+.bp-head { padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.bp-headline-one { margin: 8px 0 0; font-size: 14px; color: var(--text-strong); }
+.bp-headline-one strong { font-size: 20px; }
+.bp-headline { margin-top: 8px; }
+.bp-hl-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: center; }
+.bp-hl-pair > div, .bp-headline { display: flex; flex-direction: column; align-items: center; }
+.bp-hl-big { font-size: 24px; font-weight: 900; line-height: 1.1; color: var(--text-strong); letter-spacing: -.01em; }
+.bp-hl-pair span, .bp-hl-cap { font-size: 12px; color: var(--text); }
+/* A rule between the two halves, so the down payment and the monthly figure
+   read as two separate facts rather than one run-on (owner, 2026-09-27). */
+.bp-hl-split > div + div { border-left: 1px solid var(--line); }
+.bp-hl-split > div { justify-content: center; padding: 0 6px; }
+.bp-hl-split span { line-height: 1.25; }
+.bp-hl-sub { margin: 4px 0 0; font-size: 12px; text-align: center; color: var(--text); }
+.bp-hl-center { font-size: 30px; }
+
+/* ── Summary line ────────────────────────────────────────────────────────── */
+.bp-summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px;
+  margin: 12px 0 4px; font-size: 13px; font-weight: 700; color: var(--text-strong);
+}
+.bp-edit {
+  min-height: 44px; padding: 0 10px; border: 1px dashed var(--rail); border-radius: 10px;
+  background: var(--card); color: var(--text-strong); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.bp-edit.on { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+.bp-inline-edit { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 4px; }
+
+.bp-section {
+  margin: 20px 0 8px; padding-top: 12px; border-top: 1px solid var(--line);
+  font-size: 12px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; color: var(--text);
+}
+.bp-group { margin: 14px 0 6px; font-size: 13px; font-weight: 800; color: var(--text-strong); }
+
+/* ── Option cards ────────────────────────────────────────────────────────── */
+.bp-cards { display: flex; flex-direction: column; gap: 8px; }
+.bp-card {
+  padding: 11px 13px; border: 1px solid var(--line); border-radius: 14px;
+  background: var(--card); cursor: pointer;
+}
+.bp-card.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+.bp-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.bp-card-title { font-size: 12px; font-weight: 900; letter-spacing: .03em; text-transform: uppercase; color: var(--text); }
+.bp-radio {
+  width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--rail); background: var(--card); flex: 0 0 auto;
+}
+.bp-card.on .bp-radio { border-color: var(--accent); box-shadow: inset 0 0 0 4px var(--card); background: var(--accent); }
+.bp-card-line { margin: 2px 0 0; font-size: 13px; color: var(--text-strong); }
+.bp-card-strong { font-size: 15px; font-weight: 800; }
+.bp-diff { margin: 8px 0 0; font-size: 13px; font-weight: 800; color: var(--text-strong); }
+.bp-diff-sub { display: block; font-weight: 600; color: var(--text); }
+.bp-worth { margin: 2px 0 0; font-size: 13px; color: var(--text-strong); }
+.bp-pencil {
+  display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
+  min-width: 44px; min-height: 44px; margin: -14px -10px -14px -6px; padding: 0; border: 0; background: none;
+  color: var(--accent); font-size: 17px; cursor: pointer;
+}
+.bp-none { margin-top: 8px; }
+
+/* ── Financing ───────────────────────────────────────────────────────────── */
+.bp-tip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 10px;
+  padding: 0 14px; border: 1px solid #C97B0E; border-radius: 999px;
+  background: #E9A227; color: #2B1A0E;
+  font: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.bp-payline {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin: 4px 0 0; font-size: 13px; color: var(--text-strong);
+}
+.bp-block {
+  margin-top: 14px; padding: 12px 13px; border-radius: 13px;
+  background: var(--soft); border: 1px solid var(--line);
+}
+.bp-block-row {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  margin: 0 0 6px; font-size: 13px; color: var(--text-strong);
+}
+.bp-block-row strong { white-space: nowrap; }
+.bp-block-note { margin: 6px 0 0; font-size: 12px; font-weight: 700; color: var(--text-strong); }
+
+/* ── Cost rows ───────────────────────────────────────────────────────────── */
+.bp-row { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.bp-row-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+.bp-row-label { font-size: 14px; font-weight: 700; color: var(--text-strong); }
+.bp-row-fixed { font-size: 14px; color: var(--text-strong); white-space: nowrap; }
+.bp-based { margin: 3px 0 0; font-size: 12px; line-height: 1.4; color: var(--text-strong); }
+.bp-foot-note { margin: 12px 0 4px; }
+.bp-drop {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px;
+  border: 1px solid var(--rail); border-radius: 10px; background: var(--card);
+  color: var(--text-strong); font: inherit; font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer;
+}
+.bp-drop-caret { font-size: 11px; color: var(--muted); }
+
+/* ── Screen 3 ────────────────────────────────────────────────────────────── */
+.bp-choice { margin: 0 0 14px; }
+.bp-keep { margin: 0 0 16px; padding-left: 18px; font-size: 13px; line-height: 1.6; color: var(--text-strong); }
+.bp-math { margin: 0 0 16px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--card); }
+.bp-math-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 40px;
+  font-size: 14px; color: var(--text-strong);
+}
+.bp-math-row label { font-weight: 400; }
+.bp-math-total { border-top: 1px solid var(--line); font-weight: 800; }
+.bp-date { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bp-step {
+  width: 44px; height: 44px; border: 1px solid var(--rail); border-radius: 11px;
+  background: var(--card); color: var(--text-strong); font-size: 22px; font-weight: 800; cursor: pointer;
+}
+.bp-date-val { min-width: 84px; text-align: center; font-size: 16px; color: var(--text-strong); }
+.bp-date-note { margin-left: auto; font-size: 14px; font-weight: 800; color: var(--text-strong); }
+.bp-check {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 6px 0;
+  border: 0; background: none; color: var(--text-strong); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+}
+.bp-box {
+  flex: 0 0 auto; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid var(--rail); border-radius: 6px; background: var(--card); color: var(--on-accent); font-weight: 900;
+}
+.bp-check.on .bp-box { border-color: var(--accent); background: var(--accent); }
+
+/* ── Sheets (in-frame; never native) ─────────────────────────────────────── */
+.bp-sheet { height: auto; max-height: 82%; }
+.bp-sheet-head { flex-shrink: 0; padding: 14px 16px 0; border-bottom: 1px solid var(--line); background: var(--accent-soft); }
+.bp-sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px; }
+.bp-sheet-foot { flex-shrink: 0; padding: 10px 16px 14px; border-top: 1px solid var(--line); background: var(--card); }
+.bp-sheet-list { display: flex; flex-direction: column; gap: 6px; }
+.bp-opt {
+  min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 11px;
+  background: var(--card); color: var(--text-strong); font: inherit; font-size: 15px; font-weight: 700; text-align: left; cursor: pointer;
+}
+.bp-opt.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.bp-table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 13px; color: var(--text-strong); }
+.bp-table th { padding: 0 4px 6px; font-size: 11px; font-weight: 800; text-align: left; color: var(--text); border-bottom: 1px solid var(--line); }
+.bp-table td { padding: 9px 4px; border-bottom: 1px solid var(--line); }
+.bp-table tr.bp-you td { font-weight: 900; background: var(--accent-soft); }
+.bp-you-mark { font-size: 11px; color: var(--accent); white-space: nowrap; }
+.bp-page { font-size: 13px; line-height: 1.5; color: var(--text-strong); }
+.bp-page p { margin: 0 0 8px; }
+.bp-page ul { margin: 0 0 8px; padding-left: 18px; }
+.bp-page-title { font-size: 18px; font-weight: 900; }
+.bp-page-src { font-size: 11px; color: var(--muted); }
+.bp-page-h { margin-top: 12px !important; font-weight: 900; }
+
+/* Continue on screen 1: looks disabled, stays clickable (see bpSetupNext). */
+.button.bp-off { opacity: .55; cursor: default; }
+.button.bp-off:hover { filter: none; }
+
+/* ═══ Big Purchase — revision after the owner's review (2026-09-22) ════════ */
+
+/* Landing: the fund question is a highlighted box at the bottom, not a screen. */
+.bp-esf-box {
+  margin: 18px 0 4px; padding: 14px 14px 12px;
+  border: 1px solid var(--info-border); border-radius: 16px; background: var(--info-bg);
+}
+.bp-esf-q { margin: 0 0 4px; font-size: 15px; font-weight: 800; line-height: 1.35; color: var(--text-strong); }
+.bp-esf-sub { margin: 0 0 10px; font-size: 13px; line-height: 1.4; color: var(--text-strong); }
+.bp-esf-opts { display: flex; flex-direction: column; gap: 6px; }
+.bp-esf-opt {
+  min-height: 44px; padding: 0 14px; border: 1px solid var(--info-border); border-radius: 12px;
+  background: var(--card); color: var(--text-strong); font: inherit; font-size: 14px; font-weight: 700;
+  text-align: left; cursor: pointer;
+}
+.bp-esf-opt.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+
+/* Step 1: answered questions collapse into dropdown-style rows at the top. */
+.bp-answers { display: flex; flex-direction: column; gap: 6px; }
+.bp-ans {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 14px;
+  border: 1px solid var(--rail); border-radius: 12px; background: var(--card);
+  color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
+}
+.bp-ans.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.bp-ans-label { flex: 0 0 84px; font-size: 12px; font-weight: 700; color: var(--text); }
+.bp-ans-val { flex: 1; min-width: 0; font-size: 15px; font-weight: 800; }
+.bp-ask-done { margin: 14px 2px 0; font-size: 14px; color: var(--text-strong); }
+
+/* The dock: the one open question, its choices in thumb reach above the footer. */
+.bp-dock {
+  flex-shrink: 0; margin: 0 -18px; padding: 14px 18px 2px;
+  border-top: 1px solid var(--line); background: var(--soft);
+  border-radius: 20px 20px 0 0;
+}
+.bp-ask { margin: 0 0 10px; font-size: 18px; font-weight: 900; line-height: 1.25; color: var(--text-strong); }
+.bp-dock-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bp-dock .bp-tiles-list { gap: 6px; }
+.bp-dock .bp-tile { min-height: 48px; }
+
+/* Screen 2: summary line */
+.bp-summary { justify-content: space-between; }
+.bp-summary-noun { font-size: 14px; }
+.bp-summary-edits { display: flex; gap: 6px; }
+.bp-edit { border-style: solid; }
+
+/* Option cards: one saving pill, one sticker line */
+.bp-diff-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.bp-pill { font-size: 11px; padding: 3px 9px; font-weight: 800; }
+
+/* The money pile */
+.bp-pile { margin-top: 14px; }
+.bp-pile-lead { margin: 0 0 6px; font-size: 14px; line-height: 1.4; color: var(--text-strong); }
+.bp-pile-svg { display: block; width: 100%; height: auto; margin: 4px 0 2px; }
+.bp-pile-note { margin: 0; font-size: 13px; line-height: 1.4; color: var(--text-strong); }
+
+/* The hidden costs, as one read-only expense list */
+.bp-list { margin-top: 14px; }
+.bp-list-title { margin: 0 0 2px; font-size: 15px; font-weight: 900; color: var(--text-strong); }
+.bp-list-cap { margin: 0 0 6px; font-size: 12px; color: var(--text); }
+.bp-list-group {
+  margin: 12px 0 2px; font-size: 11px; font-weight: 900; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--text);
+}
+.bp-list-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 14px; color: var(--text-strong);
+}
+.bp-list-row strong { white-space: nowrap; }
+.bp-list-label { display: block; font-weight: 700; }
+.bp-list-sub { display: block; font-size: 12px; color: var(--text); }
+.bp-list-total { margin-top: 4px; padding-top: 10px; border-bottom: 0; border-top: 2px solid var(--text-strong); font-size: 15px; font-weight: 900; }
+.bp-list-foot { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
+
+/* How you'll pay: a segmented control and three setting rows */
+.bp-paycard { margin-top: 14px; }
+.bp-seg {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 8px 0 6px; padding: 4px;
+  border-radius: 13px; background: var(--soft);
+}
+.bp-seg button {
+  min-height: 40px; border: 0; border-radius: 10px; background: none;
+  color: var(--text); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+}
+.bp-seg button.on { background: var(--card); color: var(--text-strong); box-shadow: var(--shadow-soft), 0 0 0 1px var(--line); }
+.bp-setrow {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; min-height: 44px; padding: 0 2px; border: 0; border-bottom: 1px solid var(--line);
+  background: none; color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
+}
+.bp-setrow-label { font-size: 14px; }
+.bp-setrow-val { font-size: 14px; font-weight: 800; white-space: nowrap; }
+.bp-setrow-total { border-bottom: 0; cursor: default; font-size: 14px; }
+.bp-setrow-total strong { font-size: 16px; }
+.screen .bp-inline-input { width: 100%; min-height: 44px; margin: 6px 0; font-size: 16px; }
+.bp-tips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.bp-tips .bp-tip { margin-top: 0; min-height: 44px; padding: 0 12px; font-size: 12px; }
+.bp-tip-plain { border-color: var(--rail) !important; background: var(--card) !important; color: var(--text-strong) !important; }
+
+/* ═══ Big Purchase — second review (2026-09-22): four screens ══════════════ */
+
+/* The car this screen is about, stated once and not editable here. */
+.bp-carline { margin: 10px 0 8px; font-size: 15px; font-weight: 800; color: var(--text-strong); }
+
+/* The costs table: one line per expense, figures right, month and year. */
+.bp-table2 { margin: 10px 0 4px; }
+.bp-t2row {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 10px 0; border-bottom: 1px solid var(--line);
+}
+.bp-t2row:last-child { border-bottom: 0; }
+.bp-t2label { font-size: 15px; font-weight: 700; color: var(--text-strong); }
+.bp-t2fig { text-align: right; white-space: nowrap; }
+.bp-t2fig strong { display: block; font-size: 15px; color: var(--text-strong); }
+.bp-t2fig span { display: block; font-size: 12px; color: var(--text); }
+.bp-financed { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.bp-fin-total {
+  margin-top: 16px; padding: 4px 13px; border: 1px solid var(--line);
+  border-radius: 13px; background: var(--card);
+}
+
+/* Ways to spend less: a summary card that expands. */
+.bp-option { margin-bottom: 10px; padding: 0; overflow: hidden; }
+.bp-option.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.bp-option-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  width: 100%; padding: 14px; border: 0; background: none; text-align: left; cursor: pointer;
+}
+.bp-option-title { display: block; font-size: 16px; font-weight: 900; color: var(--text-strong); line-height: 1.25; }
+.bp-option-sub { display: block; margin-top: 4px; font-size: 13px; line-height: 1.4; color: var(--text-strong); }
+.bp-option-mark {
+  flex: 0 0 auto; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 18px; font-weight: 900;
+}
+.bp-opt-detail { padding: 0 14px 14px; }
+
+/* Buddy and the bag of money. */
+.bp-bag {
+  display: flex; align-items: center; gap: 6px;
+  margin: 10px 0 12px; padding: 10px 12px;
+  border-radius: 14px; background: var(--good-bg); border: 1px solid var(--good-border);
+}
+.bp-bag-buddy { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; background: var(--card); }
+.bp-bag-svg { width: 62px; height: 58px; flex: 0 0 auto; }
+.bp-bag-amt { margin: 0; flex: 1; min-width: 0; text-align: right; }
+.bp-bag-amt strong { display: block; font-size: 22px; font-weight: 900; color: var(--good); line-height: 1.1; }
+.bp-bag-amt span { display: block; font-size: 12px; color: var(--text-strong); }
+
+/* The two-column, apples-to-apples comparison. */
+.bp-compare { margin: 6px 0 10px; }
+.bp-cmp-head, .bp-cmp-row {
+  display: grid; grid-template-columns: 1fr 74px 74px; gap: 6px; align-items: center;
+  padding: 6px 0; border-bottom: 1px dashed var(--line);
+  font-size: 13px; color: var(--text-strong);
+}
+.bp-cmp-head { border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--text); }
+.bp-cmp-head span:not(:first-child), .bp-cmp-row span:not(.bp-cmp-label) { text-align: right; }
+.bp-cmp-label { font-weight: 700; }
+.bp-cmp-total { border-bottom: 0; border-top: 2px solid var(--text-strong); font-weight: 900; padding-top: 8px; }
+
+/* ═══ Big Purchase — third review (2026-09-22) ═════════════════════════════ */
+
+/* ── The docked choices sit RIGHT OF CENTRE ─────────────────────────────────
+   Owner: "keep thinking one handed experience… these options should skew
+   towards right hand of middle. They should be centered."
+
+   So the tiles are a centred flex cluster rather than a full-width grid: each
+   one is only as wide as it needs to be, a short last row centres under the
+   one above it, and the whole cluster is nudged toward the right thumb by
+   borrowing padding from the left. Two-option questions keep their own layout.  */
+.bp-dock .bp-tiles {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 8px; padding-left: 13%;
+}
+.bp-dock .bp-tiles .bp-tile { flex: 0 0 auto; min-width: 92px; padding: 8px 16px; }
+.bp-dock .bp-tiles-2 { display: grid; grid-template-columns: 1fr 1fr; padding-left: 0; }
+.bp-dock .bp-tiles-list { display: grid; grid-template-columns: 1fr; padding-left: 0; }
+.bp-dock .bp-tiles-list .bp-tile { min-width: 0; }
+
+/* ── The costs table ────────────────────────────────────────────────────────
+   One line per expense, two figure columns, and NO rules between rows — the
+   alignment does the separating. Tight rows so the whole thing reads as one
+   block rather than a stack of cards.                                        */
+.bp-tbl { margin: 10px 0 6px; }
+.bp-tbl-head, .bp-tbl-row {
+  display: grid; grid-template-columns: 1fr 70px 82px; gap: 8px; align-items: baseline;
+  padding: 4px 0;
+}
+.bp-tbl-head {
+  padding-bottom: 2px; font-size: 10px; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted);
+}
+.bp-tbl-row { font-size: 14px; color: var(--text-strong); }
+.bp-tbl-row span:not(.bp-tbl-label) { text-align: right; font-variant-numeric: tabular-nums; }
+.bp-tbl-label { font-weight: 700; }
+.bp-tbl-car .bp-tbl-label { font-weight: 800; }
+.bp-tbl-total {
+  margin-top: 6px; padding-top: 7px; border-top: 2px solid var(--text-strong);
+  font-size: 15px; font-weight: 900;
+}
+
+/* A "May need:" label is longer than the others and must not wrap the row onto
+   two lines — the table reads as one line per expense or it reads as nothing. */
+.bp-tbl-soft .bp-tbl-label { font-size: 13px; white-space: nowrap; }
+
+/* ═══ Big Purchase — dock layout, fourth review (2026-09-23) ═══════════════
+   The centred, right-nudged cluster is GONE. It wrapped to "2 + 2 + 1" with
+   three different left edges — a wrapped grid, not a layout. Every dock
+   question is now a full-width grid of equal cells (see bpDockLayout), so the
+   edges line up and a five-option question is a plain list, one per line,
+   which is what a one-of-many choice looks like in a shipped app.
+
+   These override the earlier `.bp-dock .bp-tiles` rules further up the file. */
+.bp-dock .bp-tiles {
+  display: grid; grid-template-columns: 1fr; gap: 8px; padding-left: 0;
+}
+.bp-dock .bp-tiles .bp-tile {
+  flex: initial; min-width: 0; width: 100%;
+  align-items: flex-start; text-align: left;
+  min-height: 48px; padding: 10px 14px;
+}
+.bp-dock .bp-tiles-2 { grid-template-columns: 1fr 1fr; }
+.bp-dock .bp-tiles-3 { grid-template-columns: repeat(3, 1fr); }
+/* Two and three across read as one control, so those centre their labels. */
+.bp-dock .bp-tiles-2 .bp-tile, .bp-dock .bp-tiles-3 .bp-tile {
+  align-items: center; text-align: center;
+}
+/* The selected row carries a tick as well as the fill — colour alone is not a
+   state, and on a full-width row there is somewhere to put it. */
+.bp-dock .bp-tiles-col .bp-tile.on::after {
+  content: "\2713"; margin-left: auto; font-size: 15px; font-weight: 900; color: var(--accent);
+}
+.bp-dock .bp-tiles-col .bp-tile { flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; }
+
+/* ═══ Big Purchase — spec revision 4 review (2026-09-26) ═══════════════════ */
+
+/* Landing rows carry an emoji, one size up from the label and centred on it. */
+.bp-cat-emoji { flex: 0 0 auto; font-size: 20px; line-height: 1; }
+.bp-cat-label { flex: 1; min-width: 0; }
+
+/* The fund box: three side-by-side buttons, label over subtext. */
+.bp-esf-opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.bp-esf-opt {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  min-height: 52px; padding: 6px 4px; text-align: center;
+}
+.bp-esf-opt-label { font-size: 14px; font-weight: 800; }
+.bp-esf-opt-sub { font-size: 11px; font-weight: 600; color: var(--text); line-height: 1.2; }
+/* Answered: the card collapses to one line and stops asking. */
+.bp-esf-done { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; }
+.bp-esf-said { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-strong); }
+.bp-esf-said span { color: var(--good); margin-right: 4px; }
+
+/* The bag now carries two figures: saved, and what it could be worth. */
+.bp-bag-amt strong { display: block; font-size: 20px; font-weight: 900; color: var(--good); line-height: 1.15; }
+.bp-bag-amt span { display: block; font-size: 11px; color: var(--text-strong); }
+.bp-bag-worth { margin-top: 4px; font-size: 16px !important; color: var(--text-strong) !important; }
+
+/* The comparison table, now up to three columns. The grid-template-columns are
+   set inline per row because the column count varies with what is on screen. */
+.bp-cmp-col {
+  display: flex; align-items: center; justify-content: center; gap: 3px;
+  min-height: 34px; padding: 2px 4px; border: 1px solid transparent; border-radius: 9px;
+  background: none; color: var(--text); font: inherit; font-size: 10px; font-weight: 900;
+  text-transform: uppercase; letter-spacing: .02em; cursor: pointer;
+}
+.bp-cmp-col.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.bp-cmp-tick { font-size: 11px; }
+/* Only the TOTAL row is ever coloured. Colouring every row turns the table into
+   a scorecard, and the cheapest car is not automatically the right one. */
+.bp-cmp-low { color: var(--good); font-weight: 900; }
+.bp-cmp-note { margin: 6px 0 10px; font-size: 11px; line-height: 1.45; color: var(--text); }
+.bp-addcol {
+  width: 100%; min-height: 44px; margin-bottom: 10px;
+  border: 1px dashed var(--rail); border-radius: 12px; background: var(--card);
+  color: var(--accent); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.bp-option.chosen { border-color: var(--accent); }
+
+/* Two summary lines: the month, then the first year. The month line is a
+   subtotal rule, the year line is the bold one the headline repeats. */
+.bp-tbl-sum { margin-top: 6px; padding-top: 7px; border-top: 1px solid var(--line); font-weight: 800; }
+.bp-tbl-total { margin-top: 0; padding-top: 4px; border-top: 2px solid var(--text-strong); }
+
+/* "Help me pick" — the way into the quiz, offered only while the type is
+   unanswered, so it never sits under a decision already made. */
+.bp-quizlink {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; min-height: 48px; margin-bottom: 12px; padding: 10px 14px;
+  border: 1px dashed var(--accent); border-radius: 13px; background: var(--accent-soft);
+  color: var(--text-strong); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.bp-quizlink-go { color: var(--accent); font-weight: 900; white-space: nowrap; }
+
+/* The quiz result. */
+.bp-quiz-result { margin-top: 14px; text-align: center; }
+.bp-quiz-said { margin: 0; font-size: 13px; color: var(--text); }
+.bp-quiz-type { margin: 2px 0 6px; font-size: 26px; font-weight: 900; color: var(--text-strong); }
+.bp-quiz-extra { margin: 0 0 8px; font-size: 14px; color: var(--text-strong); }
+.bp-quiz-why { margin: 0 0 14px; font-size: 12px; line-height: 1.5; color: var(--text); }
+
+/* A title that must not wrap on a 390px frame. */
+.esf-title.bp-title-fit { font-size: 17px; white-space: nowrap; }
+
+/* The one-line cheaper-options teaser on the costs screen. Reads as a link to
+   the next screen, not as a card competing with the table above it. */
+.bp-teaser {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; min-height: 48px; margin: 14px 0 0; padding: 10px 14px;
+  border: 1px solid var(--good-border); border-radius: 13px; background: var(--good-bg);
+  color: var(--text-strong); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+}
+.bp-teaser strong { color: var(--good); font-weight: 900; }
+.bp-teaser-go { font-size: 20px; color: var(--good); }
+
+/* ═══ Cost table, restyled (owner, 2026-09-26) ════════════════════════════
+   Bold black column headings, plain black expense rows, one bold Total, and a
+   dotted rule between the two figure columns so the month is never read as
+   part of the year. The rule is drawn as a border on the middle cell rather
+   than an absolutely-positioned line, so it stays put when a label wraps. */
+.bp-tbl-head {
+  font-size: 11px; font-weight: 900; letter-spacing: .02em;
+  text-transform: none; color: var(--text-strong);
+}
+.bp-tbl-row .bp-tbl-label { font-weight: 400; color: var(--text-strong); }
+.bp-tbl-car .bp-tbl-label { font-weight: 400; }
+.bp-tbl-soft .bp-tbl-label { font-weight: 400; }
+.bp-tbl-head span:nth-child(2),
+.bp-tbl-row span:nth-child(2) {
+  border-right: 1px dotted var(--rail); padding-right: 10px;
+}
+.bp-tbl-total { font-size: 15px; font-weight: 900; }
+.bp-tbl-total .bp-tbl-label { font-weight: 900; }
+
+/* The cheaper-options callout. The saving is the loudest thing on the screen
+   after the headline — the quiet version of this got missed entirely. */
+.bp-save {
+  margin: 16px 0 4px; padding: 14px; text-align: center;
+  border: 1px solid var(--good-border); border-radius: 16px; background: var(--good-bg);
+}
+.bp-save-lead { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-strong); }
+.bp-save-big {
+  margin: 2px 0 0; font-size: 34px; font-weight: 900; line-height: 1.05;
+  color: var(--good); letter-spacing: -.02em;
+}
+.bp-save-sub { margin: 2px 0 12px; font-size: 12px; color: var(--text-strong); }
+/* Declined: one line, and a way back in. */
+.bp-skipped {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin: 16px 0 4px; padding: 6px 2px; font-size: 13px; color: var(--text);
+}
+
+/* An inline SVG has no intrinsic size: without this it takes every pixel the
+   flex row will give it, which is most of the phone. */
+.bp-cat-icon { flex: 0 0 auto; width: 24px; height: 24px; display: block; }
+.bp-cat:not(:disabled) .bp-cat-icon { color: var(--accent); }
+.bp-cat:disabled .bp-cat-icon { color: var(--muted); }
+
+/* ═══ Landing, third pass (2026-09-27) ════════════════════════════════════ */
+
+/* Colour icons on their own tinted plate. The plate is an inline style (it is
+   part of the icon's identity, one per category); the box belongs here. */
+.bp-cat-icon {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.bp-cat-icon svg { width: 26px; height: 26px; display: block; }
+/* Coming soon dims the whole illustration rather than needing a second asset. */
+.bp-cat:disabled .bp-cat-icon { opacity: .45; filter: grayscale(.35); }
+
+/* The fund box sits at the top now, and its question needs air above the
+   answers — they were touching. */
+.bp-esf-box { margin: 4px 0 18px; padding: 15px 14px 14px; }
+.bp-esf-q { margin: 0 0 14px; line-height: 1.4; }
+.bp-esf-opt { justify-content: center; }
+/* "Start One Now" is the highlighted answer (owner's call). */
+.bp-esf-opt.strong {
+  border-color: var(--accent); background: var(--accent-fill);
+  color: var(--accent-fill-text); font-weight: 900;
+}
+.bp-esf-opt.strong .bp-esf-opt-label { font-weight: 900; }
+
+/* ═══ Screen 2 rebuilt to fit one screen (2026-09-27) ═════════════════════ */
+
+.bp-cost-shell .journal-body { display: flex; flex-direction: column; gap: 10px; }
+.bp-head-tight { padding-bottom: 8px; }
+
+/* The summary box: the first-year figure, its two halves, and the running cost
+   behind a vertical rule so the month is never read as the car's payment. */
+.bp-sum {
+  padding: 12px 14px; border: 1px solid var(--line); border-radius: 15px;
+  background: var(--card);
+}
+.bp-sum-title { margin: 0; font-size: 13px; font-weight: 700; color: var(--text); }
+.bp-sum-sub { margin: 1px 0 8px; font-size: 15px; font-weight: 900; color: var(--text-strong); }
+.bp-sum-figs { display: flex; align-items: stretch; gap: 12px; }
+.bp-sum-main { flex: 1; min-width: 0; }
+.bp-sum-main strong { display: block; font-size: 27px; font-weight: 900; line-height: 1.05; color: var(--text-strong); }
+.bp-sum-main span { display: block; margin-top: 2px; font-size: 11px; color: var(--text-strong); }
+.bp-sum-side {
+  flex: 0 0 auto; padding-left: 12px; border-left: 1px solid var(--line);
+  display: flex; flex-direction: column; justify-content: center; text-align: right;
+}
+.bp-sum-side strong { display: block; font-size: 17px; font-weight: 900; color: var(--text-strong); }
+.bp-sum-side span { display: block; font-size: 10px; line-height: 1.3; color: var(--text); max-width: 92px; }
+
+/* The running-cost box. Compact rows, big total, one rule running the full
+   height between the two figure columns rather than per-row dashes. */
+.bp-costbox { padding: 12px 14px; }
+.bp-box-head { margin: 0 0 6px; font-size: 14px; font-weight: 900; color: var(--text-strong); line-height: 1.3; }
+.bp-tbl-ruled { position: relative; }
+.bp-tbl-ruled .bp-tbl-head span:nth-child(2),
+.bp-tbl-ruled .bp-tbl-row span:nth-child(2) { border-right: 0; }
+/* One continuous divider, drawn once, spanning head to total. */
+.bp-tbl-ruled::after {
+  content: ""; position: absolute; top: 0; bottom: 0; right: 82px;
+  border-left: 1px solid var(--line);
+}
+.bp-tbl-ruled .bp-tbl-head, .bp-tbl-ruled .bp-tbl-row { padding: 2px 0; }
+/* Centred, black and bold over their columns (owner, 2026-09-27). The figures
+   under them stay right-aligned — a column of money reads off its right edge. */
+.bp-tbl-ruled .bp-tbl-head span { text-align: center; color: var(--text-strong); font-weight: 900; }
+.bp-tbl-ruled .bp-tbl-row { font-size: 13px; }
+.bp-tbl-ruled .bp-tbl-head { font-size: 10px; }
+.bp-tbl-ruled .bp-tbl-total { margin-top: 4px; padding-top: 6px; font-size: 19px; }
+.bp-tbl-ruled .bp-tbl-total .bp-tbl-label { font-size: 15px; }
+.bp-tbl-foot { margin: 8px 0 0; font-size: 10px; line-height: 1.35; color: var(--muted); }
+
+/* The saving callout, tightened to earn its place on a screen that cannot scroll. */
+.bp-save { margin: 0; padding: 10px 12px; }
+.bp-save-lead { font-size: 13px; }
+.bp-save-big { font-size: 28px; }
+.bp-save-sub { margin-bottom: 8px; font-size: 11px; }
+.bp-financed { margin: 0; padding: 0; border: 0; }
+.bp-financed .bp-q-label { margin-bottom: 6px; }
+
+/* Final squeeze so screen 2 holds without scrolling on a 390x844 frame.
+   Measured, not guessed: scrollHeight was 31px over clientHeight. */
+.bp-cost-shell .journal-body { gap: 8px; }
+.bp-cost-shell .bp-sum { padding: 10px 12px; }
+.bp-cost-shell .bp-costbox { padding: 10px 12px; }
+.bp-cost-shell .bp-sum-sub { margin-bottom: 6px; }
+.bp-cost-shell .bp-tbl-foot { margin-top: 6px; }
+.bp-cost-shell .bp-save { padding: 9px 12px; }
+.bp-cost-shell .bp-save-big { font-size: 26px; }
+.bp-cost-shell .journal-foot { padding-top: 10px; }
+
+/* ═══ Options as two side-by-side cards (2026-09-27) ══════════════════════
+   The saving is the headline of each card, in the invested figure — that is
+   the number the owner wants a tester to weigh. Tapping a card opens the
+   full comparison underneath, so both cards stay visible while reading one. */
+.bp-optcards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.bp-optcard {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  padding: 12px; border: 1px solid var(--good-border); border-radius: 15px;
+  background: var(--good-bg); color: var(--text-strong);
+  font: inherit; text-align: left; cursor: pointer;
+}
+.bp-optcard.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.bp-optcard.chosen { background: var(--accent-soft); }
+.bp-optcard-title { font-size: 15px; font-weight: 900; }
+.bp-optcard-lead { font-size: 11px; color: var(--text); }
+.bp-optcard-big { font-size: 25px; font-weight: 900; line-height: 1.1; color: var(--good); letter-spacing: -.01em; }
+.bp-optcard-quip { margin-top: 4px; font-size: 11px; line-height: 1.35; color: var(--text-strong); }
+.bp-optcard-more { margin-top: 8px; font-size: 11px; font-weight: 800; color: var(--accent); }
+
+/* ═══ Screen 4: settings that look tappable, and the 5-year list ══════════ */
+
+/* The value sits in a pill with a caret — as plain text it read as a fact. */
+.bp-setrow-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border: 1px solid var(--rail); border-radius: 999px;
+  background: var(--soft); color: var(--text-strong);
+  font-size: 13px; font-weight: 800; white-space: nowrap;
+}
+.bp-setrow:hover .bp-setrow-pill { border-color: var(--accent); }
+
+/* What the loan actually costs by the time it is done. */
+.bp-fin-sum { margin-top: 12px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--card); }
+.bp-fin-sumrow {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 3px 0; font-size: 13px; color: var(--text-strong);
+}
+.bp-fin-sumtotal { margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 15px; font-weight: 900; }
+
+/* The estimated cost over 5 years — this car, then the cheaper options. */
+.bp-fiveyear { margin-top: 14px; }
+.bp-fy-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; min-height: 52px; margin-bottom: 6px; padding: 8px 13px;
+  border: 1px solid var(--line); border-radius: 13px; background: var(--card);
+  color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
+}
+.bp-fy-row.on { border-color: var(--accent); background: var(--accent-soft); }
+.bp-fy-label { font-size: 14px; font-weight: 700; }
+.bp-fy-tag {
+  margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+  background: var(--accent); color: var(--on-accent); font-size: 10px; font-weight: 900;
+}
+.bp-fy-figs { text-align: right; white-space: nowrap; }
+.bp-fy-figs strong { display: block; font-size: 17px; font-weight: 900; }
+.bp-fy-figs span { display: block; font-size: 11px; color: var(--text); }
+
+/* ═══ Cost table + summary polish (2026-09-27) ════════════════════════════ */
+
+/* THE MAY-NEED ROW WAS PUSHING ITS OWN COLUMN OFF THE GRID. `nowrap` on a
+   label in a `1fr` track does not shrink it — the track grows past the
+   container and drags the figure columns right with it, so that one row's
+   numbers no longer lined up with the rest. A grid item's implicit `min-width:
+   auto` is the whole trap; min-width:0 lets it shrink, and the ellipsis is
+   there for a label longer than the track can ever hold. */
+.bp-tbl-row .bp-tbl-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.bp-tbl-soft .bp-tbl-label { white-space: nowrap; }
+
+/* The summary is the highlight of the screen, so it is the one block that
+   carries colour: a tinted plate, an accent rule, and the figure in the accent
+   rather than body black. Tokens only — it has to hold in all four themes. */
+.bp-sum {
+  border: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+  box-shadow: inset 0 3px 0 -1px var(--accent);
+}
+.bp-sum-title { color: var(--accent); font-weight: 800; }
+.bp-sum-main strong { color: var(--accent); }
+.bp-sum-side { border-left-color: var(--accent-border); }
+.bp-sum-side strong { color: var(--text-strong); }
+
+/* ═══ Steps 4 and 5 on one screen, no scrolling (2026-09-27) ═════════════ */
+
+/* Screen 5 */
+.bp-plan-shell .journal-body { display: flex; flex-direction: column; gap: 8px; }
+.bp-planline { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-strong); line-height: 1.35; }
+.bp-plan-shell .bp-keep { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.5; }
+.bp-plan-shell .bp-math { margin: 0; padding: 4px 12px; }
+.bp-plan-shell .bp-math-row { min-height: 34px; font-size: 13px; }
+.bp-plan-shell .bp-math-total { font-size: 14px; }
+.bp-plan-shell .bp-q { margin: 0; }
+.bp-plan-shell .bp-date { gap: 6px; }
+.bp-plan-shell .bp-step { width: 40px; height: 40px; font-size: 20px; }
+.bp-plan-shell .bp-check { padding: 2px 0; font-size: 13px; }
+.bp-plan-shell .journal-foot { padding-top: 10px; }
+
+/* Screen 4 */
+.bp-fin-shell .journal-body { display: flex; flex-direction: column; gap: 8px; }
+.bp-fin-shell .bp-carline { margin: 0; font-size: 13px; }
+.bp-fin-shell .bp-q { margin: 0; }
+.bp-fin-shell .screen .bp-price, .bp-fin-shell .bp-price { min-height: 40px; font-size: 15px; }
+.bp-fin-shell .bp-seg { margin: 0; }
+.bp-fin-shell .bp-seg button { min-height: 36px; }
+.bp-fin-shell .bp-setrow { min-height: 40px; }
+.bp-fin-shell .bp-fin-sum { margin-top: 4px; padding: 8px 12px; }
+.bp-fin-shell .bp-fin-sumrow { min-height: 0; padding: 2px 0; font-size: 12px; }
+.bp-fin-shell .bp-fin-sumtotal { font-size: 14px; }
+.bp-fin-shell .bp-fiveyear { margin-top: 4px; }
+.bp-fin-shell .bp-fy-row { min-height: 44px; margin-bottom: 5px; padding: 6px 12px; }
+.bp-fin-shell .bp-fy-figs strong { font-size: 15px; }
+.bp-fin-shell .journal-foot { padding-top: 10px; }
+
+/* The price sits on one line with its label, like the settings under it —
+   a stacked label and a full-width field cost 30px this screen cannot spare. */
+.bp-priceline { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+.screen .bp-price-inline { width: 140px; min-height: 40px; font-size: 16px; text-align: right; }
+.bp-fin-shell .bp-fiveyear .bp-based { margin: 2px 0 0; font-size: 10px; }
+.bp-fin-shell .bp-box-head { margin-bottom: 4px; font-size: 13px; }
+.bp-cost-shell .bp-tbl-foot { margin-top: 4px; }
+.bp-cost-shell .journal-body { gap: 7px; }
+
+/* Screen 4 was still 28px over at 390x844. Measured trims, smallest first. */
+.bp-fin-shell .journal-body { gap: 6px; }
+.bp-fin-shell .bp-setrow { min-height: 38px; }
+.bp-fin-shell .bp-fin-sum { padding: 6px 12px; }
+.bp-fin-shell .bp-fy-row { min-height: 40px; margin-bottom: 4px; }
+
+/* Worst case on screen 2 is a Premium car: it carries a subscriptions row the
+   others do not. Measured at 6px over with that row present. */
+.bp-cost-shell .bp-tbl-ruled .bp-tbl-row { padding: 1px 0; }
+.bp-cost-shell .bp-save-sub { margin-bottom: 6px; }
+
+/* "May need: Home charger" is the longest label in the table and was landing
+   a few pixels over its track. One step down in size fits it whole, which is
+   better than an ellipsis on a row whose point is that it is optional. */
+.bp-cost-shell .bp-tbl-soft .bp-tbl-label { font-size: 12px; }
+
+/* ═══ Step 2 summary, restyled (2026-09-27) ══════════════════════════════
+   The box no longer repeats the screen title — that moved up to be the header.
+   The year-one figure is centred, its two halves bold beneath it, and the
+   monthly sits behind the rule where it cannot read as the car's payment. */
+.bp-sum { display: flex; align-items: stretch; gap: 12px; }
+.bp-sum-main { flex: 1; min-width: 0; text-align: center; }
+.bp-sum-main strong { font-size: 30px; }
+.bp-sum-main span { font-size: 12px; }
+.bp-sum-main span b { font-weight: 900; color: var(--text-strong); }
+.bp-sum-side { justify-content: center; }
+
+/* ═══ Savings row on one line, with captions above the figures ════════════ */
+.bp-bag { display: block; padding: 10px 12px; }
+.bp-bag-title { margin: 0 0 6px; font-size: 12px; font-weight: 800; color: var(--text-strong); }
+.bp-bag-row { display: flex; align-items: center; gap: 10px; }
+.bp-bag-art { display: flex; align-items: center; flex: 0 0 auto; }
+.bp-bag-buddy { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--card); }
+.bp-bag-svg { width: 34px; height: 32px; margin-left: -4px; }
+.bp-bag-col { flex: 1; min-width: 0; text-align: right; }
+.bp-bag-cap { display: block; font-size: 10px; line-height: 1.2; color: var(--text); }
+.bp-bag-col strong { display: block; font-size: 19px; font-weight: 900; color: var(--good); line-height: 1.15; }
+.bp-bag-col .bp-pencil { min-width: 28px; min-height: 28px; margin: -8px -4px -8px 0; font-size: 14px; }
+
+/* ═══ Step 4 boxed (2026-09-27) ══════════════════════════════════════════
+   Everything about paying lives in one card — price, loan or cash, the three
+   settings and what the loan totals. Loose on the background it read as four
+   unrelated fragments. */
+.bp-finbox { padding: 12px 14px; }
+.bp-finbox .bp-seg { margin: 8px 0; }
+.bp-finbox .bp-setrow { border-bottom: 1px solid var(--line); }
+.bp-finbox .bp-setrow:last-of-type { border-bottom: 0; }
+/* The price sits with its label, not flung to the far edge. */
+.bp-priceline { justify-content: flex-start; gap: 14px; min-height: 40px; }
+.bp-priceline .bp-setrow-label { flex: 0 0 auto; font-size: 14px; }
+.screen .bp-price-inline { width: 130px; text-align: left; }
+.bp-price-fixed { font-size: 16px; font-weight: 900; color: var(--text-strong); }
+.bp-price-note { margin: 0 0 2px; font-size: 11px; }
+.bp-finbox .bp-fin-sum { margin-top: 8px; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 6px 0 0; }
+
+/* Screen 4 gained a box and lost 18px of room with it. */
+.bp-fin-shell .bp-finbox { padding: 10px 12px; }
+.bp-fin-shell .bp-finbox .bp-seg { margin: 6px 0; }
+.bp-fin-shell .bp-priceline { min-height: 38px; }
+.bp-fin-shell .bp-fin-sum { margin-top: 6px; }
+.bp-fin-shell .bp-fy-row { min-height: 38px; margin-bottom: 3px; }
+.bp-fin-shell .bp-fiveyear .bp-based { margin-top: 1px; }
+/* The derived price says where it came from on the same line, not in a
+   paragraph under it — that paragraph cost this screen 29px it did not have. */
+.bp-price-from { flex: 1; min-width: 0; font-size: 10px; line-height: 1.25; color: var(--text); }
+
+/* "What it costs" sits apart from "how you pay" — two boxes, never one list. */
+.bp-costof { margin-top: 8px; padding: 10px 12px; }
+.bp-costof .bp-fin-sumrow { font-size: 13px; }
+.bp-costof-y1 { border-top: 0; padding-top: 2px; font-size: 12px !important; font-weight: 400; color: var(--text); }
+.bp-costof-y1 strong { font-weight: 800; }
+
+/* Cheaper options as chips: what it is, what it costs, one tap to compare. */
+.bp-altchips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bp-altchip {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  min-height: 46px; padding: 7px 11px;
+  border: 1px solid var(--good-border); border-radius: 12px; background: var(--good-bg);
+  color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
+}
+.bp-altchip span { font-size: 11px; color: var(--text); }
+.bp-altchip strong { font-size: 16px; font-weight: 900; color: var(--good); }
+
+/* Step 4 holds a lot now. Measured trims: the payment lives in the headline,
+   so the loan block states only what is borrowed. */
+.bp-fin-shell .journal-body { gap: 5px; }
+.bp-fin-shell .bp-finbox { padding: 8px 12px; }
+.bp-fin-shell .bp-finbox .bp-box-head { font-size: 12px; margin-bottom: 2px; }
+.bp-fin-shell .bp-finbox .bp-seg { margin: 5px 0; }
+.bp-fin-shell .bp-finbox .bp-seg button { min-height: 34px; }
+.bp-fin-shell .bp-setrow { min-height: 36px; }
+.bp-fin-shell .bp-costof { margin-top: 5px; padding: 8px 12px; }
+.bp-fin-shell .bp-costof .bp-fin-sumrow { padding: 1px 0; }
+.bp-fin-shell .bp-fiveyear { margin-top: 4px; }
+.bp-fin-shell .bp-priceline { min-height: 34px; }
+.bp-fin-shell .bp-altchip { min-height: 42px; padding: 6px 11px; }
+
+/* ═══ Step 2's ladder: upfront → monthly → year 1 → 5 years (2026-09-27) ═══
+   Each figure is built from the one above it, so they read down the page and
+   the five-year saving underneath has something to be a saving against. */
+.bp-ladder { padding: 4px 12px; border: 1px solid var(--accent-border); border-radius: 15px; background: var(--accent-soft); }
+.bp-ladder-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 6px 0; border-bottom: 1px dashed var(--accent-border);
+  font-size: 14px; color: var(--text-strong);
+}
+.bp-ladder-row.last { border-bottom: 0; }
+.bp-ladder-label { display: flex; flex-direction: column; font-weight: 700; }
+.bp-ladder-label span { font-size: 10px; font-weight: 400; color: var(--text); line-height: 1.25; }
+.bp-ladder-row strong { font-size: 17px; font-weight: 900; white-space: nowrap; }
+.bp-ladder-row.last strong { font-size: 21px; color: var(--accent); }
+.bp-date-note small { font-size: 10px; font-weight: 600; color: var(--text); }
+
+/* The ladder added a row; measured 35px over with an electric Premium (the
+   worst case, which carries a charger line and subscriptions). */
+.bp-cost-shell .bp-ladder { padding: 2px 12px; }
+.bp-cost-shell .bp-ladder-row { padding: 5px 0; font-size: 13px; }
+.bp-cost-shell .bp-ladder-row strong { font-size: 16px; }
+.bp-cost-shell .bp-ladder-row.last strong { font-size: 19px; }
+.bp-cost-shell .bp-costbox { padding: 8px 12px; }
+.bp-cost-shell .bp-box-head { font-size: 13px; margin-bottom: 4px; }
+.bp-cost-shell .bp-save-big { font-size: 24px; }
+/* Worst case (electric Premium) needs a few more pixels on both screens. */
+.bp-cost-shell .bp-save { padding: 8px 12px; }
+.bp-cost-shell .bp-financed .bp-q-label { margin-bottom: 4px; }
+.bp-fin-shell .bp-costof-y1 { line-height: 1.3; }
+.bp-fin-shell .bp-costof .bp-fin-sumrow { font-size: 12px; }
+.bp-fin-shell .bp-fin-sumtotal { font-size: 13px; }
+
+/* ═══ Onboarding, docked (owner, 2026-09-27) ══════════════════════════════
+   The two questions in front of the Big Purchase flow put their choices in the
+   same bottom dock the calculator uses, and drop Continue — the tap is the
+   answer. Only the layout differs from .bp-dock: these are .journal-opt rows,
+   not .bp-tile, so they need their own sizing inside it. */
+.onb-dock { padding-bottom: 6px; }
+.onb-dock .journal-options { display: grid; gap: 8px; margin: 0; }
+.onb-dock .journal-opt { min-height: 46px; margin: 0; }
+
+/* Screen 2 gained a row when the radio-and-apps line stopped being zero on a
+   Standard car (2026-09-27), which put the body 63px past the frame. Trimmed
+   where it costs nothing to read: the financed question is one row instead of
+   two, and the callout and the table give a few pixels each. */
+.bp-cost-shell .bp-financed {
+  display: flex; align-items: center; gap: 10px;
+}
+.bp-cost-shell .bp-financed .bp-q-label { margin: 0; flex: 0 0 auto; font-size: 13px; }
+.bp-cost-shell .bp-financed .bp-tiles { flex: 1; min-width: 0; margin: 0; }
+.bp-cost-shell .bp-financed .bp-tiles .bp-tile { min-height: 36px; padding: 4px 8px; font-size: 13px; }
+.bp-cost-shell .bp-save-lead { font-size: 12px; }
+.bp-cost-shell .bp-save-big { font-size: 22px; }
+.bp-cost-shell .bp-save-sub { margin-bottom: 6px; font-size: 10px; }
+.bp-cost-shell .bp-save .button { min-height: 38px; }
+.bp-cost-shell .bp-tbl-ruled .bp-tbl-row { padding: 1px 0; font-size: 12.5px; }
+.bp-cost-shell .bp-tbl-ruled .bp-tbl-total { margin-top: 3px; padding-top: 4px; font-size: 17px; }
+.bp-cost-shell .bp-tbl-foot { margin-top: 5px; }
+.bp-cost-shell .bp-ladder-row { padding: 4px 0; }
+.bp-cost-shell .bp-costbox { margin-bottom: 10px; }
+.bp-cost-shell .bp-save { padding: 7px 12px; }
+
+/* Step 3 has to hold one screen too, and the headline caption grew a line when
+   the monthly figure became "car payment + running it" (owner, 2026-09-27).
+   Every row here gives 2-6px; nothing is removed. */
+.bp-fin-shell .bp-hl-split span { font-size: 11px; }
+.bp-fin-shell .bp-hl-big { font-size: 22px; }
+.bp-fin-shell .bp-setrow { min-height: 32px; }
+.bp-fin-shell .bp-seg { min-height: 34px; }
+.bp-fin-shell .bp-seg button { padding: 6px 10px; }
+.bp-fin-shell .bp-priceline { padding: 2px 0; }
+.bp-fin-shell .bp-price-inline, .bp-fin-shell .bp-price-fixed { font-size: 19px; padding: 4px 10px; }
+.bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { margin-bottom: 8px; }
+.bp-fin-shell .bp-fin-sumrow { padding: 1px 0; font-size: 13px; }
+.bp-fin-shell .bp-fiveyear { margin-top: 0; }
+.bp-fin-shell .bp-altchip { padding: 6px 10px; }
+.bp-fin-shell .bp-fiveyear .bp-box-head { font-size: 12px; margin-bottom: 3px; }
+.bp-fin-shell .bp-altchip { padding: 5px 10px; font-size: 12px; }
+.bp-fin-shell .bp-costof-y1 { font-size: 11px; line-height: 1.3; }
+.bp-fin-shell .bp-box-head { font-size: 13px; margin-bottom: 3px; }
+.bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { padding: 6px 12px; }
+.bp-fin-shell .journal-head { padding-bottom: 4px; }
+.bp-fin-shell .esf-title { margin-bottom: 2px; }
+.bp-fin-shell .bp-setrow { min-height: 29px; }
+.bp-fin-shell .bp-setrow-label, .bp-fin-shell .bp-setrow-pill { font-size: 12px; }
+.bp-fin-shell .bp-seg { min-height: 30px; }
+.bp-fin-shell .bp-price-inline, .bp-fin-shell .bp-price-fixed { font-size: 17px; padding: 3px 10px; }
+.bp-fin-shell .bp-fin-sumrow { padding: 0; }
+.bp-fin-shell .bp-fin-sum { margin-top: 4px; padding-top: 4px; }
+.bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { margin-bottom: 6px; }
+/* The last 14px: the two option chips read on one line each. */
+.bp-fin-shell .bp-altchip {
+  flex-direction: row; align-items: center; justify-content: space-between;
+  min-height: 30px; padding: 4px 10px;
+}
+.bp-fin-shell .bp-altchip strong { font-size: 14px; }
+
+/* ═══ Money saved, lined up (owner, 2026-09-27) ═══════════════════════════
+   Two equal grid cells, caption over figure, so both pairs share their
+   baselines whatever the captions say. The old version was two right-aligned
+   flex columns of different widths with a pencil hanging off one figure. The
+   rate the invested number assumes was never stated; it is a line of its own
+   now, and tapping it opens the rate sheet. */
+.bp-bag-row {
+  display: grid; grid-template-columns: auto 1fr 1fr; align-items: end; gap: 10px;
+}
+.bp-bag-col { display: grid; min-width: 0; text-align: right; }
+.bp-bag-cap { display: block; min-height: 24px; font-size: 10px; line-height: 1.2; color: var(--text); }
+.bp-bag-col strong { display: block; font-size: 19px; font-weight: 900; color: var(--good); line-height: 1.15; }
+.bp-bag-rate {
+  display: block; width: 100%; margin: 4px 0 0; padding: 0;
+  border: 0; background: none; color: var(--text); font: inherit; font-size: 11px;
+  text-align: right; cursor: pointer;
+}
+.bp-bag-rate .bp-pencil { margin-left: 4px; font-size: 12px; color: var(--good); }
+
+/* ═══ Step 2's six rows (owner, 2026-09-27) ═══════════════════════════════
+   Bold label, the qualifier in brackets italic and not bold, figure right.
+   No second line under anything — the brackets are the explanation. */
+.bp-ladder-label { display: block; font-weight: 400; }
+.bp-ladder-label strong { font-weight: 800; }
+.bp-ladder-label em { font-style: italic; font-weight: 400; font-size: 12px; color: var(--text); }
+.bp-cost-shell .bp-ladder-row { padding: 3px 0; }
+/* The loan question sits above everything it changes, so it reads as the
+   question it is rather than a switch at the foot of the screen. */
+.bp-cost-shell .bp-financed { margin-bottom: 10px; }
+.bp-cost-shell .bp-financed .bp-q-label { flex: 0 0 auto; }
+/* Six rows and a question that used to be four rows and no question: every
+   line gives a little so the screen still holds without scrolling. */
+.bp-cost-shell .bp-ladder-row { padding: 2px 0; font-size: 13px; }
+.bp-cost-shell .bp-ladder-label em { font-size: 11px; }
+.bp-cost-shell .bp-ladder-row strong { font-size: 15px; }
+.bp-cost-shell .bp-ladder-row.last strong { font-size: 17px; }
+.bp-cost-shell .bp-financed .bp-tiles .bp-tile { font-size: 11px; padding: 4px 6px; min-height: 34px; }
+.bp-cost-shell .bp-financed .bp-q-label { font-size: 12px; }
+.bp-cost-shell .bp-financed { margin-bottom: 8px; }
+/* One line per row: the label and its bracket together must not wrap, or six
+   rows become nine and the screen scrolls. */
+.bp-cost-shell .bp-ladder-row { font-size: 12.5px; }
+.bp-cost-shell .bp-ladder-label { white-space: nowrap; }
+.bp-cost-shell .bp-ladder-label em { font-size: 10.5px; }
+.bp-cost-shell .bp-ladder-row strong { white-space: nowrap; }
+/* nowrap pushed the longest row's figure off the right edge (it overflowed by
+   54px), so the label is allowed to wrap again — a bracket that runs onto a
+   second line is still the same line of copy, not the subtext the owner cut.
+   Sized down instead, which keeps every row but one on one line. */
+.bp-cost-shell .bp-ladder-row { font-size: 12px; gap: 8px; }
+.bp-cost-shell .bp-ladder-label { white-space: normal; min-width: 0; }
+.bp-cost-shell .bp-ladder-label em { font-size: 10px; }
+.bp-cost-shell .bp-ladder-row strong { font-size: 14px; }
+.bp-cost-shell .bp-ladder-row.last strong { font-size: 16px; }
+.bp-cost-shell .bp-ladder { padding: 1px 12px; }
+
+/* ═══ Step 2's six rows, laid out properly (owner, 2026-09-27) ════════════
+   Six dashed bands of equal weight had no shape and no figure column — the
+   bracket pushed each number to a different place. Now: one fixed figure
+   column with tabular numerals so the digits stack, groups separated by air
+   rather than rules, and only the last line — the answer — large and green. */
+.bp-ladder { padding: 10px 14px; }
+.bp-cost-shell .bp-ladder { padding: 10px 14px; }
+.bp-ladder-row,
+.bp-cost-shell .bp-ladder-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: baseline;
+  gap: 12px; padding: 3px 0; border: 0; font-size: 13px; color: var(--text-strong);
+}
+.bp-ladder-row.bp-ladder-gap { margin-top: 9px; }
+.bp-ladder-label, .bp-cost-shell .bp-ladder-label {
+  display: block; min-width: 0; white-space: normal; font-weight: 400; line-height: 1.3;
+}
+.bp-ladder-label strong { font-weight: 800; }
+.bp-ladder-label em,
+.bp-cost-shell .bp-ladder-label em {
+  font-style: italic; font-weight: 400; font-size: 11px; color: var(--text);
+}
+.bp-ladder-fig {
+  justify-self: end; font-size: 15px; font-weight: 900; white-space: nowrap;
+  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+}
+.bp-ladder-fig i { margin-left: 2px; font-style: normal; font-size: 11px; font-weight: 700; color: var(--text); }
+/* The answer. Its own band, the only green figure in the block. */
+.bp-ladder-hero {
+  margin: 9px -14px -10px; padding: 8px 14px;
+  border-top: 1px solid var(--accent-border); border-radius: 0 0 15px 15px;
+  background: var(--accent-soft);
+}
+.bp-ladder-hero .bp-ladder-fig,
+.bp-cost-shell .bp-ladder-hero .bp-ladder-fig { font-size: 21px; color: var(--accent); }
+.bp-ladder-hero .bp-ladder-label strong { font-size: 14px; }
+/* Six rows plus a hero band cost height the screen does not have; every block
+   gives a little rather than one block giving everything. */
+.bp-cost-shell .bp-ladder { padding: 8px 14px; }
+.bp-cost-shell .bp-ladder-row { padding: 2px 0; }
+.bp-cost-shell .bp-ladder-row.bp-ladder-gap { margin-top: 6px; }
+.bp-cost-shell .bp-ladder-hero { margin: 6px -14px -8px; padding: 6px 14px; }
+.bp-cost-shell .bp-ladder-hero .bp-ladder-fig { font-size: 19px; }
+.bp-cost-shell .bp-save { padding: 6px 12px; }
+.bp-cost-shell .bp-save-big { font-size: 20px; }
+.bp-cost-shell .bp-save-sub { margin-bottom: 5px; }
+.bp-cost-shell .bp-save .button { min-height: 34px; font-size: 13px; }
+.bp-cost-shell .bp-costbox { padding: 7px 12px; margin-bottom: 8px; }
+.bp-cost-shell .bp-tbl-foot { font-size: 9.5px; margin-top: 4px; }
+/* The block reads better on card white with only the answer tinted — the
+   whole thing in accent-soft made the hero band invisible against it. */
+.bp-ladder { background: var(--card); border-color: var(--line); }
+.bp-cost-shell .bp-ladder-row { font-size: 12.5px; }
+.bp-cost-shell .bp-ladder-label em { font-size: 10px; }
+.bp-cost-shell .bp-ladder-fig { font-size: 14px; }
+.bp-cost-shell .bp-ladder { padding: 7px 12px; }
+.bp-cost-shell .bp-ladder-hero { margin: 5px -12px -7px; padding: 6px 12px; }
+.bp-cost-shell .bp-tbl-ruled .bp-tbl-row { font-size: 12px; }
+.bp-cost-shell .bp-save-big { font-size: 19px; }
+.bp-cost-shell .bp-save-lead { font-size: 11.5px; }
+.bp-cost-shell .bp-financed .bp-tiles .bp-tile { font-size: 10.5px; min-height: 32px; }
+.bp-cost-shell .bp-financed .bp-q-label { font-size: 11.5px; }
+
+/* The cheaper options as a SAVING, not a total to subtract (owner,
+   2026-09-27). Three lines per chip: what it is, what it saves, what the
+   saving is worth kept. The saving is the loud one. */
+.bp-fin-shell .bp-altchip {
+  flex-direction: column; align-items: flex-start; justify-content: center;
+  gap: 0; min-height: 52px; padding: 5px 10px;
+}
+.bp-altchip-what { font-size: 10px; font-weight: 700; color: var(--text); }
+.bp-fin-shell .bp-altchip strong { font-size: 17px; line-height: 1.15; }
+.bp-altchip-worth { font-size: 10px; line-height: 1.25; color: var(--text); }
+/* The saving chips are three lines where they were one; the rest of step 3
+   gives it back a few pixels at a time. */
+.bp-fin-shell .bp-fin-sumrow { font-size: 12px; }
+.bp-fin-shell .bp-costof-y1 { font-size: 10px; }
+.bp-fin-shell .bp-setrow { min-height: 27px; }
+.bp-fin-shell .bp-box-head { font-size: 12.5px; margin-bottom: 2px; }
+.bp-fin-shell .bp-fiveyear .bp-box-head { font-size: 11px; }
+.bp-fin-shell .bp-altchip { min-height: 48px; }
+.bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { margin-bottom: 5px; }
+.bp-fin-shell .bp-seg { min-height: 28px; }
+.bp-fin-shell .bp-hl-big { font-size: 20px; }
+.bp-fin-shell .bp-setrow { min-height: 26px; }
+.bp-fin-shell .bp-fin-sumrow { font-size: 11.5px; }
+.bp-fin-shell .bp-altchip { min-height: 44px; }
+.bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { padding: 5px 12px; }
+.bp-fin-shell .bp-priceline { padding: 1px 0; }
+.bp-fin-shell .bp-altchip { min-height: 40px; padding: 4px 10px; }
+.bp-fin-shell .bp-altchip strong { font-size: 16px; }
+.bp-fin-shell .bp-costof { margin-bottom: 4px; }
+.bp-fin-shell .bp-fiveyear .bp-box-head { margin-bottom: 2px; }
+.bp-fin-shell .bp-altchips { gap: 6px; }
+.bp-fin-shell .bp-altchip { min-height: 38px; }
+.bp-fin-shell .bp-costof { margin-bottom: 2px; }
+.bp-fin-shell .bp-costof-y1 { line-height: 1.25; }
+
+/* ═══ The emergency-fund box: an open question, not an answered one ═══════
+   (owner, 2026-09-27: "it looks like it's preselected and something will
+   happen, but nothing does.")
+
+   One tinted button among three plain ones is the universal look of a CHOSEN
+   option, so the box read as answered and got walked past. The fix is not a
+   different highlight — it is no highlight at all, plus an instruction and a
+   box that visibly has something outstanding. */
+.bp-esf-opt.strong,
+.bp-esf-ask .bp-esf-opt {
+  border: 1px solid var(--info-border); background: var(--card);
+  color: var(--text-strong); font-weight: 700;
+}
+.bp-esf-ask .bp-esf-opt .bp-esf-opt-label { font-weight: 800; }
+.bp-esf-ask .bp-esf-opt:active { border-color: var(--accent); background: var(--accent-soft); }
+
+/* Unanswered: dashed edge and an accent spine, so it reads as a task. The
+   answered card keeps the solid border it already had. */
+.bp-esf-ask {
+  border-style: dashed; border-width: 1px 1px 1px 4px;
+  border-left-color: var(--accent); border-left-style: solid;
+}
+.bp-esf-eyebrow {
+  margin: 0 0 4px; font-size: 10px; font-weight: 900; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--accent);
+}
+.bp-esf-ask .bp-esf-q { margin: 0 0 10px; font-size: 15px; line-height: 1.3; }
+/* Three equal tiles, sized so the longest label holds two lines rather than
+   three — the box is above the category list and must not push it off. */
+.bp-esf-ask { padding: 11px 12px 12px; }
+.bp-esf-ask .bp-esf-opt { min-height: 50px; padding: 5px 3px; }
+.bp-esf-ask .bp-esf-opt-label { font-size: 12.5px; line-height: 1.15; }
+.bp-esf-ask .bp-esf-opt-sub { font-size: 10px; }
+
+/* The eyebrow is the instruction, so it is centred and readable rather than a
+   9px label nobody notices (owner, 2026-09-27). */
+.bp-esf-eyebrow {
+  text-align: center; font-size: 12px; letter-spacing: .06em; margin-bottom: 6px;
+}
+/* A 34px squircle plate. The icons were drawing detail at 24px that nothing
+   could resolve; the glyphs are bolder and the plate gives them room. */
+.bp-cat-icon {
+  width: 34px; height: 34px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+.bp-cat-icon svg { width: 100%; height: 100%; display: block; }
+.bp-cat:disabled .bp-cat-icon { opacity: .55; }
+/* Bigger icons cost the list height; the rows give it back by hugging them. */
+.bp-stack .bp-cat { min-height: 50px; padding: 7px 12px; }
+.bp-stack { display: flex; flex-direction: column; gap: 7px; }
+.bp-lead { margin-bottom: 10px; }
+
+/* ═══ The fund box, second pass (owner, 2026-09-27) ═══════════════════════
+   The question holds ONE LINE, the accent spine is gone (no other box on the
+   landing has one, and it read as a stray highlight on a blue card), and the
+   options lost their sub-lines. The dashed edge alone carries "unanswered". */
+.bp-esf-ask {
+  border: 1px dashed var(--info-border);
+  padding: 12px 12px 13px;
+}
+.bp-esf-ask .bp-esf-q {
+  margin: 0 0 10px; font-size: 13.5px; line-height: 1.25; white-space: nowrap;
+}
+.bp-esf-ask .bp-esf-opt { min-height: 46px; }
+.bp-esf-ask .bp-esf-opt-label { font-size: 13px; }
+/* No plate behind the icon any more: the artwork carries its own. */
+.bp-cat-icon {
+  width: 36px; height: 36px; border-radius: 10px; background: none;
+  object-fit: cover; display: block; flex: 0 0 auto;
+}
+
+/* ═══ Steps 2 and 3: room to breathe, one type scale ══════════════════════
+   (owner, 2026-09-27: "the whole screen looks too busy, too crowded… space
+   the three boxes out a bit more".)
+
+   Every trim in the last few rounds came out of the gaps, because the gaps are
+   what a screen gives up first — and the result was four blocks touching each
+   other. The gaps go back to 12px and the space comes instead out of type:
+   ONE SCALE on both screens, 11 / 12.5 / 14 / 20, instead of the 10, 10.5, 11,
+   11.5, 12, 12.5, 13 drift that accumulated a size at a time. */
+.bp-cost-shell .journal-body, .bp-fin-shell .journal-body { gap: 12px; }
+.bp-cost-shell .bp-financed { margin-bottom: 0; }
+.bp-cost-shell .bp-costbox, .bp-cost-shell .bp-save { margin: 0; }
+.bp-cost-shell .bp-costbox { padding: 11px 13px; }
+.bp-cost-shell .bp-save { padding: 11px 13px; }
+.bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof, .bp-fin-shell .bp-fiveyear { margin: 0; }
+.bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { padding: 10px 13px; }
+
+/* The scale. Captions 11, body and rows 12.5, figures 14, the one hero 20. */
+.bp-cost-shell .bp-ladder-row, .bp-cost-shell .bp-tbl-ruled .bp-tbl-row,
+.bp-fin-shell .bp-fin-sumrow, .bp-fin-shell .bp-setrow-label,
+.bp-fin-shell .bp-setrow-pill { font-size: 12.5px; }
+.bp-cost-shell .bp-ladder-label em, .bp-cost-shell .bp-tbl-note,
+.bp-cost-shell .bp-tbl-ruled .bp-tbl-head, .bp-fin-shell .bp-costof-y1,
+.bp-fin-shell .bp-altchip-what, .bp-altchip-worth, .bp-cost-shell .bp-save-sub { font-size: 11px; }
+.bp-cost-shell .bp-box-head, .bp-fin-shell .bp-box-head,
+.bp-fin-shell .bp-fiveyear .bp-box-head, .bp-cost-shell .bp-save-lead,
+.bp-cost-shell .bp-financed .bp-q-label { font-size: 13px; }
+.bp-cost-shell .bp-ladder-fig, .bp-cost-shell .bp-tbl-ruled .bp-tbl-total,
+.bp-fin-shell .bp-altchip strong { font-size: 15px; }
+
+/* The two totals: one tinted band, year one leading. */
+.bp-cost-shell .bp-ladder-hero { margin: 0 -13px; padding: 5px 13px; border-radius: 0; border-top: 0; }
+.bp-cost-shell .bp-ladder-row.bp-ladder-lead { margin-top: 10px; border-top: 1px solid var(--accent-border); padding-top: 8px; }
+.bp-cost-shell .bp-ladder-row.bp-ladder-hero:last-child { padding-bottom: 9px; border-radius: 0 0 15px 15px; }
+.bp-cost-shell .bp-ladder-hero .bp-ladder-label { font-weight: 800; }
+.bp-cost-shell .bp-ladder-lead .bp-ladder-fig { font-size: 23px; color: var(--accent); }
+.bp-cost-shell .bp-ladder-hero .bp-ladder-fig { font-size: 18px; color: var(--accent); }
+.bp-cost-shell .bp-ladder { padding: 10px 13px 0; }
+.bp-cost-shell .bp-save-big { font-size: 22px; }
+.bp-tbl-note { margin: 0 0 2px; line-height: 1.3; color: var(--muted); }
+.bp-save-big i { font-style: normal; font-size: 12px; font-weight: 700; color: var(--text); }
+.bp-cost-shell .bp-save-big { margin-bottom: 8px; }
+.bp-cost-shell .bp-save .button { min-height: 36px; }
+.bp-cost-shell .bp-ladder-row.bp-ladder-gap { margin-top: 8px; }
+/* The last 23px: taken from inside the boxes, never from the gaps between
+   them — the gaps are the thing the owner asked for. */
+.bp-cost-shell .bp-costbox, .bp-cost-shell .bp-save { padding: 9px 13px; }
+.bp-cost-shell .bp-ladder { padding: 8px 13px 0; }
+.bp-cost-shell .bp-ladder-row { padding: 1px 0; }
+.bp-cost-shell .bp-ladder-hero { padding: 4px 13px; }
+.bp-cost-shell .bp-tbl-ruled .bp-tbl-row { padding: 0; }
+.bp-cost-shell .bp-tbl { margin: 6px 0 0; }
+.bp-cost-shell .journal-body { gap: 11px; }
+/* Step 3, same trade as step 2: the space comes from inside the boxes. */
+.bp-fin-shell .journal-body { gap: 11px; }
+.bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { padding: 8px 13px; }
+.bp-fin-shell .bp-setrow { min-height: 25px; }
+.bp-fin-shell .bp-seg { min-height: 27px; }
+.bp-fin-shell .bp-altchip { min-height: 36px; }
+.bp-fin-shell .bp-priceline { padding: 0; }
+.bp-fin-shell .bp-box-head { margin-bottom: 3px; }
+.bp-fin-shell .bp-fin-sum { margin-top: 3px; padding-top: 3px; }
+.bp-fin-shell .bp-hl-big { font-size: 19px; }
+.bp-fin-shell .bp-price-inline, .bp-fin-shell .bp-price-fixed { font-size: 16px; padding: 2px 10px; }
+.bp-fin-shell .bp-seg { min-height: 26px; }
+.bp-fin-shell .bp-setrow { min-height: 24px; }
+.bp-fin-shell .bp-setrow { min-height: 23px; }
+.bp-fin-shell .bp-altchip { min-height: 33px; padding: 3px 10px; }
+.bp-fin-shell .bp-costof-y1 { line-height: 1.2; }
+.bp-fin-shell .bp-fiveyear .bp-box-head { margin-bottom: 4px; }
+/* The two tallest rows in the financing box were never the ones being trimmed:
+   min-height does nothing when a child's own padding sets the height. */
+.bp-fin-shell .bp-seg { min-height: 0; padding: 2px; }
+.bp-fin-shell .bp-seg button { padding: 5px 10px; font-size: 13px; min-height: 0; }
+.bp-fin-shell .bp-price-inline, .bp-fin-shell .bp-price-fixed { padding: 3px 10px; min-height: 0; height: 30px; }
+
+/* ═══ Steps 2 and 3 fill the frame (owner, 2026-09-27) ════════════════════
+   "its all crowded towards the top with a lot of space at the bottom." The
+   boxes were packed to the top with a fixed gap, so a cheaper car — fewer
+   rows, smaller figures — left a dead band above the footer while the blocks
+   above it stayed jammed together.
+
+   `space-between` hands the leftover height to the gaps instead. The `gap` is
+   now a MINIMUM: when the content is tall the blocks sit at 11px apart and the
+   screen still fits, and when it is short the same blocks spread to fill.
+   Safe with a scroll container because space-between packs from the top once
+   there is no free space — unlike `center` or `end`, which would put the first
+   block out of reach above the scroll origin. */
+.bp-cost-shell .journal-body,
+.bp-fin-shell .journal-body {
+  display: flex; flex-direction: column; justify-content: space-between; gap: 11px;
+}
+.bp-cost-shell .journal-body > *, .bp-fin-shell .journal-body > * { flex: 0 0 auto; }
+/* The minimum gap only bites when the content is tall; space-between reopens
+   it the moment there is room. 9px keeps the tallest configuration inside the
+   frame without costing the spread anything on an ordinary one. */
+.bp-fin-shell .journal-body { gap: 9px; }
+
+/* The last box was landing flush against the footer buttons (owner,
+   2026-09-27). A bottom inset lifts it clear, and because the body is
+   space-between that inset comes out of the gaps above rather than out of the
+   screen — the blocks stay spread, they just stop short of the menu. */
+.bp-cost-shell .journal-body, .bp-fin-shell .journal-body { padding-bottom: 12px; }
+/* `.journal-shell.onb-pinned .journal-body` is three classes and was winning
+   over the two-class rule above, so the inset never applied. Matched here. */
+.journal-shell.onb-pinned.bp-cost-shell .journal-body,
+.journal-shell.onb-pinned.bp-fin-shell .journal-body { padding-bottom: 12px; }
+/* Step 3 pays for its bottom inset from inside the boxes, as before. */
+.bp-fin-shell .bp-fin-sumrow { font-size: 12px; }
+.bp-fin-shell .bp-setrow { min-height: 22px; }
+.bp-fin-shell .bp-altchip { min-height: 31px; }
+.bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { padding: 7px 13px; }
+.bp-fin-shell .journal-body { gap: 8px; }
+.bp-fin-shell .bp-setrow { min-height: 21px; }
+.bp-fin-shell .bp-seg button { padding: 4px 10px; }
+.bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { padding: 6px 13px; }
+
+/* ═══ Step 3: the last box comes up off the footer (owner, 2026-09-27) ════
+   "bring the spend less box up at least 2 lines… then space everything out."
+
+   A fixed `padding-bottom` cannot do this: the tallest configuration has no
+   spare height to give, so any inset big enough to be felt on a short screen
+   pushes a tall one into scrolling. This is a SHRINKABLE SPACER instead — a
+   flex item with `flex: 0 1 34px`, the only child allowed to shrink. On a
+   short screen it grows and the block above it rises clear of the menu; on a
+   tall one it collapses to nothing and the screen still fits.
+
+   It GROWS as well as shrinks, capped at 36px (about two lines), so surplus
+   height fills the bottom inset FIRST and the rest goes into the gaps. Without
+   grow, a tall browser window put every spare pixel between the boxes and left
+   a canyon above the footer, which is what the owner was looking at. Without
+   the cap, all of it would pool at the bottom instead. */
+.journal-shell.onb-pinned.bp-fin-shell .journal-body { padding-bottom: 0; }
+.bp-fin-shell .journal-body::after {
+  content: ""; display: block; flex: 1 1 0; min-height: 0; max-height: 36px;
+}
+
+/* The three loan settings read as values, not as shouting (owner,
+   2026-09-27: "unbold the loan option drop-downs"). The pill and its caret
+   already say it can be tapped; the weight was doing nothing except making
+   three rows compete with the figures they feed. */
+.bp-fin-shell .bp-setrow-pill { font-weight: 500; }
+
+/* ═══ Big Purchase: the new front (owner, 2026-09-29) ═════════════════════
+   Landing with Buddy and the purpose, then "Find your car" (bpFinder):
+   know-it or quiz, three cars with a new and a used price each, and the car
+   view: five lines, peers beside them, two ways to spend less. Prefixed bpf-
+   so nothing here can reach an existing step. */
+
+/* Landing */
+.bp-land-hero { display: flex; align-items: center; gap: 10px; }
+.bp-land-buddy { flex: 0 0 auto; width: 76px; height: auto; }
+.bp-land-bubble {
+  position: relative; flex: 1; min-width: 0; padding: 10px 14px;
+  border: 1px solid var(--accent-border); border-radius: 16px; background: var(--accent-soft);
+}
+.bp-land-bubble::before {
+  content: ""; position: absolute; left: -7px; top: 50%; width: 12px; height: 12px;
+  transform: translateY(-50%) rotate(45deg);
+  border-left: 1px solid var(--accent-border); border-bottom: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+}
+.bp-land-bubble .esf-title { margin: 0; font-size: 18px; line-height: 1.2; }
+.bp-land-shell .journal-head { padding-bottom: 10px; }
+/* The owner's banner (2026-09-29): Buddy and a car with a bow. Full width,
+   height capped so the categories still fit; cover crops the sky, not Buddy. */
+.bp-land-banner { overflow: hidden; width: 100%; height: 104px; border-radius: 16px; }
+.bp-land-banner img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 60%; }
+.bp-land-title { margin: 8px 0 0; text-align: center; }
+.journal-shell .bp-land-title { font-size: 20px; white-space: nowrap; }
+/* Landing, 2026-10-01: three sections spread down the screen, the category
+   list (the primary action) at the bottom in thumb reach, every line of
+   reading copy centred. The gap is a minimum; spare height goes between. */
+.bp-land-shell .journal-body { display: flex; flex-direction: column; justify-content: space-between; gap: 16px; }
+.bp-land-shell .bp-lead,
+.bp-land-shell .bp-esf-q,
+.bp-land-shell .bp-esf-why,
+.bp-land-shell .bp-q-label { text-align: center; }
+.bp-land-shell .bp-lead { margin: 0; }
+.bp-land-shell .bp-esf-box { margin: 0; }
+.bp-land-shell .bp-esf-why { margin: 0 0 8px; }
+.bp-land-shell .bp-esf-q { margin: 0 0 10px; }
+.bp-land-shell .bp-q-label { margin: 0 0 8px; }
+/* Three classes: the onb-pinned body rule would otherwise win (the step 2 trap). */
+.journal-shell.onb-pinned.bp-land-shell .journal-body { padding-bottom: 14px; }
+
+/* "I know what I want": Make, Model, New/Used, one button, in the thumb dock —
+   the car-site pattern (owner, 2026-10-01). */
+.bpf-know { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; }
+.bpf-know-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 800; color: var(--text); }
+/* A field that looks like a car-site dropdown and opens a bottom list. */
+.bpf-select {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+  min-height: 48px; padding: 0 14px; border: 1px solid var(--rail); border-radius: 10px;
+  background: var(--card); color: var(--text-strong); font: inherit; font-size: 15px; font-weight: 700;
+  text-align: left; cursor: pointer;
+}
+.bpf-select-empty { color: var(--text); font-weight: 500; }
+.bpf-select:disabled { background: var(--soft); cursor: default; }
+.bpf-list .bp-opt { min-height: 48px; font-size: 15px; font-weight: 700; text-align: left; }
+/* New / Used: the price as big and bold as the car's name (owner, 2026-10-01). */
+.bpf-conds { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bpf-cond {
+  display: flex; flex-direction: column; align-items: center; gap: 1px; min-height: 64px; padding: 8px 10px;
+  border: 1px solid var(--rail); border-radius: 12px; background: var(--card);
+  color: var(--text-strong); font: inherit; cursor: pointer;
+}
+.bpf-cond.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.bpf-cond-label { font-size: 12px; font-weight: 700; color: var(--text); }
+.bpf-cond-price { font-family: var(--font-display); font-size: 20px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.bpf-know-pick { margin-top: 18px; padding: 14px; border: 1px solid var(--line); border-radius: 15px;
+  background: var(--card); text-align: center; }
+.bpf-know-name { margin: 0; font-family: var(--font-display); font-size: 20px; font-weight: 900; color: var(--text-strong); }
+.bpf-know-why { margin: 3px 0 0; font-size: 12.5px; color: var(--text); }
+
+/* On the finder's first view there is room, so the banner shows more of it. */
+.bpf-banner { height: auto; margin: 0 0 10px; }
+.bpf-banner img { height: auto; aspect-ratio: 2000 / 848; object-fit: contain; }
+/* Finder start (owner, 2026-10-01: "space out screen 2"): the lead at the top,
+   the two paths at the bottom in thumb reach, the space between them. */
+.bpf-start-shell .journal-body { display: flex; flex-direction: column; justify-content: space-between; gap: 16px; }
+.journal-shell.onb-pinned.bpf-start-shell .journal-body { padding-bottom: 14px; }
+.bpf-start-shell .bp-lead { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; text-align: center; }
+.bpf-start-shell .bpf-banner { margin-bottom: 14px; }
+.bpf-start-shell .journal-head .esf-title { margin-top: 4px; }
+.bpf-start-shell .bpf-paths { gap: 12px; }
+.bpf-start-shell .bpf-know-pick { margin-top: 0; padding: 10px 14px; }
+.bpf-start-shell .bpf-path-quiz { grid-template-rows: auto; min-height: 44px; padding-top: 8px; padding-bottom: 8px; }
+.bpf-start-shell .bpf-path-quiz .bpf-path-title { font-size: 15px; }
+.bpf-start-shell .bpf-path-quiz .bpf-path-go { grid-row: 1; font-size: 22px; line-height: 1; }
+.bpf-start-shell .journal-head { text-align: center; }
+.bp-land-shell .bp-cat-icon { width: 30px; height: 30px; }
+.bp-land-shell .bp-lead { margin-bottom: 4px; }
+.bp-land-shell .bp-esf-box { margin: 8px 0 10px; padding: 10px 12px; }
+.bp-esf-why { margin: 0 0 9px; font-size: 12.5px; line-height: 1.4; color: var(--text-strong); }
+.bp-land-shell .bp-stack { gap: 5px; }
+.bp-land-shell .bp-cat { min-height: 44px; padding-top: 5px; padding-bottom: 5px; }
+
+/* Finder: shared */
+.bpf-eyebrow { margin: 0 0 2px; font-size: 11px; font-weight: 800; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--accent); }
+.bpf-shell .journal-head { padding-bottom: 10px; }
+.bpf-shell .bp-lead { font-size: 13.5px; margin-bottom: 10px; }
+.bpf-box-head { margin: 0; font-size: 13px; font-weight: 800; color: var(--text-strong); }
+.bpf-box-note { margin: 1px 0 6px; font-size: 11px; line-height: 1.35; color: var(--text); }
+
+/* Start */
+.bpf-peerfact { margin: 0 0 14px; padding: 10px 13px; border: 1px solid var(--line);
+  border-radius: 14px; background: var(--card); }
+.bpf-peerfact-who { margin: 0 0 6px; font-size: 12px; line-height: 1.35; color: var(--text); }
+.bpf-peerfact-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 2px 0; font-size: 12.5px; color: var(--text-strong); }
+.bpf-peerfact-row strong { font-size: 15px; font-weight: 900; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bpf-peerfact-row i, .bpf-alt-month i { font-style: normal; font-size: 11px; font-weight: 600; color: var(--text); }
+.bpf-paths { display: flex; flex-direction: column; gap: 10px; }
+.bpf-path {
+  display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; align-items: center;
+  column-gap: 10px; width: 100%; min-height: 64px; padding: 12px 16px;
+  border: 1px solid var(--rail); border-radius: 16px; background: var(--card);
+  color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
+}
+.bpf-path-title { font-family: var(--font-display); font-size: 17px; font-weight: 800; }
+.bpf-path-sub { grid-row: 2; font-size: 12.5px; color: var(--text); }
+.bpf-path-go { grid-column: 2; grid-row: 1 / span 2; font-size: 24px; color: var(--accent); }
+
+/* Know: the make-and-model list scrolls inside the dock */
+.bpf-modellist { max-height: 300px; overflow-y: auto; margin: 0 -18px; padding: 0 18px 6px; }
+.bpf-tierhead { margin: 8px 0 4px; font-size: 11px; font-weight: 800; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--text); }
+.bpf-tierhead:first-child { margin-top: 0; }
+.bpf-tierhead span { margin-left: 6px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--accent); }
+.bpf-modelopt {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+  min-height: 44px; margin: 0 0 6px; padding: 0 14px; border: 1px solid var(--rail); border-radius: 12px;
+  background: var(--card); color: var(--text-strong); font: inherit; font-size: 14px; font-weight: 700;
+  text-align: left; cursor: pointer;
+}
+.bpf-modelopt.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.bpf-modelopt-price { font-weight: 600; font-size: 13px; color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* Quiz */
+.bpf-answers { gap: 5px; }
+.bpf-answers .bp-ans { min-height: 38px; }
+.bpf-answers .bp-ans-val { font-size: 14px; }
+.bpf-reset { margin: 6px 0 0; font-size: 12px; }
+.bpf-fit { margin: 12px 0 0; padding: 12px 14px; border: 1px solid var(--accent-border);
+  border-radius: 16px; background: var(--accent-soft); }
+.bpf-fit-said { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text); }
+.bpf-fit-type { margin: 2px 0 0; font-family: var(--font-display); font-size: 22px; font-weight: 900; color: var(--text-strong); }
+.bpf-fit-why { margin: 2px 0 0; font-size: 13px; color: var(--text-strong); }
+.bpf-fit-also { margin: 8px 0 0; font-size: 12px; color: var(--text); }
+.bpf-fit-also .bp-link { font-size: 12px; }
+.bpf-dock .bp-tile-sub { font-size: 11.5px; }
+
+/* Cars */
+.bpf-cars { display: flex; flex-direction: column; gap: 9px; margin-top: 10px; }
+.bpf-car { padding: 10px 12px; border: 1px solid var(--line); border-radius: 15px; background: var(--card); }
+.bpf-car-name { margin: 0; font-family: var(--font-display); font-size: 16px; font-weight: 900; color: var(--text-strong); }
+.bpf-car-why { margin: 1px 0 8px; font-size: 12px; color: var(--text); }
+.bpf-car-prices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bpf-price {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-height: 44px;
+  padding: 7px 10px; border: 1px solid var(--rail); border-radius: 12px; background: var(--card);
+  color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
+}
+.bpf-price.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.bpf-price-cond { font-size: 11px; font-weight: 700; color: var(--text); }
+.bpf-price-big { font-size: 16px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.bpf-price-five { font-size: 11px; color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* The car */
+.bpf-car-shell .journal-body { display: flex; flex-direction: column; gap: 9px; }
+.bpf-why { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--text-strong); }
+.bpf-lines { padding: 6px 13px; border: 1px solid var(--line); border-radius: 15px; background: var(--card); }
+.bpf-line {
+  display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 12px;
+  padding: 3px 0; font-size: 12.5px; color: var(--text-strong);
+}
+.bpf-line-label { min-width: 0; }
+.bpf-line-label em { font-size: 10.5px; color: var(--text); }
+.bpf-line-fig { font-size: 15px; font-weight: 900; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bpf-line-hero {
+  margin: 3px -13px; padding: 6px 13px;
+  border-top: 1px solid var(--accent-border); border-bottom: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+}
+.bpf-line-hero .bpf-line-label { font-weight: 800; }
+.bpf-line-hero .bpf-line-fig { font-size: 20px; color: var(--accent); }
+.bpf-assume { margin: -3px 2px 0; font-size: 11px; line-height: 1.4; color: var(--text); }
+.bpf-assume .bp-link { font-size: 11.5px; padding: 0; margin-left: 2px; }
+.bpf-peer, .bpf-save { padding: 8px 13px; border: 1px solid var(--line); border-radius: 15px; background: var(--card); }
+.bpf-grid { display: grid; grid-template-columns: 1fr auto auto; column-gap: 16px; row-gap: 2px;
+  align-items: baseline; font-size: 12.5px; color: var(--text-strong); }
+.bpf-grid strong { justify-self: end; font-size: 14px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.bpf-grid-h { justify-self: end; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text); }
+.bpf-gap { margin: 5px 0 0; font-size: 12px; font-weight: 700; color: var(--text-strong); }
+.bpf-save .bpf-box-head { margin-bottom: 5px; }
+.bpf-alt {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+  min-height: 44px; margin-top: 5px; padding: 6px 11px; border: 1px solid var(--rail); border-radius: 12px;
+  background: var(--card); color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
+}
+.bpf-alt-text, .bpf-alt-figs { display: flex; flex-direction: column; min-width: 0; }
+.bpf-alt-figs { align-items: flex-end; flex: 0 0 auto; }
+.bpf-alt-head { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text); }
+.bpf-alt-name { font-size: 13px; font-weight: 800; }
+.bpf-alt-month { font-size: 14px; font-weight: 900; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bpf-alt-diff { font-size: 11.5px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+
+/* Buddy: the breakdown, every figure editable */
+.bpf-calc { margin: 4px 0 10px 34px; padding: 8px 12px; border: 1px solid var(--line);
+  border-radius: 14px; background: var(--card); }
+.bpf-calc-h { margin: 8px 0 3px; font-size: 10.5px; font-weight: 800; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--text); }
+.bpf-calc-h:first-child { margin-top: 0; }
+.bpf-calc-row { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  min-height: 34px; font-size: 12.5px; color: var(--text-strong); }
+.bpf-calc-stack { flex-direction: column; align-items: stretch; gap: 4px; padding: 3px 0; }
+.bpf-calc-out strong { font-size: 14px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.screen .bpf-calc-in, .bpf-calc-in {
+  width: 96px; min-height: 32px; padding: 0 8px; border: 1px solid var(--rail); border-radius: 9px;
+  background: var(--card); color: var(--text-strong); font: inherit; font-size: 13px; font-weight: 700;
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.bpf-seg { display: flex; gap: 4px; flex-wrap: nowrap; }
+.bpf-seg button {
+  flex: 1 1 auto; min-height: 30px; padding: 0 8px; border: 1px solid var(--rail); border-radius: 9px;
+  background: var(--card); color: var(--text-strong); font: inherit; font-size: 12px; font-weight: 600;
+  white-space: nowrap; cursor: pointer;
+}
+.bpf-seg button.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); font-weight: 800; }
+.bpf-calc-total { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px -12px -8px;
+  padding: 8px 12px; border-top: 1px solid var(--accent-border); border-radius: 0 0 14px 14px; background: var(--accent-soft); }
+.bpf-calc-total div { display: flex; flex-direction: column; }
+.bpf-calc-total span { font-size: 10.5px; color: var(--text); }
+.bpf-calc-total strong { font-size: 14px; font-weight: 900; color: var(--text-strong); font-variant-numeric: tabular-nums; }
+.bpf-calc-total div:first-child strong { color: var(--accent); }
+.bpf-calc .bp-link { margin-top: 12px; font-size: 12px; }
+
+/* The price range: tier and dollars as one label, the cars under it. */
+.bpf-ranges { display: flex; flex-direction: column; gap: 7px; }
+.bpf-range {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%;
+  min-height: 48px; padding: 8px 14px; border: 1px solid var(--rail); border-radius: 12px;
+  background: var(--card); color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
+}
+.bpf-range.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.bpf-range-top { display: flex; align-items: baseline; gap: 8px; width: 100%; }
+.bpf-range-tier { font-size: 15px; font-weight: 800; }
+.bpf-range-price { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bpf-range-peer { margin-left: auto; padding: 1px 7px; border-radius: 999px; background: var(--accent-soft);
+  border: 1px solid var(--accent-border); font-size: 10.5px; font-weight: 800; color: var(--accent); white-space: nowrap; }
+.bpf-range-cars { font-size: 11.5px; color: var(--text); }
+
+/* The car view has to hold one screen at its tallest (a quiz pick, new, on a
+   loan, both ways to spend less). Space comes from inside the boxes; the gap
+   between them is a minimum and any surplus height spreads into it. */
+.bpf-car-shell .journal-body { gap: 7px; justify-content: space-between; }
+.bpf-car-shell .bpf-line { padding: 2px 0; }
+.bpf-car-shell .bpf-line-hero { margin: 2px -13px; padding: 5px 13px; }
+.bpf-car-shell .bpf-line-hero .bpf-line-fig { font-size: 19px; }
+.bpf-car-shell .bpf-peer, .bpf-car-shell .bpf-save { padding: 6px 12px; }
+.bpf-car-shell .bpf-box-note { margin-bottom: 4px; }
+.bpf-car-shell .bpf-alt { margin-top: 4px; padding: 4px 11px; }
+.bpf-car-shell .bpf-gap { margin-top: 3px; }
+/* The loan line and its link share one row: the link keeps its 44px tap
+   height, and the text beside it wraps inside that height rather than pushing
+   the link onto a line of its own. */
+.bpf-assume { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px 0; }
+.bpf-assume .bp-link { flex: 0 0 auto; margin-left: 0; }
+/* Same shrinkable spacer as step 3: surplus height lifts the last box off the
+   menu first (up to about two lines), then spreads into the gaps. */
+.bpf-car-shell .journal-body::after { content: ""; display: block; flex: 1 1 0; min-height: 0; max-height: 28px; }
+.bpf-answers .bp-ans-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* "I know what I want" sits right above the Make and Model fields (owner, 2026-10-03). */
+.bpf-know-head { margin: 0; font-family: var(--font-display); font-size: 17px; font-weight: 800; color: var(--text-strong); }
+/* Fit at the tallest pick (owner: one screen, no scrolling): tighter dock gaps, and the
+   known-for line on one line, taken from inside the boxes, not between them. */
+.bpf-start-shell .bpf-know { gap: 7px; }
+.bpf-start-shell .bpf-know-pick { padding: 8px 14px; }
+.bpf-start-shell .bpf-know-why { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ═══ Purchase flow, 2026-10-03 ═════════════════════════════════════════════════
+   GLOBAL (owner): (1) copy that describes something is centred; (2) body copy is
+   dark and sturdy, never the gray --text. --text is #3D3A36 at weight 400, which
+   read as gray and thin on cream. Inside the purchase screens --text IS the
+   strong ink, and the base weight is 500. Set on the shells, so every rule that
+   already says var(--text) comes out dark without touching it. */
+:is(.bp-shell, .bpf-shell, .bp-land-shell, .bp-cost-shell, .bp-fin-shell, .bp-plan-shell) {
+  --text: var(--ink-strong);
+  font-weight: 500;
+}
+:is(.bp-shell, .bpf-shell, .bp-land-shell, .bp-cost-shell, .bp-fin-shell, .bp-plan-shell)
+  :is(.bp-lead, .bpf-why, .bpf-car-why, .bpf-fit, .bpf-fit-why, .bpf-fit-also, .bpf-know-why,
+      .bpf-box-note, .bp-esf-sub, .bp-esf-why, .bp-pile-lead, .bp-pile-note, .bp-quiz-why,
+      .bp-quiz-said, .bp-list-cap, .bp-hl-sub, .bp-ask-done) {
+  text-align: center;
+}
+.bpf-shell .bpf-eyebrow, .bpf-shell .esf-title { text-align: center; }
+
+/* Make badge: a stand-in for the logo, each maker its own colour. */
+.bpf-logo {
+  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: hsl(var(--h, 150) 48% 36%); color: #fff;
+  font-family: var(--font-display); font-size: 12.5px; font-weight: 900; letter-spacing: .02em;
+}
+
+/* Close (X) at the foot of any picker. */
+.bpf-close {
+  display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+  min-height: 44px; margin-top: 8px; border: 1px solid var(--rail); border-radius: 12px;
+  background: var(--card); color: var(--text-strong); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+}
+.bpf-close span { font-size: 22px; line-height: 1; font-weight: 600; }
+
+/* Quiz screen: answers, fit, range and the three cars in one view. */
+.bpf-quiz-shell .journal-body { display: flex; flex-direction: column; gap: 8px; }
+.bpf-quiz-shell .bpf-answers { margin: 0; }
+.bpf-quiz-shell .bpf-fit { margin: 0; padding: 7px 12px; border-radius: 14px; text-align: center; }
+.bpf-quiz-shell .bpf-fit-type { margin: 0; font-family: var(--font-display); font-size: 17px; font-weight: 900; color: var(--text-strong); }
+.bpf-quiz-shell .bpf-fit-said { font-family: var(--font-body); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; margin-right: 4px; }
+.bpf-quiz-shell .bpf-fit-why { margin: 1px 0 0; font-size: 12.5px; }
+.bpf-quiz-shell .bpf-fit-also { margin: 3px 0 0; font-size: 12px; }
+.bpf-quiz-shell .bpf-cars { margin: 0; gap: 8px; }
+
+/* A car: its maker's colour on the box, badge and name on one line, a one-line
+   reputation, and New and Used as two buttons that each carry their price. */
+.bpf-car {
+  padding: 8px 10px 9px; border-radius: 15px;
+  border: 1px solid hsl(var(--h, 150) 32% 76%);
+  background: color-mix(in srgb, hsl(var(--h, 150) 70% 50%) 9%, var(--card));
+  box-shadow: inset 4px 0 0 hsl(var(--h, 150) 48% 42%);
+}
+.bpf-car-top { display: flex; align-items: center; justify-content: center; gap: 9px; }
+.bpf-car-name { margin: 0; font-size: 16px; line-height: 1.15; text-align: center; }
+.bpf-car-why { margin: 3px 0 7px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bpf-car-prices { gap: 7px; }
+.bpf-price { align-items: center; justify-content: center; text-align: center; min-height: 40px; padding: 5px 8px; gap: 0;
+  background: var(--card); }
+.bpf-price-line { display: flex; align-items: baseline; justify-content: center; gap: 7px; }
+.bpf-price-cond { font-size: 12px; font-weight: 700; }
+.bpf-price-big { font-size: 17px; }
+.bpf-price-five { font-size: 11px; }
+.bpf-quiz-shell .bpf-price.on { border-color: hsl(var(--h, 150) 48% 42%); }
+
+/* The car: one expense table, the monthly leading. */
+.bpf-car-shell .bpf-why { font-size: 13px; }
+.bpf-table {
+  display: grid; grid-template-columns: 1fr auto auto; column-gap: 14px; align-items: center;
+  padding: 4px 13px 8px; border: 1px solid var(--line); border-radius: 15px; background: var(--card);
+}
+.bpf-t-h { justify-self: end; padding: 6px 0 4px; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text-strong); }
+.bpf-t-label { display: flex; flex-direction: column; padding: 6px 0; border-top: 1px solid var(--line); }
+.bpf-t-me, .bpf-t-peer { align-self: stretch; display: flex; align-items: center; justify-content: flex-end; border-top: 1px solid var(--line);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bpf-t-me { font-size: 16px; font-weight: 900; }
+.bpf-t-peer { font-size: 15px; font-weight: 500; }
+.bpf-t-name { font-size: 13px; font-weight: 700; color: var(--text-strong); }
+.bpf-t-sub { font-size: 11.5px; font-weight: 500; color: var(--text-strong); }
+.bpf-t-link { align-self: flex-start; margin-top: 2px; padding: 4px 0; border: 0; background: none; font: inherit; font-size: 13px;
+  font-weight: 800; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.bpf-t-total { background: var(--accent-soft); border-top-color: var(--accent-border); }
+.bpf-t-label.bpf-t-total { margin-left: -13px; padding-left: 13px; }
+.bpf-t-peer.bpf-t-total { margin-right: -13px; padding-right: 13px; }
+.bpf-t-label.bpf-t-total .bpf-t-name { font-size: 15px; font-weight: 900; }
+.bpf-t-me.bpf-t-total { font-size: 26px; color: var(--accent); }
+.bpf-t-peer.bpf-t-total { font-size: 17px; font-weight: 500; }
+.bpf-t-who { margin: -2px 0 0; font-size: 11.5px; }
+.bpf-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 7px 8px; border: 1px solid var(--line);
+  border-radius: 15px; background: var(--card); text-align: center; }
+.bpf-stat { display: flex; flex-direction: column; gap: 1px; }
+.bpf-stat span { font-size: 10.5px; font-weight: 700; color: var(--text-strong); }
+.bpf-stat strong { font-size: 14px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.bpf-alt { justify-content: space-between; }
+.bpf-alt-head { color: var(--text-strong); }
+.bpf-quiz-shell .bpf-fit-also { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0 6px; }
+.bpf-quiz-shell .bpf-fit-also .bp-link { min-height: 28px; padding: 0 2px; }
+.bpf-table { column-gap: 0; }
+.bpf-t-h { padding-left: 14px; }
+.bpf-t-me, .bpf-t-peer { padding-left: 14px; }
+.bpf-t-label.bpf-t-total .bpf-t-name { font-size: 14px; }
+.bpf-t-link { text-align: left; white-space: nowrap; font-size: 12.5px; }
+.bpf-t-name, .bpf-t-sub { text-align: left; }
+.bpf-table { align-items: stretch; }
+.bpf-t-label { justify-content: center; }
+.bpf-t-h { align-self: end; }
+.bpf-stat span { white-space: nowrap; }
+
+/* Compact cars (owner, 2026-10-03: "this takes up way too much space"). */
+.bpf-quiz-shell .bpf-car { padding: 6px 9px 7px; }
+.bpf-quiz-shell .bpf-car-top { gap: 7px; }
+.bpf-quiz-shell .bpf-logo, .bpf-quiz-shell .bpf-logo-img { width: 24px; height: 24px; font-size: 10.5px; }
+.bpf-quiz-shell .bpf-car-name { font-size: 15px; }
+.bpf-quiz-shell .bpf-car-why { margin: 1px 0 5px; font-size: 11.5px; }
+.bpf-quiz-shell .bpf-price { min-height: 34px; padding: 3px 6px; }
+.bpf-quiz-shell .bpf-price-big { font-size: 16px; }
+.bpf-quiz-shell .bpf-price-five { font-size: 10.5px; line-height: 1.2; }
+.bpf-quiz-shell .bpf-cars { gap: 6px; }
+.bpf-logo-chip { background: #fff; border: 1px solid var(--line); }
+.bpf-logo-img { display: block; width: 78%; height: 78%; object-fit: contain; }
+
+/* Car cost screen, round 2 (owner, 2026-10-03: no descriptions in the table, year 1
+   and 5 years beside peers, and one type system in "Ways to spend less"). Inter
+   throughout both boxes; the numbers are the only thing that gets heavier. */
+.bpf-table, .bpf-table *, .bpf-save, .bpf-save * { font-family: var(--font-body); }
+.bpf-t-name { font-size: 14px; font-weight: 700; }
+.bpf-t-label { padding: 7px 0; }
+.bpf-t-label.bpf-t-long .bpf-t-name { font-weight: 600; }
+.bpf-t-me { font-size: 16px; font-weight: 800; }
+.bpf-t-me.bpf-t-long { font-size: 15px; }
+.bpf-t-peer.bpf-t-long { font-size: 14px; }
+.bpf-t-label.bpf-t-total .bpf-t-name { font-size: 15px; font-weight: 800; }
+.bpf-t-me.bpf-t-total { font-size: 24px; font-weight: 800; }
+.bpf-t-h { font-weight: 700; }
+.bpf-deal { margin-top: -4px; font-size: 12.5px; font-weight: 600; }
+.bpf-save .bpf-box-head { font-size: 14px; font-weight: 700; text-align: left; }
+.bpf-alt { align-items: center; padding: 6px 12px; text-align: left; }
+.bpf-alt-name { font-size: 14px; font-weight: 700; color: var(--text-strong); }
+.bpf-alt-head { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--text-strong); }
+.bpf-alt-month { font-size: 14px; font-weight: 700; color: var(--text-strong); }
+.bpf-alt-diff { font-size: 12px; font-weight: 500; color: var(--text-strong); }
+/* Fit: the table's rows and the options' rows take the room from inside themselves. */
+.bpf-table { padding: 2px 13px 6px; }
+.bpf-t-me, .bpf-t-peer, .bpf-t-h { padding-left: 8px; }
+.bpf-t-label { padding: 4px 0; }
+.bpf-t-link { padding: 2px 0 0; }
+.bpf-t-me.bpf-t-total { font-size: 22px; }
+.bpf-t-label.bpf-t-total .bpf-t-name { font-size: 14px; white-space: nowrap; }
+.bpf-car-shell .bpf-alt { min-height: 40px; margin-top: 4px; padding: 3px 12px; }
+.bpf-car-shell .bpf-save { padding: 6px 12px 7px; }
+.bpf-car-shell .journal-body { gap: 6px; }
+.bpf-car-shell .bpf-t-who { margin: -2px 0 0; }
+
+/* The question rows (owner, 2026-10-03): the one being asked is an open, outlined row
+   with its choices docked below; the ones still to come are locked. */
+.bp-ans-empty .bp-ans-val { font-weight: 600; }
+.bp-ans-locked { background: var(--soft); cursor: default; }
+.bp-ans-locked .bp-drop-caret { opacity: .45; }
+.bp-shell .bp-answers .bp-ans, .bpf-shell .bp-answers .bp-ans { min-height: 38px; }
+.bp-shell .bp-answers .bp-ans-locked, .bpf-shell .bp-answers .bp-ans-locked { min-height: 34px; }
+.bp-shell .bp-answers { gap: 5px; }
+
+/* Spread the quiz screen (owner, 2026-10-03: "way too much space after the cars"):
+   spare height goes into the gaps between the blocks, not into the boxes. */
+.bpf-quiz-shell .journal-body { justify-content: space-between; gap: 8px; }
+.bpf-quiz-shell .bpf-cars { gap: 10px; }
+
+/* Logos: in the make list, in the Make field, and at the top of the car. */
+.bp-opt:has(.bpf-logo) { display: flex; align-items: center; gap: 12px; }
+.bpf-list .bp-opt .bpf-logo { width: 32px; height: 32px; }
+.bpf-select-val { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.bpf-select-val .bpf-logo { width: 26px; height: 26px; }
+.bpf-car-title { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.bpf-car-title .bpf-logo { width: 34px; height: 34px; }
+
+/* ONE FONT, TWO WEIGHTS in the expense table and the options (owner, 2026-10-03:
+   "one font everywhere, only size or bold can change"). The face was already Inter;
+   what read as a mix was the weights 500, 600, 800 and 900 landing on different
+   cuts of the system font, and tabular figures. Regular and bold only. */
+.bpf-shell .bpf-table, .bpf-shell .bpf-table *, .bpf-shell .bpf-save, .bpf-shell .bpf-save * {
+  font-family: var(--font-body); font-variant-numeric: normal; font-weight: 400; font-style: normal;
+}
+.bpf-shell .bpf-t-name, .bpf-shell .bpf-t-me, .bpf-shell .bpf-t-h, .bpf-shell .bpf-t-link,
+.bpf-shell .bpf-save .bpf-box-head, .bpf-shell .bpf-alt-name, .bpf-shell .bpf-alt-diff { font-weight: 700; }
+.bpf-shell .bpf-t-label.bpf-t-long .bpf-t-name { font-weight: 400; }
+.bpf-shell .bpf-t-me.bpf-t-long { font-weight: 700; }
+.bpf-shell .bpf-t-peer { font-weight: 400; }
+
+/* Ways to spend less: a coloured row with the maker's logo, the saving in bold. */
+.bpf-shell .bpf-alt {
+  display: flex; align-items: center; gap: 10px; text-align: left;
+  border: 1px solid hsl(var(--h, 215) 32% 76%);
+  background: color-mix(in srgb, hsl(var(--h, 215) 70% 50%) 9%, var(--card));
+  box-shadow: inset 4px 0 0 hsl(var(--h, 215) 48% 42%);
+}
+.bpf-shell .bpf-alt .bpf-logo { width: 28px; height: 28px; }
+.bpf-shell .bpf-alt-text { flex: 1 1 auto; min-width: 0; }
+.bpf-shell .bpf-alt-name { font-size: 14px; }
+.bpf-shell .bpf-alt-head { font-size: 12px; }
+.bpf-shell .bpf-alt-diff { font-size: 15px; }
+.bpf-shell .bpf-alt-month { font-size: 12px; }
+.bpf-shell .bpf-alt-best .bpf-alt-diff { color: var(--good); }
+
+/* Cost screen, round 3 (owner, 2026-10-03). */
+.bpf-shell .bpf-deal { margin-top: -2px; font-size: 15px; font-weight: 700; }
+.bpf-shell .bpf-t-peer, .bpf-shell .bpf-t-h-peer { border-left: 1px solid var(--line); }
+.bpf-shell .bpf-t-peer { font-size: 13px; }
+.bpf-shell .bpf-t-h-peer { font-size: 10.5px; }
+.bpf-shell .bpf-t-peer.bpf-t-long { font-size: 13px; }
+.bpf-shell .bpf-t-label.bpf-t-total .bpf-t-name { font-size: 14px; }
+.bpf-shell .bpf-t-me.bpf-t-total { font-size: 17px; color: var(--accent); }
+.bpf-shell .bpf-t-peer.bpf-t-total { font-size: 13px; }
+.bpf-shell .bpf-t-name { white-space: nowrap; }
+.bpf-shell .bpf-t-sub { font-size: 11.5px; line-height: 1.25; }
+.bpf-shell .bpf-t-foot { grid-column: 1 / -1; margin: 4px -13px -6px; padding: 5px 13px 0; border-top: 1px solid var(--line);
+  font-size: 11px; line-height: 1.35; text-align: center; }
+.bpf-shell .bpf-t-foot, .bpf-shell .bpf-t-foot * { font-family: var(--font-body); font-weight: 400; }
+
+/* Options: one line each, room between them, the picked one outlined. */
+.bpf-car-shell .bpf-alt { margin-top: 7px; }
+.bpf-shell .bpf-alt-name { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bpf-shell .bpf-alt-head { white-space: nowrap; }
+.bpf-shell .bpf-alt-figs { flex: 0 0 auto; }
+.bpf-shell .bpf-alt-diff, .bpf-shell .bpf-alt-month { white-space: nowrap; }
+.bpf-shell .bpf-alt-good { color: var(--good); }
+.bpf-shell .bpf-alt.bpf-alt-on { box-shadow: inset 4px 0 0 hsl(var(--h, 215) 48% 42%), 0 0 0 2px var(--accent); }
+.bpf-logo-peers { background: var(--soft); color: var(--text-strong); border: 1px solid var(--line); }
+.bpf-peer-cars { display: flex; flex-direction: column; gap: 10px; }
+
+/* The tier and its range sit under the type in the fit box (owner, 2026-10-03). */
+.bpf-quiz-shell .bpf-fit-tier { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-strong); }
+.bpf-quiz-shell .bpf-range-cars { white-space: normal; line-height: 1.3; text-align: left; }
+.bp-shell .bp-answers .bp-ans-locked, .bpf-shell .bp-answers .bp-ans-locked { min-height: 30px; }
+
+/* Cost screen, round 4 (owner, 2026-10-03). */
+.bpf-shell .bpf-deal-row { display: flex; justify-content: center; align-items: stretch; gap: 0; }
+.bpf-shell .bpf-deal-cell { flex: 0 1 auto; padding: 0 22px; text-align: center; display: flex; flex-direction: column; }
+.bpf-shell .bpf-deal-cell + .bpf-deal-cell { border-left: 1px solid var(--rail); }
+.bpf-shell .bpf-deal-cell, .bpf-shell .bpf-deal-cell * { font-family: var(--font-body); font-style: normal; }
+.bpf-shell .bpf-deal-cell strong { font-size: 22px; font-weight: 700; line-height: 1.15; color: var(--text-strong); }
+.bpf-shell .bpf-deal-cell span { font-size: 12.5px; font-weight: 400; color: var(--text-strong); }
+/* The vertical rule runs the whole table, from the header between This car and Peers to the last row. */
+.bpf-shell .bpf-t-h { align-self: stretch; display: flex; align-items: flex-end; justify-content: flex-end; }
+.bpf-shell .bpf-t-peer, .bpf-shell .bpf-t-h-peer { border-left: 1px solid var(--rail); }
+.bpf-shell .bpf-t-calc { grid-column: 1 / -1; display: flex; justify-content: center; border-top: 1px solid var(--line); margin: 0 -13px; }
+.bpf-shell .bpf-t-calc .bpf-t-link { margin: 0; padding: 7px 0; font-size: 13.5px; text-decoration: underline; }
+/* Your pick is plain gray, never highlighted; the tried option carries the outline. */
+.bpf-shell .bpf-alt.bpf-alt-orig, .bpf-shell .bpf-alt.bpf-alt-orig.bpf-alt-on {
+  background: var(--soft); border: 1px solid var(--line); box-shadow: none;
+}
+.bpf-shell .bpf-alt-orig .bpf-alt-diff, .bpf-shell .bpf-alt-orig .bpf-alt-month, .bpf-shell .bpf-alt-orig .bpf-alt-head { font-weight: 400; }
+.bpf-shell .bpf-car-title { font-size: 20px; line-height: 1.15; }
+.bpf-shell .bpf-car-title span { min-width: 0; }
+.bpf-shell .bpf-deal-cell strong { font-size: 21px; }
+.bpf-shell .bpf-t-calc .bpf-t-link { padding: 5px 0; }
+.bpf-car-shell .bpf-alt { min-height: 38px; padding-top: 2px; padding-bottom: 2px; }
+.bpf-shell .bpf-deal-cell span { font-size: 12px; }
+.bpf-car-shell .journal-body { gap: 5px; }
+
+/* Buddy and the car sit at the top of "Help me choose" while there is room (owner,
+   2026-10-03): the first view, and the result with its cars. Whole image, never cropped,
+   at 72% width so the result still fits one screen. Closed pickers need the room back. */
+.bpf-quiz-shell .bpf-banner-quiz { width: 72%; margin: 0 auto 6px; background: none; }
+.bpf-quiz-shell .journal-head { text-align: center; }
+
+/* One rule, not two: the Peers header sits in the same column box as the rows so its
+   left edge is the same line, and the This car figures keep clear of it. */
+.bpf-shell .bpf-t-h-peer { justify-self: stretch; }
+.bpf-shell .bpf-t-me, .bpf-shell .bpf-t-h:not(.bpf-t-h-peer) { padding-right: 12px; }
+.bpf-shell .bpf-t-peer, .bpf-shell .bpf-t-h-peer { padding-left: 12px; }
+.bpf-car-shell .bpf-save { margin-top: 6px; }
+.bpf-shell .bpf-t-calc .bpf-t-link { padding: 4px 0; }
+.bpf-shell .bpf-t-foot { padding-top: 4px; }
+.bpf-shell .bpf-deal-cell strong { font-size: 20px; }
+.bpf-shell .bpf-t-foot { white-space: nowrap; font-size: 11px; }
+
+/* "I know what I want": every box the same height, and the smaller size (owner,
+   2026-10-03). Make, Model, New, Used, the button and the Help me choose row are all 40px. */
+.bpf-start-shell .bpf-select { min-height: 40px; font-size: 14.5px; }
+.bpf-start-shell .bpf-select-val .bpf-logo { width: 24px; height: 24px; }
+.bpf-start-shell .bpf-cond { flex-direction: row; justify-content: center; align-items: baseline; gap: 8px; min-height: 40px; padding: 0 10px; align-items: center; }
+.bpf-start-shell .bpf-cond-price { font-size: 17px; }
+.bpf-start-shell .bpf-cond-label { font-size: 13px; }
+.bpf-start-shell .button.full { min-height: 40px; }
+/* Help me choose is a real button, not a quiet row. */
+.bpf-start-shell .bpf-path-quiz {
+  min-height: 40px; padding: 0 16px; border: 2px solid var(--accent); background: var(--accent-soft); border-radius: 12px;
+}
+.bpf-start-shell .bpf-path-quiz .bpf-path-title { font-size: 15px; font-weight: 700; color: var(--accent); }
+.bpf-start-shell .bpf-path-quiz .bpf-path-go { color: var(--accent); }
+.bpf-start-shell .bpf-cond { gap: 6px; padding: 0 6px; }
+.bpf-start-shell .bpf-cond-label { font-size: 12px; white-space: nowrap; }
+.bpf-start-shell .bpf-cond-price { font-size: 16px; white-space: nowrap; }
+
+/* Help me choose leads the dock, bigger, with an emoji for choosing (owner, 2026-10-03). */
+.bpf-start-shell .bpf-path-quiz {
+  grid-template-columns: auto 1fr auto; grid-template-rows: auto; column-gap: 12px;
+  min-height: 58px; padding: 0 16px; margin-bottom: 4px; border-width: 2px;
+}
+.bpf-start-shell .bpf-path-quiz .bpf-path-emoji { font-size: 28px; line-height: 1; }
+.bpf-start-shell .bpf-path-quiz .bpf-path-title { font-size: 18px; font-weight: 800; text-align: left; }
+.bpf-start-shell .bpf-path-quiz .bpf-path-go { grid-row: 1; font-size: 26px; }
+.bpf-start-shell .bpf-path-quiz .bpf-path-emoji { grid-column: 1; grid-row: 1; }
+.bpf-start-shell .bpf-path-quiz .bpf-path-title { grid-column: 2; grid-row: 1; }
+.bpf-start-shell .bpf-path-quiz .bpf-path-go { grid-column: 3; grid-row: 1; }
+
+/* Help me choose, friendlier (owner, 2026-10-03: "inviting, friendly, fun"): warm apricot
+   instead of the muted green, a sparkle in a white bubble, a soft lift, dark readable text. */
+.bpf-start-shell .bpf-path-quiz {
+  border: 1px solid color-mix(in srgb, var(--apricot) 80%, var(--card));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--apricot) 38%, var(--card)), color-mix(in srgb, var(--apricot) 14%, var(--card)));
+  border-radius: var(--radius-button); box-shadow: 0 3px 10px rgba(61, 58, 54, .10);
+}
+.bpf-start-shell .bpf-path-quiz .bpf-path-emoji {
+  display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%;
+  background: var(--card); font-size: 20px; box-shadow: 0 1px 3px rgba(61, 58, 54, .12);
+}
+.bpf-start-shell .bpf-path-quiz .bpf-path-title { color: var(--text-strong); font-size: 18px; font-weight: 800; }
+.bpf-start-shell .bpf-path-quiz .bpf-path-go {
+  display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--card); color: var(--text-strong); font-size: 22px; line-height: 1; padding-bottom: 2px;
+}
+/* Buddy's own face on Help me choose (owner, 2026-10-03), the same art as the Ask button. */
+.bpf-start-shell .bpf-path-quiz .bpf-path-emoji { width: 44px; height: 44px; overflow: hidden; padding: 0; }
+.bpf-start-shell .bpf-path-face { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+/* Start screen, round 3 (owner, 2026-10-03): "move all of this up". The choices follow the
+   lead instead of sinking to the foot; the spare height sits above Back and Ask. */
+.journal-shell.onb-pinned.bpf-start-shell .journal-body { flex: 0 0 auto; padding-bottom: 16px; }
+.bpf-start-shell .bp-dock { border-radius: 20px; margin-bottom: 0; padding-bottom: 12px; }
+.bpf-start-shell .journal-foot { margin-top: auto; }
+
+/* Descriptions are centred everywhere a car is described, the sheet included. */
+.bpf-car-why, .bp-sheet .bpf-car-why { text-align: center; }
+.bp-sheet .bpf-car-top { justify-content: center; }
+
+/* Your pick is gray but still reads as a button you can press. */
+.bpf-shell .bpf-alt.bpf-alt-orig, .bpf-shell .bpf-alt.bpf-alt-orig.bpf-alt-on {
+  background: var(--soft); border: 1px solid var(--rail); box-shadow: 0 1px 3px rgba(61, 58, 54, .14); cursor: pointer;
+}
+
+/* ═══ Your car: pay for it, plan for it (owner, 2026-10-03) ══════════════════════
+   Two sections that read as one flow: each a card under its own title band, the
+   first answering "how do I pay", the second "how much do I save, by when". */
+.bp-yc-shell .journal-body { display: flex; flex-direction: column; gap: 10px; }
+.bp-yc-lead { margin: 0; font-size: 14px; text-align: center; }
+.bp-yc-sec { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 16px; background: var(--card); overflow: hidden; }
+.bp-yc-band { margin: 0; padding: 7px 14px; border-bottom: 1px solid var(--accent-border); background: var(--accent-soft);
+  font-family: var(--font-body); font-size: 14px; font-weight: 700; color: var(--text-strong); }
+.bp-yc-card { padding: 8px 14px 10px; }
+.bp-yc-card .bp-priceline { margin-bottom: 8px; }
+.bp-yc-card .bp-seg { margin-bottom: 4px; }
+.bp-yc-when { margin: 8px 0 6px; font-size: 13px; text-align: center; }
+.bp-yc-shell .bp-quizlink { margin: 0; }
+.bpf-yc-all { margin-top: 10px; }
+.bpf-ycwrap .bpf-save { border: 0; padding: 0; background: none; }
+.bp-yc-sec { flex-shrink: 0; }
+.bp-yc-shell .bp-quizlink { flex-shrink: 0; gap: 8px; padding: 0 12px; }
+.bp-yc-shell .bp-quizlink > span { white-space: nowrap; font-size: 13.5px; }
+
+/* Your car: fit one screen. Space comes from inside the cards: flat rows, no nested boxes. */
+.bp-yc-shell .journal-body { gap: 8px; }
+.bp-yc-shell .bp-quizlink { min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+.bp-yc-band { padding: 5px 14px; }
+.bp-yc-card { padding: 4px 14px 8px; }
+.bp-yc-card .bp-priceline { margin-bottom: 6px; }
+.bp-yc-card .bp-price-inline { min-height: 38px; }
+.bp-yc-shell .bp-setrow { min-height: 36px; }
+.bp-yc-shell .bp-fin-sum { margin-top: 2px; padding: 4px 0 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: none; }
+.bp-yc-shell .bp-fin-sumrow { padding: 2px 0; font-size: 14px; font-weight: 700; }
+.bp-yc-shell .bp-math { margin: 0; padding: 0; border: 0; background: none; }
+.bp-yc-shell .bp-math-row { min-height: 32px; font-size: 14px; }
+.bp-yc-shell .bp-math-row .bp-row-input { min-height: 34px; }
+.bp-yc-shell .bp-yc-when { margin: 4px 0 4px; }
+.bp-yc-shell .bp-step { width: 38px; height: 38px; }
+.bp-yc-shell .bp-date { flex-wrap: nowrap; }
+
+/* Loan / Cash / Lease: three segments; Lease is dimmed on a used car. */
+.bp-seg3 button { flex: 1 1 0; }
+.bp-seg3 .bp-seg-off { opacity: .45; cursor: not-allowed; }
+.bp-yc-shell .bp-setrow { min-height: 34px; }
+.bp-seg.bp-seg3 { grid-template-columns: 1fr 1fr 1fr; }
+.bp-yc-shell .bp-seg { margin: 4px 0 2px; }
+.bp-yc-shell .bp-seg button { min-height: 36px; }
+
+/* ═══ Your car, type clean-up (owner, 2026-10-03) ═══════════════════════════════
+   ONE face, ONE size (14px) in both sections, bold for what you read first and
+   regular for the rest; 12px only for a caption. Every control reads as the same
+   kind of control: the same dropdown pill, the same field, the same stepper. */
+.bp-yc-shell .bp-yc-sec, .bp-yc-shell .bp-yc-sec * {
+  font-family: var(--font-body); font-size: 14px; font-weight: 400; font-style: normal;
+  font-variant-numeric: normal; line-height: 1.25; letter-spacing: 0; text-transform: none;
+}
+.bp-yc-shell .bp-yc-band { font-size: 15px; font-weight: 700; padding: 8px 14px; }
+.bp-yc-shell .bp-seg button, .bp-yc-shell .bp-fin-sumrow strong, .bp-yc-shell .bp-math-row strong,
+.bp-yc-shell .bp-math-total, .bp-yc-shell .bp-math-total *, .bp-yc-shell .bp-fin-sumrow span:first-child,
+.bp-yc-shell .bp-q-label, .bp-yc-shell .bp-date-val, .bp-yc-shell .bp-date-note { font-weight: 700; }
+.bp-yc-shell .bp-date-note small { font-size: 12px; font-weight: 400; }
+.bp-yc-shell .bp-setrow-label, .bp-yc-shell .bp-math-row label, .bp-yc-shell .bp-math-row > span:first-child { font-weight: 400; }
+.bp-yc-shell .bp-math-total > span:first-child { font-weight: 700; }
+
+/* The dropdown pill: the same as every other dropdown (white, ruled, 14px bold). */
+.bp-yc-shell .bp-setrow-pill {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 12px;
+  border: 1px solid var(--rail); border-radius: 10px; background: var(--card); font-weight: 700;
+}
+.bp-yc-shell .bp-setrow-pill .bp-drop-caret { font-size: 10px; font-weight: 400; }
+
+/* Fields: price and already saved. */
+.bp-yc-shell input.esf-amount, .bp-yc-shell .bp-price-inline, .bp-yc-shell .bp-row-input {
+  font-family: var(--font-body); font-size: 14px; font-weight: 700; min-height: 34px; padding: 0 12px;
+  border: 1px solid var(--rail); border-radius: 10px; background: var(--card); color: var(--text-strong);
+}
+.bp-yc-shell .bp-price-inline { width: 130px; }
+.bp-yc-shell .bp-row-input { width: 110px; }
+
+/* The stepper. */
+.bp-yc-shell .bp-step { font-size: 20px; font-weight: 400; }
+.bp-yc-shell .bp-yc-when { text-align: left; margin: 10px 0 6px; }
+
+/* Two sections that read as two: air between them, each lifted off the page. */
+.bp-yc-shell .journal-body { gap: 14px; }
+.bp-yc-shell .bp-yc-sec { border-color: var(--rail); box-shadow: 0 2px 8px rgba(61, 58, 54, .08); }
+.bp-yc-shell .bp-yc-card { padding: 8px 14px 12px; }
+.bp-yc-shell .bp-setrow { min-height: 36px; }
+/* fit */
+.bp-yc-shell .journal-body { gap: 11px; }
+.bp-yc-shell .bp-yc-band { padding: 6px 14px; }
+.bp-yc-shell .bp-yc-card { padding: 5px 14px 8px; }
+.bp-yc-shell .bp-setrow { min-height: 33px; }
+.bp-yc-shell .bp-setrow-pill { min-height: 30px; }
+.bp-yc-shell .bp-math-row { min-height: 30px; }
+.bp-yc-shell .bp-seg button { min-height: 34px; }
+.bp-yc-shell .bp-step { width: 34px; height: 34px; }
+.bp-yc-shell .bp-yc-when { margin: 6px 0 4px; }
+.bp-yc-shell .bp-yc-card .bp-priceline { margin-bottom: 4px; }
+
+/* ═══ Planning for it: one question, then the sum (owner, 2026-10-03) ════════════ */
+.bp-yc-shell .bp-yc-q { margin: 2px 0 6px; font-weight: 700; text-align: left; }
+.bp-yc-shell .bp-yc-card .bp-seg { margin: 0 0 4px; }
+.bp-yc-shell .bp-math-need {
+  margin: 2px -14px 0; padding: 4px 14px; min-height: 34px; background: var(--accent-soft);
+  border-top: 1px solid var(--accent-border); border-bottom: 1px solid var(--accent-border);
+}
+.bp-yc-shell .bp-math-need > span:first-child, .bp-yc-shell .bp-math-need strong { font-weight: 700; }
+.bp-yc-shell .bp-math-need strong { color: var(--good); font-size: 16px; }
+.bp-yc-shell button.bp-yc-when { margin: 4px 0 0; padding: 0 2px; min-height: 36px; border-bottom: 0; text-align: left; }
+.bp-yc-shell .bp-yc-per { margin: 2px 0 0; text-align: left; }
+.bp-yc-shell .bp-yc-per strong { font-weight: 700; }
+.bp-yc-shell .bp-yc-cta { flex-shrink: 0; padding: 0 0 8px; }
+.bp-yc-shell .bp-yc-cta .button { min-height: 44px; font-size: 14px; font-weight: 700; }
+
+/* Your car: room for the open Planning card. Everything comes out of the insides of boxes. */
+.bp-yc-shell .journal-head { padding-bottom: 4px; }
+.bp-yc-shell .bp-yc-lead { margin: 2px 0 0; font-size: 12.5px; line-height: 1.3; text-align: center; font-weight: 400; }
+.bp-yc-shell .bpf-car-title { font-size: 18px; }
+.bp-yc-shell .journal-body { gap: 8px; }
+.bp-yc-shell .bp-quizlink { min-height: 34px; padding-top: 4px; padding-bottom: 4px; }
+.bp-yc-shell .bp-yc-band { padding: 4px 14px; }
+.bp-yc-shell .bp-yc-card { padding: 4px 14px 6px; }
+.bp-yc-shell .bp-setrow { min-height: 30px; }
+.bp-yc-shell .bp-setrow-pill { min-height: 28px; }
+.bp-yc-shell .bp-math-row { min-height: 28px; }
+.bp-yc-shell .bp-math-need { min-height: 30px; padding-top: 3px; padding-bottom: 3px; }
+.bp-yc-shell .bp-seg button { min-height: 30px; }
+.bp-yc-shell .bp-seg { margin: 2px 0 2px; padding: 3px; }
+.bp-yc-shell .bp-yc-q { margin: 0 0 4px; }
+.bp-yc-shell .bp-yc-card .bp-priceline { margin-bottom: 2px; }
+.bp-yc-shell .bp-yc-card .bp-price-inline { min-height: 30px; }
+.bp-yc-shell input.esf-amount, .bp-yc-shell .bp-row-input { min-height: 28px; }
+.bp-yc-shell button.bp-yc-when { min-height: 30px; margin: 2px 0 0; }
+.bp-yc-shell .bp-yc-per { margin: 0; line-height: 1.2; }
+.bp-yc-shell .bp-fin-sum { margin-top: 0; }
+.bp-yc-shell .bp-yc-cta { padding: 0 0 6px; }
+.bp-yc-shell .bp-yc-cta .button { min-height: 42px; }
+.bp-yc-shell .bp-setrow { min-height: 28px; }
+.bp-yc-shell .bp-setrow-pill { min-height: 26px; }
+.bp-yc-shell .bp-math-row { min-height: 26px; }
+.bp-yc-shell button.bp-yc-when { min-height: 28px; }
+.bp-yc-shell .bp-yc-card { padding: 3px 14px 5px; }
+
+/* ═══ Cost screen, round 5 (owner, 2026-10-03) ══════════════════════════════════
+   The expense table is the thing to look at, so it is tinted. Every box is a thick
+   (2px) bordered box so each reads as its own function. */
+.bpf-shell .bpf-table { background: var(--accent-soft); border: 2px solid var(--accent); }
+.bpf-shell .bpf-table .bpf-t-label, .bpf-shell .bpf-table .bpf-t-me, .bpf-shell .bpf-table .bpf-t-peer { border-top-color: var(--accent-border); }
+.bpf-shell .bpf-table .bpf-t-total { background: color-mix(in srgb, var(--accent-border) 70%, var(--accent-soft)); border-top-color: var(--accent); }
+.bpf-shell .bpf-t-calc, .bpf-shell .bpf-t-foot { border-top-color: var(--accent-border); }
+.bpf-shell .bpf-save, .bpf-shell .bpf-car, .bpf-shell .bpf-fit, .bpf-shell .bpf-know-pick, .bp-yc-shell .bp-yc-sec { border-width: 2px; }
+.bpf-shell .bpf-save, .bpf-shell .bpf-know-pick, .bp-yc-shell .bp-yc-sec { border-color: var(--rail); }
+
+/* Alternative cars that can save you money: one line saying what it is, two money columns. */
+.bpf-shell .bpf-save { padding: 10px 12px 8px; }
+.bpf-car-shell .bpf-save { margin-top: 12px; padding: 8px 12px 6px; }
+.bpf-shell .bpf-save-head { margin: 0 0 6px; font-size: 14px; font-weight: 700; text-align: left; }
+.bpf-shell .bpf-save-cols, .bpf-shell .bpf-alt {
+  display: grid; grid-template-columns: 28px minmax(0, 1fr) 62px 90px; column-gap: 8px; align-items: center;
+}
+.bpf-shell .bpf-save-cols { padding: 0 13px 3px; font-size: 11px; font-weight: 700; text-align: right; }
+.bpf-shell .bpf-save-cols span { text-align: right; line-height: 1.1; }
+.bpf-shell .bpf-alt { padding: 3px 13px; min-height: 40px; }
+.bpf-shell .bpf-alt-c1, .bpf-shell .bpf-alt-c2 { text-align: right; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.bpf-shell .bpf-alt-c1 .bpf-alt-dash { font-weight: 400; font-size: 12px; white-space: nowrap; }
+.bpf-shell .bpf-alt-orig .bpf-alt-c1 { grid-column: 3 / 5; }
+.bpf-shell .bpf-alt-good { color: var(--good); }
+.bpf-shell .bpf-alt-text { min-width: 0; }
+.bpf-shell .bpf-alt-name, .bpf-shell .bpf-alt-head { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.bpf-shell .bpf-save-note { margin: 5px 0 0; font-size: 11px; text-align: left; line-height: 1.2; }
+
+/* "How we worked it out": condensed, so it needs less scrolling. */
+.bpf-calc { padding: 4px 12px 8px; }
+.bpf-calc-h { margin: 6px 0 1px; font-size: 10.5px; }
+.bpf-calc-row { min-height: 28px; gap: 6px; font-size: 12.5px; }
+.bpf-calc-stack { gap: 3px; padding: 2px 0; }
+.bpf-seg { gap: 3px; }
+.bpf-seg button { min-height: 26px; padding: 0 7px; font-size: 12px; border-radius: 8px; }
+.screen .bpf-calc-in, .bpf-calc-in { width: 88px; min-height: 28px; padding: 0 8px; font-size: 12.5px; border-radius: 8px; }
+.bpf-calc-out strong { font-size: 13px; }
+.bpf-calc-total { margin-top: 6px; padding-top: 6px; padding-bottom: 6px; }
+.bpf-calc .bp-link { margin-top: 6px; }
+/* fit: the save box and table take room from inside themselves */
+.bpf-shell .bpf-save-cols, .bpf-shell .bpf-alt { grid-template-columns: 26px minmax(0, 1fr) 54px 74px; column-gap: 6px; }
+.bpf-shell .bpf-alt { min-height: 36px; padding: 2px 11px; }
+.bpf-shell .bpf-save-cols { padding: 0 11px 2px; font-size: 10.5px; }
+.bpf-shell .bpf-alt .bpf-logo { width: 26px; height: 26px; }
+.bpf-shell .bpf-alt-name { font-size: 13px; }
+.bpf-shell .bpf-alt-head { font-size: 11.5px; }
+.bpf-shell .bpf-alt-c1, .bpf-shell .bpf-alt-c2 { font-size: 13.5px; }
+.bpf-car-shell .bpf-alt { margin-top: 5px; }
+.bpf-car-shell .bpf-save { margin-top: 10px; padding: 6px 11px 5px; }
+.bpf-shell .bpf-save-head { margin-bottom: 4px; font-size: 13.5px; }
+.bpf-shell .bpf-save-note { margin-top: 4px; }
+.bpf-shell .bpf-t-label { padding: 3px 0; }
+.bpf-shell .bpf-t-h { padding-top: 4px; padding-bottom: 2px; }
+.bpf-shell .bpf-t-calc .bpf-t-link { padding: 3px 0; }
+.bpf-shell .bpf-t-foot { padding-top: 3px; }
+.bpf-shell .bpf-deal-row { margin-top: -4px; }
+.bpf-shell .bpf-save-cols, .bpf-shell .bpf-alt { grid-template-columns: 24px minmax(0, 1fr) 50px 72px; column-gap: 6px; }
+.bpf-shell .bpf-alt { padding: 2px 9px; }
+.bpf-shell .bpf-save-cols { padding: 0 9px 2px; }
+.bpf-shell .bpf-alt .bpf-logo { width: 24px; height: 24px; }
+.bpf-shell .bpf-alt-name { font-size: 12.5px; }
+.bpf-car-shell .journal-body { gap: 4px; }
+.bpf-shell .bpf-t-label { padding: 2px 0; }
+.bpf-shell .bpf-table { padding-bottom: 4px; }
+.bpf-shell .bpf-save-cols, .bpf-shell .bpf-alt { grid-template-columns: 24px minmax(0, 1fr) 58px 76px; }
+
+/* ═══ Round 6 (owner, 2026-10-03) ═══════════════════════════════════════════════
+   Quiz: an emoji on every question and answer, the answers all one soft colour. */
+.bpf-dock .bp-tile { background: var(--info-bg); border-color: var(--info-border); }
+.bpf-dock .bp-tile.on { background: var(--accent-soft); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.bp-emoji { font-style: normal; font-size: 18px; line-height: 1; margin-right: 8px; vertical-align: -2px; }
+.bpf-dock .bp-tile-label { display: flex; align-items: center; }
+.bpf-dock .bp-tiles.bp-full .bp-tile, .bpf-dock .bp-tile { text-align: left; }
+
+/* The expense table: a different colour from the green highlight, so the total stands out. */
+.bpf-shell .bpf-table { background: var(--info-bg); border: 2px solid var(--info); }
+.bpf-shell .bpf-table .bpf-t-label, .bpf-shell .bpf-table .bpf-t-me, .bpf-shell .bpf-table .bpf-t-peer { border-top-color: var(--info-border); }
+.bpf-shell .bpf-t-calc, .bpf-shell .bpf-t-foot { border-top-color: var(--info-border); }
+.bpf-shell .bpf-t-peer, .bpf-shell .bpf-t-h-peer { border-left-color: var(--info); }
+.bpf-shell .bpf-table .bpf-t-total { background: color-mix(in srgb, var(--accent-border) 85%, var(--card)); border-top-color: var(--accent); }
+.bpf-shell .bpf-t-me.bpf-t-total { color: var(--good); }
+.bpf-shell .bpf-t-link { color: var(--info); }
+
+/* Saved columns: "Saved" centred over both, "per month" and "over 5 years*" on one line each,
+   the figures right-aligned under them. */
+.bpf-shell .bpf-save-cols { font-size: 10.5px; padding-bottom: 3px; row-gap: 0; }
+.bpf-shell .bpf-save-cols span { text-align: center; white-space: nowrap; }
+.bpf-shell .bpf-save-cols .bpf-save-saved { grid-column: 3 / 5; font-size: 11.5px; }
+.bpf-shell .bpf-save-cols span:nth-child(4) { grid-column: 3; }
+.bpf-shell .bpf-save-cols span:nth-child(5) { grid-column: 4; }
+.bpf-shell .bpf-save-cols, .bpf-shell .bpf-alt { grid-template-columns: 24px minmax(0, 1fr) 60px 80px; }
+.bpf-shell .bpf-alt-c1, .bpf-shell .bpf-alt-c2 { text-align: right; }
+.bpf-car-shell .bpf-alt { margin-top: 8px; }
+.bpf-car-shell .bpf-alt { margin-top: 7px; min-height: 34px; padding-top: 1px; padding-bottom: 1px; }
+.bpf-shell .bpf-alt .bpf-logo { width: 22px; height: 22px; }
+.bpf-car-shell .bpf-save { margin-top: 9px; }
+.bpf-shell .bpf-save-note { margin-top: 3px; }
+.bpf-shell .bpf-alt-orig .bpf-alt-c1 { grid-column: auto; }
+.bpf-shell .bpf-t-label.bpf-t-total { padding-left: 13px; }
+.bpf-shell .bpf-t-peer.bpf-t-total { padding-right: 13px; }
+
+/* Round 7: "Saved" shares the line with the two column titles; the table sits a little lower and
+   the alternatives box is pushed down toward the buttons (spare height goes between them). */
+.bpf-shell .bpf-save-cols .bpf-save-saved { grid-column: 2; text-align: right; font-size: 10.5px; font-weight: 700; }
+.bpf-shell .bpf-save-cols span:nth-child(3) { grid-column: 3; }
+.bpf-shell .bpf-save-cols span:nth-child(4) { grid-column: 4; }
+.bpf-car-shell .journal-body::after { display: none; }
+.bpf-car-shell .journal-body { justify-content: flex-start; }
+.bpf-car-shell .bpf-table { margin-top: 8px; }
+.bpf-car-shell .bpf-save { margin-top: auto; }
+.bpf-car-shell .journal-body { padding-bottom: 10px; }
+
+/* Round 8 (owner, 2026-10-03). The alternatives box floats halfway between the table and the buttons. */
+.bpf-car-shell .bpf-save { margin-top: auto; margin-bottom: auto; }
+.bpf-car-shell .journal-body { padding-bottom: 4px; }
+
+/* Buttons look like buttons: a clear border on every foot button in the purchase flow. */
+:is(.bp-shell, .bpf-shell, .bp-land-shell, .bp-cost-shell, .bp-fin-shell, .bp-plan-shell) .journal-foot .button,
+:is(.bp-shell, .bpf-shell, .bp-land-shell, .bp-cost-shell, .bp-fin-shell, .bp-plan-shell) .bp-yc-cta .button {
+  border: 2px solid var(--accent);
+}
+:is(.bp-shell, .bpf-shell, .bp-land-shell, .bp-cost-shell, .bp-fin-shell, .bp-plan-shell) .journal-foot .button.secondary {
+  border: 2px solid var(--rail);
+}
+:is(.bp-shell, .bpf-shell, .bp-land-shell, .bp-cost-shell, .bp-fin-shell, .bp-plan-shell) .journal-foot .esf-ask {
+  border: 2px solid color-mix(in srgb, var(--apricot) 45%, var(--ink));
+}
+
+/* The price field sits on the right, like every other value on the screen. */
+.bp-yc-shell .bp-yc-card .bp-priceline { display: flex; align-items: center; justify-content: space-between; }
+:is(.bp-shell, .bpf-shell, .bp-land-shell, .bp-cost-shell, .bp-fin-shell, .bp-plan-shell) .journal-foot .esf-ask { border: 2px solid #C97B0E; }
+.bp-yc-shell .bp-price-inline { text-align: right; }
+.bpf-car-shell .journal-body { padding-bottom: 8px; }
+
+/* Your car: the spare height is shared equally between the strip, the two cards and the goal
+   button (owner, 2026-10-03), so the gaps from the top to the buttons below are all the same. */
+.bp-yc-shell .journal-body { justify-content: space-between; gap: 8px; padding-bottom: 10px; }
+.bp-yc-shell .bp-yc-cta { padding: 0; }
+.bp-yc-shell .journal-body { padding-bottom: 4px; }
+.journal-shell.onb-pinned.bp-yc-shell .journal-body { padding-bottom: 0; }
+.bp-yc-shell .journal-body { gap: 3px; }
+
+/* Landing: every category option is a bordered box (owner, 2026-10-03). */
+.bp-land-shell .bp-cat { border: 2px solid var(--rail); }
+.bp-land-shell .bp-cat:disabled { border-color: var(--bar); }
+.bp-land-shell .bp-cat:disabled { border-color: var(--rail); }
+
+/* Quiz answers are centred: emoji and answer on one line, the context line under it. */
+.bpf-dock .bp-tile, .bpf-dock .bp-tiles.bp-full .bp-tile { text-align: center; align-items: center; }
+.bpf-dock .bp-tile-label { justify-content: center; text-align: center; }
+.bpf-dock .bp-tile-sub { text-align: center; }
+.bpf-dock .bp-tiles.bp-tiles-list .bp-tile { text-align: center; align-items: center; }
+.bpf-dock .bp-tiles.bp-tiles-list .bp-tile .bp-tile-label, .bpf-dock .bp-tiles.bp-tiles-list .bp-tile .bp-tile-sub { align-self: center; text-align: center; }
+.bpf-dock .bp-tile { padding-top: 5px; padding-bottom: 5px; }
+.bpf-dock .bp-ask { margin-bottom: 6px; }
+
+/* Quiz answers read as buttons (owner, 2026-10-03: "users are confused what to do"): a raised
+   white button with a firm border and a bottom edge, and a round arrow on the right that says
+   "tap me". Picking one presses it down. */
+.bpf-dock .bp-tiles.bp-tiles-list .bp-tile {
+  position: relative; background: var(--card); border: 2px solid var(--info);
+  box-shadow: 0 3px 0 var(--info-border); padding: 4px 44px 4px 12px; cursor: pointer;
+  transition: transform .08s var(--ease), box-shadow .08s var(--ease);
+}
+.bpf-dock .bp-tiles.bp-tiles-list .bp-tile::after {
+  content: "\203A"; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--on-accent);
+  display: flex; align-items: center; justify-content: center; font-size: 20px; line-height: 1; padding-bottom: 2px;
+}
+.bpf-dock .bp-tiles.bp-tiles-list .bp-tile:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--info-border); }
+.bpf-dock .bp-tiles.bp-tiles-list .bp-tile.on { background: var(--accent-soft); border-color: var(--accent); box-shadow: 0 3px 0 var(--accent-border); }
+.bpf-dock .bp-tiles.bp-tiles-list { gap: 8px; }
+
+/* ═══ Round 9 (owner, 2026-10-03) ═══════════════════════════════════════════════
+   Start: three sections with equal air between them: "Help me choose a car", "I know what I
+   want", and the buttons. The spare height is split into the gaps above each. */
+.journal-shell.onb-pinned.bpf-start-shell .journal-body { flex: 0 0 auto; padding-bottom: 6px; }
+.bpf-start-shell .bpf-help, .bpf-start-shell .bpf-know-sec { margin-top: auto; border-radius: 20px; border: 2px solid var(--rail); padding: 10px 14px 12px; }
+.bpf-start-shell .bpf-help { padding-bottom: 10px; }
+.bpf-start-shell .bpf-help .bpf-path-quiz { margin-bottom: 0; }
+.bpf-start-shell .journal-foot { margin-top: auto; }
+
+/* Quiz: every question looks the same and sits at the same height. The answers live in one
+   tinted box, each answer a white button with an arrow; question lines reserve two lines and
+   every button is the same height, so the dock is the same size on every screen. */
+.bpf-quiz-shell .bp-dock .bp-ask { min-height: 44px; margin-bottom: 4px; display: flex; align-items: flex-start; }
+.bpf-dock .bp-tiles.bp-tiles-list {
+  background: var(--info-bg); border: 2px solid var(--info-border); border-radius: 16px; padding: 8px; gap: 8px;
+}
+.bpf-dock .bp-tiles.bp-tiles-list .bp-tile { min-height: 50px; }
+.bpf-dock .bp-tiles.bp-tiles-list .bp-tile { min-height: 46px; padding-top: 3px; padding-bottom: 3px; }
+.bpf-dock .bp-tiles.bp-tiles-list { gap: 7px; padding: 7px; }
