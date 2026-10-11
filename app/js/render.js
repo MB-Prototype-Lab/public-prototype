@@ -70,6 +70,15 @@ function adminSubtitle() {
                                                  " of " + ESF_STEPS.length + ". Six survival categories, typed figures only.";
   if (state.screen === "esfPlan")         return "Emergency fund — the number and the plan. One figure, not two: " +
                                                  "health cover is stated, never chosen.";
+  if (state.screen === "bpLanding")       return "Big purchase — landing and the emergency fund check. Not numbered steps.";
+  if (state.screen === "bpFinder")        return "Big purchase - find your car. Know-it or quiz, then the five lines, peers and ways to spend less.";
+  if (state.screen === "bpYourCar")       return "Big purchase - your car. Pay for it and plan for it on one screen.";
+  if (state.screen === "bpSetup")         return "Big purchase — step 1 of 3, what you're buying. ZIP and miles only if not in state.";
+  if (state.screen === "bpQuiz")          return "Big purchase - help me pick. Four questions, docked one at a time; suggests a vehicle shape, never chooses.";
+  if (state.screen === "bpCost")          return "Big purchase — step 2 of 5, the costs that are easy to miss. Read-only defaults, plus the financed question.";
+  if (state.screen === "bpOptions")       return "Big purchase — step 3 of 5, ways to spend less. Every option priced on the same rows over 5 years.";
+  if (state.screen === "bpFinance")       return "Big purchase — step 4 of 5, paying for it. Final price and financing adjustments.";
+  if (state.screen === "bpCommit")        return "Big purchase — step 5 of 5, plan for it. One date: goal target and purchase date.";
   if (state.screen === "budgetBuild")     return APP_VERSION + " builder — " + bbStep().title.toLowerCase() +
                                                  " (step " + ((state.budgetBuild && state.budgetBuild.step || 0) + 1) +
                                                  " of " + BB_STEPS.length + "), Help me out per line.";
@@ -118,6 +127,15 @@ function renderScreen() {
   if (state.screen === "budgetBuild")       return renderBudgetBuild();
   if (state.screen === "esfBuild")          return renderEsfBuild();
   if (state.screen === "esfPlan")           return renderEsfPlan();
+  if (state.screen === "bpLanding")         return renderBpLanding();
+  if (state.screen === "bpFinder")          return renderBpFinder();
+  if (state.screen === "bpYourCar")         return renderBpYourCar();
+  if (state.screen === "bpSetup")           return renderBpSetup();
+  if (state.screen === "bpQuiz")            return renderBpQuiz();
+  if (state.screen === "bpCost")            return renderBpCost();
+  if (state.screen === "bpOptions")         return renderBpOptions();
+  if (state.screen === "bpFinance")         return renderBpFinance();
+  if (state.screen === "bpCommit")          return renderBpCommit();
   if (state.screen === "spendingProfile")   return renderSpendingProfile();
   if (state.screen === "budgetCompare")     return renderBudgetCompare();
   if (state.screen === "lifestyleWizard")   return renderLifestyleWizard();
@@ -186,6 +204,15 @@ function renderAdmin() {
   if (state.screen === "budgetBuild")     return renderBudgetBuildAdmin();
   if (state.screen === "esfBuild")        return renderEsfBuildAdmin();
   if (state.screen === "esfPlan")         return renderEsfPlanAdmin();
+  if (state.screen === "bpLanding")       return renderBpLandingAdmin();
+  if (state.screen === "bpFinder")        return renderBpFinderAdmin();
+  if (state.screen === "bpYourCar")       return renderBpYourCarAdmin();
+  if (state.screen === "bpSetup")         return renderBpSetupAdmin();
+  if (state.screen === "bpQuiz")          return renderBpQuizAdmin();
+  if (state.screen === "bpCost")          return renderBpCostAdmin();
+  if (state.screen === "bpOptions")       return renderBpOptionsAdmin();
+  if (state.screen === "bpFinance")       return renderBpFinanceAdmin();
+  if (state.screen === "bpCommit")        return renderBpCommitAdmin();
   if (state.screen === "spendingProfile") return renderLifestyleWizardAdmin();
   if (state.screen === "budgetCompare")   return renderBudgetCompareAdmin();
   if (state.screen === "lifestyleWizard") return renderLifestyleWizardAdmin();
@@ -200,7 +227,7 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="navAdminJump(this.value)">
-          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetCategory","spendEstimator","budgetBuild","helpMeOut","esfBuild","esfPlan","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","myProgress","comparison",
+          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetCategory","spendEstimator","budgetBuild","helpMeOut","esfBuild","esfPlan","bpLanding","bpFinder","bpYourCar","bpSetup","bpQuiz","bpCost","bpOptions","bpFinance","bpCommit","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","myProgress","comparison",
              "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
              "goals","learn","topic","lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation","marketplace",
              "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
@@ -251,7 +278,7 @@ function render() {
   // Any new full-bleed screen should join an existing list, not add a call.
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
   screenRoot.classList.toggle("journal-mode",     ["lessonFraming","lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen) || screenRoot.classList.contains("journal-mode"));
-  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","helpMeOut","esfBuild","esfPlan","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","spendEstimator"].includes(state.screen));
+  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","helpMeOut","esfBuild","esfPlan","bpLanding","bpFinder","bpYourCar","bpSetup","bpQuiz","bpCost","bpOptions","bpFinance","bpCommit","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","spendEstimator"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("login-mode",       state.screen === "login");
   screenRoot.classList.toggle("du-mode",          state.screen === "dailyUpdate");
@@ -286,8 +313,10 @@ function render() {
   // move the pill out from under a finger mid-press (screens/buddy-panel.js).
   const buddyRoot = document.getElementById("buddyRoot");
   if (buddyRoot) {
-    buddyRoot.innerHTML = (typeof renderEsfBuddyLayer === "function") ? renderEsfBuddyLayer() : "";
+    buddyRoot.innerHTML = ((typeof renderEsfBuddyLayer === "function") ? renderEsfBuddyLayer() : "") +
+                          ((typeof renderBpLayer === "function") ? renderBpLayer() : "");
     if (typeof esfBuddyMountHook === "function") esfBuddyMountHook();
+    if (typeof bpBuddyMountHook === "function") bpBuddyMountHook();
   }
 
   // The onboarding narrator is a timed surface like the lesson player, but it

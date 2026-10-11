@@ -98,6 +98,7 @@ function scrollKey() {
   }
   if (s === "budgetBuild" && state.budgetBuild) return s + ":" + state.budgetBuild.step;
   if (s === "esfBuild" && state.esf) return s + ":" + state.esf.step;
+  if (s === "bpLanding" && state.bp) return s + ":" + state.bp.stage;
   // Category AND stage, but never the answers: revealing the next question is
   // the same view growing, and holding position is what keeps it readable.
   if (s === "helpMeOut" && state.helpMeOut) {
@@ -249,6 +250,8 @@ function activeTabFor(screen) {
   // The emergency fund lives under Goals — it ends in one, even though it seeds
   // the budget on the way through.
   if (["esfBuild", "esfPlan"].includes(screen)) return "goals";
+  // So does the big purchase calculator — it ends in a savings goal.
+  if (["bpLanding", "bpFinder", "bpYourCar", "bpSetup", "bpQuiz", "bpCost", "bpOptions", "bpFinance", "bpCommit"].includes(screen)) return "goals";
   if (screen === "myDebts")           return "aboutMe";
   if (screen === "debtAnalyzer")      return "aboutMe";
   if (screen === "comparison")        return "aboutMe";

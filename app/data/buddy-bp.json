@@ -1,0 +1,333 @@
+{
+  "_note": "Buddy's copy for the Big Purchase Calculator (spec §11). Same contract as buddy-esf.json: steps -> the entries offered on that screen, rows -> what Buddy says. Explain-only: no chips, no lifestyle questions. Owner 2026-09-22: every expense on the costs screen gets an entry that says what it is, how it was worked out, and what it means. D26 + the owner's voice rule: facts only, never call a cost high, never recommend an option, never 'should'. The credit tier is 'the score we used', never the user's own.",
+
+  "steps": {
+    "0": { "prompt": "What can I help with?", "items": ["whatIsThis", "whyFundFirst", "whichFundAnswer", "whatCounts"] },
+    "pick": { "prompt": "What can I help with?", "items": ["finderWhat", "finderPeers", "finderMonthly", "finderUsed", "finderPeerCar"] },
+    "quiz": { "prompt": "What can I help with?", "items": ["whyQuiz", "quizHowItWorks", "quizNotSure"] },
+    "1": { "prompt": "What can I help with?", "items": ["tiers", "newOrUsed", "whyZip", "noCarInMind"] },
+    "2": { "prompt": "Ask me about any of these costs.",
+           "items": ["taxesReg", "insurance", "fuel", "upkeep", "subscriptions", "mayNeed", "firstYear", "financed"] },
+    "3": { "prompt": "What can I help with?", "items": ["whyOptions", "usedOption", "tierOption", "howSaving", "savedFive"] },
+    "4": { "prompt": "What can I help with?", "items": ["loanOrCash", "downPayment", "loanLength", "creditScore", "scoreRates", "taxBreak", "interest"] },
+    "5": { "prompt": "What can I help with?", "items": ["goal", "reminder", "whenBuy"] }
+  },
+
+  "rows": {
+    "finderWhat": {
+      "label": "What is this screen for?",
+      "say": [
+        "It finds a specific car that fits how you live, and shows what it costs to own, not just the sticker price.",
+        "Then it puts that beside what peers with a similar income spend, so you have something to compare it with."
+      ]
+    },
+    "finderPeers": {
+      "label": "Who are peers?",
+      "say": [
+        "Peers are a model, not real people's accounts. It starts from national spending for your income and household size, then adjusts for where you live.",
+        "It shows what's typical. What you do with that is up to you."
+      ]
+    },
+    "finderMonthly": {
+      "label": "What's in the total monthly cost?",
+      "say": [
+        "The car payment, plus what it costs to run: insurance, fuel or charging, and upkeep.",
+        "It's the whole amount leaving your account for the car each month."
+      ]
+    },
+    "finderUsed": {
+      "label": "How is the used price worked out?",
+      "say": [
+        "A used car here is about 3 years old and priced 28% under the same car new.",
+        "Upkeep runs higher on an older car and insurance a little lower. Both are in its monthly figure."
+      ]
+    },
+    "finderPeerCar": {
+      "label": "How do you pick the car peers' payment buys?",
+      "say": [
+        "I take what peers pay each month on a car loan and work back to the price that payment buys, on the same loan terms as your car.",
+        "Then I pick the car of the same kind, new or used, that comes closest to that price without going over."
+      ]
+    },
+    "whatIsThis": {
+      "label": "What does this do?",
+      "say": [
+        "It works out what something really costs. Not just the price, but the bills that come with it.",
+        "For a car that's taxes and registration, insurance, fuel and upkeep. Most of them don't show up until after you've bought it.",
+        "Then it shows you a couple of cheaper ways to get the same kind of thing, priced the same way."
+      ]
+    },
+    "whyFundFirst": {
+      "label": "Why ask about an emergency fund?",
+      "say": [
+        "A big purchase usually adds a monthly bill, and the bill doesn't pause when something else goes wrong.",
+        "An emergency fund is money set aside for those times. With one, a surprise cost doesn't have to go on a card.",
+        "It's a question, not a rule. You can carry on either way."
+      ]
+    },
+    "whichFundAnswer": {
+      "label": "What do the three answers do?",
+      "say": [
+        "Yes: I'll stop asking and we carry on with the purchase.",
+        "Start One Now: I'll take you to the emergency fund tool first, and bring you straight back here when you're done.",
+        "Ask me later: we carry on now, and I'll offer it again at the end."
+      ]
+    },
+    "whatCounts": {
+      "label": "What counts as a big purchase?",
+      "say": [
+        "Anything expensive enough that the costs around it matter: a car, a boat, a home, a big trip.",
+        "Right now only the vehicle one is built. The others are listed so you can see what's coming.",
+        "The way it works is the same for all of them: price, plus everything that comes after."
+      ]
+    },
+    "whyQuiz": {
+      "label": "Why these questions?",
+      "say": [
+        "They're about how you'd use the vehicle, not about money.",
+        "Who's usually with you, what you do with it, where you drive, and what matters most to you.",
+        "Four answers is enough to point at a shape of vehicle: a car, an SUV, a truck."
+      ]
+    },
+    "quizHowItWorks": {
+      "label": "How does it decide?",
+      "say": [
+        "Each answer adds points to the types it suits. Six or more people points hard at a minivan; hauling points at a truck.",
+        "The type with the most points is the one I show you.",
+        "It's a starting point, not a decision. Nothing gets priced until you say to use it."
+      ]
+    },
+    "quizNotSure": {
+      "label": "What if none of these fit?",
+      "say": [
+        "Pick the closest one. The suggestion moves with the whole set of answers, not any single one.",
+        "Or skip it with 'I'll pick myself' and choose the type directly on the next screen.",
+        "You can change any of it later, and the costs update with it."
+      ]
+    },
+    "noCarInMind": {
+      "label": "I don't know what I want yet",
+      "say": [
+        "That's fine. Tap 'Help me pick' at the top and I'll ask four questions about how you drive.",
+        "It suggests a type of vehicle, and you can take it or ignore it.",
+        "If you'd rather just look at numbers, pick anything close and change it later."
+      ]
+    },
+    "tiers": {
+      "label": "What do the tiers mean?",
+      "say": [
+        "The tiers group brands by what they usually cost.",
+        "Luxury and Premium cost more to buy. They also tend to cost more to insure and repair.",
+        "The brand names are examples. Pick the tier closest to the one you're looking at."
+      ]
+    },
+    "newOrUsed": {
+      "label": "New or used?",
+      "say": [
+        "A new car loses the most value in its first year.",
+        "A used car has already lost that first drop. Its loan rate is usually higher, and repairs can come sooner.",
+        "Pick the one you're thinking about. We'll price the other one too, later on."
+      ]
+    },
+    "whyZip": {
+      "label": "Why do you need my ZIP?",
+      "say": [
+        "Sales tax, fees, insurance and gas prices change from state to state.",
+        "Your ZIP lets us use the figures for where you live.",
+        "If you'd rather not share it, we use national averages."
+      ]
+    },
+
+    "taxesReg": {
+      "label": "Taxes and registration",
+      "say": [
+        "What the state and the dealer charge you on the day, on top of the price.",
+        "It's your state's sales tax rate on the price, plus the title fee, the first registration, and the dealer's paperwork fee.",
+        "It's usually due at signing, so it's cash you need up front. In most states a trade-in lowers the tax, because you only pay on the difference."
+      ]
+    },
+    "insurance": {
+      "label": "Insurance",
+      "say": [
+        "What you pay each month to be covered.",
+        "We start from the average full-coverage premium in your state, then adjust for the kind of car, the brand tier and whether it's new or used.",
+        "Your own quote will differ. Age, driving record and claims history move a premium a lot, and this tool doesn't ask for any of them.",
+        "It's the cost that carries on whether you drive the car or not."
+      ]
+    },
+    "fuel": {
+      "label": "Fuel or charging",
+      "say": [
+        "What it costs to move the car each month.",
+        "It's the miles a day you told us, times about 30 days, at the price of a mile for this car.",
+        "For gas we use your state's pump price and the typical miles per gallon for this kind of vehicle. For electric we use your state's electricity rate and how much power it takes to go a mile.",
+        "Drive more and this line grows. Nothing else on the list moves as much with how you use it."
+      ]
+    },
+    "upkeep": {
+      "label": "Upkeep and repairs",
+      "say": [
+        "Oil, tires, brakes, and the repairs that turn up.",
+        "It follows distance: your miles a day times a per-mile rate from AAA's running-cost figures, adjusted for the car's age and brand tier.",
+        "Nobody pays it evenly. Some months are nothing and one month is a timing belt, so treat it as money set aside rather than a bill.",
+        "Older cars carry a bigger figure here, which is part of what a lower used price is buying you."
+      ]
+    },
+    "subscriptions": {
+      "label": "Subscriptions",
+      "say": [
+        "Connected services some brands charge for: remote start from an app, built-in data, some driver-assist features.",
+        "We use a typical monthly figure for the brand tier. Not every car has them, and some include them for the first few years.",
+        "If the car you're looking at doesn't have any, treat this line as zero."
+      ]
+    },
+    "mayNeed": {
+      "label": "What does \"may need\" mean?",
+      "say": [
+        "It's a one-off cost that comes with this kind of vehicle, but isn't part of buying it.",
+        "A home charger for an electric car, or helmet and jacket for a motorcycle.",
+        "You can put it off, borrow, or buy second-hand, so it's listed separately from the costs you can't avoid."
+      ]
+    },
+    "firstYear": {
+      "label": "What's in the first year?",
+      "say": [
+        "Everything on this list: the one-off costs at purchase, plus twelve months of the monthly ones.",
+        "After that first year the one-off costs are behind you, so it settles to the monthly figure.",
+        "The price of the car itself isn't in here. This is what comes on top of it."
+      ]
+    },
+    "financed": {
+      "label": "Why ask if it's financed?",
+      "say": [
+        "A loan adds interest, which is a real cost of owning the car.",
+        "Paying cash means no interest, but the cash is gone and can't be doing anything else.",
+        "Either way, we work the numbers out at the end, once you've settled on which car."
+      ]
+    },
+
+    "whyOptions": {
+      "label": "Why are you showing me these?",
+      "say": [
+        "You told us what you want. These are the two ways people most often spend less on the same kind of vehicle.",
+        "It's here so the choice is in front of you with real numbers, not so you change your mind.",
+        "Staying with the one you came for is a perfectly good answer."
+      ]
+    },
+    "usedOption": {
+      "label": "The used option",
+      "say": [
+        "The same kind of car, a few years old, at about 20% less.",
+        "Someone else already paid for the first few years of it, which is where most of the price goes.",
+        "Two things go the other way: used loan rates are higher, often close to double, and repairs tend to arrive sooner.",
+        "The saving shown counts all of that, which is why it's smaller than the difference in sticker price."
+      ]
+    },
+    "tierOption": {
+      "label": "The cheaper brand option",
+      "say": [
+        "The same kind of vehicle from a brand one tier down, at about 35% less.",
+        "Cheaper to buy, and usually cheaper to insure and repair.",
+        "It holds its value slightly better than a luxury badge does, which shows up in what you get back when you sell."
+      ]
+    },
+    "howSaving": {
+      "label": "How is the saving worked out?",
+      "say": [
+        "Both cars are priced on the same rows over five years: the price, taxes and registration, insurance, fuel, upkeep, and loan interest if there is a loan.",
+        "The saving is the difference between those two totals. It's apples to apples, which is why the table shows both columns.",
+        "We don't count anything for what a car might sell for later. These are the dollars that leave your pocket."
+      ]
+    },
+    "savedFive": {
+      "label": "The money in the bag",
+      "say": [
+        "It's what you'd still have after five years if you bought the cheaper one and everything else stayed the same.",
+        "It isn't a windfall you get on day one. It builds up as smaller payments, smaller premiums and a smaller loss in value.",
+        "If it were set aside instead of spent, it could grow. That's what the line under the bag is showing."
+      ]
+    },
+
+    "loanOrCash": {
+      "label": "Loan or cash?",
+      "say": [
+        "A loan costs interest. That cost is fixed once you sign.",
+        "Cash you don't spend could grow if it's saved. That growth is not promised.",
+        "The numbers show both side by side. Which way to pay is your call."
+      ]
+    },
+    "downPayment": {
+      "label": "Down payment",
+      "say": [
+        "The cash you pay up front. The loan covers the rest.",
+        "A bigger down payment means a smaller loan, so less interest and a smaller monthly payment.",
+        "It's also the amount the next screen helps you save for."
+      ]
+    },
+    "loanLength": {
+      "label": "Loan length",
+      "say": [
+        "How many months you take to pay the loan back.",
+        "A longer loan has a smaller monthly payment. You pay interest for more months, so the total interest is higher.",
+        "If the loan runs longer than five years, we only count the interest you'd pay while you own the car."
+      ]
+    },
+    "creditScore": {
+      "label": "Credit score",
+      "say": [
+        "It sets the rate a lender offers, and the rate sets both your payment and the interest total.",
+        "We don't know your score. This is just the band we used to pick a typical rate. Published averages, one lender report.",
+        "If you already have an offer, type that rate in instead and the numbers use yours."
+      ]
+    },
+    "scoreRates": {
+      "label": "Why does my score matter?",
+      "say": [
+        "The score band sets the rate, and the rate sets both your payment and what the loan costs in total.",
+        "On a typical new car loan: around 4.4% at 781 and above, 6.2% from 661 to 780, 9.7% from 600 to 660, and about 13.5% below 600.",
+        "Same car, same price. Only the score changes.",
+        "Used-car rates run higher at every band, often close to double."
+      ]
+    },
+    "taxBreak": {
+      "label": "Is there a tax break?",
+      "say": [
+        "From 2025 through 2028, some people can deduct the interest on a NEW car loan from their federal taxes. Used cars and leases don't qualify.",
+        "It depends on your income, where the car was assembled, and whether it's for personal use. Up to $10,000 of interest a year.",
+        "We don't count it in any of your numbers. Whether it applies is between you, the IRS and whoever does your taxes."
+      ]
+    },
+    "interest": {
+      "label": "Interest over 5 years",
+      "say": [
+        "What the loan costs you on top of the price.",
+        "It's worked out month by month on what you still owe, so it shrinks as the balance does.",
+        "We count only the interest paid in the first five years, since that's the window everything here is measured over."
+      ]
+    },
+
+    "goal": {
+      "label": "The goal",
+      "say": [
+        "The goal is the cash you need on the day you buy, minus what you've already saved.",
+        "With a loan, that's the down payment. Paying cash, it's the price plus tax and fees.",
+        "It shows up on your Goals tab so you can track it."
+      ]
+    },
+    "reminder": {
+      "label": "The reminder",
+      "say": [
+        "When you reach your goal, or your buying date comes, I'll ask whether to add this car to your budget.",
+        "With a loan, the figure is your monthly payment. Paying cash, it's the running costs: insurance, fuel and upkeep.",
+        "Nothing goes into your budget unless you tap to add it."
+      ]
+    },
+    "whenBuy": {
+      "label": "When do you plan to buy?",
+      "say": [
+        "This date does two jobs. It's the date for your savings goal, and it's when you plan to buy.",
+        "A later date means a smaller amount to save each month."
+      ]
+    }
+  }
+}

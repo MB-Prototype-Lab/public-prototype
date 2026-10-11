@@ -35,6 +35,11 @@ class AppStructureTests(unittest.TestCase):
             ('js/budget-baseline.js', 'js/esf.js'),
             ('js/esf.js', 'js/buddy-esf.js'),
             ('js/buddy-esf.js', 'screens/buddy-panel.js'),
+            ('data/big-purchase.js', 'js/bp-engine.js'),
+            ('data/buddy-bp.js', 'js/buddy-bp.js'),
+            ('js/esf.js', 'js/bp-vehicle.js'),
+            ('js/bp-engine.js', 'js/bp-vehicle.js'),
+            ('js/bp-vehicle.js', 'screens/bp-landing.js'),
         ):
             self.assertLess(scripts.index(before), scripts.index(after))
         self.assertIn('id="buddyRoot"', html)

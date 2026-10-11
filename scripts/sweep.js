@@ -2086,14 +2086,14 @@ if (typeof BUDGET_PAYWALL_ANNUAL !== "undefined" && typeof renderBudgetPaywall =
   var wallHtml = renderBudgetPaywall();
   var monAt = wallHtml.indexOf("budgetPaywallTap('monthly')");
   var annAt = wallHtml.indexOf("budgetPaywallTap('annual')");
-  var annBtn = /<button[^>]*bp-plan-annual[\s\S]*?<\/button>/.exec(wallHtml);
+  var annBtn = /<button[^>]*paywall-plan-annual[\s\S]*?<\/button>/.exec(wallHtml);
   chk(monAt !== -1 && annAt !== -1 && monAt < annAt && !!annBtn &&
-      !/\bsecondary\b/.test(annBtn[0].split(">")[0]) && /bp-plan-tag/.test(annBtn[0]),
+      !/\bsecondary\b/.test(annBtn[0].split(">")[0]) && /paywall-plan-tag/.test(annBtn[0]),
       "monthly first, annual last -- and annual is the filled button with the pill");
 
   var fullYear = Math.round(BUDGET_PAYWALL_MONTHLY * 12 * 100) / 100;
   var pct = Math.floor((fullYear - BUDGET_PAYWALL_ANNUAL) / fullYear * 100);
-  var wasShown = annBtn ? (/<s class="bp-was"[^>]*>\s*\$([\d.,]+)\s*<\/s>/.exec(annBtn[0]) || [])[1] : null;
+  var wasShown = annBtn ? (/<s class="paywall-was"[^>]*>\s*\$([\d.,]+)\s*<\/s>/.exec(annBtn[0]) || [])[1] : null;
   var pctShown = annBtn ? (/Save (\d+)%/.exec(annBtn[0]) || [])[1] : null;
   chk(wasShown === fullYear.toFixed(2) && Number(pctShown) === pct,
       "the struck-through price is monthly x 12 and \"Save " + pct + "%\" is rounded down",
