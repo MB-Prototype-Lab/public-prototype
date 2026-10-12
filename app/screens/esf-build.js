@@ -188,17 +188,8 @@ function esfNext() {
 function esfBack() {
   const s = esfSession();
   if (s.step > 0) { s.step--; render(); return; }
-  // Back off the FIRST fund screen reopens onboarding at its first question.
-  // navBack() popped to the Goals tab, which is where the fund ends rather than
-  // where it began — so "back" moved the tester forwards.
-  // v3.1c: a fund opened from the big purchase calculator's "Start mine first"
-  // began THERE, so Back returns there rather than to onboarding.
+  // A calculator detour returns to its caller; other entries use their own stack.
   if (state.bp && state.bp.esfReturn) { navBack(); return; }
-  if (typeof ESF_ONLY !== "undefined" && ESF_ONLY && typeof onbStart === "function") {
-    onbStart();
-    go("onboarding");
-    return;
-  }
   navBack();
 }
 

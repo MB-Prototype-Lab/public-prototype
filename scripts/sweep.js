@@ -2396,7 +2396,9 @@ section("7n. Full app integration: onboarding, ESF and Buddy");
   var saved = JSON.parse(JSON.stringify(state));
   var oldConfirm = confirm;
   try {
-    chk(ESF_ONLY === false && BUDGET_PAYWALL === true && BUDDY_SINGLE_ART === true &&
+    chk(typeof ESF_ONLY === "undefined" && typeof BP_ENTRY === "undefined",
+        "contained entry flags are absent from the full app");
+    chk(BUDGET_PAYWALL === true && BUDDY_SINGLE_ART === true &&
         LESSON_REUSE_FRAMING === false && USEBERRY_TRACKING === false,
         "combined development flags retain the full app and disable tracking");
     onbStart();
