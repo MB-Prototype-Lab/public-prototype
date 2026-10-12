@@ -67,3 +67,25 @@ bundled ESF → publication integration → dormant app-flag removal and runbook
 combined checks and PM verification. Publication work may overlap Flow work once
 contracts settle and file ownership is exclusive. Details and acceptance criteria
 are in the approved plan; avoid reconstructing them from historical flag comments.
+
+## Implementation checkpoint — contracts and foundation in progress
+
+- Laptop resumed `work/flows-20261011` clean at `6bdefcf`; fetched source main
+  remains `8f7b142cd3c065d1dc1b324d741ab9c9a5f8b440`.
+- Astra coordination is active with bounded GPT-6.1 Sol workers. Exact interfaces
+  and ownership are in [flows-contract.md](flows-contract.md); committed app
+  SHA-256 baseline inventory is [flows-baseline.json](flows-baseline.json).
+- Foundation worker owns create/check/scope/catalog tooling, safe local selector
+  discovery and focused tests/CI entries. Generic creation starts with an
+  onboarding-only contained policy; concrete packages expand it deliberately.
+- Publication worker concurrently owns only publication packaging and focused
+  tests. No catalog rows/tags/publication are being created.
+- Root ran baseline syntax (123 JS files), path, release-runtime and
+  local-variants checks successfully using Node 22.23.3 arm64 from `/tmp`.
+  Baseline sweep passed: 253 checks, zero failures and two existing warnings
+  for owner/browser checks.
+- App bytes remain unchanged; Flow packages have not yet been created. Next:
+  foundation review, ESF containment proof, BP bundled ESF, then flag cleanup/docs
+  and combined runtime/publication checks. PM/platform verification remains open.
+- Authorization is unchanged: branch pushes/CI permitted; wait for PM verification
+  before the implementation PR. No merge, settings change or publication.
