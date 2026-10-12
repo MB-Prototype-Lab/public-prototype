@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "emergency-fund",
+  "label": "Emergency fund",
+  "purpose": "Set up and save an emergency savings fund.",
+  "reference": null,
+  "source_app_commit": "8f7b142cd3c065d1dc1b324d741ab9c9a5f8b440",
+  "task_base": "5725c1076f4d96a5cfc987f43887d6406042bc03",
+  "entry": "onboarding",
+  "completion": "goals",
+  "allowed_screens": [
+    "onboarding",
+    "esfBuild",
+    "helpMeOut",
+    "esfPlan",
+    "goals"
+  ],
+  "setup_steps": [
+    "zip",
+    "income",
+    "household",
+    "place",
+    "coverage",
+    "miles"
+  ],
+  "profile_behavior": "Apply valid URL profile once on HTTP and file entry, otherwise existing default profile at setup completion. Answered setup fields win. Skip finishes setup immediately. Back from the first expense step restores the completed setup answers at ZIP; a new completion seeds a fresh expense session.",
+  "proposed_differences": [
+    "Contained emergency-fund setup, expense capture, help, Buddy and planning; Goals shows only the emergency fund.",
+    "Refresh and Restart start a fresh emergency-fund setup; Exit returns to the selector.",
+    "Back from first expense capture restores setup answers instead of discarding them.",
+    "Fix inherited ZIP keypad change-event recursion by committing reentrant input changes once."
+  ]
+}
