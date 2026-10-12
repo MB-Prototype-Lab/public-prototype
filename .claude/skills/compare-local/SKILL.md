@@ -33,3 +33,9 @@ the merged primary checkout before `adopt --verified` closes the comparison.
 Close retains all work. Cleanup requires concrete selected variant IDs and removes
 only clean worktrees, retaining branches. Dirty work requires a separate preservation
 or deletion decision; do not force removal. No pushes, main merges, or publication.
+
+Contained Flows are separate from this app-alternatives workspace; read
+[Flows](../../../docs/flows.md) for creating/editing/checking a Flow or selectively
+integrating its proposal. Do not treat “keep this Flow” as a whole-directory app
+adoption, or add Flow comparison support implicitly. Existing alternatives continue
+using the procedure above.

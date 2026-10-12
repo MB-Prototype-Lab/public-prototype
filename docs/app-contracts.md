@@ -5,7 +5,7 @@ Read alongside app/docs/architecture.md. docs/workflow.md governs operations; pr
 ## Combined prototype behavior
 
 The single editable `app/` combines blue `b9e0332` with HoffDemo-Chat `ddee54e`
-(including HoffDemo/ESF `8c7a252`). `ESF_ONLY = false`: onboarding ends at Home,
+(including HoffDemo/ESF `8c7a252`). Full onboarding ends at Home,
 all tabs remain available, and emergency savings is reached from tasks and Goals.
 Onboarding combines ZIP/income refinement, household ages/kids, housing type,
 coverage and driving questions with the single Buddy picture and name/pronouns.
@@ -35,12 +35,11 @@ is added. Development tracking remains off; releases control tracking.
 ### Big Purchase Calculator
 
 Ported from blue `HoffDemo-BigPurchase` (`f84f142`, `b4abe14`); see
-docs/big-purchase-spec.md and docs/history/big-purchase-notes.md. `BP_ENTRY = false`:
-onboarding and Home are unchanged, and the calculator opens from the Goals tab's
-"Estimate a big purchase" card (`bpOpen()`) and the admin jump list. Blue's
-calculator-first entry is `BP_ENTRY = true` **with** `ESF_ONLY = true`; the hand-over
-sits inside `onbFinish()`'s ESF_ONLY branch, so `BP_ENTRY` alone only shortens
-onboarding. All docked onboarding behavior is gated on `BP_ENTRY`.
+docs/big-purchase-spec.md and docs/history/big-purchase-notes.md. The calculator
+opens from the Goals tab's "Estimate a big purchase" card (`bpOpen()`) and the
+full-app admin jump list. Full onboarding and all product tabs remain available.
+Calculator-first setup and contained presentation belong to the standalone Big
+Purchase Flow; the full app has no BP_ENTRY/ESF_ONLY entry flags.
 
 The calculator writes `state.bp` (in-flight run, reset by `bpStart()`),
 `state.bigPurchase` (the saved plan) and `state.bpEvents` (session log). Commit
@@ -327,7 +326,11 @@ tracking is independent of the untracked development sweep.
 
 ## Don't
 
-Do not edit historical snapshots; ship fixes as new IDs. Current work belongs in app/.
+Do not edit historical snapshots; ship fixes as new IDs. Approved product changes
+belong in app/; contained proposals belong in flows/<id>/, with their own setup,
+policy, code and assets. See [Flows](flows.md). A Flow merge does not approve product
+changes. Selective app integration preserves full onboarding/tabs and existing BP/ESF
+save semantics, and requires PM verification of the integrated app before the PR.
 
 - Don't build sprite-sheet `background-position` cropping. **L22 allows
   owner-supplied buddy illustrations, but they are separate files chosen by

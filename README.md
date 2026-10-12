@@ -3,7 +3,8 @@
 This repository is the shared workspace for the MoneyBuddy prototype. An
 operator can work with an agent from Claude Desktop on Windows or from a
 terminal. The editable app is in `app/`; the repository root opens a selector
-for the local app and historical builds.
+for the full app, standalone Flows and historical builds. The repository cutover
+is complete; historical snapshots, `demo` and PM branches remain preserved.
 
 ## 1. Confirm GitHub access
 
@@ -100,8 +101,9 @@ without asking to see the token.
 ## 3. Preview the app
 
 With a local checkout, open `index.html` in a browser, enter passcode `1337`,
-and choose the local app. No server or package installation is needed for this
-preview. A refresh returns to the selector. If you are using Claude Desktop,
+and choose **Full app** or a card under **Flows**. No server or package installation
+is needed. Full-app refresh returns to the selector; Flow refresh and Restart begin
+the same Flow fresh, and Exit Flow returns to the selector. If you are using Claude Desktop,
 ask the agent to show you the file in the Code tab's browser pane or open it
 from the checkout folder in File Explorer.
 
@@ -150,3 +152,12 @@ Continue with “Change option A,” then “Keep B” when you choose. The agen
 and merges B into your task branch locally. Alternatives remain available to the
 agent until you explicitly ask “Clean up this comparison.” The ordinary selector
 returns when the comparison closes. See [local comparisons](docs/local-variants.md).
+
+## Iterate on a contained Flow
+
+Ask your agent: “Create a Flow for this proposal” or “Change the Emergency Fund
+Flow.” The agent handles committed source selection, package setup and checks; you
+review it from the selector or its standalone file link. `app/` stays the approved
+product. Merging a Flow shares the proposal; adopting it means selectively integrating
+the chosen behavior into the full app, then verifying that app before the PR opens.
+Publication requires a separate explicit request. See [Working with Flows](docs/flows.md).

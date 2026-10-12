@@ -1,13 +1,14 @@
 # Working together
 
 Operators coordinate in Discord; GitHub Issues are optional. Start/sync manage work,
-ship integrates tested work into main, publish explicitly updates the live selector
+ship prepares reviewed task work for main, publish explicitly updates the live selector
 and optionally adds a snapshot. An operator can request publication after
 coordination.
 Shipping does not authorize publication. A task's remote permissions must be explicit;
 the organization rollout permits remote reads, task-branch pushes, PR creation and CI
 verification. Merge, repository settings and publication require separate authorization.
-The old repo/site remains the blue fallback; team cutover is pending.
+Repository cutover is complete. Preserve historical publication identities, `demo`
+and PM/HoffDemo branches; no further migration mechanism is needed.
 
 ## Start work
 
@@ -26,6 +27,16 @@ Concurrent operators use distinct task branches. For alternatives within one tas
 use [compare-local](../.claude/skills/compare-local/SKILL.md) and the
 [local comparison procedure](local-variants.md). Comparisons start from the current
 feature branch checkpoint, not a new main-based task.
+
+## Task scope
+
+`app/` is the approved product; `flows/<id>/` holds contained proposals. For a Flow
+task, record its base and ID, follow [Flows](flows.md), and run
+`python3 scripts/flows.py scope --base FULL_TASK_BASE_SHA --scope flow`. Creation
+and editing must leave app bytes unchanged. A chosen proposal enters the product
+through an explicit app-integration task and selective changes, using
+`--scope app-integration`. PM verifies the integrated full app before the PR opens.
+Merging a Flow makes it available without approving or integrating the proposal.
 
 ## Sync
 
@@ -81,11 +92,11 @@ Hide builds to reduce clutter while retaining direct access.
 
 ## Adoption
 
-After authorized rollout, each operator reads this workflow and inspects their
+With repository cutover complete, each operator reads this workflow and inspects their
 checkout with their agent. Preserve unfinished work. For HoffDemo branches, do
 not merge main's source consolidation into the branch as an automatic onboarding
 step; keep the branch intact and plan explicit feature ports. New tasks target
-app/ from current main.
+the approved app or a named Flow from current main.
 The operator setup in README.md offers Claude Desktop on Windows with browser
 sign-in, or a terminal with a repository-scoped token. An agent can install and
 configure GitHub CLI for either path.

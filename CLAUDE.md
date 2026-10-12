@@ -1,9 +1,10 @@
 # MoneyBuddy prototype
 
 A static, mobile-shaped finance coaching prototype. One editable application lives
-in `app/`. Open `index.html` directly, enter passcode `1337`, and choose the local
-app. No server or dependency installation is needed for preview. Refresh returns
-to the selector; data loads through script tags so `file://` works.
+in `app/`; contained proposals live in `flows/<id>/`. Open `index.html` directly,
+enter passcode `1337`, and choose Full app or a Flow. No server or dependency
+installation is needed. App refresh returns to the selector; Flow refresh/Restart
+starts that Flow fresh. Data loads through script tags so `file://` works.
 
 ## Collaboration
 
@@ -14,11 +15,11 @@ commits. Sync by merging main, never rebasing or force pushing. Ship through a
 reviewed PR and passing CI with applicable PM testing. Publishing is a separate,
 explicit request; merging main never deploys. Do not infer remote success.
 
-Keep `demo` as the pre-cutover fallback. Leave all PM/HoffDemo branches untouched;
+Repository cutover is complete. Keep `demo` as a historical fallback. Leave all PM/HoffDemo branches untouched;
 the approved blue/PM features are integrated in `app/`. Never restore editable
 `versions/` copies. Historical builds are immutable hosted snapshots and Git history.
-The organization repo is the green rehearsal destination; team cutover is pending.
-Current rollout scope permits branch pushes, PR creation and CI verification. Merge,
+The organization repository is the shared working destination.
+Current session scope permits branch pushes, PR creation and CI verification. Merge,
 repository settings and publication require separate authorization.
 Keep `branching.md` untracked; stage specific files.
 
@@ -44,6 +45,7 @@ Do not regenerate media as part of packaging. `MB_VERSION` is retired and errors
 | Testing | [docs/testing.md](docs/testing.md) |
 | Tracking and participant URLs | [app/docs/useberry.md](app/docs/useberry.md) |
 | Looking up historical decisions | `docs/history/`, `app/PROGRESS.md` (reference, not a task queue) |
+| Creating/editing/checking Flows or selectively integrating proposals | [docs/flows.md](docs/flows.md) |
 | Local alternatives | [docs/local-variants.md](docs/local-variants.md) |
 | Future PM feature ports | [docs/future-work.md](docs/future-work.md) |
 
@@ -58,3 +60,8 @@ replace the budget immediately and return to Goals, including on repeat saves.
 Explain decisions in product terms to the two PMs. Record scope and testing in PR
 text, not historical progress logs. Material changes after signoff require repeating
 affected checks. Do not claim unavailable runtime or browser checks passed.
+
+Flow tasks declare `--scope flow` against the recorded full task base and leave app
+bytes unchanged. Product integration uses `--scope app-integration`; selectively port
+approved behavior and obtain PM full-app verification before opening the PR. Merging
+a Flow does not approve its proposal or publish it. See [Flows](docs/flows.md).

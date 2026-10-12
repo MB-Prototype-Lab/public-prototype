@@ -8,6 +8,10 @@ bash scripts/sweep.sh
 python3 scripts/check-paths.py
 node tests/release-runtime.cjs
 node tests/local-variants.cjs
+node tests/flows-selector.cjs
+node tests/flows-runtime.cjs
+bash scripts/check-syntax.sh flows
+python3 scripts/flows.py check
 python3 -m unittest discover -s tests -v
 python3 scripts/publish.py check
 ```
@@ -18,15 +22,16 @@ never a pass. No local browser installation or server is required.
 
 PM checklist: open root index.html on file://, enter 1337, open current app, exercise
 the changed flow, check narrow layout and all four themes, input focus and sliders,
-and audio when affected. Refresh must return to the selector. For publication test
+and audio when affected. Full-app refresh must return to the selector; Flow refresh
+and Restart must start the same Flow fresh, and Exit must return to the selector. For publication test
 HTTP(S) screen/deep links with participant parameters; tracking follows the snapshot
 setting and never injects on file://. Check archive expansion, hidden direct links,
 and retirement notices. Record results in PR text. Optional authorized browser
 checks supplement PM testing. Re-run affected checks after material changes.
 
 Publication tests use disposable Git repositories and do not push. Historical exports
-are compared byte-for-byte before source consolidation. Initial cached migration is
-provisional: owner verification is a separate cutover requirement.
+are compared byte-for-byte against their immutable identities. Repository cutover
+is complete; these checks preserve the established migration baseline.
 
 Local comparison tests use disposable repositories to check selective checkpointing,
 common starting commits, original-branch advancement, merge conflicts, interrupted
@@ -70,3 +75,36 @@ For this integration, PM acceptance must also cover ESF and Buddy on narrow
 layouts, all four themes, and affected onboarding/lesson audio and video. The
 source ESF spec records small tap targets, car/coverage assumptions and prototype
 estimates; record acceptance or remaining concerns in the integration PR.
+
+## Flow verification
+
+Run the commands above for the complete integrated change; for ordinary Flow edits
+also run `python3 scripts/flows.py check --id ID` and
+`python3 scripts/flows.py scope --base FULL_TASK_BASE_SHA --scope flow`. Explicit
+product integration uses `--scope app-integration` and needs full-app PM verification
+before opening its PR. See [the operating guide](flows.md).
+
+Python negative tests cover unsafe IDs, collisions, links, traversal/cross-package
+paths, malformed staged entries, rollback, stale wrappers and app scope. Selector
+tests cover missing/invalid discovery and safe text rendering while keeping app,
+passcode and comparison access. Runtime tests must exercise actual reachability,
+prerequisites, setup Back/Skip, repeated saves, refresh/restart, forbidden deep links,
+admin/history/render dispatch, and participant parameter preservation. Dynamic path
+checks validate directory prefixes rather than every computed suffix; exercise
+selected generated media URLs. Generated onboarding narration is optional in the
+source and retains its documented speech/silence fallback.
+
+PM acceptance for Emergency Fund: full and skipped setup; expense help/Buddy;
+planning, save/reopen/repeat save; exactly one fund goal and immediate correct budget
+replacement. Big Purchase: setup Back/Skip; vehicle selection/owned-car/quiz,
+compare/finance/lease/planning; repeat purchase saves without budget writes; both
+before-purchase and after-save ESF branches, their distinct Back callers, and return
+to the same car session with inputs intact. Included ESF saves retain their budget
+effect. Check constrained Goals, disabled controls, excluded routes and selected media.
+
+Browser evidence is separate from automated DOM/VM tests. Record file:// results on
+Windows/WSL and macOS separately, including paths with spaces, narrow layouts, four
+themes, input/keyboard behavior, media, refresh/restart/exit and independent sessions.
+Rehearse HTTP publication twice with a previous manifest and verify participant
+links and frozen tracking. No Windows/WSL or macOS browser acceptance is implied by
+this guide; absent platform evidence remains pending and must be named in the PR.

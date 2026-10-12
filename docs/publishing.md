@@ -1,15 +1,16 @@
 # Snapshot publication
 
-Shipping integrates app work into main. Publishing is an explicit, separately
+Shipping integrates reviewed task work into main. Publishing is an explicit, separately
 requested release of the selector and its retained snapshots. Ordinary main pushes
 and catalog merges do not deploy. The sole deployment trigger is a new
 `publish/<unique-id>` tag. The organization rollout currently permits branch pushes,
 PR creation and CI verification only. Tag creation/push, merge, settings changes and
-deployment require separate authorization. The old repo/site remains the blue fallback.
+deployment require separate authorization. Repository cutover is complete; preserve
+historical identities, fallback `demo` and PM/HoffDemo branches.
 
 ## Source and catalog
 
-One editable app lives in app/. `publication/catalog.json` separates immutable fields
+The approved editable product lives in app/; contained proposals live in flows/<id>/. `publication/catalog.json` separates immutable fields
 (id, source_tag, full commit, source_dir, public_path, format, tracking, digest) from
 presentation (label, description, order, state, ongoing_study). IDs and paths are
 permanent. Do not recycle IDs even after retirement. Labels and descriptions are
@@ -28,7 +29,8 @@ request and any study-resolution decision in the catalog PR. Resolve ongoing_stu
 before retiring or demoting an active build. A null value means unknown, never false;
 all unknown study statuses block deployment. Confirm any new study status with PMs.
 Restoration changes state only; it serves the original bytes. Source tags stay forever.
-The shared selector intentionally changes, so refresh returns to the current selector.
+The shared selector intentionally changes. Full-app refresh returns there; Flow
+refresh restarts the same frozen Flow, with an explicit Exit to the selector.
 Guarantees cover hosted bytes and stable paths, not Useberry service behavior or
 already-loaded browser copies.
 
@@ -56,8 +58,9 @@ and GitHub Pages deployment succeeded. The live
 [green manifest](https://mb-prototype-lab.github.io/public-prototype/publication-manifest.json)
 reports that revision and all five legacy snapshots. The green selector and
 legacy entry URLs respond, but PM browser, media, deep-link and participant
-study-flow checks have not been recorded. The blue site remains the serving
-fallback; team adoption and participant-link changes are separate decisions.
+study-flow checks were not recorded in that historical deployment report. Repository
+cutover is now complete; this does not retroactively establish missing browser
+evidence. Preserve the historical fallback and coordinate study-link changes separately.
 
 The initial deployment used a one-time bootstrap because green had no previous
 manifest. GitHub now has `VERIFIED_MIGRATION_BASELINE` set to the baseline SHA;
@@ -104,6 +107,32 @@ run status and logs, and the Pages link to verify output. PR browser instruction
 complete in docs/workflow.md. CLI users can inspect runs with `gh run list`/`gh run view`;
 CLI availability never changes the required evidence or authorization.
 
+## Prepare a Flow snapshot
+
+Use the same procedure above, selecting a tested committed Flow on verified current
+main and adding `--flow`:
+
+```sh
+python3 scripts/publish.py prepare --flow emergency-fund --id emergency-fund-study-01 --commit FULL_MAIN_SHA --label 'Emergency Fund study' --tracking on
+```
+
+The proposed row uses `flow-static-v1`, `source_dir=flows/emergency-fund`, and
+`public_path=versions/emergency-fund-study-01/index.html`. The Flow ID identifies the
+working experience; the permanent snapshot ID identifies one immutable revision.
+Kind and Flow grouping are derived from validated format/source metadata. Local
+`flows/catalog.*` is discovery only and does not publish anything. Merging a Flow
+into main neither publishes it nor approves integrating its proposal into `app/`.
+Full-app preparation without `--flow` excludes all Flow packages.
+
+The package exports only its own committed static files, excludes authoring
+`flow.json`/docs, retains deterministic runtime policy, validates dependencies and
+freezes tracking/selector settings. No mutable app/shared imports are allowed.
+Source tags, main-source checks, digest/previous-manifest guarantees, the artifact
+ceiling and study/lifecycle protections are identical to other snapshots. Retirement
+replaces every packaged HTML entry, preventing nested entries from bypassing it.
+Direct study links bypass the selector/passcode; participant parameters cannot turn
+tracking on. Follow [Flow review and integration](flows.md) for source iteration.
+
 ## Selector-only changes and resuming
 
 For label/order/archive/hide/retire/restore changes, retain every immutable field and
@@ -124,7 +153,8 @@ bootstrap flags. A failed build never uploads a partially validated artifact.
 without injection or regeneration. `static-v1` exports static app extensions, excludes
 docs and hidden directories, and replaces release-config.js with frozen tracking plus
 `../../index.html` selector destination. Never change an existing format's behavior;
-add a new versioned format when packaging must change. Historical code is never run.
+`flow-static-v1` is the separate standalone Flow format described above. Historical
+code is never run; legacy-v1 and static-v1 semantics remain unchanged.
 The digest is SHA-256 of canonical sorted JSON mapping relative filenames to SHA-256
 content hashes. Every snapshot's identity describes its complete original package,
 even when its current entry URL hosts a retirement notice.
@@ -154,7 +184,7 @@ main changes during that final check. A later source-only merge does not invalid
 the bytes of an in-progress approved publication, but no newer publication can run
 concurrently. The previous manifest is also bound to its catalog revision in Git.
 
-## Verified setup and remaining rollout checks
+## Recorded setup and browser verification
 
 GitHub settings inspected on 2026-09-22 show:
 
@@ -171,13 +201,14 @@ GitHub settings inspected on 2026-09-22 show:
   publication tags are present at the identities listed above.
 
 The deployment result and HTTP responses do not establish visual or participant
-study behavior. Before team cutover, PMs should record passcode and selector
-refresh, the v1/v2/v3/v3.1/v4 entry paths and media, narrow layouts and themes,
-deep links and participant parameters, and the active v4 study flow. Coordinate
-participant-link changes separately. Keep the blue site and `demo` as fallback
-until those checks and the cutover decision are complete; do not delete `demo`.
-For future settings changes, inspect the saved state again and obtain separate
-authorization. Future merges and publications also require their own authorization.
+study behavior. Repository cutover is complete. Record outstanding PM checks for
+passcode/selector refresh, historical entry paths/media, narrow layouts/themes,
+participant deep links and active studies separately; do not infer those results
+from cutover. Retain `demo`, historical publication identities and PM branches.
+Windows/WSL and macOS browser evidence must be recorded separately; automated
+rehearsals do not establish either platform. For future settings changes, inspect
+current saved state and obtain separate authorization. Future merges and publications
+also require their own authorization.
 
 Workflow syntax and Pages action wiring were checked against the official
 [custom Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
