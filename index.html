@@ -24,8 +24,12 @@
     <div id="versionList" style="display:flex;flex-direction:column;gap:10px;">
       <!-- CATALOG -->
       <!-- LOCAL PREVIEW START -->
-      <div id="localPreview"><a class="gate-btn" href="app/index.html">Current local app · tracking off</a>
+      <div id="localPreview"><a class="gate-btn" href="app/index.html">Full app · tracking off</a>
       <p><a href="https://mb-prototype-lab.github.io/public-prototype/">Live historical builds</a></p></div>
+      <section id="localFlows" hidden aria-label="Flows">
+        <h2>Flows</h2>
+        <div id="localFlowsList"></div>
+      </section>
       <section id="localAlternatives" class="local-alternatives" hidden aria-label="Local alternatives">
         <h2>Local alternatives</h2>
         <div id="localAlternativesList"></div>
@@ -42,6 +46,8 @@
 <script src=".local-preview/variants.js"></script>
 <script src=".local-preview/return.js"></script>
 <script src="gate/local-variants.js"></script>
+<script src="flows/catalog.js"></script>
+<script src="gate/flows.js"></script>
 <!-- LOCAL SCRIPTS END -->
 <script src="gate/gate.js"></script>
 </body>
