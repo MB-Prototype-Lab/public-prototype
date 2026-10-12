@@ -7,6 +7,7 @@ from html.parser import HTMLParser
 import posixpath
 from urllib.parse import unquote, urlsplit
 import io
+import importlib.util
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -20,6 +21,7 @@ PRESENTATION = ('label', 'description', 'order', 'state', 'ongoing_study')
 CEILING = 800_000_000
 ID = re.compile(r'[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}\Z')
 HEX = re.compile(r'[0-9a-f]{40}\Z')
+FLOW_ID = re.compile(r'[a-z0-9]+(?:-[a-z0-9]+)*\Z')
 SHA256 = re.compile(r'[0-9a-f]{64}\Z')
 
 
@@ -62,12 +64,15 @@ def validate(catalog):
         ids.add(row['id'])
         require(row['source_tag'] == 'snapshot/' + row['id'], 'invalid source tag')
         require(isinstance(row['commit'], str) and HEX.fullmatch(row['commit']), 'full source SHA required')
-        require(row['format'] in ('legacy-v1', 'static-v1'), 'unsupported packaging format')
+        require(row['format'] in ('legacy-v1', 'static-v1', 'flow-static-v1'), 'unsupported packaging format')
         require(row['public_path'] == 'versions/' + row['id'] + '/index.html', 'invalid public path')
         require(row['public_path'] not in paths, 'conflicting public path')
         paths.add(row['public_path'])
         require(safe_path(row['source_dir']), 'unsafe source directory')
-        require(row['source_dir'] == ('versions/' + row['id'] if row['format'] == 'legacy-v1' else 'app'), 'invalid source directory for format')
+        if row['format'] == 'flow-static-v1':
+            require(row['source_dir'].startswith('flows/') and FLOW_ID.fullmatch(row['source_dir'][6:]), 'invalid Flow source directory')
+        else:
+            require(row['source_dir'] == ('versions/' + row['id'] if row['format'] == 'legacy-v1' else 'app'), 'invalid source directory for format')
         if row['format'] == 'legacy-v1':
             require(row['commit'] == catalog['migration_baseline'], 'legacy source differs from migration baseline')
         require(type(row['tracking']) is bool, 'tracking must be boolean')
@@ -139,6 +144,46 @@ def package(row, repo=ROOT, require_tags=True):
         files = {p: b for p, b in files.items() if PurePosixPath(p).suffix.lower() in extensions and not any(x.startswith('.') for x in PurePosixPath(p).parts) and not p.startswith(('docs/', '.worktrees/'))}
         require('release-config.js' in files and b'src="release-config.js"' in files['index.html'], 'source does not support release configuration')
         files['release-config.js'] = b'window.MB_RELEASE = Object.freeze(' + canonical({'tracking': row['tracking'], 'selector': '../../index.html'}) + b');\n'
+    if row['format'] == 'flow-static-v1':
+        files = package_flow(row, files)
+    return files
+
+
+def flow_tools():
+    """Use the current validator; never import or execute snapshot source."""
+    spec = importlib.util.spec_from_file_location('moneybuddy_flows', ROOT/'scripts/flows.py')
+    require(spec is not None and spec.loader is not None, 'Flow tooling unavailable')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def package_flow(row, source):
+    require(row['source_dir'].startswith('flows/') and FLOW_ID.fullmatch(row['source_dir'][6:]), 'invalid Flow source directory')
+    tools = flow_tools()
+    require('flow.json' in source, 'Flow source missing flow.json')
+    metadata = read_json(source['flow.json'])
+    tools.validate_metadata(metadata, row['source_dir'][6:])
+    require(source.get('flow-config.js') == tools.wrapper('MB_FLOW', metadata).encode(), 'Flow policy wrapper differs from metadata')
+    extensions = {'.html', '.js', '.css', '.json', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.wav', '.mp3', '.mp4', '.ogg', '.woff', '.woff2', '.ttf'}
+    files = {p: b for p, b in source.items() if p != 'flow.json' and PurePosixPath(p).suffix.lower() in extensions
+             and not any(part.startswith('.') for part in PurePosixPath(p).parts)
+             and not p.startswith('docs/')}
+    require('release-config.js' in files and b'src="release-config.js"' in files['index.html'], 'source does not support release configuration')
+    class Scripts(HTMLParser):
+        def __init__(self):
+            super().__init__(); self.sources = []
+        def handle_starttag(self, tag, attrs):
+            if tag == 'script':
+                self.sources.append(dict(attrs).get('src'))
+    scripts = Scripts(); scripts.feed(files['index.html'].decode('utf-8'))
+    required = ('release-config.js', 'flow-config.js', 'js/config.js', 'js/flow.js', 'js/navigation.js')
+    require(all(p in files and scripts.sources.count(p) == 1 for p in required), 'Flow entry missing required policy/runtime scripts')
+    require(scripts.sources.index('flow-config.js') < scripts.sources.index('js/config.js')
+            and scripts.sources.index('release-config.js') < scripts.sources.index('js/config.js')
+            and scripts.sources.index('js/flow.js') < scripts.sources.index('js/navigation.js'), 'Flow policy/runtime script order invalid')
+    files['release-config.js'] = b'window.MB_RELEASE = Object.freeze(' + canonical({'tracking': row['tracking'], 'selector': '../../index.html'}) + b');\n'
+    tools.validate_dependencies(files, selector='../../index.html')
     return files
 
 
@@ -148,9 +193,15 @@ def selector(catalog, template, gate_js, css):
         tracking = 'Tracking on' if row['tracking'] else 'Tracking off'
         return ('<a class="gate-btn" href="' + row['public_path'] + '">' + html.escape(row['label']) +
                 '<span class="gate-badge">' + tracking + '</span></a><p>' + html.escape(row['description']) + '</p>')
-    active = ''.join(card(r) for r in rows if r['state'] == 'active')
-    archived = ''.join(card(r) for r in rows if r['state'] == 'archived')
-    listing = active + ('<details><summary>Older versions</summary>' + archived + '</details>' if archived else '')
+    def group(flow):
+        selected = [r for r in rows if (r['format'] == 'flow-static-v1') == flow]
+        active = ''.join(card(r) for r in selected if r['state'] == 'active')
+        archived = ''.join(card(r) for r in selected if r['state'] == 'archived')
+        return active + ('<details><summary>Older ' + ('Flow snapshots' if flow else 'versions') + '</summary>' + archived + '</details>' if archived else '')
+    listing = group(False)
+    flows = group(True)
+    if flows:
+        listing += '<section aria-label="Flow snapshots"><h2>Flow snapshots</h2>' + flows + '</section>'
     require(template.count('<!-- CATALOG -->') == 1, 'selector template marker missing or repeated')
     for start, end in (('<!-- LOCAL PREVIEW START -->', '<!-- LOCAL PREVIEW END -->'),
                        ('<!-- LOCAL SCRIPTS START -->', '<!-- LOCAL SCRIPTS END -->')):
@@ -222,7 +273,7 @@ def build(catalog, revision, assets, repo=ROOT, previous=None, require_tags=True
             files = {'index.html': ('<!doctype html><meta charset="utf-8"><title>Build retired</title><h1>This build has been retired</h1><p>' + html.escape(row['label']) + '</p><a href="../../index.html">Return to selector</a>').encode()}
         prefix = row['public_path'].rsplit('/', 1)[0] + '/'
         output.update({prefix + k: v for k, v in files.items()})
-    validate_assets(output, [r['public_path'].rsplit('/', 1)[0] + '/' for r in catalog['snapshots'] if r['format'] == 'static-v1'])
+    validate_assets(output, [r['public_path'].rsplit('/', 1)[0] + '/' for r in catalog['snapshots'] if r['format'] in ('static-v1', 'flow-static-v1')])
     manifest = {'schema': 1, 'revision': revision, 'catalog': catalog, 'snapshots': snapshot_files, 'files': file_digests(output)}
     output['publication-manifest.json'] = canonical(manifest) + b'\n'
     require(sum(map(len, output.values())) <= min(ceiling, CEILING), 'artifact exceeds size ceiling')
@@ -253,6 +304,7 @@ def main():
     pack.add_argument('--bootstrap-tag', help='administrator-approved initial publication tag')
     pack.add_argument('--main-ref', default='refs/remotes/origin/main')
     prepare = sub.add_parser('prepare')
+    prepare.add_argument('--flow', help='committed standalone Flow ID')
     prepare.add_argument('--id', required=True)
     prepare.add_argument('--commit', required=True)
     prepare.add_argument('--label', required=True)
@@ -261,6 +313,9 @@ def main():
     if args.command == 'prepare':
         row = dict(id=args.id, source_tag='snapshot/'+args.id, commit=git('rev-parse', args.commit+'^{commit}').decode().strip(), source_dir='app', public_path='versions/'+args.id+'/index.html', format='static-v1', tracking=args.tracking=='on', digest='0'*64, label=args.label, description='', order=0, state='active', ongoing_study=False)
         require(ID.fullmatch(args.id), 'invalid snapshot id')
+        if args.flow is not None:
+            require(FLOW_ID.fullmatch(args.flow), 'invalid Flow id')
+            row.update(source_dir='flows/' + args.flow, format='flow-static-v1')
         require(subprocess.run(['git', 'merge-base', '--is-ancestor', row['commit'], 'main'], capture_output=True).returncode == 0, 'snapshot source must be on local main')
         row['digest'] = digest(package(row, require_tags=False))
         print(json.dumps(row, indent=2))
