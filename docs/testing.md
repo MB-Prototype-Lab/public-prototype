@@ -118,7 +118,9 @@ HTTP. `tests/flows-snapshot-browser.cjs` exercises offline exported packages; it
 header describes the required snapshot IDs and environment. Set
 `MB_FLOW_SNAPSHOT_FILE_ROOT` to an artifact directory with spaces to also check
 file URLs. The shared `tests/flows-tools-browser.cjs` helper compares normal/hover
-button styles against the full app in all four themes and checks Enter/Space,
-hidden-while-open behavior, Close focus, placement and phone sizing. Both require an
+button styles against the full app in all four themes, compares phone, **›** and
+panel positions with the full app at 1440, 1000, 900, 390 and 320px (collapsed and
+open; no Tools at phone widths), and checks Enter/Space, hidden-while-open behavior
+and Close focus. Both require an
 existing Playwright/browser installation. Snapshot smoke blocks all external
 requests. Record these results separately from PM and platform acceptance.

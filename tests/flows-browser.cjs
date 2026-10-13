@@ -27,7 +27,8 @@ async function checkTools(page) {
  await page.getByPlaceholder('ZIP code').fill('90210');
  await page.getByPlaceholder('ZIP code').press('Tab');
  const answers=await page.evaluate(()=>JSON.stringify(state.onboarding));
- for(const width of [1440,900,390,320]) {
+ // Phone widths have no Tools, as in the full app (checked by checkExpandButton).
+ for(const width of [1440,900]) {
   await page.setViewportSize({width,height:900});
   const phoneBefore=await page.locator('.phone').boundingBox();
   await page.locator('#adminExpandTab').focus();
@@ -42,7 +43,7 @@ async function checkTools(page) {
   await page.getByRole('button',{name:'Close Tools',exact:true}).click();
   assert.equal(await page.locator('#adminExpandTab').evaluate(el=>el===document.activeElement),true);
  }
- await page.setViewportSize({width:390,height:844});
+ await page.setViewportSize({width:900,height:844});
  await openTools(page);
  const steps=await page.evaluate(()=>MB_FLOW.setup_steps);
  assert.deepEqual(await page.locator('#flowSetupStep option').allTextContents(),steps);
@@ -129,7 +130,7 @@ async function chooseCar(page) {
  await expectScreen(page,'bpYourCar');
 }
 async function purchaseBrowser(browser,temp,mode) {
- const page=await browser.newPage({viewport:{width:390,height:844}});
+ const page=await browser.newPage({viewport:{width:900,height:844}});
  const errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  const pkg=path.join(temp,'flows','big-purchase');
@@ -271,7 +272,7 @@ async function purchaseBrowser(browser,temp,mode) {
   execFileSync('python3',['-c', 'from pathlib import Path; from scripts.flows import adapt_starter; import sys; adapt_starter(Path(sys.argv[1]))',starter],{cwd:repo});
   fs.writeFileSync(path.join(starter,'flow-config.js'),'window.MB_FLOW={id:"starter",entry:"onboarding",allowed_screens:["onboarding"],setup_steps:[]};');
   for(const mode of ['file','http']) {
-  const starterPage=await browser.newPage({viewport:{width:390,height:844}});
+  const starterPage=await browser.newPage({viewport:{width:900,height:844}});
   const starterErrors=[];
   starterPage.on('pageerror',e=>starterErrors.push(e.message));
   await starterPage.goto(mode==='file' ? pathToFileURL(path.join(starter,'index.html')).href : 'http://127.0.0.1:'+server.address().port+'/flows/starter/index.html');
@@ -291,7 +292,7 @@ async function purchaseBrowser(browser,temp,mode) {
   }
 
   for (const mode of (process.env.MB_FLOW_BASE_URL ? ['file','http'] : ['file'])) {
-   const page=await browser.newPage({viewport:{width:390,height:844}});
+   const page=await browser.newPage({viewport:{width:900,height:844}});
    const errors=[];
    page.on('pageerror',e=>{errors.push(e.message); console.error(mode,e.stack.split('\n').slice(0,7).join('\n'));});
    const base=mode==='file'?pathToFileURL(path.join(pkg,'index.html')).href:new URL('flows/emergency-fund/index.html',process.env.MB_FLOW_BASE_URL.replace(/\/?$/, '/')).href;

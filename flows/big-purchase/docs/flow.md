@@ -82,7 +82,8 @@ automation does not imply Windows/WSL or macOS acceptance.
 
 Tools starts collapsed on file, HTTP and published snapshots. Its labeled toggle
 reports expanded state; Close returns focus to that toggle. The panel sits beside
-the phone on desktop and below it through normal page scrolling on narrow screens.
+the phone on desktop and below it at medium widths, exactly as in the full app;
+like the full app, phone-width windows (768px and below) offer no Tools.
 Opening, closing and reading it preserve participant answers and do not initialize
 feature sessions. Participant navigation uses the source headers, footers and
 contextual Back controls; there is no universal reviewer toolbar in the phone.

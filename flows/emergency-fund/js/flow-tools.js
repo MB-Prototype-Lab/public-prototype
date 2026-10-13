@@ -10,7 +10,8 @@ function mbFlowToolsSync() {
   document.getElementById('flowAdmin').hidden = !open;
   document.getElementById('adminSessionLog').textContent = 'Session: ' + mbFlowSession;
   document.getElementById('adminNavLog').textContent = 'Nav: ' + ((window.__navLog || []).join(' ← ') || 'none');
-  document.getElementById('adminTrailLog').textContent = 'Trail: ' + (typeof ubTrailPreview === 'function' ? ubTrailPreview() : 'none');
+  var trail = typeof ubTrailPreview === 'function' ? ubTrailPreview() : '';
+  document.getElementById('adminTrailLog').textContent = 'Trail: ' + (trail.indexOf('.') === -1 ? 'nothing set yet' : trail.slice(8));
   document.getElementById('adminErrorLog').textContent = 'Last error: ' + (window.__lastError ? JSON.stringify(window.__lastError) : 'none');
 }
 function mbFlowToolsToggle(open) {

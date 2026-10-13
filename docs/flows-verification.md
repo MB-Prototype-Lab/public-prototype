@@ -254,3 +254,36 @@ checks. Flow syntax (249), runtime, all nine Flow Python tests, package and scop
 checks pass. App and publication records remain unchanged from `021d406`.
 These targeted follow-up checks do not update earlier snapshot/platform or PM
 acceptance evidence. The PR remains unopened pending affected PM review.
+
+
+## Page-shell parity with the full app — 2026-10-13
+
+Change base `a7f408729013da0b2edc9083704e5ee420330c58`. Both Flows and the creation
+adapter now use the full app’s page layout unchanged. Removing the Flow-only overrides
+moves the phone 52px up to the app’s 24px top and back onto the app’s grid column. The
+**›** returns to the app’s fixed position at the phone’s top edge. The open panel uses
+the app’s spacing and fixed height, and phone widths (768px and below) offer no Tools,
+as in the full app. Three small styling fixes accompany it:
+- Exit Flow matches its neighboring header buttons.
+- The **›** regains the app’s hover tooltip.
+- The footer formats the trail line as the app does.
+
+Phone contents and Flow-specific Tools content are unchanged.
+
+Linux headless Chrome compared app, both Flows and an adapter-generated starter.
+Phone, **›** and panel boxes, display and position were identical at 1440, 1000, 900,
+820, 769, 768, 400, 390 and 320px. Heights 900 and 760 were checked, with Tools both
+collapsed and open, and screenshots matched in all four themes. Flow check, Flow
+scope, path checks, publication check and Python discovery passed (63 tests, one
+skipped: Node unavailable).
+
+Not run on this machine, by agreement, with no tools installed:
+- `check-syntax.sh` and the Node test suite (CI runs these).
+- The Playwright browser tests, which now compare geometry with the full app.
+
+Edited JS parsed cleanly in Chromium. That parse is not a substitute for the Node
+checks.
+
+PM visual re-acceptance: switch between Local Prototype and each Flow at desktop width
+and confirm nothing outside the phone moves, then open Tools and narrow the window
+below 769px. Windows/WSL and macOS acceptance remain pending.

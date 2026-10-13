@@ -26,8 +26,9 @@ A participant URL cannot enable tracking or unlock excluded screens.
 
 Reviewer controls live outside the phone in the initially collapsed **Tools**
 panel, including in snapshots. Open the **›** button (accessible name **Tools**) for Restart Flow, Exit Flow, themes,
-Copy State and controls for the current initialized screen. Desktop places the
-panel alongside the phone; narrow screens place it below through page scrolling.
+Copy State and controls for the current initialized screen. The page around the
+phone matches Local Prototype exactly: the panel sits alongside the phone on desktop
+and below it at medium widths, and phone-width windows (768px and below) offer no Tools.
 The button appears only while collapsed; **‹** (Close Tools) restores it and returns focus to it. Setup steps stay within each Flow's policy, and
 no unrestricted product screen picker is available. The phone retains the source
 participant headers, footers and contextual Back controls.

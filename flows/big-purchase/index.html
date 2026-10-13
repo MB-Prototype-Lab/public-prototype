@@ -45,7 +45,7 @@
       </div>
       <p class="admin-subtitle" id="adminSubtitle">Manual controls for the active screen.</p>
       <button class="button secondary" style="margin-top:10px;width:100%;font-size:11px;" onclick="mbFlowRestart()">Restart Flow</button>
-      <button class="button secondary full" type="button" onclick="mbFlowExit()">Exit Flow</button>
+      <button class="button secondary" type="button" style="margin-top:6px;width:100%;font-size:11px;" onclick="mbFlowExit()">Exit Flow</button>
       <!-- Theme picker (L21). Filled by render(); the four options live in
            THEMES (js/theme.js), not here. -->
       <p style="margin:10px 0 4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--chrome-muted);">Theme</p>
@@ -54,7 +54,7 @@
     </div>
     <div id="adminRoot" class="admin-scroll"></div>
     <div id="adminFooter" style="padding:10px 14px;border-top:1px solid var(--chrome-line);font-size:10px;color:var(--chrome-muted);flex-shrink:0;">
-      <div id="adminSessionLog"></div>
+      <div id="adminSessionLog" style="margin-bottom:4px;"></div>
       <div id="adminNavLog" style="margin-bottom:4px;"></div>
       <!-- What the value trail would write at the next checkpoint. Visible
            during a moderated run so you can see it filling, rather than
@@ -67,7 +67,7 @@
 </div>
 
 <!-- Admin expand tab — visible only when admin is collapsed -->
-<button id="adminExpandTab" class="admin-expand-tab" type="button" onclick="mbFlowToolsToggle(true)" aria-label="Tools" aria-controls="flowAdmin" aria-expanded="false">›</button>
+<button id="adminExpandTab" class="admin-expand-tab" type="button" onclick="mbFlowToolsToggle(true)" aria-label="Tools" aria-controls="flowAdmin" aria-expanded="false" title="Expand admin">›</button>
 
 <!-- 0. Developer tooling: error catcher + nav log updater -->
 <script>

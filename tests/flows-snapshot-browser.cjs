@@ -15,7 +15,7 @@ const {checkExpandButton}=require('./flows-tools-browser.cjs');
  try {
   for(const mode of (process.env.MB_FLOW_SNAPSHOT_FILE_ROOT ? ['file','http'] : ['http'])) {
   for(const [id,tracking,entry] of [['emergency-fund',true,'esfBuild'],['big-purchase',false,'bpLanding']]) {
-   const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[],external=[];
+   const page=await browser.newPage({viewport:{width:900,height:844}}),errors=[],external=[];
    page.on('pageerror',e=>errors.push(e.message));
    page.on('dialog',d=>d.dismiss());
    await page.route('**/*',route=>{
