@@ -180,3 +180,57 @@ goal/reminder simulations, repeated saves and both BP fund return paths. PM
 acceptance, Windows/WSL and macOS file-with-spaces checks remain unverified. Linux
 automation does not substitute for those checks. Merge and publication remain
 separately authorized.
+
+
+## Full-app expand-button match — 2026-10-13
+
+Implementation checkpoint: `1cca55cfdd25484225881dce3b3264008ffd3cf5` on
+`work/flows-20261011`. Change base: `021d4061c01b0a935c05ea2772e69d045ebff72d`.
+No subagents. Both Flows and the creation adapter now use the full app’s 28×48px
+**›** button, with accessible name **Tools**, the existing panel relationship and
+accurate expanded state. The button opens only, hides while open at every width,
+and returns with focus on Close. Flow position, collapsed defaults, outside-phone
+panel placement and reviewer/participant behavior remain intact. No metadata or
+public API changed.
+
+All required repository checks pass: app syntax 124, Flow syntax 249, sweep 254
+with zero failures and two existing warnings, paths, release runtime, local
+alternatives, selector, Flow runtime, all 63 Python tests, Flow package checks,
+publication catalog/historical digests and Flow scope against the change base.
+`app/` and `publication/` have zero diff from that base.
+
+Linux Chromium passes `tests/flows-browser.cjs` for both packages on copied file
+URLs with spaces and HTTP, plus the actual creation adapter on both protocols.
+The shared browser helper compares normal and hover computed styles with the
+full-app button in Light, Dark, Natural Light and Natural Dark, at widths 1440,
+900, 390 and 320px. It checks exact size/position, accessible naming, Enter and
+Space activation, hidden state and absence from the accessibility tree while
+open, Close focus restoration, unchanged phone dimensions, desktop/below-phone
+panel placement, no horizontal overflow and unchanged participant state.
+Existing journey checks still pass: setup/Back/Skip, reviewer controls, themes,
+media, repeat saves, both purchase fund detours, preserved inputs, distinct budget
+effects, refresh/Restart/Exit and participant parameters.
+
+Two local in-memory catalog builds exported committed checkpoint `1cca55c` and
+were byte-identical, including validation against the first manifest. No real
+catalog or tags were written. Artifact: `/tmp/MoneyBuddy chevron snapshot kc8e62t8`,
+964 files, 77,368,263 bytes; fund package 21,127,569 bytes; purchase package
+21,129,482 bytes. Historical exports retain their digests and output stays below
+the publication size ceiling. `tests/flows-snapshot-browser.cjs` passes both
+exported snapshots on file URLs with spaces and HTTP, including the same four-theme
+button comparisons, keyboard/focus, placement/overflow, refresh/Restart/Exit,
+participant parameters and frozen tracking. All external requests were aborted;
+file URLs never inject telemetry.
+
+Reproduction uses the browser harness environment in `docs/testing.md`. Serve the
+checkout for `MB_FLOW_BASE_URL`. Serve the artifact for
+`MB_FLOW_SNAPSHOT_BASE_URL` and set `MB_FLOW_SNAPSHOT_FILE_ROOT` to its directory
+with spaces. Local builds and servers do not publish.
+
+PM must repeat affected visual acceptance on `1cca55c` before opening the
+implementation PR: compare the chevron with the full app in all four themes;
+check desktop/narrow position, expand-only disappearance, Enter/Space and Close
+focus, plus the existing outside-phone reviewer and participant checks above.
+PM acceptance and Windows/WSL/macOS file-with-spaces acceptance remain pending.
+Linux automation does not establish those results. Merge and publication remain
+separately authorized.

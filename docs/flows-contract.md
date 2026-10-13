@@ -46,6 +46,9 @@ Reviewer Tools is outside the phone, collapsed at every boot (including snapshot
 and uses an explicit current-screen/prerequisite dispatcher. Reading or toggling
 it cannot initialize features or change answers. Narrow layouts put it below the
 phone without overlay or shrinking; closing returns focus to the labeled toggle.
+The reviewer expand button matches the full app’s 28×48px **›** styling while
+retaining Flow positioning and narrow-screen availability. Its accessible name is
+**Tools**; opening hides it, and Close reveals it and restores focus.
 The phone preserves source contextual navigation without a universal toolbar.
 A package-owned Restart clears all session state by a fresh document load; Exit
 uses frozen MB_RELEASE selector or local ../../index.html. Full app is unchanged
@@ -67,7 +70,3 @@ entries. Flow worker owns flows/<id>/ plus tests/flows-runtime.cjs and relevant
 behavior tests. Publication worker exclusively owns scripts/publish.py and focused
 publication tests until integrated. Cleanup/docs work is serialized after packages
 exist. Lead owns this contract, baseline, handoff and integration review.
-
-The reviewer expand button matches the full app’s 28×48px **›** styling while
-retaining Flow positioning and narrow-screen availability. Its accessible name is
-**Tools**; opening hides it, and Close reveals it and restores focus.

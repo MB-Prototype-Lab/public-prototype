@@ -206,3 +206,20 @@ remote writes, PR, merge or publication have occurred.
 - PM must repeat affected acceptance on `b7663e8` before opening the implementation
   PR. Windows/WSL and macOS remain unverified. Keep the PR unopened; merging,
   settings changes and publication remain outside authorization. No deployment.
+
+
+### Expand-button match — 2026-10-13
+
+- Implementation checkpoint `1cca55c`, change base `021d4061c01b0a935c05ea2772e69d045ebff72d`.
+  Both packages and the creation adapter use the full app’s 28×48px **›** button
+  with accessible name Tools. Opening hides it; Close reveals it and restores focus.
+  Outside-phone placement and narrow availability remain intact.
+- Required checks pass, including all 63 Python tests and Flow scope. Linux
+  Chromium verifies normal/hover style parity in four themes, Enter/Space,
+  hidden-while-open, focus, phone sizing and overflow across desktop/narrow widths.
+  Both Flows, generated starters and exported snapshots pass file-with-spaces and
+  HTTP checks. Deterministic exports and frozen tracking pass. Full evidence is in
+  `docs/flows-verification.md`; app and publication records are unchanged from base.
+- Repeat affected PM visual acceptance on `1cca55c` before opening the PR.
+  Windows/WSL and macOS acceptance remain pending. Merge and publication require
+  separate authorization.
