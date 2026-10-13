@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "id": "big-purchase",
+  "label": "Big purchase",
+  "purpose": "Plan a vehicle purchase and its emergency fund.",
+  "reference": null,
+  "source_app_commit": "8f7b142cd3c065d1dc1b324d741ab9c9a5f8b440",
+  "task_base": "09fdbbaac134562120f134b77a4c3752837d0b65",
+  "entry": "onboarding",
+  "completion": "goals",
+  "allowed_screens": [
+    "onboarding",
+    "bpLanding",
+    "bpFinder",
+    "bpYourCar",
+    "bpSetup",
+    "bpQuiz",
+    "bpCost",
+    "bpOptions",
+    "bpFinance",
+    "bpCommit",
+    "esfBuild",
+    "helpMeOut",
+    "esfPlan",
+    "goals"
+  ],
+  "setup_steps": [
+    "zip",
+    "income",
+    "miles"
+  ],
+  "profile_behavior": "Apply a valid launch profile once on file or HTTP; existing default profile supplies unanswered setup values. Answered ZIP/income/driving win. Docked income and driving advance on selection. Landing Back restores the last setup question with answers intact. Bundled ESF asks no additional onboarding questions.",
+  "proposed_differences": [
+    "Contained vehicle planning and bundled emergency fund; Goals shows only purchase and emergency-fund goals.",
+    "Refresh and Restart begin fresh purchase setup; Exit returns to selector.",
+    "Explicit before-purchase and after-save emergency-fund caller and resume destinations preserve the same purchase session.",
+    "Inherited ZIP keypad change recursion is fixed with one reentrant-safe commit."
+  ]
+}

@@ -1,0 +1,370 @@
+// GENERATED from big-purchase.json — do not hand-edit.
+// Regenerate: bash scripts/wrap-data.sh
+//
+// The app runs on file://, where fetch() is blocked and there is no dev
+// server, so spec data ships as a script-loadable assignment (L13).
+// The .json beside this file is the byte-identical spec copy.
+const BIG_PURCHASE =
+{
+  "_note": "Big Purchase Calculator (docs/big-purchase-spec.md Â§13). Every figure is sourced or flagged _prototype. FIGURES are data, ARITHMETIC is code: js/bp-engine.js and js/bp-vehicle.js read every number from here. If you edit this file, re-run: MB_VERSION=v3.1c bash scripts/wrap-data.sh",
+
+  "credit": {
+    "defaultTier": "600-660",
+    "order": ["under600", "600-660", "661-780", "781+"],
+    "labels": { "under600": "Under 600", "600-660": "600-660", "661-780": "661-780", "781+": "781+" },
+    "tiers": {
+      "781+":     { "new": 4.41,  "used": 6.29 },
+      "661-780":  { "new": 6.15,  "used": 8.81 },
+      "600-660":  { "new": 9.71,  "used": 13.93 },
+      "under600": { "new": 13.52, "used": 19.10 }
+    },
+    "motorcycleAdd": 2.0,
+    "_motorcycleNote": "_prototype: no Experian series for motorcycle loans; +2 points on the car rate is a placeholder.",
+    "_source": "Experian, State of the Automotive Finance Market, Q2 2026  -  ALL FOUR TIERS FROM THIS ONE RELEASE (spec Â§3.4). Tier map: 781+ = super prime, 661-780 = prime, 600-660 = near prime (601-660), Under 600 = subprime (501-600; deep subprime not shown). Refilled 2026-09-21 from experian.com/blogs/ask-experian/average-car-loan-interest-rates-by-credit-score/"
+  },
+
+  "opportunity": {
+    "defaultRate": 0.07,
+    "options": [0.04, 0.05, 0.06, 0.07, 0.08, 0.10],
+    "_note": "7% is the US stock market's long-run average return after inflation  -  not a recent 3-year return. Copy says what a difference is WORTH, never 'invest'."
+  },
+
+  "horizons": { "primary": 5,
+    "_note": "5 years only. The secondary 3-year figure was dropped on the owner's call (2026-09-26): it appeared nowhere after the flow was split into five screens, and a second horizon beside the first reads as a rival answer." },
+
+  "categoryEmoji": { "vehicle": "🚗", "boatRv": "⛵", "home": "🏡", "vacation": "✈️", "other": "🛒" },
+
+  "financing": {
+    "defaultMode": "loan",
+    "downOptions": [0.10, 0.20],
+    "defaultDown": 0.20,
+    "terms": [36, 48, 60, 72],
+    "defaultTerm": 60
+  },
+
+  "plan": { "defaultMonthsOut": 12, "roundTo": 100, "notYetDays": 14 },
+
+  "taxBreak": {
+    "id": "carLoanInterest2025",
+    "newOnly": true,
+    "loanOnly": true,
+    "expires": "2028-12-31",
+    "link": "irs.gov/newsroom/one-big-beautiful-bill-provisions",
+    "_linkNote": "Confirm the exact URL at build (spec Â§9.2). The in-app page is MoneyBuddy's own summary, not IRS text."
+  },
+
+  "vehicle": {
+    "types": [
+      { "id": "car",        "label": "Car" },
+      { "id": "suv",        "label": "SUV" },
+      { "id": "minivan",    "label": "Minivan" },
+      { "id": "truck",      "label": "Pickup truck" },
+      { "id": "motorcycle", "label": "Motorcycle" }
+    ],
+    "tierOrder": ["luxury", "premium", "everyday", "value"],
+    "_tierNote": "The DISPLAY label for the third tier is Standard (owner, 2026-09-26). The data KEY stays everyday: it is a join key across tierExamples, the factor tables and saved sessions, and renaming it would silently return undefined wherever one spot was missed. Same trick as Health displaying as Medical and Dental in the taxonomy.",
+    "tierLabels": { "luxury": "Luxury", "premium": "Premium", "everyday": "Standard", "value": "Value" },
+    "tierExamples": {
+      "car":        { "luxury": "Porsche, Range Rover, Mercedes S-Class", "premium": "BMW, Lexus, Audi, Acura", "everyday": "Toyota, Honda, Ford, Chevy, Subaru", "value": "Kia, Hyundai, Nissan, Mitsubishi" },
+      "suv":        { "luxury": "Porsche, Range Rover, Mercedes S-Class", "premium": "BMW, Lexus, Audi, Acura", "everyday": "Toyota, Honda, Ford, Chevy, Subaru", "value": "Kia, Hyundai, Nissan, Mitsubishi" },
+      "minivan":    { "luxury": "Porsche, Range Rover, Mercedes S-Class", "premium": "BMW, Lexus, Audi, Acura", "everyday": "Toyota, Honda, Ford, Chevy, Subaru", "value": "Kia, Hyundai, Nissan, Mitsubishi" },
+      "truck":      { "luxury": "Ram Limited, GMC Denali", "premium": "Ford F-150 Platinum", "everyday": "Toyota Tacoma, Chevy Silverado", "value": "Nissan Frontier" },
+      "motorcycle": { "luxury": "Ducati, BMW", "premium": "Harley-Davidson, Triumph", "everyday": "Honda, Yamaha, Kawasaki", "value": "Royal Enfield, Kymco" }
+    },
+    "fuels": [
+      { "id": "gas",      "label": "Gas" },
+      { "id": "diesel",   "label": "Diesel", "hideFor": ["motorcycle", "minivan"] },
+      { "id": "hybrid",   "label": "Hybrid" },
+      { "id": "electric", "label": "Electric" }
+    ],
+    "ages": [
+      { "id": "1-3", "label": "1-3 yrs", "startAge": 2 },
+      { "id": "4-6", "label": "4-6 yrs", "startAge": 5 },
+      { "id": "7+",  "label": "7+ yrs",  "startAge": 8 }
+    ],
+
+    "quiz": {
+      "_note": "Four questions for somebody who has no car in mind yet (owner, 2026-09-26: 'the experience assumes the user has a car in mind, but they may not'). Every option carries SCORES, and the highest-scoring type wins — so a new question is a data entry, not a branch in the code. `tier` and `fuel` are nudges, applied only when the answers point somewhere clearly. It suggests a shape of vehicle, never a purchase: the tester can take it or pick for themselves, and the figures do not change until they do.",
+      "_prototype": true,
+      "questions": [
+        { "id": "who", "ask": "Who's usually in the car?", "options": [
+          { "id": "justMe",  "label": "Mostly just me",   "scores": { "car": 2, "motorcycle": 1 } },
+          { "id": "plusOne", "label": "Me and one other", "scores": { "car": 2, "suv": 1 } },
+          { "id": "family",  "label": "Three or more",    "scores": { "suv": 2, "minivan": 1 } },
+          { "id": "crowd",   "label": "Six or more",      "scores": { "minivan": 3, "suv": 1 } }
+        ] },
+        { "id": "use", "ask": "What do you use it for most?", "options": [
+          { "id": "commute", "label": "Getting to work",        "scores": { "car": 2, "motorcycle": 1 } },
+          { "id": "errands", "label": "Errands and school runs", "scores": { "suv": 1, "minivan": 1, "car": 1 } },
+          { "id": "haul",    "label": "Hauling or towing",       "scores": { "truck": 3 }, "fuel": "diesel" },
+          { "id": "trips",   "label": "Long road trips",         "scores": { "suv": 2, "car": 1 } }
+        ] },
+        { "id": "where", "ask": "Where do you do most of your driving?", "options": [
+          { "id": "city",  "label": "City streets",              "scores": { "car": 2, "motorcycle": 1 } },
+          { "id": "mixed", "label": "A bit of everything",       "scores": { "suv": 1, "car": 1 } },
+          { "id": "rural", "label": "Country roads and highways", "scores": { "truck": 1, "suv": 1 } },
+          { "id": "snow",  "label": "Snow, ice or steep hills",  "scores": { "suv": 2, "truck": 1 } }
+        ] },
+        { "id": "fuel", "ask": "How would you like to fuel it?",
+          "_note": "NEVER asks 'do you want an EV' cold. Each option says what it means for the person day to day — where you fill up, what it costs to run, what goes wrong — and the last one hands the choice back to the answers they already gave.",
+          "options": [
+            { "id": "electric", "emoji": "🔌", "label": "Plug it in",      "sub": "Charge at home, no gas stations, fewer moving parts to fix", "fuel": "electric" },
+            { "id": "hybrid",   "label": "A bit of both",   "sub": "Still uses gas, just a lot less of it", "fuel": "hybrid" },
+            { "id": "gas",      "label": "Stick with gas",  "sub": "Fill up anywhere, cheapest to buy", "fuel": "gas" },
+            { "id": "either",   "label": "No preference",   "sub": "We'll pick what suits your answers" }
+          ] },
+        { "id": "age", "ask": "New, or a few years old?", "options": [
+          { "id": "new",  "label": "Brand new",        "sub": "Full warranty, nothing worn out yet", "condition": "new" },
+          { "id": "used", "label": "A few years old",  "sub": "Someone else paid for the first few years", "condition": "used" },
+          { "id": "open", "label": "Show me both",     "sub": "We'll start new and price the used one beside it", "condition": "new" }
+        ] }
+      ]
+    },
+
+    "finder": {
+      "_note": "The car finder (owner, 2026-09-29): a SPECIFIC make and model, never a shape of vehicle. Three types, three uses each, three price tiers, three models per tier = 81 cars. Base trim only (owner: 'display the basic make/model'). Prices are approximate 2026 base MSRP including destination, fixed at build time (_prototype). Tier keys are the ones the insurance and upkeep factor tables already use; the tier's price RANGE on screen is derived from the three models in it, never typed. The used price is the same usedCut every other screen uses, so a used car costs the same wherever it appears.",
+      "_prototype": true,
+      "tiers": ["value", "everyday", "premium"],
+      "types": [
+        { "id": "car",   "label": "Sedan" },
+        { "id": "suv",   "label": "SUV" },
+        { "id": "truck", "label": "Truck" }
+      ],
+      "uses": {
+        "car": [
+          { "id": "commuter",  "label": "Commuter sedan",   "blurb": "Easy on gas for daily miles" },
+          { "id": "family",    "label": "Family sedan",     "blurb": "Room for passengers and a big trunk" },
+          { "id": "sport",     "label": "Sport sedan",      "blurb": "Fun to drive, every day" }
+        ],
+        "suv": [
+          { "id": "adventure", "label": "Adventure SUV",    "blurb": "Trails, camping and room for gear" },
+          { "id": "family",    "label": "3-row family SUV", "blurb": "Seats 7 or more" },
+          { "id": "city",      "label": "Compact SUV",      "blurb": "Easy to park, room for the weekend" }
+        ],
+        "truck": [
+          { "id": "hauling",   "label": "Hauling truck",    "blurb": "Full-size, for heavy towing" },
+          { "id": "adventure", "label": "Off-road truck",   "blurb": "Built for trails and back roads" },
+          { "id": "everyday",  "label": "Everyday truck",   "blurb": "A bed when you need it, easy to live with" }
+        ]
+      },
+      "usedAge": "1-3",
+      "usedLabel": "Used, about 3 years old",
+      "models": [
+        { "id": "versa",        "make": "Nissan",        "model": "Versa",            "type": "car",   "use": "commuter",  "tier": "value",    "fuel": "gas",      "price": 18300, "why": "Seats 5, easy to park", "known": "One of the most affordable new cars in America" },
+        { "id": "k4",           "make": "Kia",           "model": "K4",               "type": "car",   "use": "commuter",  "tier": "value",    "fuel": "gas",      "price": 22600, "why": "Seats 5, big touchscreen", "known": "Kia's bold new compact, packed with tech for the price" },
+        { "id": "elantra",      "make": "Hyundai",       "model": "Elantra",          "type": "car",   "use": "commuter",  "tier": "value",    "fuel": "gas",      "price": 22900, "why": "Seats 5, roomy back seat", "known": "Sharp styling and a long warranty for the money" },
+        { "id": "corollahy",    "make": "Toyota",        "model": "Corolla Hybrid",   "type": "car",   "use": "commuter",  "tier": "everyday", "fuel": "hybrid",   "price": 25000, "why": "Hybrid, seats 5", "known": "Famously reliable, and fuel-sipping" },
+        { "id": "elantrahy",    "make": "Hyundai",       "model": "Elantra Hybrid",   "type": "car",   "use": "commuter",  "tier": "everyday", "fuel": "hybrid",   "price": 26000, "why": "Hybrid, seats 5", "known": "Hybrid mileage with a long warranty" },
+        { "id": "civichy",      "make": "Honda",         "model": "Civic Hybrid",     "type": "car",   "use": "commuter",  "tier": "everyday", "fuel": "hybrid",   "price": 30000, "why": "Hybrid with a sporty feel", "known": "America's favorite compact, now thriftier" },
+        { "id": "ioniq6",       "make": "Hyundai",       "model": "Ioniq 6",          "type": "car",   "use": "commuter",  "tier": "premium",  "fuel": "electric", "price": 38600, "why": "Electric, charges at home", "known": "Sleek electric sedan with fast charging and long range" },
+        { "id": "model3",       "make": "Tesla",         "model": "Model 3",          "type": "car",   "use": "commuter",  "tier": "premium",  "fuel": "electric", "price": 43000, "why": "Electric, charges at home", "known": "The electric sedan that took EVs mainstream" },
+        { "id": "es300h",       "make": "Lexus",         "model": "ES 300h",          "type": "car",   "use": "commuter",  "tier": "premium",  "fuel": "hybrid",   "price": 44500, "why": "Hybrid, quiet and comfortable", "known": "Lexus comfort and quiet with hybrid fuel savings" },
+
+        { "id": "sentra",       "make": "Nissan",        "model": "Sentra",           "type": "car",   "use": "family",    "tier": "value",    "fuel": "gas",      "price": 22500, "why": "Seats 5, roomy back seat", "known": "A comfortable ride and standard safety tech" },
+        { "id": "jetta",        "make": "Volkswagen",    "model": "Jetta",            "type": "car",   "use": "family",    "tier": "value",    "fuel": "gas",      "price": 23500, "why": "Seats 5, big trunk", "known": "A smooth, German-engineered ride and a big trunk" },
+        { "id": "k5",           "make": "Kia",           "model": "K5",               "type": "car",   "use": "family",    "tier": "value",    "fuel": "gas",      "price": 28000, "why": "Seats 5, big trunk", "known": "Sporty styling and lots of features for a midsize price" },
+        { "id": "sonata",       "make": "Hyundai",       "model": "Sonata",           "type": "car",   "use": "family",    "tier": "everyday", "fuel": "gas",      "price": 28500, "why": "Seats 5, big trunk", "known": "Midsize comfort backed by Hyundai's long warranty" },
+        { "id": "camry",        "make": "Toyota",        "model": "Camry",            "type": "car",   "use": "family",    "tier": "everyday", "fuel": "hybrid",   "price": 29500, "why": "Hybrid, seats 5, big trunk", "known": "America's best-selling sedan, now hybrid only" },
+        { "id": "accord",       "make": "Honda",         "model": "Accord",           "type": "car",   "use": "family",    "tier": "everyday", "fuel": "gas",      "price": 29500, "why": "Seats 5, roomy back seat", "known": "A long-time class leader, roomy, refined and reliable" },
+        { "id": "g80",          "make": "Genesis",       "model": "G80",              "type": "car",   "use": "family",    "tier": "premium",  "fuel": "gas",      "price": 56000, "why": "Seats 5, quiet cabin", "known": "Luxury comfort for less than German brands" },
+        { "id": "bmw5",         "make": "BMW",           "model": "5 Series",         "type": "car",   "use": "family",    "tier": "premium",  "fuel": "gas",      "price": 59000, "why": "Seats 5, smooth on the highway", "known": "The benchmark luxury sport sedan" },
+        { "id": "eclass",       "make": "Mercedes-Benz", "model": "E-Class",          "type": "car",   "use": "family",    "tier": "premium",  "fuel": "gas",      "price": 63000, "why": "Seats 5, smooth on the highway", "known": "Mercedes comfort and tech, the classic executive sedan" },
+
+        { "id": "impreza",      "make": "Subaru",        "model": "Impreza",          "type": "car",   "use": "sport",     "tier": "value",    "fuel": "gas",      "price": 24000, "why": "All-wheel drive, seats 5", "known": "All-wheel drive standard, rare at this price" },
+        { "id": "mazda3",       "make": "Mazda",         "model": "Mazda3",           "type": "car",   "use": "sport",     "tier": "value",    "fuel": "gas",      "price": 24500, "why": "Sharp handling, seats 5", "known": "An upscale cabin and sharp handling for the money" },
+        { "id": "civic",        "make": "Honda",         "model": "Civic",            "type": "car",   "use": "sport",     "tier": "value",    "fuel": "gas",      "price": 25000, "why": "Nimble, seats 5", "known": "A reliable classic that's fun to drive" },
+        { "id": "gr86",         "make": "Toyota",        "model": "GR86",             "type": "car",   "use": "sport",     "tier": "everyday", "fuel": "gas",      "price": 31000, "why": "Rear-wheel drive coupe, seats 4", "known": "An affordable rear-wheel-drive sports car, built for fun" },
+        { "id": "jettagli",     "make": "Volkswagen",    "model": "Jetta GLI",        "type": "car",   "use": "sport",     "tier": "everyday", "fuel": "gas",      "price": 33000, "why": "Turbo, seats 5", "known": "A quick turbo compact with a sporty edge" },
+        { "id": "wrx",          "make": "Subaru",        "model": "WRX",              "type": "car",   "use": "sport",     "tier": "everyday", "fuel": "gas",      "price": 34000, "why": "All-wheel drive turbo, seats 5", "known": "Rally-bred all-wheel-drive performance" },
+        { "id": "bmw3",         "make": "BMW",           "model": "3 Series",         "type": "car",   "use": "sport",     "tier": "premium",  "fuel": "gas",      "price": 46000, "why": "Rear-wheel drive, seats 5", "known": "The original sport sedan and the class benchmark" },
+        { "id": "audia5",       "make": "Audi",          "model": "A5",               "type": "car",   "use": "sport",     "tier": "premium",  "fuel": "gas",      "price": 46000, "why": "All-wheel drive, seats 5", "known": "Quattro all-wheel drive and a polished, quiet cabin" },
+        { "id": "cclass",       "make": "Mercedes-Benz", "model": "C-Class",          "type": "car",   "use": "sport",     "tier": "premium",  "fuel": "gas",      "price": 49000, "why": "Turbo, seats 5", "known": "Mercedes luxury and tech in a compact size" },
+
+        { "id": "crosstrek",    "make": "Subaru",        "model": "Crosstrek",        "type": "suv",   "use": "adventure", "tier": "value",    "fuel": "gas",      "price": 27000, "why": "All-wheel drive, high clearance", "known": "A go-anywhere compact with all-wheel drive standard" },
+        { "id": "compass",      "make": "Jeep",          "model": "Compass",          "type": "suv",   "use": "adventure", "tier": "value",    "fuel": "gas",      "price": 28000, "why": "4x4, seats 5", "known": "Jeep's trail heritage in a compact size" },
+        { "id": "broncosport",  "make": "Ford",          "model": "Bronco Sport",     "type": "suv",   "use": "adventure", "tier": "value",    "fuel": "gas",      "price": 31500, "why": "4x4, seats 5, built for trails", "known": "Bronco attitude and real trail skills, compact size" },
+        { "id": "outback",      "make": "Subaru",        "model": "Outback",          "type": "suv",   "use": "adventure", "tier": "everyday", "fuel": "gas",      "price": 34000, "why": "All-wheel drive, room for gear", "known": "The wagon-style SUV, all-wheel drive standard" },
+        { "id": "bronco",       "make": "Ford",          "model": "Bronco",           "type": "suv",   "use": "adventure", "tier": "everyday", "fuel": "gas",      "price": 40000, "why": "4x4, removable roof and doors", "known": "An off-road icon with a removable roof and doors" },
+        { "id": "4runner",      "make": "Toyota",        "model": "4Runner",          "type": "suv",   "use": "adventure", "tier": "everyday", "fuel": "gas",      "price": 42000, "why": "4x4, rugged frame, seats 5", "known": "Legendary toughness and resale value, built for trails" },
+        { "id": "defender",     "make": "Land Rover",    "model": "Defender",         "type": "suv",   "use": "adventure", "tier": "premium",  "fuel": "gas",      "price": 60000, "why": "4x4, seats up to 7", "known": "A British off-road icon, rebuilt with luxury" },
+        { "id": "gx",           "make": "Lexus",         "model": "GX",               "type": "suv",   "use": "adventure", "tier": "premium",  "fuel": "gas",      "price": 65000, "why": "4x4, seats up to 7", "known": "A rugged off-roader with Lexus quality inside" },
+        { "id": "r1s",          "make": "Rivian",        "model": "R1S",              "type": "suv",   "use": "adventure", "tier": "premium",  "fuel": "electric", "price": 77000, "why": "Electric 4x4, seats 7", "known": "An electric adventure SUV with serious off-road skill" },
+
+        { "id": "outlander",    "make": "Mitsubishi",    "model": "Outlander",        "type": "suv",   "use": "family",    "tier": "value",    "fuel": "gas",      "price": 30500, "why": "Seats 7, third row", "known": "Three rows and a long warranty at a value price" },
+        { "id": "sorento",      "make": "Kia",           "model": "Sorento",          "type": "suv",   "use": "family",    "tier": "value",    "fuel": "gas",      "price": 32500, "why": "Seats 7, third row", "known": "Three rows in a size that's easy to park" },
+        { "id": "santafe",      "make": "Hyundai",       "model": "Santa Fe",         "type": "suv",   "use": "family",    "tier": "value",    "fuel": "gas",      "price": 35000, "why": "Seats 7, boxy and roomy", "known": "A boxy, roomy design made for camping and family" },
+        { "id": "telluride",    "make": "Kia",           "model": "Telluride",        "type": "suv",   "use": "family",    "tier": "everyday", "fuel": "gas",      "price": 38000, "why": "Seats 8, third row", "known": "The award-winning three-row family favorite" },
+        { "id": "grandhl",      "make": "Toyota",        "model": "Grand Highlander", "type": "suv",   "use": "family",    "tier": "everyday", "fuel": "gas",      "price": 42000, "why": "Seats 8, adult-size third row", "known": "Toyota reliability with a real adult-size third row" },
+        { "id": "pilot",        "make": "Honda",         "model": "Pilot",            "type": "suv",   "use": "family",    "tier": "everyday", "fuel": "gas",      "price": 42000, "why": "Seats 8, third row", "known": "Honda's roomy, dependable family hauler" },
+        { "id": "lexustx",      "make": "Lexus",         "model": "TX",               "type": "suv",   "use": "family",    "tier": "premium",  "fuel": "gas",      "price": 56000, "why": "Seats 7, adult-size third row", "known": "Lexus luxury with room for seven adults" },
+        { "id": "xc90",         "make": "Volvo",         "model": "XC90",             "type": "suv",   "use": "family",    "tier": "premium",  "fuel": "gas",      "price": 59000, "why": "Seats 7, quiet cabin", "known": "Scandinavian design with a reputation for safety" },
+        { "id": "q7",           "make": "Audi",          "model": "Q7",               "type": "suv",   "use": "family",    "tier": "premium",  "fuel": "gas",      "price": 62000, "why": "Seats 7, all-wheel drive", "known": "Smooth, quiet three-row luxury with quattro" },
+
+        { "id": "kicks",        "make": "Nissan",        "model": "Kicks",            "type": "suv",   "use": "city",      "tier": "value",    "fuel": "gas",      "price": 22500, "why": "Seats 5, easy to park", "known": "An easy-to-park city SUV at a low price" },
+        { "id": "kona",         "make": "Hyundai",       "model": "Kona",             "type": "suv",   "use": "city",      "tier": "value",    "fuel": "gas",      "price": 25500, "why": "Seats 5, easy to park", "known": "Fun styling in a city-friendly size" },
+        { "id": "seltos",       "make": "Kia",           "model": "Seltos",           "type": "suv",   "use": "city",      "tier": "value",    "fuel": "gas",      "price": 25500, "why": "All-wheel drive available, seats 5", "known": "Roomy for its size, with lots of tech" },
+        { "id": "rav4",         "make": "Toyota",        "model": "RAV4",             "type": "suv",   "use": "city",      "tier": "everyday", "fuel": "hybrid",   "price": 31000, "why": "Hybrid, seats 5", "known": "America's best-selling SUV, now a hybrid" },
+        { "id": "crv",          "make": "Honda",         "model": "CR-V",             "type": "suv",   "use": "city",      "tier": "everyday", "fuel": "gas",      "price": 31000, "why": "Seats 5, big cargo area", "known": "Practical, reliable and surprisingly roomy inside" },
+        { "id": "cx50",         "make": "Mazda",         "model": "CX-50",            "type": "suv",   "use": "city",      "tier": "everyday", "fuel": "gas",      "price": 31500, "why": "All-wheel drive, seats 5", "known": "A rugged look with an upscale Mazda feel" },
+        { "id": "nx",           "make": "Lexus",         "model": "NX",               "type": "suv",   "use": "city",      "tier": "premium",  "fuel": "gas",      "price": 44000, "why": "Seats 5, quiet cabin", "known": "Lexus quality and quiet in a compact size" },
+        { "id": "modely",       "make": "Tesla",         "model": "Model Y",          "type": "suv",   "use": "city",      "tier": "premium",  "fuel": "electric", "price": 45000, "why": "Electric, charges at home", "known": "Tesla's popular electric SUV, with Supercharger access" },
+        { "id": "x3",           "make": "BMW",           "model": "X3",               "type": "suv",   "use": "city",      "tier": "premium",  "fuel": "gas",      "price": 51000, "why": "All-wheel drive, seats 5", "known": "A sporty drive in a practical size" },
+
+        { "id": "silverado",    "make": "Chevrolet",     "model": "Silverado 1500",   "type": "truck", "use": "hauling",   "tier": "value",    "fuel": "gas",      "price": 38500, "why": "Full-size bed, heavy towing", "known": "Chevy's full-size workhorse pickup" },
+        { "id": "f150",         "make": "Ford",          "model": "F-150",            "type": "truck", "use": "hauling",   "tier": "value",    "fuel": "gas",      "price": 39500, "why": "Full-size bed, heavy towing", "known": "America's best-selling truck for over 40 years" },
+        { "id": "ram1500",      "make": "Ram",           "model": "1500",             "type": "truck", "use": "hauling",   "tier": "value",    "fuel": "gas",      "price": 41000, "why": "Full-size, smooth ride", "known": "Known for the smoothest ride in its class" },
+        { "id": "f250",         "make": "Ford",          "model": "F-250 Super Duty", "type": "truck", "use": "hauling",   "tier": "everyday", "fuel": "gas",      "price": 46000, "why": "Heavy duty, big trailers", "known": "Heavy-duty towing for big trailers and campers" },
+        { "id": "silverado2500","make": "Chevrolet",     "model": "Silverado 2500HD", "type": "truck", "use": "hauling",   "tier": "everyday", "fuel": "gas",      "price": 47000, "why": "Heavy duty, big trailers", "known": "Heavy-duty strength for serious towing" },
+        { "id": "ram2500",      "make": "Ram",           "model": "2500",             "type": "truck", "use": "hauling",   "tier": "everyday", "fuel": "gas",      "price": 47500, "why": "Heavy duty, big trailers", "known": "Heavy-duty capability with Ram's comfortable cabin" },
+        { "id": "sierradenali", "make": "GMC",           "model": "Sierra Denali",    "type": "truck", "use": "hauling",   "tier": "premium",  "fuel": "gas",      "price": 66000, "why": "Full-size, luxury cabin", "known": "GMC's top-of-the-line luxury pickup" },
+        { "id": "ramlimited",   "make": "Ram",           "model": "1500 Limited",     "type": "truck", "use": "hauling",   "tier": "premium",  "fuel": "gas",      "price": 66000, "why": "Full-size, luxury cabin", "known": "A luxury-car cabin in a full-size pickup" },
+        { "id": "f150plat",     "make": "Ford",          "model": "F-150 Platinum",   "type": "truck", "use": "hauling",   "tier": "premium",  "fuel": "gas",      "price": 67000, "why": "Full-size, luxury cabin", "known": "The F-150 dressed in premium comfort" },
+
+        { "id": "frontier",     "make": "Nissan",        "model": "Frontier",         "type": "truck", "use": "adventure", "tier": "value",    "fuel": "gas",      "price": 32000, "why": "Midsize, 4x4 available", "known": "A simple, tough midsize truck with V6 power" },
+        { "id": "colorado",     "make": "Chevrolet",     "model": "Colorado",         "type": "truck", "use": "adventure", "tier": "value",    "fuel": "gas",      "price": 32500, "why": "Midsize, 4x4 available", "known": "A capable midsize pickup in a garage-friendly size" },
+        { "id": "ranger",       "make": "Ford",          "model": "Ranger",           "type": "truck", "use": "adventure", "tier": "value",    "fuel": "gas",      "price": 34000, "why": "Midsize, 4x4 available", "known": "Ford toughness in a midsize package" },
+        { "id": "gladiator",    "make": "Jeep",          "model": "Gladiator",        "type": "truck", "use": "adventure", "tier": "everyday", "fuel": "gas",      "price": 40000, "why": "4x4, removable roof and doors", "known": "The only open-air pickup, trail-rated by Jeep" },
+        { "id": "trailboss",    "make": "Chevrolet",     "model": "Colorado Trail Boss", "type": "truck", "use": "adventure", "tier": "everyday", "fuel": "gas",   "price": 40500, "why": "4x4, lifted for trails", "known": "A lifted midsize truck, ready for the trail" },
+        { "id": "tacomatrd",    "make": "Toyota",        "model": "Tacoma TRD Off-Road", "type": "truck", "use": "adventure", "tier": "everyday", "fuel": "gas",   "price": 41000, "why": "4x4, off-road suspension", "known": "Toyota's trail-ready midsize legend" },
+        { "id": "rangerraptor", "make": "Ford",          "model": "Ranger Raptor",    "type": "truck", "use": "adventure", "tier": "premium",  "fuel": "gas",      "price": 57000, "why": "Desert-race suspension, 4x4", "known": "Desert-race suspension in a midsize truck" },
+        { "id": "ramrho",       "make": "Ram",           "model": "1500 RHO",         "type": "truck", "use": "adventure", "tier": "premium",  "fuel": "gas",      "price": 72000, "why": "Desert-race suspension, full-size", "known": "High-speed off-road performance, full size" },
+        { "id": "f150raptor",   "make": "Ford",          "model": "F-150 Raptor",     "type": "truck", "use": "adventure", "tier": "premium",  "fuel": "gas",      "price": 80000, "why": "Desert-race suspension, full-size", "known": "The original desert-racing pickup" },
+
+        { "id": "maverick",     "make": "Ford",          "model": "Maverick",         "type": "truck", "use": "everyday",  "tier": "value",    "fuel": "hybrid",   "price": 28500, "why": "Hybrid, compact bed, seats 5", "known": "The affordable hybrid pickup that started a trend" },
+        { "id": "santacruz",    "make": "Hyundai",       "model": "Santa Cruz",       "type": "truck", "use": "everyday",  "tier": "value",    "fuel": "gas",      "price": 30000, "why": "Compact bed, drives like an SUV", "known": "Pickup-bed utility with SUV comfort" },
+        { "id": "tacoma",       "make": "Toyota",        "model": "Tacoma",           "type": "truck", "use": "everyday",  "tier": "value",    "fuel": "gas",      "price": 33500, "why": "Midsize, seats 5", "known": "Legendary reliability and resale value" },
+        { "id": "canyon",       "make": "GMC",           "model": "Canyon",           "type": "truck", "use": "everyday",  "tier": "everyday", "fuel": "gas",      "price": 40000, "why": "Midsize, seats 5", "known": "An upscale midsize pickup from GMC" },
+        { "id": "ridgeline",    "make": "Honda",         "model": "Ridgeline",        "type": "truck", "use": "everyday",  "tier": "everyday", "fuel": "gas",      "price": 41000, "why": "All-wheel drive, lockable trunk in the bed", "known": "An SUV-smooth ride with a lockable trunk in the bed" },
+        { "id": "tundra",       "make": "Toyota",        "model": "Tundra",           "type": "truck", "use": "everyday",  "tier": "everyday", "fuel": "gas",      "price": 42000, "why": "Full-size, seats 5", "known": "Toyota's full-size truck, with hybrid power available" },
+        { "id": "lightning",    "make": "Ford",          "model": "F-150 Lightning",  "type": "truck", "use": "everyday",  "tier": "premium",  "fuel": "electric", "price": 55000, "why": "Electric, full-size, charges at home", "known": "The electric F-150 that can power your home" },
+        { "id": "r1t",          "make": "Rivian",        "model": "R1T",              "type": "truck", "use": "everyday",  "tier": "premium",  "fuel": "electric", "price": 71000, "why": "Electric 4x4, seats 5", "known": "An electric adventure truck with clever storage" },
+        { "id": "silveradoev",  "make": "Chevrolet",     "model": "Silverado EV",     "type": "truck", "use": "everyday",  "tier": "premium",  "fuel": "electric", "price": 74000, "why": "Electric, full-size, charges at home", "known": "An electric full-size truck with long range" }
+      ],
+
+      "quiz": {
+        "_note": "Short and fun (owner): the primary use, who rides along, where they drive, how green, and a vibe. Each option scores the nine type.use buckets; the highest wins and ties fall to the order of `buckets`. `green` is not a score: it puts the matching drivetrain first among the three cars shown. A new question is a data entry, not a branch.",
+        "buckets": ["suv.city", "car.commuter", "suv.family", "car.family", "suv.adventure", "truck.everyday", "truck.adventure", "truck.hauling", "car.sport"],
+        "questions": [
+          { "id": "weekend", "ask": "On a typical weekend, what do you use your car for?", "short": "Weekends", "emoji": "🗓️", "options": [
+            { "id": "outdoors", "emoji": "🏕️", "label": "Trips to the trail or campsite", "sub": "Dirt roads, gear, getting out of town",        "scores": { "suv.adventure": 3, "truck.adventure": 2 } },
+            { "id": "family",   "emoji": "⚽", "label": "Driving to games and practice", "sub": "For the kids, or for you", "scores": { "suv.family": 3, "car.family": 2 } },
+            { "id": "projects", "emoji": "📦", "label": "Hauling something big", "sub": "Furniture, mulch, a trailer or boat", "scores": { "truck.hauling": 3, "truck.everyday": 2 } },
+            { "id": "city",     "emoji": "🛍️", "label": "Errands and short trips", "sub": "Shopping, lunch, getting around town", "scores": { "suv.city": 2, "car.commuter": 2, "car.sport": 1 } }
+          ] },
+          { "id": "crew", "ask": "Who's usually riding with you?", "short": "Riders", "emoji": "👥", "options": [
+            { "id": "solo",   "emoji": "🎧", "label": "Just me and my playlist", "scores": { "car.sport": 2, "car.commuter": 2, "truck.everyday": 1 } },
+            { "id": "duo",    "emoji": "👫", "label": "Me plus one",             "scores": { "suv.city": 2, "car.commuter": 1, "car.sport": 1, "truck.adventure": 1 } },
+            { "id": "family", "emoji": "👨‍👩‍👧", "label": "A full car, 3 to 5",      "scores": { "car.family": 2, "suv.family": 1, "suv.adventure": 1, "suv.city": 1 } },
+            { "id": "crowd",  "emoji": "🚌", "label": "The whole team, 6 or more", "scores": { "suv.family": 4 } }
+          ] },
+          { "id": "drive", "ask": "What's your everyday drive?", "short": "Driving", "emoji": "🚗", "options": [
+            { "id": "town",    "emoji": "🏙️", "label": "Short hops around town",  "scores": { "suv.city": 2, "car.commuter": 2 } },
+            { "id": "highway", "emoji": "🛣️", "label": "Long highway miles",      "scores": { "car.commuter": 2, "car.family": 1, "car.sport": 1 } },
+            { "id": "dirt",    "emoji": "🌄", "label": "Dirt roads and back roads", "scores": { "suv.adventure": 2, "truck.adventure": 2 } },
+            { "id": "tow",     "emoji": "🚤", "label": "Pulling a trailer or boat", "scores": { "truck.hauling": 3, "truck.everyday": 1 } }
+          ] },
+          { "id": "green", "ask": "How green are you feeling?", "short": "Fuel", "emoji": "🌱", "options": [
+            { "id": "plug",   "emoji": "🔌", "label": "Plug it in",         "sub": "Electric, charge at home",     "green": "electric", "scores": { "suv.city": 1, "car.commuter": 1 } },
+            { "id": "hybrid", "emoji": "🍃", "label": "Hybrid's my speed",  "sub": "Still gas, a lot less of it", "green": "hybrid",   "scores": { "car.commuter": 1, "suv.city": 1 } },
+            { "id": "gas",    "emoji": "⛽", "label": "Gas is fine",        "sub": "Fill up anywhere",            "green": "gas",      "scores": {} },
+            { "id": "unsure", "emoji": "🤷", "label": "Not sure yet",       "sub": "Show me everything",          "scores": {} }
+          ] },
+          { "id": "vibe", "ask": "Pick a vibe", "short": "Vibe", "emoji": "✨", "options": [
+            { "id": "fun",   "emoji": "🏎️", "label": "Fun to drive",        "scores": { "car.sport": 3, "truck.adventure": 1 } },
+            { "id": "comfy", "emoji": "🛋️", "label": "Smooth and quiet",    "scores": { "car.family": 2, "suv.family": 1 } },
+            { "id": "tough", "emoji": "💪", "label": "Tough and capable",   "scores": { "suv.adventure": 2, "truck.hauling": 1, "truck.adventure": 1 } },
+            { "id": "easy",  "emoji": "🔧", "label": "Simple and reliable", "scores": { "car.commuter": 1, "suv.city": 1, "truck.everyday": 1 } }
+          ] }
+        ]
+      }
+    },
+
+    "peerSpend": {
+      "_note": "What peers spend on a car each month, by income band (the peer model's b1-b5) and household size 1 / 2 / 3 / 4+ (ARRAY INDEX = size - 1, the same trap as peer-benchmarks). `payment` is the car loan payment alone; `running` is insurance, fuel and upkeep. Running is scaled by the ZIP's Transport cost-of-living multiplier (benchColMultipliers), the payment is not: a car costs about the same to buy everywhere, and what differs by place is keeping it. _prototype: shaped on Experian's average new (~$745) and used (~$520) payments and AAA's ownership costs, scaled by income. Peers, never real users (D23).",
+      "_prototype": true,
+      "payment": {
+        "b1": [300, 320, 340, 360],
+        "b2": [410, 430, 455, 475],
+        "b3": [510, 535, 560, 585],
+        "b4": [620, 650, 680, 710],
+        "b5": [780, 820, 860, 900]
+      },
+      "running": {
+        "b1": [330, 350, 370, 390],
+        "b2": [360, 385, 405, 425],
+        "b3": [390, 415, 440, 460],
+        "b4": [420, 450, 475, 500],
+        "b5": [470, 500, 530, 560]
+      }
+    },
+
+    "alternatives": { "usedCut": 0.28, "tierCut": 0.35, "usedAge": "1-3", "_prototype": true,
+                      "_note": "Fixed cuts, no real price data: used 1-3 yrs at -28%, one tier down at -35%. The used cut was 20% until 2026-09-27, which put a 1-3 year old car far too close to the new one beside it (owner: used price feels too low, especially compared to other brand). Most of what a car loses goes in the first two or three years, so 28% is the nearer figure." },
+
+    "retention": {
+      "year1": 0.80, "years2to5": 0.85, "year6plus": 0.88,
+      "tierAdjust": { "luxury": -0.03, "premium": -0.01, "everyday": 0, "value": 0.02 },
+      "fuelAdjust": { "gas": 0, "diesel": 0, "hybrid": 0.01, "electric": -0.03 },
+      "_prototype": true,
+      "_note": "Share of value kept each year. Luxury and electric lose faster, Value slower. Used cars start at their age band."
+    },
+
+    "factors": {
+      "insuranceType":  { "car": 1.0, "suv": 1.05, "minivan": 0.95, "truck": 1.05, "motorcycle": 0.45 },
+      "insuranceTier":  { "luxury": 1.55, "premium": 1.25, "everyday": 1.0, "value": 0.9 },
+      "insuranceCondition": { "new": 1.0, "1-3": 0.9, "4-6": 0.8, "7+": 0.7 },
+      "insuranceFullCoverage": 1.6,
+      "_insuranceCoverageNote": "The ESF's state figure is the AVERAGE premium written in that state, and most of those policies are liability-only on a paid-off car. Every car priced here is being bought - usually financed, which makes full coverage a condition of the loan - so the base is scaled to a full-coverage policy before the type, tier and age factors apply. Added 2026-09-27 (owner: 'insurance seems way too low').",
+      "upkeepAge":  { "new": 1.00, "1-3": 1.35, "4-6": 1.75, "7+": 2.20 },
+      "upkeepTier": { "luxury": 2.00, "premium": 1.40, "everyday": 1.00, "value": 0.95 },
+      "upkeepFuel": { "gas": 1.0, "diesel": 1.1, "hybrid": 0.95, "electric": 0.7 },
+      "upkeepType": { "car": 1.0, "suv": 1.05, "minivan": 1.05, "truck": 1.1, "motorcycle": 0.8 },
+      "_prototype": true,
+      "_note": "Base insurance is the ESF's NAIC state average (emergency-fund.json driving.insuranceAnnualByState). Upkeep no longer uses the ESF's flat per-mile rate — see the upkeep block below. Every factor set is centred on 1.00 at the baseline it describes: a NEW STANDARD car. An earlier draft put new at 0.60 and standard at 0.85, which multiplied out to about a third of the right figure and quietly undid the model."
+    },
+
+    "upkeep": {
+      "base": 400,
+      "perMile": 0.06,
+      "_source": "AAA Your Driving Costs 2026 puts maintenance, repair and tires at 11.7 cents/mile at 15,000 miles a year (11.04 in 2025, 10.13 in 2024). Split into a TIME component and a MILEAGE component, because pure cents-per-mile is wrong at low mileage: oil degrades by date, tires age out, batteries and fluids run on a calendar, so a 3-mile-a-day driver is not nearly free to maintain. At 5,475 miles a year this gives 400 + 329 = 729/yr, close to AAA's 641 pure per-mile figure at the same mileage, with a sensible floor.",
+      "_baseline": "729/yr is a NEW STANDARD car averaged across 5 years of ownership — which is what AAA's 11.7 cents/mile measures, a new car over 5 years and 75,000 miles, not a car in any one year. The condition factor is therefore an average over the whole 5 years: a car bought at 4 years old is 9 by the end.",
+      "_tierAnchor": "Tier factors are anchored on reported brand averages of roughly 583/yr for a Honda owner against roughly 1,623 for a Porsche owner. Directionally reasoned, not sourced per brand.",
+      "_prototype": true
+    },
+
+    "milesPerDayDefault": 15,
+    "milesFloor": 2,
+    "milesBandMidpoints": { "none": 2, "lt5": 3.5, "5to15": 10, "15to30": 25, "30plus": 40 },
+    "_milesBandNote": "What each onboarding band is worth to THIS tool, keyed on the ONB_MILES ids (owner, 2026-09-26). Deliberately not the same as the emergency fund's own midpoints: 15-30 is 25 here against 22 there, and under-5 is 3.5 against 3. Car costs scale straight off this number, so the owner set it for the car rather than inheriting a figure tuned for a budget line.",
+    "_milesNote": "This feature never asks how far you drive: it reads the shared profile and otherwise assumes milesPerDayDefault. milesFloor is what I-do-not-drive becomes HERE, because somebody buying a car drives a little; the onboarding band itself is untouched, where 0 still means no car to the emergency fund.",
+    "mpg": { "car": 24, "suv": 15, "minivan": 19, "truck": 14, "motorcycle": 45 },
+    "pumpPricePerGallon": 4.25,
+    "_pumpNote": "THIS TOOL'S OWN PUMP PRICE, not the emergency fund's (owner, 2026-09-27: 'fuel price is still too low... i think gas price is higher than $4 too'). The ESF prices a bill being paid this month, where the EIA's 3.15 national average is the right figure. This tool prices five years of fuel starting whenever the car is bought, and the owner set the figure it should plan against. A state that already exceeds it in the ESF table keeps its own higher number.",
+    "_mpgNote": "REAL-WORLD combined, not EPA window-sticker. PUT BACK 2026-09-27 after a day at the raised figures: the owner reads a gas SUV as about 15 mpg and showed the arithmetic they expect (15 miles a day x 30 days / 15 mpg x $4 a gallon), so these are the numbers this tool plans against. Window figures come off a test cycle; short trips, cold starts, a loaded car and a heavy right foot all land well under them.",
+    "hybridMpgFactor": 1.45,
+    "dieselMpgFactor": 1.25,
+    "dieselPremiumPerGallon": 0.60,
+    "kWhPerMile": { "car": 0.28, "suv": 0.35, "minivan": 0.38, "truck": 0.48, "motorcycle": 0.10 },
+    "nationalCentsPerKwh": 16.5,
+    "_fuelSource": "_prototype: EPA combined MPG class averages (rounded). Pump price reuses the ESF's EIA figures; electricity uses the state rate in zip-cost-of-living.json.",
+
+    "subscriptions": { "luxury": 45, "premium": 30, "everyday": 15, "value": 10, "_prototype": true,
+                       "_note": "Monthly connected-services bill: satellite radio, the app that unlocks and pre-heats the car, live traffic and in-car data, and on some brands the remote start or extra horsepower that now arrives as a subscription. RAISED 2026-09-27 (owner: 'what are subscriptions for a car? $15 seems too low'). Satellite radio alone is about $15 after the free trial, so a Standard car is no longer zero, and the label on screen now names what it is." },
+    "charger": 1400,
+    "gear": 800,
+    "_flatSource": "_prototype: Level 2 home charger installed ($1,200-$1,600); starter riding gear  -  helmet, jacket, gloves ($600-$1,000).",
+
+    "states": {
+      "_national": { "name": "your state", "salesTax": 0.06, "creditsTradeIn": true, "titleFee": 50, "registration": 100, "renewal": 100, "docFee": 300 },
+      "CA": { "name": "California", "salesTax": 0.0725, "creditsTradeIn": false, "titleFee": 25, "registration": 250, "renewal": 250, "docFee": 85 },
+      "TN": { "name": "Tennessee",  "salesTax": 0.07,   "creditsTradeIn": true,  "titleFee": 14, "registration": 30,  "renewal": 30,  "docFee": 500 },
+      "AR": { "name": "Arkansas",   "salesTax": 0.065,  "creditsTradeIn": true,  "titleFee": 10, "registration": 30,  "renewal": 30,  "docFee": 129 },
+      "TX": { "name": "Texas",      "salesTax": 0.0625, "creditsTradeIn": true,  "titleFee": 33, "registration": 75,  "renewal": 75,  "docFee": 150 },
+      "NY": { "name": "New York",   "salesTax": 0.04,   "creditsTradeIn": true,  "titleFee": 50, "registration": 140, "renewal": 140, "docFee": 175 },
+      "FL": { "name": "Florida",    "salesTax": 0.06,   "creditsTradeIn": true,  "titleFee": 77, "registration": 225, "renewal": 45,  "docFee": 999 },
+      "_prototype": true,
+      "_note": "State base sales-tax rates (local add-ons not included). California taxes the full price  -  no trade-in credit. Fees are rounded placeholders; registration in some states is value-based and is not modelled."
+    }
+  }
+}
+;
