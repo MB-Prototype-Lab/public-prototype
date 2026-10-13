@@ -67,3 +67,7 @@ entries. Flow worker owns flows/<id>/ plus tests/flows-runtime.cjs and relevant
 behavior tests. Publication worker exclusively owns scripts/publish.py and focused
 publication tests until integrated. Cleanup/docs work is serialized after packages
 exist. Lead owns this contract, baseline, handoff and integration review.
+
+The reviewer expand button matches the full app’s 28×48px **›** styling while
+retaining Flow positioning and narrow-screen availability. Its accessible name is
+**Tools**; opening hides it, and Close reveals it and restores focus.

@@ -4,7 +4,8 @@ function mbFlowToolsSync() {
   var open = !state.adminCollapsed;
   document.querySelector('.page').classList.toggle('admin-collapsed', !open);
   var toggle = document.getElementById('adminExpandTab');
-  toggle.style.display = 'flex';
+  toggle.style.display = open ? 'none' : 'flex';
+  toggle.hidden = open;
   toggle.setAttribute('aria-expanded', String(open));
   document.getElementById('flowAdmin').hidden = !open;
   document.getElementById('adminSessionLog').textContent = 'Session: ' + mbFlowSession;

@@ -113,6 +113,10 @@ this guide; absent platform evidence remains pending and must be named in the PR
 Optional Flow browser checks: `tests/flows-browser.cjs` exercises package journeys,
 outside-phone Tools and the actual creation adapter on file URLs with spaces and
 HTTP. `tests/flows-snapshot-browser.cjs` exercises offline exported packages; its
-header describes the required snapshot IDs and environment. Both require an
+header describes the required snapshot IDs and environment. Set
+`MB_FLOW_SNAPSHOT_FILE_ROOT` to an artifact directory with spaces to also check
+file URLs. The shared `tests/flows-tools-browser.cjs` helper compares normal/hover
+button styles against the full app in all four themes and checks Enter/Space,
+hidden-while-open behavior, Close focus, placement and phone sizing. Both require an
 existing Playwright/browser installation. Snapshot smoke blocks all external
 requests. Record these results separately from PM and platform acceptance.

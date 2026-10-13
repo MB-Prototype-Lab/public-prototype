@@ -9,15 +9,18 @@ const path = require('node:path');
 const os = require('node:os');
 const {execFileSync} = require('node:child_process');
 const { pathToFileURL } = require('node:url');
+const http = require('node:http');
 const repo = process.cwd();
+const {checkExpandButton} = require('./flows-tools-browser.cjs');
 async function expectScreen(page, screen) { await page.waitForFunction(s => typeof state !== 'undefined' && state.screen === s, screen); }
 async function openTools(page) {
- const toggle=page.getByRole('button',{name:'Tools',exact:true});
+ const toggle=page.locator('#adminExpandTab');
  if(await toggle.getAttribute('aria-expanded')==='false') await toggle.click();
  assert.equal(await toggle.getAttribute('aria-expanded'),'true');
 }
 async function checkTools(page) {
- assert.equal(await page.getByRole('button',{name:'Tools',exact:true}).getAttribute('aria-expanded'),'false');
+ await checkExpandButton(page, page.context().browser());
+ assert.equal(await page.locator('#adminExpandTab').getAttribute('aria-expanded'),'false');
  assert.equal(await page.locator('.mb-flow-controls').count(),0);
  assert.equal(await page.locator('.phone #topbarRoot').innerHTML(),'');
  assert.equal(await page.locator('#screenRoot').evaluate(el=>el.classList.contains('no-topbar')),true);
@@ -27,9 +30,9 @@ async function checkTools(page) {
  for(const width of [1440,900,390,320]) {
   await page.setViewportSize({width,height:900});
   const phoneBefore=await page.locator('.phone').boundingBox();
-  await page.getByRole('button',{name:'Tools',exact:true}).focus();
+  await page.locator('#adminExpandTab').focus();
   await page.keyboard.press('Enter');
-  assert.equal(await page.getByRole('button',{name:'Tools',exact:true}).getAttribute('aria-expanded'),'true');
+  assert.equal(await page.locator('#adminExpandTab').getAttribute('aria-expanded'),'true');
   const phone=await page.locator('.phone').boundingBox(), admin=await page.locator('.admin').boundingBox();
   assert.equal(phone.width,phoneBefore.width);assert.equal(phone.height,phoneBefore.height);
   assert(width>900 ? admin.x>=phone.x+phone.width : admin.y>=phone.y+phone.height);
@@ -37,7 +40,7 @@ async function checkTools(page) {
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   assert.equal(await page.evaluate(()=>JSON.stringify(state.onboarding)),answers);
   await page.getByRole('button',{name:'Close Tools',exact:true}).click();
-  assert.equal(await page.getByRole('button',{name:'Tools',exact:true}).evaluate(el=>el===document.activeElement),true);
+  assert.equal(await page.locator('#adminExpandTab').evaluate(el=>el===document.activeElement),true);
  }
  await page.setViewportSize({width:390,height:844});
  await openTools(page);
@@ -56,7 +59,7 @@ async function checkTools(page) {
  await page.getByRole('button',{name:'Close Tools',exact:true}).click();
  await page.reload();
  await expectScreen(page,'onboarding');
- assert.equal(await page.getByRole('button',{name:'Tools',exact:true}).getAttribute('aria-expanded'),'false');
+ assert.equal(await page.locator('#adminExpandTab').getAttribute('aria-expanded'),'false');
 }
 async function next(page) { await page.locator('#onbContinue').click(); }
 async function setup(page, destination='esfBuild') {
@@ -246,6 +249,17 @@ async function purchaseBrowser(browser,temp,mode) {
 (async()=>{
  const browser=await chromium.launch({headless:true, args:JSON.parse(process.env.MB_CHROMIUM_ARGS || '[]'), ...(process.env.MB_CHROMIUM_EXECUTABLE ? {executablePath:process.env.MB_CHROMIUM_EXECUTABLE} : {})});
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'MoneyBuddy Flow path spaces '));
+ const server=http.createServer((req,res)=>{
+  const file=path.resolve(temp,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));
+  if(!file.startsWith(temp+path.sep)){res.writeHead(403).end();return;}
+  fs.readFile(file,(error,data)=>{
+   if(error){res.writeHead(404).end();return;}
+   const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json'};
+   res.setHeader('Content-Type',types[path.extname(file)] || 'application/octet-stream');
+   res.end(data);
+  });
+ });
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  try {
   const pkg=path.join(temp,'flows','emergency-fund');
   fs.mkdirSync(path.dirname(pkg),{recursive:true});
@@ -256,12 +270,14 @@ async function purchaseBrowser(browser,temp,mode) {
   fs.cpSync(path.join(repo,'app'),starter,{recursive:true});
   execFileSync('python3',['-c', 'from pathlib import Path; from scripts.flows import adapt_starter; import sys; adapt_starter(Path(sys.argv[1]))',starter],{cwd:repo});
   fs.writeFileSync(path.join(starter,'flow-config.js'),'window.MB_FLOW={id:"starter",entry:"onboarding",allowed_screens:["onboarding"],setup_steps:[]};');
+  for(const mode of ['file','http']) {
   const starterPage=await browser.newPage({viewport:{width:390,height:844}});
   const starterErrors=[];
   starterPage.on('pageerror',e=>starterErrors.push(e.message));
-  await starterPage.goto(pathToFileURL(path.join(starter,'index.html')).href);
+  await starterPage.goto(mode==='file' ? pathToFileURL(path.join(starter,'index.html')).href : 'http://127.0.0.1:'+server.address().port+'/flows/starter/index.html');
   await expectScreen(starterPage,'onboarding');
   assert.equal(await starterPage.locator('.admin:visible').count(),0);
+  await checkExpandButton(starterPage,browser);
   await openTools(starterPage);
   assert.equal(await starterPage.locator('#flowSetupStep').count(),0);
   assert.equal(await starterPage.locator('.phone button[onclick*="mbFlowRestart"], .phone button[onclick*="mbFlowExit"]').count(),0);
@@ -271,7 +287,8 @@ async function purchaseBrowser(browser,temp,mode) {
   await expectScreen(starterPage,'onboarding');
   assert.equal(starterErrors.length,0,starterErrors.join('\n'));
   await starterPage.close();
-  console.log('PASS generated starter: collapsed outside-phone tools, safe profile-only setup controls, excluded routes blocked');
+  console.log('PASS generated starter '+mode+': collapsed outside-phone tools, safe profile-only setup controls, excluded routes blocked');
+  }
 
   for (const mode of (process.env.MB_FLOW_BASE_URL ? ['file','http'] : ['file'])) {
    const page=await browser.newPage({viewport:{width:390,height:844}});
@@ -326,5 +343,5 @@ async function purchaseBrowser(browser,temp,mode) {
    await page.close();
    await purchaseBrowser(browser,temp,mode);
   }
- }finally{await browser.close();fs.rmSync(temp,{recursive:true,force:true});}
+ }finally{await browser.close();await new Promise(resolve=>server.close(resolve));fs.rmSync(temp,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1});
