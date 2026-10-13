@@ -1,8 +1,9 @@
 # Contained Flows — implementation plan
 
 Status: approved by the user on 2026-10-11, including the Astra/Sol 6.1 delegation
-and Flow refresh defaults. Implementation will start on the laptop; see
-[the handoff](flows-handoff.md). Prepared against fetched main
+and Flow refresh defaults. Implementation and local verification are complete;
+PM/platform acceptance remains pending. See [verification](flows-verification.md)
+and [the handoff](flows-handoff.md). Prepared against fetched main
 `8f7b142cd3c065d1dc1b324d741ab9c9a5f8b440`.
 
 ## Outcome and accepted decisions

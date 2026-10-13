@@ -96,7 +96,7 @@ source and retains its documented speech/silence fallback.
 
 PM acceptance for Emergency Fund: full and skipped setup; expense help/Buddy;
 planning, save/reopen/repeat save; exactly one fund goal and immediate correct budget
-replacement. Big Purchase: setup Back/Skip; vehicle selection/owned-car/quiz,
+replacement. Big Purchase: setup Back/Skip; known-model/new/used selection and quiz,
 compare/finance/lease/planning; repeat purchase saves without budget writes; both
 before-purchase and after-save ESF branches, their distinct Back callers, and return
 to the same car session with inputs intact. Included ESF saves retain their budget

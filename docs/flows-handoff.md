@@ -89,3 +89,96 @@ are in the approved plan; avoid reconstructing them from historical flag comment
   and combined runtime/publication checks. PM/platform verification remains open.
 - Authorization is unchanged: branch pushes/CI permitted; wait for PM verification
   before the implementation PR. No merge, settings change or publication.
+
+### Publication checkpoint
+
+Contract/baseline checkpoint committed as `b5478e5`. Publication code/test checkpoint
+`5725c10` adds `flow-static-v1` without changing real publication records. All 27
+publication tests (16 existing and 11 new), real historical catalog digest checks,
+Python compilation and whitespace checks passed. ARM Node executed tracking URL
+resistance checks. This checkpoint depends on the foundation validator currently
+being finalized in the working tree.
+
+Foundation created `flows/emergency-fund` from recorded app source, with task base
+`b5478e5`; seven negative foundation tests and real-source create/check passed.
+The starter is authoring scaffolding, not a completed participant Flow. A Sol
+worker now owns its actual ESF implementation and runtime tests; final foundation
+hardening and syntax checks continue separately. No app cleanup has begun.
+
+### Resume after usage-window limit — 2026-10-12
+
+User requested resume after reset. Fetch confirmed origin/main still `8f7b142`;
+branch HEAD remains `5725c10` with both checkpoint commits local, and all unfinished
+work preserved. Foundation and ESF workers resumed their bounded assignments.
+Contrary to the earlier coarse checkpoint, partial ESF policy/runtime/onboarding
+edits had reached disk before the interruption; they are being completed, not
+recreated. Runtime acceptance tests were not yet present and remain required.
+Foundation's final staged-entry rejection test is still pending. No app changes,
+remote writes, PR, merge or publication have occurred.
+
+### ESF containment proof and full-app cleanup checkpoints
+
+- Foundation committed `52cb489`: eight negative tooling tests and eleven focused
+  publication tests pass; staged malformed entry is rejected before installation.
+- Current operating docs/runbooks committed `09fdbba`; active cutover instructions
+  now reflect completed cutover, retaining historical identities and fallback refs.
+- Emergency Fund package committed `19864f7`. Actual-script VM coverage includes
+  file/HTTP setup, defaults/Skip/Back, help, Buddy estimate application, planning,
+  repeated saves, budget replacement, reopen, forbidden navigation/history/render,
+  state prerequisites, themes, restart and participant parameters.
+- Root's Linux Chromium browser checks passed file URLs in a copied path with
+  spaces and local HTTP: real setup inputs/clicks, keyboard focus/Tab, first-expense
+  Back/Skip answers, all four themes/narrow width, loaded fund image, planner typed
+  balance/date, save/reopen/repeat save, refresh/restart/Exit, tracking off and
+  participant parameters. Windows/WSL and macOS and PM acceptance remain pending.
+- Actual browser testing exposed inherited ZIP keypad change-event recursion. It
+  is fixed only in Flow copies with an event-sequence regression, documented as a
+  proposed difference. Full-app cleanup does not adopt this unrelated behavior.
+- Big Purchase baseline was created from the same original `8f7b142` source before
+  app cleanup; its full implementation is now in progress.
+- Full-app flag cleanup committed `5c6f329`: only four app files differ from the
+  captured baseline (config, onboarding, topbar, esf-build), with no new app files.
+  Syntax 124, sweep 254 checks/zero failures/two existing warnings, app structure
+  and path checks passed. Path checker now includes present Flow packages.
+- Current work remains BP runtime/branches and tests, combined checks, actual
+  publication rehearsals/size evidence, and PM handoff. No PR or remote action.
+
+### Final implementation and local verification — 2026-10-12
+
+- Resumed the existing dirty implementation without recreating packages. Fresh
+  fetch confirmed main remained `8f7b142`; unrelated branches and local alternatives
+  remain untouched. One GPT-6.1 Sol worker completed the preserved BP work.
+- Scope hardening checkpoint `663a908` rejects staged app edits even if the
+  worktree matches the baseline; its negative regression passes.
+- Package/test checkpoint `17bc494` completes Big Purchase, discovery catalog and
+  both actual-script/runtime and optional browser harnesses. BP owns its bundled
+  ESF. Before-purchase and after-save detours retain distinct callers; the actual
+  Your car screen now offers deferred Save and start emergency fund, preserving
+  no-goal/repeat-save semantics. Package docs enumerate source routes and changes.
+- All required docs/testing.md checks pass: app syntax 124, Flow syntax 247, app
+  sweep 254/zero failures, Python 63, paths, release/runtime, local alternatives,
+  selector, both Flow journeys/negative routes, package boundaries, explicit
+  app-integration scope and historical publication catalog/digests. Final sweep's
+  two preexisting warnings are unreferenced functions and five dark-film fallbacks,
+  correcting the earlier coarse owner/browser-warning description.
+- Linux Chromium 153 verified both Flows using real file URLs in copied paths with
+  spaces and local HTTP: setup/back/skip, four themes/narrow layouts, inputs/focus,
+  selected media, ordinary/repeated saves, both BP fund branches with preserved
+  car inputs, loan/cash/lease, fresh lifecycle, parameters and tracking off.
+- Two committed offline publication rehearsals passed in a disposable clone,
+  using both real selected Flow packages and the first build's previous manifest.
+  Both outputs are byte-identical: 960 files, 77,351,508 bytes (below 800 MB ceiling).
+  Source checkpoint `17bc494`; fixture commit `2229c2c` exists only in that clone.
+  Full sizes/evidence are in docs/flows-verification.md. Real catalog/tags unchanged.
+- Immutable-artifact HTTP smoke passed both snapshots: canonical cold boot, Skip,
+  loaded media, frozen tracking despite opposing parameters, participant-preserving
+  refresh/Restart, and Exit to artifact selector. All external requests were
+  intercepted/aborted; no telemetry was sent. No page errors occurred.
+- Baseline digest comparison confirms only the four approved app flag-cleanup
+  files changed, with no added/deleted app files. Source lacks a distinct
+  already-owned-car journey; actual known-model/new/used paths are retained and
+  tested, with that limitation explicitly recorded for PM review.
+- Remaining: PM product/visual acceptance, Windows/WSL and macOS file-with-spaces
+  browser checks. PR must wait for PM verification. Authorized task-branch push is
+  a separate observed milestone; no merge, repository settings, tags or publication
+  are authorized. Nothing has been deployed or live-verified by this work.
