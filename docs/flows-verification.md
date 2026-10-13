@@ -115,3 +115,68 @@ Source audit limitation: the approved plan mentioned an owned-car path, but sour
 and new/used selection paths are retained and checked. No new product journey was
 invented. PM should review those actual paths; adding an owned-car journey is
 separate product scope.
+
+
+## Outside-phone reviewer correction — 2026-10-12
+
+Correction implementation checkpoint: `b7663e829a94017024c4f08f3026d62addd2c567`.
+Correction base: `d9faeb30a04f5e9ce81e3c1ca240a2a822437eba` on the existing
+`work/flows-20261011` branch. Source presentation reference remains `8f7b142`.
+No subagents were used for this correction. Previous browser evidence describing
+the in-phone toolbar is superseded by the checks below.
+
+Both packages restore source headers, footers and contextual Back while suppressing
+Home/menu escapes. Tools lives outside `.phone`, starts collapsed, and dispatches
+only the current allowed screen with existing prerequisites. Restart clears the
+whole Flow. Setup steps, profiles, purchase fixtures, comparison variants and
+reminder simulations are scoped. Goals and Copy State omit unrelated seeded
+product activity. ESF help no longer reads/initializes the excluded budget queue;
+admin cost/options/commit readers no longer synthesize fixture answers.
+
+All required repository checks pass at the correction checkpoint: app syntax 124,
+Flow syntax 249, sweep 254/zero failures/two existing warnings, paths, release
+runtime, local alternatives, selector, actual-script Flow runtime, all 63 Python
+tests, package checks and publication catalog/historical digest checks. Flow scope
+passes against the correction base. `/app` and `publication/` have zero diff from
+that base; historical snapshots and publication tags were not changed.
+
+Linux Chromium passes `tests/flows-browser.cjs` on real copied file URLs containing
+spaces and HTTP for both packages. Checks include Tools collapsed defaults,
+Enter/Space-compatible toggle semantics, focus retained across setup selection and
+returned on close, all four themes, desktop/below-phone placement at 1440, 900, 390
+and 320px, identical phone dimensions when toggling, no overlap/horizontal overflow,
+and no toolbar or reserved topbar space on setup. Actual participant Back/Skip,
+inputs, refresh/Restart/Exit and participant parameters pass. Repeated fund saves,
+reopening, both BP fund branches, retained purchase inputs, one goal per type and
+distinct budget effects pass. Every restored interactive reviewer control is
+exercised: setup step/profile, Copy State, themes, purchase fixture/car selection,
+comparison A/B and both goal/reminder simulations. Retained screen diagnostics are
+read under normal feature initialization. Runtime checks audit every tools reader
+for state/history mutation and reject malformed control values, excluded screens,
+wrong-screen actions and missing feature prerequisites. The actual creation adapter
+also passes a browser smoke with safe profile-only starter controls and blocked
+excluded routes.
+
+Two local in-memory catalog builds of the committed correction were identical,
+including a second build validated against the first manifest. Their synthetic
+snapshot IDs are `rehearsal-emergency-fund` (tracking on) and
+`rehearsal-big-purchase` (tracking off); no real catalog or tags were written.
+Output: `/tmp/moneybuddy-tools-snapshot-_n7zz7hn`, 964 files, 77,368,245 bytes.
+Fund package: 21,127,560 bytes; purchase package: 21,129,473 bytes. Output remains
+below the 800 MB ceiling, retains historical bytes, and excludes authoring docs,
+metadata and worktrees. `tests/flows-snapshot-browser.cjs` verifies both exported
+packages on HTTP: collapsed tools on cold boot/refresh/Restart, outside-phone
+placement, keyboard/focus, narrow overflow, participant parameters, frozen tracking
+and selector Exit. Every external request is aborted; no telemetry is sent.
+
+Reproduction uses the existing optional Playwright environment described in the
+browser harness header. Serve the checkout for `MB_FLOW_BASE_URL` and the local
+artifact for `MB_FLOW_SNAPSHOT_BASE_URL`; neither command publishes anything.
+
+PM must repeat the affected visual/product checks on the correction before the
+implementation PR opens: source contextual Back/Skip, Tools placement/collapse,
+keyboard/focus, four themes/narrow screens, setup/profile/fixtures/comparisons,
+goal/reminder simulations, repeated saves and both BP fund return paths. PM
+acceptance, Windows/WSL and macOS file-with-spaces checks remain unverified. Linux
+automation does not substitute for those checks. Merge and publication remain
+separately authorized.

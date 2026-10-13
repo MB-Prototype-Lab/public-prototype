@@ -182,3 +182,27 @@ remote writes, PR, merge or publication have occurred.
   browser checks. PR must wait for PM verification. Authorized task-branch push is
   a separate observed milestone; no merge, repository settings, tags or publication
   are authorized. Nothing has been deployed or live-verified by this work.
+
+
+### Reviewer-tools correction — 2026-10-12
+
+- Resumed this branch at `d9faeb3`; current main remained `8f7b142` after fetch.
+  No subagents. Correction checkpoint `b7663e8` restores the source participant
+  presentation and replaces the in-phone toolbar with a collapsed outside-phone
+  Tools panel. Its explicit dispatcher retains only audited current-screen
+  controls with valid state; setup, Goals, simulations and copied state are scoped.
+- Tools opening/closing/reading leaves participant answers and sessions alone;
+  Close restores focus. Desktop expands alongside the unchanged-size phone,
+  narrow screens below it. Creation templates follow the same arrangement and
+  expose only safe onboarding controls for generic starters.
+- Required repository checks pass, including 63 Python tests, app syntax 124,
+  Flow syntax 249 and sweep 254/zero failures/two existing warnings. Both packages
+  pass file-with-spaces and HTTP browser checks, every restored interactive tool,
+  320px through desktop layouts, four themes, actual participant Back, repeat
+  saves and both BP fund branches. Local deterministic snapshot builds and both
+  exported-package HTTP smoke checks pass. Full evidence and byte counts are in
+  docs/flows-verification.md. `/app`, historical snapshots and publication records
+  are unchanged by the correction.
+- PM must repeat affected acceptance on `b7663e8` before opening the implementation
+  PR. Windows/WSL and macOS remain unverified. Keep the PR unopened; merging,
+  settings changes and publication remain outside authorization. No deployment.

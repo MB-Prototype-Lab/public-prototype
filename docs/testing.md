@@ -108,3 +108,11 @@ themes, input/keyboard behavior, media, refresh/restart/exit and independent ses
 Rehearse HTTP publication twice with a previous manifest and verify participant
 links and frozen tracking. No Windows/WSL or macOS browser acceptance is implied by
 this guide; absent platform evidence remains pending and must be named in the PR.
+
+
+Optional Flow browser checks: `tests/flows-browser.cjs` exercises package journeys,
+outside-phone Tools and the actual creation adapter on file URLs with spaces and
+HTTP. `tests/flows-snapshot-browser.cjs` exercises offline exported packages; its
+header describes the required snapshot IDs and environment. Both require an
+existing Playwright/browser installation. Snapshot smoke blocks all external
+requests. Record these results separately from PM and platform acceptance.
