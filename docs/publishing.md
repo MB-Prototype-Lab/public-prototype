@@ -14,12 +14,17 @@ The approved editable product lives in app/; contained proposals live in flows/<
 (id, source_tag, full commit, source_dir, public_path, format, tracking, digest) from
 presentation (label, description, order, state, ongoing_study). IDs and paths are
 permanent. Do not recycle IDs even after retirement. Labels and descriptions are
-escaped in the selector. Tracking is shown independently of active/archive placement.
+escaped in the selector. A "Tracking on" badge marks every listed tracked build,
+active or archived; untracked builds carry no badge. Full-app builds appear on the
+selector's **Prototype** tab and Flow snapshots on its **Flows** tab. The toggle
+appears only when both tabs list something, so it stays hidden until a Flow
+snapshot is active or archived. A Flow row shows its catalog `description` beside
+the label, so set a short one when preparing it.
 
 | State | Selector | Direct URL |
 |---|---|---|
-| active | Prominent, ascending order then ID | Original app |
-| archived | Collapsed Older versions | Original app |
+| active | Prominent (full app: blue button; Flow: list row), ascending order then ID | Original app |
+| archived | Collapsed Older versions on its tab | Original app |
 | hidden | Omitted | Original app |
 | retired | Omitted | Retirement notice with selector link |
 

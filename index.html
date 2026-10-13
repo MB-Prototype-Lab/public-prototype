@@ -20,23 +20,37 @@
 
   <div id="selectorScreen" class="gate-screen" style="display:none;">
     <p class="gate-eyebrow">MoneyBuddy Prototype</p>
-    <h1 class="gate-title">Choose a version</h1>
-    <div id="versionList" style="display:flex;flex-direction:column;gap:10px;">
+    <h1 class="gate-title">Choose what to open</h1>
+    <div id="gateTabs" class="gate-tabs" aria-label="Choose what to open" hidden>
+      <button type="button" id="gateTabPrototype" class="gate-tab" aria-controls="gatePanelPrototype">Prototype</button>
+      <button type="button" id="gateTabFlows" class="gate-tab" aria-controls="gatePanelFlows">Flows</button>
+    </div>
+
+    <section id="gatePanelPrototype" class="gate-panel" aria-labelledby="gateTabPrototype">
+      <p class="gate-helper">The full MoneyBuddy app.</p>
       <!-- CATALOG -->
       <!-- LOCAL PREVIEW START -->
-      <div id="localPreview"><a class="gate-btn" href="app/index.html">Full app · tracking off</a>
-      <p><a href="https://mb-prototype-lab.github.io/public-prototype/">Live historical builds</a></p></div>
-      <section id="localFlows" hidden aria-label="Flows">
-        <h2>Flows</h2>
-        <div id="localFlowsList"></div>
-      </section>
+      <div id="localPreview" class="gate-stack">
+        <a class="gate-btn gate-btn-primary" href="app/index.html">Local Prototype</a>
+        <a class="gate-btn" href="https://mb-prototype-lab.github.io/public-prototype/" target="_blank" rel="noopener">Historical versions <span aria-hidden="true">↗</span><span class="gate-sr-only"> (opens in a new tab)</span></a>
+      </div>
       <section id="localAlternatives" class="local-alternatives" hidden aria-label="Local alternatives">
         <h2>Local alternatives</h2>
         <div id="localAlternativesList"></div>
         <button type="button" id="localCompare" class="gate-btn">Compare side by side</button>
       </section>
       <!-- LOCAL PREVIEW END -->
-    </div>
+    </section>
+
+    <section id="gatePanelFlows" class="gate-panel" aria-labelledby="gateTabFlows" hidden>
+      <p class="gate-helper">Short journeys focused on one task.</p>
+      <!-- FLOW CATALOG -->
+      <!-- LOCAL PREVIEW START -->
+      <div id="localFlows" hidden>
+        <div id="localFlowsList" class="gate-list"></div>
+      </div>
+      <!-- LOCAL PREVIEW END -->
+    </section>
   </div>
 
 </main>

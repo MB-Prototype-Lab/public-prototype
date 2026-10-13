@@ -55,7 +55,8 @@ it is local rehearsal evidence, not a publication. PM acceptance remains separat
 
 ## PM review checklist
 
-Use the root selector, passcode 1337, then Full app or a named Flow. Direct Flow
+Use the root selector, passcode 1337, then Local Prototype (Prototype tab) or a named
+Flow (Flows tab). Direct Flow
 links intentionally bypass the passcode. Both Flows restart themselves on refresh;
 Full app refresh returns to the selector. Restart starts a fresh session; Exit
 returns to the selector.
@@ -81,8 +82,10 @@ returns to the selector.
 - Full app regression: full setup and Buddy creation end at Home; all five tabs
   remain; Goals still opens both tools; purchase save does not change budget,
   ESF save immediately replaces it, including repeat saves.
-- Local selector: passcode, Full app, Flows and existing alternatives; side-by-side
-  comparisons retain their previous behavior.
+- Local selector: passcode, Prototype/Flows toggle (mouse and arrow keys), Local
+  Prototype, Historical versions (new tab), Flow list, and existing alternatives under
+  the Prototype tab; Exit Flow returns to the Flows tab; side-by-side comparisons
+  retain their previous behavior. Check light and dark system themes at phone width.
 
 ## Platform status
 

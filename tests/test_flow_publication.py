@@ -69,9 +69,18 @@ class FlowPublicationTests(unittest.TestCase):
 
     def test_flow_discovery_hidden_retirement_and_restore(self):
         previous=self.previous()
-        self.assertIn('Flow snapshots',self.build()['index.html'].decode())
+        def panels(page):
+            flows=page.index('id="gatePanelFlows"')
+            return page[page.index('id="gatePanelPrototype"'):flows],page[flows:]
+        app,flows=panels(self.build()['index.html'].decode())
+        self.assertIn('<a class="gate-row" href="versions/fund-study/index.html">',flows)
+        self.assertNotIn('versions/fund-study',app)
+        self.assertNotIn('versions/v1',flows)
         self.flow['state']='archived'
-        self.assertIn('Older Flow snapshots',self.build(previous=previous)['index.html'].decode())
+        app,flows=panels(self.build(previous=previous)['index.html'].decode())
+        older=flows[flows.index('<details class="gate-older"><summary>Older versions</summary>'):]
+        self.assertIn('versions/fund-study/index.html',older)
+        self.assertNotIn('versions/fund-study',app)
         self.flow['state']='hidden'
         hidden=self.build(previous=previous)
         self.assertNotIn('versions/fund-study',hidden['index.html'].decode())

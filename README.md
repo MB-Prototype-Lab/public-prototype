@@ -3,7 +3,8 @@
 This repository is the shared workspace for the MoneyBuddy prototype. An
 operator can work with an agent from Claude Desktop on Windows or from a
 terminal. The editable app is in `app/`; the repository root opens a selector
-for the full app, standalone Flows and historical builds. The repository cutover
+with a **Prototype** tab (the full app and a link to historical builds) and a
+**Flows** tab (standalone Flows). The repository cutover
 is complete; historical snapshots, `demo` and PM branches remain preserved.
 
 ## 1. Confirm GitHub access
@@ -101,7 +102,8 @@ without asking to see the token.
 ## 3. Preview the app
 
 With a local checkout, open `index.html` in a browser, enter passcode `1337`,
-and choose **Full app** or a card under **Flows**. No server or package installation
+and choose **Local Prototype** on the **Prototype** tab or a Flow on the **Flows** tab.
+**Historical versions** opens the published builds in a new tab. No server or package installation
 is needed. Full-app refresh returns to the selector; Flow refresh and Restart begin
 the same Flow fresh, and Exit Flow returns to the selector. If you are using Claude Desktop,
 ask the agent to show you the file in the Code tab's browser pane or open it
@@ -141,7 +143,7 @@ repository settings change, or publication.
 ## Compare alternatives locally
 
 Ask your agent: “Make two alternatives.” It prepares named choices under **Local
-alternatives** in your existing selector. Use **Open in new tab** and arrange the
+alternatives** on the selector's **Prototype** tab. Use **Open in new tab** and arrange the
 windows side by side. Readable URL folders such as `variant-A` and `variant-B`
 help you identify the option; later comparisons may add a suffix such as `variant-A-2`.
 Each alternative runs independently; refresh returns to the

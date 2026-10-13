@@ -18,7 +18,7 @@ ownership is ambiguous. Start all options from the current feature branch's shar
 checkpoint. Do not run start-work inside a variant or create nested comparisons.
 
 Implement requested alternatives in their recorded worktrees, run affected checks,
-and refresh the manifest. Tell the PM the friendly labels and how to choose **Compare side by side** after unlocking the selector.
+and refresh the manifest. Tell the PM the friendly labels and how to choose **Compare side by side** on the selector's Prototype tab.
 Explain that dropdowns and pane counts preserve progress until refresh or Back to
 versions, Show tools widens a pane, and Restart preview resets only that variant.
 Hidden previews keep running; pause audio before switching away. Standalone new-tab

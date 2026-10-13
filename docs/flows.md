@@ -8,7 +8,9 @@ preserve historical snapshots, source/publication tags, `demo` and PM/HoffDemo b
 
 ## Preview and review
 
-Open root `index.html`, enter `1337`, and choose **Full app** or a card under **Flows**.
+Open root `index.html`, enter `1337`, and choose **Local Prototype** on the **Prototype**
+tab or a Flow on the **Flows** tab. The selector remembers the tab for the browser
+session, so **Exit Flow** returns to the Flows list.
 A Flow also opens directly at `flows/<id>/index.html`, without the passcode. Each
 launch is a separate document and session; no server or dependency installation is
 needed. Ask the agent for a browser file URL with the checkout path properly encoded

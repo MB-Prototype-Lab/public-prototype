@@ -11,6 +11,8 @@
 
 var GATE_PASSCODE = "1337";
 var GATE_SESSION_KEY = "mb_gate_unlocked";
+var GATE_TAB_KEY = "mb_gate_tab";
+var GATE_TABS = ["prototype", "flows"];
 
 function gateShowSelector() {
   document.getElementById("passcodeScreen").style.display = "none";
@@ -22,6 +24,79 @@ function gateShowSelector() {
   // address so the step is visible. replaceState because unlocking is not
   // somewhere Back should return to.
   gateMarkUrl("version-select");
+  // Without tabs the markup still shows the Prototype panel, so a failure here
+  // costs the toggle, never access.
+  try { gateTabsSync(); } catch (e) { /* never block the gate on cosmetics */ }
+}
+
+// ─── Prototype / Flows toggle ────────────────────────────────────────────────
+// Panels are filled before this runs: locally by gate/flows.js and
+// gate/local-variants.js, whose DOMContentLoaded listeners are registered by
+// earlier synchronous scripts; when published, by scripts/publish.py. Panels are
+// switched only through `hidden`, because the compare workspace restores
+// #selectorScreen with style.display. The tab is kept out of the URL: Flow exits
+// return to a frozen "../../index.html", so the session remembers it instead.
+
+function gateTabParts(name) {
+  var suffix = name === "flows" ? "Flows" : "Prototype";
+  return { tab: document.getElementById("gateTab" + suffix), panel: document.getElementById("gatePanel" + suffix) };
+}
+
+function gateTabsSync() {
+  var available = GATE_TABS.filter(function (name) {
+    return !!gateTabParts(name).panel.querySelector("a[href]");
+  });
+  // A toggle with an empty side (published before any Flow snapshot) would lead
+  // testers to nothing, so it only appears when both sides have something.
+  var both = available.length === GATE_TABS.length;
+  var tabs = document.getElementById("gateTabs");
+  tabs.hidden = !both;
+  if (both) tabs.setAttribute("role", "tablist"); else tabs.removeAttribute("role");
+  GATE_TABS.forEach(function (name) {
+    var parts = gateTabParts(name);
+    if (both) {
+      parts.tab.setAttribute("role", "tab");
+      parts.panel.setAttribute("role", "tabpanel");
+    } else {
+      parts.tab.removeAttribute("role");
+      parts.panel.removeAttribute("role");
+    }
+  });
+  var stored = null;
+  try { stored = sessionStorage.getItem(GATE_TAB_KEY); } catch (e) { /* private-mode storage block */ }
+  // Fall back without overwriting what the person last chose.
+  var chosen = available.indexOf(stored) !== -1 ? stored : available.indexOf("prototype") !== -1 ? "prototype" : available[0] || "prototype";
+  gateSelectTab(chosen, false);
+}
+
+/** Show one panel. `remember` is true only for a person's own choice. */
+function gateSelectTab(name, remember) {
+  GATE_TABS.forEach(function (other) {
+    var parts = gateTabParts(other);
+    var selected = other === name;
+    parts.tab.setAttribute("aria-selected", selected ? "true" : "false");
+    parts.tab.tabIndex = selected ? 0 : -1;
+    parts.panel.hidden = !selected;
+  });
+  if (remember) {
+    try { sessionStorage.setItem(GATE_TAB_KEY, name); } catch (e) { /* private-mode storage block */ }
+  }
+}
+
+function gateTabsBind() {
+  var keys = { ArrowLeft: -1, ArrowRight: 1, Home: "first", End: "last" };
+  GATE_TABS.forEach(function (name, index) {
+    var tab = gateTabParts(name).tab;
+    tab.addEventListener("click", function () { gateSelectTab(name, true); });
+    tab.addEventListener("keydown", function (e) {
+      var move = keys[e.key];
+      if (move === undefined) return;
+      e.preventDefault();
+      var next = move === "first" ? 0 : move === "last" ? GATE_TABS.length - 1 : (index + move + GATE_TABS.length) % GATE_TABS.length;
+      gateSelectTab(GATE_TABS[next], true);
+      gateTabParts(GATE_TABS[next]).tab.focus();
+    });
+  });
 }
 
 /**
@@ -66,6 +141,7 @@ function gateSubmit() {
 function gateInit() {
   var unlocked = false;
   try { unlocked = sessionStorage.getItem(GATE_SESSION_KEY) === "1"; } catch (e) { /* private-mode storage block */ }
+  try { gateTabsBind(); } catch (e) { /* never block the gate on cosmetics */ }
 
   if (unlocked) {
     gateShowSelector();

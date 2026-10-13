@@ -60,7 +60,7 @@
     });
     if (choices.length) {
       section.hidden = false;
-      choices.push({ label: "Current local app", description: "Your current checkout; not necessarily the original baseline.", href: "app/index.html" });
+      choices.push({ label: "Local Prototype", description: "Your current checkout; not necessarily the original baseline.", href: "app/index.html" });
       localCompareInit(choices);
     }
   }

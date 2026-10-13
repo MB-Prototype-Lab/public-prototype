@@ -12,16 +12,21 @@
           flow.id.length > 64 || seen[flow.id] || typeof flow.label !== "string" || !flow.label.trim() ||
           typeof flow.description !== "string" || flow.path !== "flows/" + flow.id + "/index.html") return;
       seen[flow.id] = true;
-      var card = document.createElement("div");
-      var link = document.createElement("a");
-      link.className = "gate-btn";
-      link.href = flow.path;
-      link.textContent = flow.label;
-      card.appendChild(link);
-      var description = document.createElement("p");
-      description.textContent = flow.description;
-      card.appendChild(description);
-      list.appendChild(card);
+      // Same row shape scripts/publish.py renders for published Flow snapshots.
+      var row = document.createElement("a");
+      row.className = "gate-row";
+      row.href = flow.path;
+      var name = document.createElement("span");
+      name.className = "gate-row-name";
+      name.textContent = flow.label;
+      row.appendChild(name);
+      if (flow.description.trim()) {
+        var note = document.createElement("span");
+        note.className = "gate-row-note";
+        note.textContent = flow.description;
+        row.appendChild(note);
+      }
+      list.appendChild(row);
       section.hidden = false;
     });
   });

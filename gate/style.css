@@ -12,6 +12,8 @@
   --gate-line: #d9dee8;
   --gate-accent: #315efb;
   --gate-danger: #b42318;
+  --gate-tab-on: #ffffff;
+  --gate-hover: rgba(49, 94, 251, .07);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,10 +25,15 @@
     --gate-line: #343844;
     --gate-accent: #4f76fc;
     --gate-danger: #f04438;
+    --gate-tab-on: #2c303a;
+    --gate-hover: rgba(79, 118, 252, .14);
   }
 }
 
 * { box-sizing: border-box; }
+
+/* Panel and section CSS sets display; `hidden` must still win. */
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -35,14 +42,16 @@ body {
   background: var(--gate-bg);
   color: var(--gate-text);
   display: flex;
-  align-items: center;
+  /* Top-aligned, not centred: the two panels differ in height, and a centred
+     card would move the toggle out from under the pointer on every switch. */
+  align-items: flex-start;
   justify-content: center;
-  padding: 24px;
+  padding: clamp(24px, 10vh, 96px) 24px 24px;
 }
 
 .gate-wrap {
   width: 100%;
-  max-width: 360px;
+  max-width: 400px;
 }
 
 .gate-screen {
@@ -56,6 +65,11 @@ body {
   padding: 28px 24px;
   box-shadow: 0 12px 40px rgba(16, 24, 40, .12);
   text-align: center;
+}
+
+@media (max-width: 479px) {
+  body { padding: 24px 16px; }
+  .gate-screen { padding: 24px 16px; }
 }
 
 .gate-eyebrow {
@@ -101,6 +115,7 @@ body {
   border: 1px solid var(--gate-line);
   border-radius: 14px;
   padding: 14px;
+  font-family: inherit;
   font-size: 15px;
   font-weight: 850;
   cursor: pointer;
@@ -108,10 +123,13 @@ body {
   color: var(--gate-text);
 }
 
-/* "recording" on a version whose build loads a usability tracker. The gate is
-   the last screen before a tester is inside the app, so it is the last honest
+a.gate-btn { display: block; text-decoration: none; }
+
+/* "Tracking on" for a published build that loads a usability tracker. The gate
+   is the last screen before a tester is inside the app, so it is the last honest
    place to say so — and they cannot switch it off, which is exactly why it has
-   to be stated rather than assumed. */
+   to be stated rather than assumed. Untracked builds carry no badge, and local
+   builds never track. */
 .gate-badge {
   display: inline-block;
   margin-left: 8px;
@@ -136,6 +154,181 @@ body {
 }
 
 .gate-btn-primary:hover { filter: brightness(1.06); }
+.gate-btn-primary .gate-badge { background: #fff; color: var(--gate-accent); }
+
+.gate-btn:focus-visible,
+.gate-tab:focus-visible,
+.gate-older > summary:focus-visible {
+  outline: 2px solid var(--gate-accent);
+  outline-offset: 2px;
+}
+
+.gate-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ─── Prototype / Flows toggle ────────────────────────────────────────────── */
+
+.gate-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--gate-line);
+  border-radius: 14px;
+  background: var(--gate-bg);
+}
+
+.gate-tab {
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  background: transparent;
+  color: var(--gate-muted);
+}
+
+.gate-tab:hover { color: var(--gate-text); }
+
+.gate-tab[aria-selected="true"] {
+  background: var(--gate-tab-on);
+  border-color: var(--gate-line);
+  color: var(--gate-text);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, .12);
+}
+
+.gate-panel,
+.gate-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gate-helper {
+  margin: 0;
+  font-size: 13px;
+  color: var(--gate-muted);
+}
+
+.gate-note {
+  margin: -4px 0 0;
+  font-size: 13px;
+  color: var(--gate-muted);
+}
+
+/* ─── Compact rows: Flows and older versions ─────────────────────────────────
+   The name carries the choice, so it keeps the button font; the blurb sits
+   beside it in smaller type to keep a growing list short. Rows share the list's
+   columns (subgrid), so names stay on one line where they fit and every blurb
+   starts at the same edge. */
+
+.gate-list {
+  display: grid;
+  grid-template-columns: fit-content(50%) 1fr;
+  border: 1px solid var(--gate-line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--gate-bg);
+  text-align: left;
+}
+
+.gate-row {
+  position: relative;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(7.5em, 42%) 1fr;
+  grid-template-columns: subgrid;
+  column-gap: 12px;
+  align-items: center;
+  min-height: 44px;
+  padding: 12px 34px 12px 14px;
+  color: var(--gate-text);
+  text-decoration: none;
+}
+
+.gate-row + .gate-row { border-top: 1px solid var(--gate-line); }
+.gate-row:hover { background: var(--gate-hover); }
+
+.gate-row:focus-visible {
+  outline: 2px solid var(--gate-accent);
+  outline-offset: -2px;
+}
+
+.gate-row::after {
+  content: "›";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: var(--gate-muted);
+}
+
+.gate-row-name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.gate-row-name .gate-badge { margin-left: 0; }
+
+.gate-row-note {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--gate-muted);
+}
+
+@media (max-width: 359px) {
+  .gate-list { display: flex; flex-direction: column; }
+  .gate-row { grid-template-columns: 1fr; row-gap: 4px; }
+}
+
+.gate-older { text-align: left; }
+
+.gate-older > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.gate-older > summary::-webkit-details-marker { display: none; }
+
+.gate-older > summary::before {
+  content: "›";
+  display: inline-block;
+  width: 10px;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--gate-accent);
+  transition: transform .15s ease;
+}
+
+.gate-older[open] > summary::before { transform: rotate(90deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-older > summary::before { transition: none; }
+}
+
+/* ─── Local alternatives (local selector only) ───────────────────────────── */
 
 .local-alternatives {
   border-top: 1px solid var(--gate-line);
@@ -144,13 +337,12 @@ body {
   text-align: left;
 }
 
-.local-alternatives[hidden] { display: none; }
 .local-alternatives h2 { font-size: 16px; margin: 0 0 12px; }
 #localAlternativesList { display: flex; flex-direction: column; gap: 12px; }
 .local-alternative { display: flex; flex-direction: column; gap: 6px; }
 .local-alternative .gate-btn { display: block; text-decoration: none; }
 .local-alternative p { color: var(--gate-muted); font-size: 13px; margin: 0; }
-.local-open-new-tab { font-size: 13px; }
+.local-open-new-tab { font-size: 13px; color: var(--gate-accent); }
 
 /* Mobile-style scroll indicators (thin rounded thumb, no track/arrows) */
 ::-webkit-scrollbar { width: 5px; height: 5px; }

@@ -24,6 +24,7 @@ jobs:
       - run: node tests/release-runtime.cjs
       - run: node tests/local-variants.cjs
       - run: node tests/flows-selector.cjs
+      - run: node tests/gate-tabs.cjs
       - run: node tests/flows-runtime.cjs
       - run: python3 scripts/flows.py check
       - name: Flow script syntax

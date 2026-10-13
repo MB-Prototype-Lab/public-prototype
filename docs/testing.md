@@ -9,6 +9,7 @@ python3 scripts/check-paths.py
 node tests/release-runtime.cjs
 node tests/local-variants.cjs
 node tests/flows-selector.cjs
+node tests/gate-tabs.cjs
 node tests/flows-runtime.cjs
 bash scripts/check-syntax.sh flows
 python3 scripts/flows.py check
@@ -20,13 +21,14 @@ Node or macOS JavaScriptCore is needed for JS checks; Python 3.11+ for publicati
 checks. CI explicitly installs Node and Python. A missing engine is a blocked check,
 never a pass. No local browser installation or server is required.
 
-PM checklist: open root index.html on file://, enter 1337, open current app, exercise
+PM checklist: open root index.html on file://, enter 1337, open Local Prototype, exercise
 the changed flow, check narrow layout and all four themes, input focus and sliders,
 and audio when affected. Full-app refresh must return to the selector; Flow refresh
 and Restart must start the same Flow fresh, and Exit must return to the selector. For publication test
 HTTP(S) screen/deep links with participant parameters; tracking follows the snapshot
-setting and never injects on file://. Check archive expansion, hidden direct links,
-and retirement notices. Record results in PR text. Optional authorized browser
+setting and never injects on file://. Check the Prototype/Flows toggle (hidden when
+no Flow snapshot is listed), archive expansion, hidden direct links, and retirement
+notices. Record results in PR text. Optional authorized browser
 checks supplement PM testing. Re-run affected checks after material changes.
 
 Publication tests use disposable Git repositories and do not push. Historical exports

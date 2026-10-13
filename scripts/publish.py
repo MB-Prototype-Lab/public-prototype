@@ -187,31 +187,48 @@ def package_flow(row, source):
     return files
 
 
+def strip_local(template, start, end, single):
+    """Remove every start..end block; each must close before the next opens."""
+    require(template.count(start) >= 1 and template.count(start) == template.count(end) and
+            (template.count(start) == 1 or not single), 'local selector boundary missing or repeated')
+    while start in template:
+        first = template.index(start)
+        last = template.find(end, first)
+        require(last != -1 and start not in template[first + len(start):last], 'local selector boundary out of order')
+        template = template[:first] + template[last + len(end):]
+    require(end not in template, 'local selector boundary out of order')
+    return template
+
+
 def selector(catalog, template, gate_js, css):
     rows = sorted(catalog['snapshots'], key=lambda r: (r['order'], r['id']))
-    def card(row):
-        tracking = 'Tracking on' if row['tracking'] else 'Tracking off'
-        return ('<a class="gate-btn" href="' + row['public_path'] + '">' + html.escape(row['label']) +
-                '<span class="gate-badge">' + tracking + '</span></a><p>' + html.escape(row['description']) + '</p>')
-    def group(flow):
-        selected = [r for r in rows if (r['format'] == 'flow-static-v1') == flow]
-        active = ''.join(card(r) for r in selected if r['state'] == 'active')
-        archived = ''.join(card(r) for r in selected if r['state'] == 'archived')
-        return active + ('<details><summary>Older ' + ('Flow snapshots' if flow else 'versions') + '</summary>' + archived + '</details>' if archived else '')
-    listing = group(False)
-    flows = group(True)
-    if flows:
-        listing += '<section aria-label="Flow snapshots"><h2>Flow snapshots</h2>' + flows + '</section>'
-    require(template.count('<!-- CATALOG -->') == 1, 'selector template marker missing or repeated')
-    for start, end in (('<!-- LOCAL PREVIEW START -->', '<!-- LOCAL PREVIEW END -->'),
-                       ('<!-- LOCAL SCRIPTS START -->', '<!-- LOCAL SCRIPTS END -->')):
-        require(template.count(start) == 1 and template.count(end) == 1,
-                'local selector boundary missing or repeated')
-        first, last = template.index(start), template.index(end)
-        require(first < last, 'local selector boundary out of order')
-        template = template[:first] + template[last + len(end):]
-    return {'index.html': template.replace('<!-- CATALOG -->', listing).encode(),
-            'gate/gate.js': gate_js, 'gate/style.css': css, '.nojekyll': b''}
+    # Only tracked builds are badged: the selector is the last place a tester is
+    # told a build records, and "Tracking off" on every older build was noise.
+    def badge(row):
+        return '<span class="gate-badge">Tracking on</span>' if row['tracking'] else ''
+    def button(row):
+        note = '<p class="gate-note">' + html.escape(row['description']) + '</p>' if row['description'].strip() else ''
+        return ('<a class="gate-btn gate-btn-primary" href="' + row['public_path'] + '">' + html.escape(row['label']) +
+                badge(row) + '</a>' + note)
+    def item(row):
+        note = '<span class="gate-row-note">' + html.escape(row['description']) + '</span>' if row['description'].strip() else ''
+        return ('<a class="gate-row" href="' + row['public_path'] + '"><span class="gate-row-name">' +
+                html.escape(row['label']) + badge(row) + '</span>' + note + '</a>')
+    def older(selected):
+        archived = ''.join(item(r) for r in selected if r['state'] == 'archived')
+        return '<details class="gate-older"><summary>Older versions</summary><div class="gate-list">' + archived + '</div></details>' if archived else ''
+    apps = [r for r in rows if r['format'] != 'flow-static-v1']
+    flows = [r for r in rows if r['format'] == 'flow-static-v1']
+    app_listing = ''.join(button(r) for r in apps if r['state'] == 'active') + older(apps)
+    active_flows = ''.join(item(r) for r in flows if r['state'] == 'active')
+    flow_listing = ('<div class="gate-list">' + active_flows + '</div>' if active_flows else '') + older(flows)
+    template = strip_local(template, '<!-- LOCAL PREVIEW START -->', '<!-- LOCAL PREVIEW END -->', single=False)
+    template = strip_local(template, '<!-- LOCAL SCRIPTS START -->', '<!-- LOCAL SCRIPTS END -->', single=True)
+    # Counted after stripping, so a marker left inside a local block fails loudly.
+    for marker in ('<!-- CATALOG -->', '<!-- FLOW CATALOG -->'):
+        require(template.count(marker) == 1, 'selector template marker missing or repeated')
+    page = template.replace('<!-- CATALOG -->', app_listing).replace('<!-- FLOW CATALOG -->', flow_listing)
+    return {'index.html': page.encode(), 'gate/gate.js': gate_js, 'gate/style.css': css, '.nojekyll': b''}
 
 
 def validate_assets(output, prefixes):

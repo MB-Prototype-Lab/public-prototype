@@ -8,9 +8,9 @@ all alternative branches and worktrees. Published builds never contain local cho
 
 ## Compare in one tab
 
-After unlocking the selector, choose **Compare side by side**. Two panes initially
+After unlocking the selector, choose **Compare side by side** on the **Prototype** tab. Two panes initially
 show the first two valid alternatives. **Visible panes** offers one through the
-number of choices, including **Current local app**, which is your current checkout
+number of choices, including **Local Prototype**, which is your current checkout
 and is not necessarily the original baseline.
 
 Each pane offers a variant dropdown, description, **Show tools**, **Restart preview**,

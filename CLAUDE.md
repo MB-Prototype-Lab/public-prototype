@@ -2,7 +2,7 @@
 
 A static, mobile-shaped finance coaching prototype. One editable application lives
 in `app/`; contained proposals live in `flows/<id>/`. Open `index.html` directly,
-enter passcode `1337`, and choose Full app or a Flow. No server or dependency
+enter passcode `1337`, and choose Local Prototype or a Flow from the toggle. No server or dependency
 installation is needed. App refresh returns to the selector; Flow refresh/Restart
 starts that Flow fresh. Data loads through script tags so `file://` works.
 
