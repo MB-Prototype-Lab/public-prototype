@@ -11,17 +11,11 @@
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/keyboard.css">
-<style>
-.admin, .admin-expand-tab { display:none !important; }
-.mb-flow-controls { display:flex; align-items:center; gap:6px; padding:4px; background:var(--card); color:var(--text); font-size:12px; }
-.mb-flow-controls button, .mb-flow-controls select { cursor:pointer; font:inherit; padding:6px; min-height:44px; min-width:44px; color:var(--text); background:var(--card); border:1px solid var(--line); border-radius:6px; }
-.mb-flow-controls select { flex:1; min-width:0; }
-.screen.journal-mode #topbarRoot { display:block; }
-</style>
+<link rel="stylesheet" href="css/flow-tools.css">
 </head>
 <body>
 
-<div class="page">
+<div class="page admin-collapsed">
 
   <!-- Phone frame -->
   <main class="phone" aria-label="Phone frame">
@@ -43,14 +37,15 @@
   </main>
 
   <!-- Admin panel -->
-  <aside class="admin" aria-label="Admin Tools">
+  <aside id="flowAdmin" class="admin" aria-label="Admin Tools" hidden>
     <div class="admin-header">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
         <p class="admin-title" style="margin:0;">Admin Tools</p>
-        <button class="admin-collapse-btn" type="button" onclick="state.adminCollapsed=true;render()" title="Collapse admin">‹</button>
+        <button class="admin-collapse-btn" type="button" onclick="mbFlowToolsToggle(false)" aria-label="Close Tools">Close</button>
       </div>
       <p class="admin-subtitle" id="adminSubtitle">Manual controls for the active screen.</p>
-      <button class="button secondary" style="margin-top:10px;width:100%;font-size:11px;" onclick="resetUserData()">Reset User Data</button>
+      <button class="button secondary" style="margin-top:10px;width:100%;font-size:11px;" onclick="mbFlowRestart()">Restart Flow</button>
+      <button class="button secondary full" type="button" onclick="mbFlowExit()">Exit Flow</button>
       <!-- Theme picker (L21). Filled by render(); the four options live in
            THEMES (js/theme.js), not here. -->
       <p style="margin:10px 0 4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--chrome-muted);">Theme</p>
@@ -59,6 +54,7 @@
     </div>
     <div id="adminRoot" class="admin-scroll"></div>
     <div id="adminFooter" style="padding:10px 14px;border-top:1px solid var(--chrome-line);font-size:10px;color:var(--chrome-muted);flex-shrink:0;">
+      <div id="adminSessionLog"></div>
       <div id="adminNavLog" style="margin-bottom:4px;"></div>
       <!-- What the value trail would write at the next checkpoint. Visible
            during a moderated run so you can see it filling, rather than
@@ -71,7 +67,7 @@
 </div>
 
 <!-- Admin expand tab — visible only when admin is collapsed -->
-<button id="adminExpandTab" class="admin-expand-tab" type="button" onclick="state.adminCollapsed=false;render()" title="Expand admin">›</button>
+<button id="adminExpandTab" class="admin-expand-tab" type="button" onclick="mbFlowToolsToggle(state.adminCollapsed)" aria-controls="flowAdmin" aria-expanded="false">Tools</button>
 
 <!-- 0. Developer tooling: error catcher + nav log updater -->
 <script>
@@ -275,6 +271,7 @@ window.onunhandledrejection = function(e) {
      js/config.js — the one sanctioned exception to D02, documented there. -->
 <script src="js/useberry.js"></script>
 <script src="js/render.js"></script>
+<script src="js/flow-tools.js"></script>
 <script src="js/flow.js"></script>
 <script src="js/navigation.js"></script>
 

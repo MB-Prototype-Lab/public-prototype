@@ -30,7 +30,7 @@ function mbFlowEsfBack() {
   go(caller.screen);
 }
 function mbFlowRestart() {
-  // Reload drops state, pending renders, media and trail. Participant inputs survive.
+  // Reload drops state, pending renders, media and trail. Participant URL parameters survive.
   var url = new URL(location.href);
   url.searchParams.delete('screen');
   if (url.hash.indexOf('#v=') === 0) url.hash = '';
@@ -70,19 +70,26 @@ function mbFlowInstall() {
     return baseScreen();
   };
   renderNav = function () { return ''; };
-  renderAdmin = function () { return ''; };
-  renderTopBar = function () {
-    return '<div class="mb-flow-controls"><button type="button" onclick="navBack()">Back</button>' +
-      '<button type="button" onclick="mbFlowRestart()">Restart</button>' +
-      '<button type="button" onclick="mbFlowExit()">Exit</button>' +
-      '<select aria-label="Theme" onchange="themeSet(this.value)">' + THEMES.map(function (t) {
-        return '<option value="' + h(t.id) + '"' + (themeCurrent().id === t.id ? ' selected' : '') + '>' + h(t.label) + '</option>';
-      }).join('') + '</select></div>';
-  };
+  renderAdmin = mbFlowRenderAdmin;
+  appStateSnapshot = mbFlowStateSnapshot;
+  copyAppState = mbFlowCopyState;
   var baseRender = render;
   render = function () {
     if (!mbFlowAllowed(state.screen)) mbFlowSeed();
+    var active = document.activeElement;
+    var inTools = active && active.closest && active.closest('.admin');
+    var controlId = inTools ? active.id : '';
+    var controlAction = inTools ? active.getAttribute('onclick') : '';
+    var controlChange = inTools ? active.getAttribute('onchange') : '';
     baseRender();
+    mbFlowToolsSync();
+    if (inTools) {
+      var controls = document.querySelectorAll('.admin button, .admin select');
+      var target = Array.from(controls).find(function (el) {
+        return controlId ? el.id === controlId : controlAction ? el.getAttribute('onclick') === controlAction : controlChange && el.getAttribute('onchange') === controlChange;
+      });
+      if (target) target.focus();
+    }
   };
   navCommit = function (screen) {
     if (!mbFlowAllowed(screen)) return false;

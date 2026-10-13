@@ -245,7 +245,7 @@ function renderBpCommit() {
 }
 
 function renderBpCommitAdmin() {
-  bpEnsureSetup();
+  if (!state.bp || !bpSetupComplete()) return "";
   const card = bpSelectedCard();
   const a = bpSaveToAfford(card);
   return `

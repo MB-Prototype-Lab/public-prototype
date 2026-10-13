@@ -42,6 +42,11 @@ canonical entry even when a screen query is present. Participant parameters surv
 HTTP URL writes and restart; parse profile parameters on file URLs too, once at
 boot. Keep reviewed existing start functions, calculations and state ownership.
 No arbitrary admin jump surface; reviewer controls and themes stay contained.
+Reviewer Tools is outside the phone, collapsed at every boot (including snapshots),
+and uses an explicit current-screen/prerequisite dispatcher. Reading or toggling
+it cannot initialize features or change answers. Narrow layouts put it below the
+phone without overlay or shrinking; closing returns focus to the labeled toggle.
+The phone preserves source contextual navigation without a universal toolbar.
 A package-owned Restart clears all session state by a fresh document load; Exit
 uses frozen MB_RELEASE selector or local ../../index.html. Full app is unchanged
 until both package baselines exist and explicit flag cleanup starts.

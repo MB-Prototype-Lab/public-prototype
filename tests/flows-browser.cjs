@@ -7,9 +7,57 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
+const {execFileSync} = require('node:child_process');
 const { pathToFileURL } = require('node:url');
 const repo = process.cwd();
 async function expectScreen(page, screen) { await page.waitForFunction(s => typeof state !== 'undefined' && state.screen === s, screen); }
+async function openTools(page) {
+ const toggle=page.getByRole('button',{name:'Tools',exact:true});
+ if(await toggle.getAttribute('aria-expanded')==='false') await toggle.click();
+ assert.equal(await toggle.getAttribute('aria-expanded'),'true');
+}
+async function checkTools(page) {
+ assert.equal(await page.getByRole('button',{name:'Tools',exact:true}).getAttribute('aria-expanded'),'false');
+ assert.equal(await page.locator('.mb-flow-controls').count(),0);
+ assert.equal(await page.locator('.phone #topbarRoot').innerHTML(),'');
+ assert.equal(await page.locator('#screenRoot').evaluate(el=>el.classList.contains('no-topbar')),true);
+ await page.getByPlaceholder('ZIP code').fill('90210');
+ await page.getByPlaceholder('ZIP code').press('Tab');
+ const answers=await page.evaluate(()=>JSON.stringify(state.onboarding));
+ for(const width of [1440,900,390,320]) {
+  await page.setViewportSize({width,height:900});
+  const phoneBefore=await page.locator('.phone').boundingBox();
+  await page.getByRole('button',{name:'Tools',exact:true}).focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.getByRole('button',{name:'Tools',exact:true}).getAttribute('aria-expanded'),'true');
+  const phone=await page.locator('.phone').boundingBox(), admin=await page.locator('.admin').boundingBox();
+  assert.equal(phone.width,phoneBefore.width);assert.equal(phone.height,phoneBefore.height);
+  assert(width>900 ? admin.x>=phone.x+phone.width : admin.y>=phone.y+phone.height);
+  assert.equal(await page.locator('.phone .admin, .phone #themePicker, .phone #adminExpandTab').count(),0);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  assert.equal(await page.evaluate(()=>JSON.stringify(state.onboarding)),answers);
+  await page.getByRole('button',{name:'Close Tools',exact:true}).click();
+  assert.equal(await page.getByRole('button',{name:'Tools',exact:true}).evaluate(el=>el===document.activeElement),true);
+ }
+ await page.setViewportSize({width:390,height:844});
+ await openTools(page);
+ const steps=await page.evaluate(()=>MB_FLOW.setup_steps);
+ assert.deepEqual(await page.locator('#flowSetupStep option').allTextContents(),steps);
+ for(let i=0;i<steps.length;i++) {
+  await page.getByLabel('Setup step',{exact:true}).focus();
+  await page.getByLabel('Setup step',{exact:true}).selectOption(String(i));
+  assert.equal(await page.evaluate(()=>state.onboarding.step),i);
+  assert.equal(await page.getByLabel('Setup step',{exact:true}).evaluate(el=>el===document.activeElement),true);
+ }
+ await page.getByLabel('Active profile',{exact:true}).selectOption('above_at');
+ assert.equal(await page.evaluate(()=>state.activeProfileId),'above_at');
+ assert.equal(await page.evaluate(()=>state.onboarding.zip),'90210');
+ await page.getByRole('button',{name:'Copy State',exact:true}).click();
+ await page.getByRole('button',{name:'Close Tools',exact:true}).click();
+ await page.reload();
+ await expectScreen(page,'onboarding');
+ assert.equal(await page.getByRole('button',{name:'Tools',exact:true}).getAttribute('aria-expanded'),'false');
+}
 async function next(page) { await page.locator('#onbContinue').click(); }
 async function setup(page, destination='esfBuild') {
   await page.getByPlaceholder('ZIP code').fill('10001');
@@ -86,9 +134,11 @@ async function purchaseBrowser(browser,temp,mode) {
  const base=mode==='file'?pathToFileURL(path.join(pkg,'index.html')).href:new URL('flows/big-purchase/index.html',process.env.MB_FLOW_BASE_URL.replace(/\/?$/, '/')).href;
  await page.goto(base+'?participant=car-123&screen=budget&tracking=true');
  await expectScreen(page,'onboarding');
+ page.on('dialog',dialog=>dialog.dismiss());
+ await checkTools(page);
  await setup(page,'bpLanding');
  const originalAnswers=await page.evaluate(()=>JSON.stringify(state.bpOnbReturn));
- await page.locator('.mb-flow-controls button').filter({hasText:/^Back$/}).click();
+ await page.getByRole('button',{name:'Back',exact:true}).first().click();
  await expectScreen(page,'onboarding');
  assert.equal(await page.evaluate(()=>ONB_STEPS[state.onboarding.step]),'miles');
  assert.equal(await page.evaluate(()=>state.onboarding.zip),'10001');
@@ -97,7 +147,7 @@ async function purchaseBrowser(browser,temp,mode) {
  assert(originalAnswers.includes('10001'));
  await page.getByRole('button',{name:'Start One Now',exact:true}).click();
  await expectScreen(page,'esfBuild');
- await page.locator('.mb-flow-controls button').filter({hasText:/^Back$/}).click();
+ await page.getByRole('button',{name:'Back',exact:true}).first().click();
  await expectScreen(page,'bpLanding');
  // The collapsed answer remains changeable before re-entering the detour.
  await page.locator('button[onclick="bpEsfCheck(null)"]').click();
@@ -108,9 +158,11 @@ async function purchaseBrowser(browser,temp,mode) {
  await page.getByRole('button',{name:'Back to your car',exact:true}).click();
  await chooseCar(page);
  for(const theme of ['light','dark','naturalLight','naturalDark']) {
-  await page.getByLabel('Theme',{exact:true}).selectOption(theme);
+  await openTools(page);
+  await page.locator('#themePicker button[onclick="themeSet(\''+theme+'\')"]').click();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  }
+ await page.getByRole('button',{name:'Close Tools',exact:true}).click();
  for(const payment of ['Cash','Lease','Loan']) {
   await page.getByRole('button',{name:payment,exact:true}).click();
   assert.equal(await page.getByRole('button',{name:payment,exact:true}).getAttribute('aria-pressed'),'true');
@@ -123,7 +175,8 @@ async function purchaseBrowser(browser,temp,mode) {
  assert.equal(await page.evaluate(()=>JSON.stringify(state.plan)),budget);
  assert.equal(await page.evaluate(()=>state.tacticalGoals.filter(g=>g.type==='purchaseSaving').length),1);
  // Separate fresh document proves the after-save caller does not inherit before.
- await page.getByRole('button',{name:'Restart',exact:true}).click();
+ await openTools(page);
+ await page.getByRole('button',{name:'Restart Flow',exact:true}).click();
  await expectScreen(page,'onboarding');
  await page.getByRole('button',{name:'Skip',exact:true}).click();
  await expectScreen(page,'bpLanding');
@@ -138,7 +191,7 @@ async function purchaseBrowser(browser,temp,mode) {
  await expectScreen(page,'esfBuild');
  assert.equal(await page.evaluate(()=>state.bp.esfCaller.kind),'after');
  assert.equal(await page.evaluate(()=>JSON.stringify(state.plan)),afterBudget);
- await page.locator('.mb-flow-controls button').filter({hasText:/^Back$/}).click();
+ await page.getByRole('button',{name:'Back',exact:true}).first().click();
  await expectScreen(page,'bpYourCar');
  assert.equal(await page.evaluate(()=>JSON.stringify(bpfSelected())),selection);
  assert.equal(await page.getByLabel('Already saved, dollars',{exact:true}).inputValue(),'$200');
@@ -156,12 +209,36 @@ async function purchaseBrowser(browser,temp,mode) {
  assert.equal(await page.evaluate(()=>JSON.stringify(state.plan)),esfBudget);
  assert.equal(await page.evaluate(()=>state.tacticalGoals.filter(g=>g.type==='purchaseSaving').length),1);
  assert.equal(await page.evaluate(()=>state.tacticalGoals.filter(esfLooksLikeEsfGoal).length),1);
+ // Exercise every restored interactive purchase tool through its rendered UI.
+ await openTools(page);
+ const savedBudget=await page.evaluate(()=>JSON.stringify(state.plan));
+ await page.getByRole('button',{name:'Mark the goal reached',exact:true}).click();
+ await expectScreen(page,'goals');
+ await page.getByRole('button',{name:'Make the purchase date today',exact:true}).click();
+ await page.evaluate(()=>go('bpFinder'));
+ await page.getByRole('button',{name:'Jump: Toyota 4Runner, new',exact:true}).click();
+ await page.evaluate(()=>go('bpSetup'));
+ await page.getByRole('button',{name:'Fill: Everyday SUV · Gas · New · $35,000',exact:true}).click();
+ await page.evaluate(()=>go('bpCost'));
+ for(const variant of ['A','B']) {
+  await page.getByRole('button',{name:'Version '+variant,exact:true}).click();
+  assert.equal(await page.evaluate(()=>state.bp.costVariant),variant);
+ }
+ for(const screen of ['bpOptions','bpFinance','bpCommit']) {
+  await page.evaluate(s=>go(s),screen);
+  assert(await page.locator('#adminRoot').innerText());
+ }
+ await page.evaluate(()=>bpQuizStart());
+ assert((await page.locator('#adminRoot').innerText()).includes('Scores'));
+ assert.equal(await page.evaluate(()=>JSON.stringify(state.plan)),savedBudget);
+ assert.equal(await page.evaluate(()=>__navLog.every(s=>MB_FLOW.allowed_screens.includes(s))),true);
  await page.reload();
  await expectScreen(page,'onboarding');
  assert.equal(await page.evaluate(()=>state.bp),null);
  assert.equal(new URL(page.url()).searchParams.get('participant'),'car-123');
  assert.equal(errors.length,0,errors.join('\n'));
- await page.getByRole('button',{name:'Exit',exact:true}).click();
+ await openTools(page);
+ await page.getByRole('button',{name:'Exit Flow',exact:true}).click();
  await page.waitForURL(u=>u.pathname.endsWith('/index.html')&&!u.pathname.includes('/flows/'));
  console.log('PASS BP '+process.platform+' Chromium '+mode+': docked setup/back/skip, actual finder/model/cost/loan/cash/lease, before and after ESF save/back/resume, intact inputs, repeat saves, distinct budget effects, themes/narrow, refresh/restart/exit and participant parameters');
  await page.close();
@@ -174,6 +251,28 @@ async function purchaseBrowser(browser,temp,mode) {
   fs.mkdirSync(path.dirname(pkg),{recursive:true});
   fs.cpSync(path.join(repo,'flows','emergency-fund'),pkg,{recursive:true});
   fs.writeFileSync(path.join(temp,'index.html'),'<title>Selector destination</title>');
+  // Exercise the actual creation adapter against a full source application.
+  const starter=path.join(temp,'flows','starter');
+  fs.cpSync(path.join(repo,'app'),starter,{recursive:true});
+  execFileSync('python3',['-c', 'from pathlib import Path; from scripts.flows import adapt_starter; import sys; adapt_starter(Path(sys.argv[1]))',starter],{cwd:repo});
+  fs.writeFileSync(path.join(starter,'flow-config.js'),'window.MB_FLOW={id:"starter",entry:"onboarding",allowed_screens:["onboarding"],setup_steps:[]};');
+  const starterPage=await browser.newPage({viewport:{width:390,height:844}});
+  const starterErrors=[];
+  starterPage.on('pageerror',e=>starterErrors.push(e.message));
+  await starterPage.goto(pathToFileURL(path.join(starter,'index.html')).href);
+  await expectScreen(starterPage,'onboarding');
+  assert.equal(await starterPage.locator('.admin:visible').count(),0);
+  await openTools(starterPage);
+  assert.equal(await starterPage.locator('#flowSetupStep').count(),0);
+  assert.equal(await starterPage.locator('.phone button[onclick*="mbFlowRestart"], .phone button[onclick*="mbFlowExit"]').count(),0);
+  assert.equal(await starterPage.locator('#adminRoot select').count(),1);
+  await starterPage.getByLabel('Active profile',{exact:true}).selectOption('above_at');
+  await starterPage.evaluate(()=>{go('settings');navAdminJump('home');});
+  await expectScreen(starterPage,'onboarding');
+  assert.equal(starterErrors.length,0,starterErrors.join('\n'));
+  await starterPage.close();
+  console.log('PASS generated starter: collapsed outside-phone tools, safe profile-only setup controls, excluded routes blocked');
+
   for (const mode of (process.env.MB_FLOW_BASE_URL ? ['file','http'] : ['file'])) {
    const page=await browser.newPage({viewport:{width:390,height:844}});
    const errors=[];
@@ -181,13 +280,15 @@ async function purchaseBrowser(browser,temp,mode) {
    const base=mode==='file'?pathToFileURL(path.join(pkg,'index.html')).href:new URL('flows/emergency-fund/index.html',process.env.MB_FLOW_BASE_URL.replace(/\/?$/, '/')).href;
    await page.goto(base+'?participant=review-123&screen=budget&useberry=true&tracking=true');
    await expectScreen(page,'onboarding');
+   page.on('dialog',dialog=>dialog.dismiss());
+   await checkTools(page);
    assert.equal(await page.locator('.admin:visible').count(),0);
    assert.equal(await page.locator('#navRoot button').count(),0);
    await page.getByPlaceholder('ZIP code').focus();
    assert.equal(await page.getByPlaceholder('ZIP code').evaluate(e=>document.activeElement===e),true);
    await setup(page);
    assert.equal(await page.evaluate(()=>state.profile.zip),'10001');
-   await page.locator('.mb-flow-controls button').filter({hasText:/^Back$/}).click();
+   await page.getByRole('button',{name:'Back',exact:true}).first().click();
    await expectScreen(page,'onboarding');
    assert.equal(await page.getByPlaceholder('ZIP code').inputValue(),'10001');
    const saved=await page.evaluate(()=>JSON.stringify(state.onboarding));
@@ -196,11 +297,13 @@ async function purchaseBrowser(browser,temp,mode) {
    await expectScreen(page,'esfBuild');
    assert.equal(await page.evaluate(()=>state.profile.zip),'10001');
    for(const theme of ['light','dark','naturalLight','naturalDark']){
-    await page.getByLabel('Theme',{exact:true}).selectOption(theme);
+    await openTools(page);
+  await page.locator('#themePicker button[onclick="themeSet(\''+theme+'\')"]').click();
     assert.equal(await page.evaluate(()=>themeCurrent().id),theme);
     assert.equal(await page.locator('.phone').isVisible(),true);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    }
+   await page.getByRole('button',{name:'Close Tools',exact:true}).click();
    await saveAndReopenFund(page);
    assert.equal(await page.evaluate(()=>Array.from(document.scripts).some(s=>/useberry.*(?:\.com|\.io)/i.test(s.src))),false);
    if(mode==='http')assert.equal(new URL(page.url()).searchParams.get('participant'),'review-123');
@@ -210,12 +313,14 @@ async function purchaseBrowser(browser,temp,mode) {
    assert.equal(await page.getByPlaceholder('ZIP code').inputValue(),'');
    await page.getByRole('button',{name:'Skip',exact:true}).click();
    await expectScreen(page,'esfBuild');
-   await page.getByRole('button',{name:'Restart',exact:true}).click();
+   await openTools(page);
+ await page.getByRole('button',{name:'Restart Flow',exact:true}).click();
    await expectScreen(page,'onboarding');
    assert.equal(new URL(page.url()).searchParams.get('participant'),'review-123');
    assert.equal(errors.length,0,errors.join('\n'));
    if(process.env.MB_FLOW_SCREENSHOT_DIR) await page.screenshot({path:path.join(process.env.MB_FLOW_SCREENSHOT_DIR,'mb-esf-'+mode+'-review.png')});
-   await page.getByRole('button',{name:'Exit',exact:true}).click();
+   await openTools(page);
+ await page.getByRole('button',{name:'Exit Flow',exact:true}).click();
    await page.waitForURL(u=>u.pathname.endsWith('/index.html')&&!u.pathname.includes('/flows/'));
    console.log('PASS ESF '+process.platform+' Chromium '+mode+': actual setup inputs/clicks, first-expense Back/Skip answers, themes/narrow layout, focus, fund media/save/reopen/repeat save, tracking off, refresh, restart, exit; '+(mode==='file'?'path with spaces':'participant parameters'));
    await page.close();

@@ -202,7 +202,7 @@ function renderHmoAsk(s) {
   const done = hmoComplete(s.category, s.answers);
   const running = hmoCompute(s.category, s.answers);
   const answeredAny = t.questions.some(q => q.type !== "slider" && s.answers[q.id] != null);
-  const queued = bbPendingHelp().length;
+  const queued = s.target === "esf" ? 0 : bbPendingHelp().length;
 
   return `
     <div class="journal-shell">
@@ -304,7 +304,7 @@ function renderHmoConfirm(s) {
   const conditioned = hmoBandIsConditioned(s.category, s.answers);
   const peer = hmoPeerValue(s.category, s.answers);
   const g = budgetBandGeometry({ budget: s.value, actual: 0, peer: peer, hi: s.sliderMax });
-  const queued = bbPendingHelp().length;
+  const queued = s.target === "esf" ? 0 : bbPendingHelp().length;
 
   return `
     <div class="journal-shell">
@@ -386,7 +386,7 @@ function renderHelpMeOutAdmin() {
       </div>
       <div class="input-group">
         <label>Queue</label>
-        <div class="helper">${bbPendingHelp().map(h).join(", ") || "last one"}</div>
+        <div class="helper">${s.target === "esf" ? "Emergency fund expense" : (bbPendingHelp().map(h).join(", ") || "last one")}</div>
       </div>
     </div>`;
 }

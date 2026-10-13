@@ -76,3 +76,22 @@ commit. No new category, onboarding question or financial calculation is added.
 Runtime checks live in `tests/flows-runtime.cjs`; browser evidence and platform
 limitations are recorded separately in the project handoff/PR. Linux browser
 automation does not imply Windows/WSL or macOS acceptance.
+
+
+## Reviewer tools
+
+Tools starts collapsed on file, HTTP and published snapshots. Its labeled toggle
+reports expanded state; Close returns focus to that toggle. The panel sits beside
+the phone on desktop and below it through normal page scrolling on narrow screens.
+Opening, closing and reading it preserve participant answers and do not initialize
+feature sessions. Participant navigation uses the source headers, footers and
+contextual Back controls; there is no universal reviewer toolbar in the phone.
+
+Restart Flow clears the entire session by reloading; Exit Flow uses the release
+selector. Four themes, Copy State, navigation/error/session diagnostics and an
+explicit dispatcher expose only the current allowed screen with valid feature
+state. Setup offers only this Flow's steps and valid profiles. ESF calculations
+and help diagnostics use the fund session. Purchase fixtures, layout comparisons
+and goal/reminder simulations require an initialized included purchase screen.
+Goals and copied diagnostics omit unrelated seeded goals and product activity.
+There is no fallback to the full-app admin renderer or unrestricted screen picker.

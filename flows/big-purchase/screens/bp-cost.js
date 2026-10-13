@@ -429,7 +429,7 @@ function renderBpCost() {
 }
 
 function renderBpCostAdmin() {
-  bpEnsureSetup();
+  if (!state.bp || !bpSetupComplete()) return "";
   const card = bpCard("pick");
   const t = bpCostTotals(card);
   return `

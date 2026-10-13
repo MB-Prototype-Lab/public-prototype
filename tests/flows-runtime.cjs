@@ -39,6 +39,19 @@ function bootFlow(id, href = `file:///prototype/flows/${id}/index.html`, reload 
   for(const match of html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"[^>]*><\/script>/g)) {
     vm.runInContext(fs.readFileSync(path.join(folder,match[1]),'utf8'),c,{filename:match[1]});
   }
+  // Every actual participant render also audits tools readers for side effects.
+  const participantRender = c.render;
+  const flowState = vm.runInContext('state',c);
+  c.render = function () {
+    participantRender();
+    const collapsed = flowState.adminCollapsed;
+    flowState.adminCollapsed = false;
+    const before = JSON.stringify(flowState), count = pushes.length;
+    c.renderAdmin();
+    assert.equal(JSON.stringify(flowState), before, id + ' admin reader mutated ' + flowState.screen);
+    assert.equal(pushes.length, count);
+    flowState.adminCollapsed = collapsed;
+  };
   return {c,run:code=>vm.runInContext(code,c),elements,events,pushes,loc,html};
 }
 function esfTests() {
@@ -152,9 +165,10 @@ function esfTests() {
     assert.equal(run('state.tacticalGoals.length'),1);
     assert.equal(run('state.expenses.rows.groceries'),555);
     assert.equal(run('state.plan.Groceries'),555);
-    for(const theme of run('THEMES.map(t=>t.id)')) {c.themeSet(theme);c.render();assert.ok(c.renderTopBar().includes(`value="${theme}" selected`));}
+    for(const theme of run('THEMES.map(t=>t.id)')) {c.themeSet(theme);c.render();assert.equal(c.themeCurrent().id,theme);}
     assert.equal(c.renderNav(),'');assert.equal(c.renderAdmin(),'');
-    assert.ok(c.renderTopBar().includes('aria-label="Theme"'));
+    assert.ok(!c.renderTopBar().includes('mb-flow-controls'));
+    c.mbFlowToolsToggle(true);assert.ok(c.renderAdmin().includes('Flow goals'));c.mbFlowToolsToggle(false);
     assert.ok(t.pushes.every(s=>!['home','aboutMe','settings','bpLanding'].includes(s.screen)));
     if(protocol==='https:') {
       const u=new URL(t.loc.href);assert.equal(u.searchParams.get('PROLIFIC_PID'),'p123');assert.equal(u.searchParams.get('study'),'sample');assert.equal(u.searchParams.get('profile'),'above_at');
@@ -265,7 +279,7 @@ function bpTests() {
     c.bpYcSetNeed(false);assert.ok(!c.renderBpYourCar().includes('thenEsf'));purchase(t,{noGoal:true});assert.equal(run('state.bigPurchase.goalId'),null);assert.equal(run('state.tacticalGoals.filter(g=>g.type==="purchaseSaving").length'),0);
     blocked(t,excluded);
     for(const unwanted of ['goalsRemove','Create your own','Settings',"go('budget')"]) assert.ok(!c.renderGoalsV3().includes(unwanted));
-    for(const theme of run('THEMES.map(t=>t.id)')) {c.themeSet(theme);c.render();assert.ok(c.renderTopBar().includes(`value="${theme}" selected`));}
+    for(const theme of run('THEMES.map(t=>t.id)')) {c.themeSet(theme);c.render();assert.equal(c.themeCurrent().id,theme);}
     assert.equal(c.renderNav(),'');assert.equal(c.renderAdmin(),'');
     const good=run('getNavSnapshot()'),poisoned=JSON.parse(JSON.stringify(good));poisoned.nav.stacks.home=['home','settings','goals'];c.restoreNavSnapshot(poisoned);assert.equal(run('state.nav.stacks.home.join(",")'),'goals');
     c.restoreNavSnapshot({...good,mbFlowSession:'prior-document'});assert.equal(run('state.screen'),'onboarding');
@@ -307,3 +321,60 @@ function bpTests() {
 }
 if(require.main===module) {esfTests();bpTests();console.log('Emergency fund and big purchase actual-script runtime journeys and containment checks passed.');}
 module.exports={bootFlow,esfTests,bpTests};
+
+function reviewerTests() {
+ for (const id of ['emergency-fund','big-purchase']) {
+  const t=bootFlow(id), {c,run}=t;
+  assert.equal(run('state.adminCollapsed'),true);
+  assert.equal(c.renderTopBar(),'');
+  const before=JSON.stringify(run('state.onboarding'));
+  c.mbFlowToolsToggle(true);
+  assert(c.renderAdmin().includes('flowSetupStep'));
+  assert(!c.renderAdmin().includes('Restart onboarding'));
+  assert(!c.renderAdmin().includes('navAdminJump'));
+  assert.equal(JSON.stringify(run('state.onboarding')),before);
+  for(const v of ['-1','999','1.2','1junk','',NaN,'settings']) assert.equal(c.mbFlowSetupStep(v),false);
+  assert.equal(c.mbFlowProfile('bad-profile'),false);
+  assert.equal(c.mbFlowProfile('above_at'),true);
+  const zip=run('state.onboarding.zip');
+  for(let i=0;i<run('ONB_STEPS.length');i++) assert.equal(c.mbFlowSetupStep(String(i)),true);
+  assert.equal(run('state.onboarding.zip'),zip);
+  for(const action of ['fixture','car','variant','reach','due','settings']) assert.equal(c.mbFlowAdminAction(action,'nonsense'),false);
+  c.mbFlowToolsToggle(false);
+  assert.equal(c.renderAdmin(),'');
+  c.onbSkipAll();
+  if(id==='emergency-fund') {
+   c.esfRunHelp('Groceries');c.render();
+   assert.equal(run('state.budgetBuild'),null);
+   c.hmoBack();
+  } else {
+   c.bpEsfCheck('after');c.bpPickCategory('vehicle');
+   c.mbFlowToolsToggle(true);
+   assert(c.renderAdmin().includes("mbFlowAdminAction('car')"));
+   assert.equal(c.mbFlowAdminAction('car'),true);
+   c.bpfContinue();
+   c.go('bpSetup');
+   assert.equal(c.mbFlowAdminAction('fixture'),true);
+   c.go('bpCost');
+   for(const v of ['A','B']) assert.equal(c.mbFlowAdminAction('variant',v),true);
+   assert.equal(c.mbFlowAdminAction('variant','home'),false);
+   c.bpQuizStart();c.go('bpOptions');c.go('bpFinance');c.go('bpCommit');c.bpCommit();
+   assert.equal(c.mbFlowAdminAction('reach'),true);
+   assert.equal(c.mbFlowAdminAction('due'),true);
+   assert(c.renderAdmin().includes('Flow goals'));
+   assert(!c.renderAdmin().includes('Strategic'));
+  }
+  assert.equal(run('Object.hasOwn(appStateSnapshot(),"strategicGoal")'),false);
+  assert.equal(run('Object.hasOwn(appStateSnapshot(),"journal")'),false);
+  // Invalid/cold screens cannot start a session through instrumentation.
+  run('state.esf=null;state.bp=null;state.screen="esfPlan";state.adminCollapsed=false');
+  const cold=JSON.stringify(run('state'));
+  assert.equal(c.renderAdmin(),'');
+  assert.equal(JSON.stringify(run('state')),cold);
+  assert(t.pushes.every(s=>run('window.MB_FLOW.allowed_screens').includes(s.screen)));
+ }
+}
+if(require.main===module) {
+ reviewerTests();
+ console.log('Flow reviewer readers, scoped controls, malformed inputs and prerequisites passed.');
+}

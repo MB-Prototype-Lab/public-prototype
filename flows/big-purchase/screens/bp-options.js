@@ -300,7 +300,7 @@ function renderBpOptions() {
 }
 
 function renderBpOptionsAdmin() {
-  bpEnsureSetup();
+  if (!state.bp || !bpSetupComplete()) return "";
   const cards = bpCards();
   const pickSt = bpStack(cards[0], 5);
   return `

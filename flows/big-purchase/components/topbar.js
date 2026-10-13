@@ -48,7 +48,7 @@ function renderTopBar() {
     // The home icon is the one route out of the emergency-fund build and into
     // the daily-loop screens, which the ESF-only build is not showing. Left in
     // place it is a door to a room that has been taken off the map.
-    left = `<button class="topbar-btn" type="button" onclick="navGoHome()" aria-label="Home">${TOPBAR_HOME_ICON}</button>`;
+    left = `<span class="topbar-slot"></span>`;
   } else if (fullBleed) {
     // Nav is hidden here, so back is the only exit. Depth 1 on a full-bleed
     // screen means it was entered as a stack root — fall back to home.
@@ -73,9 +73,9 @@ function renderTopBar() {
         <span class="topbar-dot">·</span>
         <span class="topbar-stat" title="Buddy level">Lv&nbsp;${h(state.buddyLevel)}</span>
       </div>
-      <button class="topbar-btn" type="button" onclick="topbarToggleMenu()" aria-label="Menu">☰</button>
+      <span class="topbar-slot"></span>
     </div>
-    ${state.topbarMenuOpen ? renderTopBarMenu() : ""}
+
   `;
 }
 

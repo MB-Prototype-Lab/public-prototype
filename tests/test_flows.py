@@ -23,6 +23,7 @@ class FlowsTest(unittest.TestCase):
         self.write('app/release-config.js', '')
         self.write('app/js/config.js', '')
         self.write('app/js/navigation.js', 'bootV3();')
+        self.write('app/css/keyboard.css', '')
         self.write('app/docs/excluded.json', '{}')
         self.write('app/.secret', 'hidden')
         self.write('app/source.py', 'not static')
@@ -58,6 +59,12 @@ class FlowsTest(unittest.TestCase):
             self.assertFalse((package / absent).exists())
         self.assertEqual(before, self.inventory())
         self.assertEqual(json.loads((package / 'flow.json').read_text())['allowed_screens'], ['onboarding'])
+        self.assertTrue((package / 'js/flow-tools.js').exists())
+        self.assertTrue((package / 'css/flow-tools.css').exists())
+        runtime = (package / 'js/flow.js').read_text()
+        self.assertIn('state.adminCollapsed = true', runtime)
+        self.assertIn('screen === "onboarding"', runtime)
+        self.assertNotIn('mbFlowRestart()', (package / 'index.html').read_text())
         self.assertLess((package / 'index.html').read_text().index('flow-config.js'), (package / 'index.html').read_text().index('js/config.js'))
 
     def test_unsafe_ids_sources_and_collisions_preserve_catalog(self):

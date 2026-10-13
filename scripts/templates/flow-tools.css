@@ -1,0 +1,37 @@
+/* Reviewer tools occupy their own grid track, never the phone viewport. */
+.page, .page.admin-collapsed {
+  grid-template-columns: 390px;
+  padding-top: 76px;
+}
+.page:not(.admin-collapsed) { grid-template-columns: 390px 390px; }
+.admin-expand-tab {
+  display: flex;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: auto;
+  min-width: 72px;
+  height: 44px;
+  padding: 8px 12px;
+}
+.admin-collapse-btn { min-height: 44px; padding: 8px; font-size: 14px; }
+.admin[hidden] { display: none !important; }
+.admin-scroll { overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  .page, .page.admin-collapsed, .page:not(.admin-collapsed) {
+    grid-template-columns: minmax(0, 390px);
+    padding: 76px 0 24px;
+  }
+  .phone { width: 390px; max-width: 100%; flex-shrink: 0; }
+  .admin:not([hidden]) {
+    display: flex !important;
+    position: relative;
+    top: auto;
+    width: 390px;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+  }
+  .admin-scroll { overflow: visible; }
+  #adminExpandTab { display: flex !important; }
+}

@@ -22,6 +22,14 @@ the selector. Participant parameters survive navigation and restart; a recorded
 screen or trail does not recreate a previous session. Local tracking stays off.
 A participant URL cannot enable tracking or unlock excluded screens.
 
+Reviewer controls live outside the phone in the initially collapsed **Tools**
+panel, including in snapshots. Open Tools for Restart Flow, Exit Flow, themes,
+Copy State and controls for the current initialized screen. Desktop places the
+panel alongside the phone; narrow screens place it below through page scrolling.
+Closing returns focus to Tools. Setup steps stay within each Flow's policy, and
+no unrestricted product screen picker is available. The phone retains the source
+participant headers, footers and contextual Back controls.
+
 The initial experiences are `emergency-fund` and `big-purchase`. Emergency Fund
 includes setup, expense help, planning, repeat saving and constrained Goals. Big
 Purchase includes its vehicle journey and its own bundled emergency-fund detours;

@@ -244,7 +244,8 @@ def check_package(directory, m):
 
 
 GENERIC_RUNTIME = '''// Generated starter containment. Adapt policy and prerequisites for the concrete Flow.
-function mbFlowAllowed(screen) { return window.MB_FLOW.allowed_screens.indexOf(screen) !== -1; }
+var mbFlowSession = Math.random().toString(36).slice(2);
+function mbFlowAllowed(screen) { return window.MB_FLOW.allowed_screens.indexOf(screen) !== -1 && screen === "onboarding" && !!state.onboarding; }
 function mbFlowSeed() {
   state.screen = window.MB_FLOW.entry;
   state.nav = {activeStack: "home", stacks: {home: [state.screen]}};
@@ -259,15 +260,18 @@ function mbFlowExit() { location.assign(window.MB_RELEASE.selector); }
 v3EntryScreen = function () { return window.MB_FLOW.entry; };
 function mbFlowInstall() {
   try { var profile = new URL(location.href).searchParams.get("profile"); if (profile) profileApply(profile); } catch (e) {}
+  state.adminCollapsed = true;
   mbFlowSeed();
   var oldScreen = renderScreen;
   renderScreen = function () { if (!mbFlowAllowed(state.screen)) mbFlowSeed(); return oldScreen(); };
-  renderAdmin = function () { return ""; };
+  renderAdmin = mbFlowRenderAdmin;
+  appStateSnapshot = mbFlowStateSnapshot;
+  copyAppState = mbFlowCopyState;
   renderNav = function () { return ""; };
   var oldRender = render;
   render = function () { if (!mbFlowAllowed(state.screen)) mbFlowSeed(); oldRender();
     document.getElementById("navRoot").innerHTML = "";
-    document.getElementById("adminRoot").innerHTML = "";
+    mbFlowToolsSync();
   };
   go = function (screen) { if (!mbFlowAllowed(screen)) return; state.nav.stacks.home.push(screen); navCommit(screen); };
   navCommit = function (screen) { if (!mbFlowAllowed(screen)) return; state.screen = screen; render(); };
@@ -286,7 +290,23 @@ def adapt_starter(directory):
     html = re.sub(r'  <script>\s*// On browser refresh,.*?</script>', '', html, count=1, flags=re.S)
     html = html.replace('<script src="release-config.js"></script>', '<script src="release-config.js"></script>\n  <script src="flow-config.js"></script>')
     html = html.replace('<script src="js/navigation.js"></script>', '<script src="js/flow.js"></script>\n<script src="js/navigation.js"></script>')
-    html = html.replace('<div id="navRoot"></div>', '<div id="navRoot"></div><button type="button" onclick="mbFlowRestart()">Restart Flow</button><button type="button" onclick="mbFlowExit()">Exit Flow</button>')
+    html = html.replace('<link rel="stylesheet" href="css/keyboard.css">', '<link rel="stylesheet" href="css/keyboard.css">\n<link rel="stylesheet" href="css/flow-tools.css">')
+    html = html.replace('<script src="js/flow.js"></script>', '<script src="js/flow-tools.js"></script>\n<script src="js/flow.js"></script>')
+    html = html.replace('<div class="page">', '<div class="page admin-collapsed">')
+    html = html.replace('<aside class="admin" aria-label="Admin Tools">', '<aside id="flowAdmin" class="admin" aria-label="Admin Tools" hidden>')
+    html = html.replace('onclick="state.adminCollapsed=true;render()" title="Collapse admin">‹', 'onclick="mbFlowToolsToggle(false)" aria-label="Close Tools">Close')
+    html = html.replace('onclick="state.adminCollapsed=false;render()" title="Expand admin">›', 'onclick="mbFlowToolsToggle(state.adminCollapsed)" aria-controls="flowAdmin" aria-expanded="false">Tools')
+    html = html.replace('onclick="resetUserData()">Reset User Data', 'onclick="mbFlowRestart()">Restart Flow')
+    html = html.replace('<!-- Theme picker (L21).', '<button class="button secondary full" type="button" onclick="mbFlowExit()">Exit Flow</button>\n      <!-- Theme picker (L21).')
+    html = html.replace('<div id="adminNavLog"', '<div id="adminSessionLog"></div>\n      <div id="adminNavLog"')
+    templates = Path(__file__).resolve().parent / 'templates'
+    (directory / 'js/flow-tools.js').write_text((templates / 'flow-tools.js').read_text())
+    (directory / 'css').mkdir(exist_ok=True)
+    (directory / 'css/flow-tools.css').write_text((templates / 'flow-tools.css').read_text())
+    # An onboarding-only starter has no shared product header or global menu.
+    topbar = directory / 'components/topbar.js'
+    if topbar.exists():
+        topbar.write_text(topbar.read_text() + '\nrenderTopBar = function () { return ""; };\n')
     (directory / 'index.html').write_text(html)
     nav = directory / 'js/navigation.js'
     nav.write_text(nav.read_text().replace('bootV3();', 'bootV3();\nmbFlowInstall();', 1))

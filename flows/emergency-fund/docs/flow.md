@@ -12,8 +12,8 @@ goals. Ask Buddy is an overlay on expense capture and planning. Help-me-out is
 permitted only with an active fund and an ESF-targeted help session. Planning
 requires an active fund; Goals requires completed or skipped setup. There are no
 product tabs, settings, arbitrary admin jumps, purchase cards or other goal
-creation/removal controls. The toolbar provides Back, Restart, Exit and the four
-themes. The existing calculations, help models, Buddy tree, normal esfStart,
+creation/removal controls. Source headers and contextual Back controls remain in the phone. Reviewer
+controls live in the separate, initially collapsed Tools panel. The existing calculations, help models, Buddy tree, normal esfStart,
 esfReopen and esfCommit remain package-local copies of the source behavior.
 
 Setup asks ZIP, income, household, home type, health coverage and driving. Skip
@@ -48,3 +48,22 @@ save/repeat/reopen, source budget effects, route/deep-link/history/render guards
 themes, file/HTTP profiles and restart. Its DOM is simulated; native layouts,
 keyboard/pointer behavior, media and platform-specific file opening need browser
 review. This package is an editable proposal, not product approval or publication.
+
+
+## Reviewer tools
+
+Tools starts collapsed on file, HTTP and published snapshots. Its labeled toggle
+reports expanded state; Close returns focus to that toggle. The panel sits beside
+the phone on desktop and below it through normal page scrolling on narrow screens.
+Opening, closing and reading it preserve participant answers and do not initialize
+feature sessions. Participant navigation uses the source headers, footers and
+contextual Back controls; there is no universal reviewer toolbar in the phone.
+
+Restart Flow clears the entire session by reloading; Exit Flow uses the release
+selector. Four themes, Copy State, navigation/error/session diagnostics and an
+explicit dispatcher expose only the current allowed screen with valid feature
+state. Setup offers only this Flow's steps and valid profiles. ESF calculations
+and help diagnostics use the fund session. Purchase fixtures, layout comparisons
+and goal/reminder simulations require an initialized included purchase screen.
+Goals and copied diagnostics omit unrelated seeded goals and product activity.
+There is no fallback to the full-app admin renderer or unrestricted screen picker.
