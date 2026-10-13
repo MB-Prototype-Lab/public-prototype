@@ -353,6 +353,9 @@ def scope(root, base, selected_scope):
         raise ValueError('scope base must be a full commit SHA')
     git(root, 'cat-file', '-e', base + '^{commit}')
     changed = set(git(root, 'diff', '--name-only', base, '--', 'app').decode().splitlines())
+    # A worktree restored to baseline can hide a different staged version. Check
+    # the index separately because that version is what the next commit records.
+    changed.update(git(root, 'diff', '--cached', '--name-only', base, '--', 'app').decode().splitlines())
     changed.update(git(root, 'ls-files', '--others', '--exclude-standard', 'app').decode().splitlines())
     if changed and selected_scope == 'flow':
         raise ValueError('Flow scope changes app/: ' + ', '.join(sorted(changed)) + '; restore accidental edits or explicitly use app-integration scope for approved integration')

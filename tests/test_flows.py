@@ -130,6 +130,14 @@ class FlowsTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             flows.validate_metadata(m, 'sample')
 
+    def test_scope_rejects_staged_change_when_worktree_matches_base(self):
+        self.write('app/js/config.js', '// staged product change')
+        self.git('add', 'app/js/config.js')
+        self.write('app/js/config.js', '')
+        with self.assertRaisesRegex(ValueError, 'app/js/config.js'):
+            flows.scope(self.root, self.base, 'flow')
+        flows.scope(self.root, self.base, 'app-integration')
+
     def test_dependencies_negative_and_dynamic_prefixes(self):
         valid = {'index.html': b'<script src="js/main.js"></script>', 'js/main.js': b'const asset = `assets/img/${name}.png`;', 'assets/img/example.png': b'image'}
         flows.validate_dependencies(valid)
