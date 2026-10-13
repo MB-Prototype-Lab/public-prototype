@@ -228,10 +228,11 @@ def check_package(directory, m):
             raise ValueError(f'{directory}: missing {required}')
     html = (directory / 'index.html').read_text()
     scripts = re.findall(r'<script\b[^>]*\bsrc\s*=\s*["\']([^"\']+)["\']', html, re.I)
-    required_scripts = ['release-config.js', 'flow-config.js', 'js/config.js', 'js/flow.js', 'js/navigation.js']
+    required_scripts = ['release-config.js', 'flow-config.js', 'js/refresh-pin.js', 'js/config.js', 'js/flow.js', 'js/navigation.js']
     if any(scripts.count(name) != 1 for name in required_scripts):
-        raise ValueError(f'{directory}: entry must load each required configuration/runtime script exactly once')
-    if not (scripts.index('release-config.js') < scripts.index('js/config.js') and
+        raise ValueError(f'{directory}: entry must load each required configuration/runtime script exactly once '
+                         '(the source app commit must include js/refresh-pin.js)')
+    if not (scripts.index('release-config.js') < scripts.index('js/refresh-pin.js') < scripts.index('js/config.js') and
             scripts.index('flow-config.js') < scripts.index('js/config.js') and
             scripts.index('js/flow.js') < scripts.index('js/navigation.js')):
         raise ValueError(f'{directory}: policy must load before app config, runtime before navigation boot')
@@ -250,12 +251,7 @@ function mbFlowSeed() {
   state.screen = window.MB_FLOW.entry;
   state.nav = {activeStack: "home", stacks: {home: [state.screen]}};
 }
-function mbFlowRestart() {
-  var url = new URL(location.href);
-  url.searchParams.delete("screen");
-  if (url.hash.indexOf("#v=") === 0) url.hash = "";
-  location.replace(url.href);
-}
+function mbFlowRestart() { refreshPinRestart(); }
 function mbFlowExit() { location.assign(window.MB_RELEASE.selector); }
 v3EntryScreen = function () { return window.MB_FLOW.entry; };
 function mbFlowInstall() {
@@ -287,7 +283,6 @@ function mbFlowInstall() {
 
 def adapt_starter(directory):
     html = (directory / 'index.html').read_text()
-    html = re.sub(r'  <script>\s*// On browser refresh,.*?</script>', '', html, count=1, flags=re.S)
     html = html.replace('<script src="release-config.js"></script>', '<script src="release-config.js"></script>\n  <script src="flow-config.js"></script>')
     html = html.replace('<script src="js/navigation.js"></script>', '<script src="js/flow.js"></script>\n<script src="js/navigation.js"></script>')
     html = html.replace('<link rel="stylesheet" href="css/keyboard.css">', '<link rel="stylesheet" href="css/keyboard.css">\n<link rel="stylesheet" href="css/flow-tools.css">')
@@ -297,7 +292,7 @@ def adapt_starter(directory):
     html = html.replace('onclick="state.adminCollapsed=true;render()" title="Collapse admin">‹', 'onclick="mbFlowToolsToggle(false)" aria-label="Close Tools" title="Collapse admin">‹')
     html = html.replace('onclick="state.adminCollapsed=false;render()" title="Expand admin">›', 'onclick="mbFlowToolsToggle(true)" aria-label="Tools" aria-controls="flowAdmin" aria-expanded="false" title="Expand admin">›')
     html = html.replace('onclick="resetUserData()">Reset User Data', 'onclick="mbFlowRestart()">Restart Flow')
-    html = html.replace('<!-- Theme picker (L21).', '<button class="button secondary" type="button" style="margin-top:6px;width:100%;font-size:11px;" onclick="mbFlowExit()">Exit Flow</button>\n      <!-- Theme picker (L21).')
+    html = html.replace('onclick="refreshPinExit()">Exit Prototype', 'onclick="mbFlowExit()">Exit Flow')
     html = html.replace('<div id="adminNavLog"', '<div id="adminSessionLog" style="margin-bottom:4px;"></div>\n      <div id="adminNavLog"')
     templates = Path(__file__).resolve().parent / 'templates'
     (directory / 'js/flow-tools.js').write_text((templates / 'flow-tools.js').read_text())

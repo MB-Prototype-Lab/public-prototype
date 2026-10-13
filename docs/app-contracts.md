@@ -234,6 +234,13 @@ The three factors are asserted separately — see architecture §5.
   matcher; benchmarks are static; the journal is structured.
 - **No backend, no database, no localStorage** (D03). State is in-memory and
   resets on refresh. This is intentional.
+- **Refresh pin** (`js/refresh-pin.js`, loaded right after `release-config.js`). A
+  reload returns to the selector unless Admin Tools' **Pin on refresh** is checked;
+  pinned, the same page restarts fresh without `?screen=` or the `#v=` trail.
+  The pin is one sessionStorage flag per browser tab, shared with Flows and the
+  comparison toolbar; it is a reviewer preference, never participant data. An
+  embedded copy (a comparison pane) ignores it, never redirects to the selector,
+  and disables the pin and **Exit Prototype** with a note. Exit leaves the pin set.
 - **The app runs on `file://`** — `fetch()` and XHR are blocked and there is no
   dev server. Data loads via `<script>` tags (`data/*.js`), never a network call.
 

@@ -28,7 +28,13 @@ Show tools do not reduce preview height. Scrolling inside the app still works no
 Progress lasts until refresh or exit through **Back to versions**. Restart resets
 only that variant; opening a new tab starts a separate session. Hidden previews
 remain running, including audio: pause playback before switching away. Refresh
-returns to the ordinary selector. Previews have independent documents and app state;
+returns to the ordinary selector unless **Pin on refresh**, beside **Visible panes**,
+is checked: then refresh reopens the workspace with the same pane count, variant in
+each pane and tools widths, and every pane starts fresh. Variants no longer in the
+comparison fall back to the defaults. The pin is the same one as in Tools, shared by
+the whole browser tab; **Back to versions** closes the workspace and keeps it set.
+Inside a pane, Tools' own pin and Exit are disabled with a note, and reloading a
+single pane restarts that app in place. Previews have independent documents and app state;
 the workspace never reads their contents. If your browser cannot embed a local file,
 use the standalone links. File embedding still needs Windows/WSL and macOS browser
 verification, including checkout paths with spaces.

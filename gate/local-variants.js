@@ -5,6 +5,51 @@
 
   var safeId = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 
+  // Pin on refresh: one per browser tab, shared with Tools in the Prototype and
+  // Flows (app/js/refresh-pin.js). While pinned, the workspace layout is kept so a
+  // refresh reopens it; the panes themselves always start fresh.
+  var PIN_KEY = "mb_refresh_pin";
+  var LAYOUT_KEY = "mb_compare_layout";
+  var UNLOCK_KEY = "mb_gate_unlocked"; // GATE_SESSION_KEY in gate/gate.js
+
+  function storageGet(key) {
+    try { return sessionStorage.getItem(key); } catch (e) { return null; }
+  }
+  function storageSet(key, value) {
+    try { sessionStorage.setItem(key, value); return true; } catch (e) { return false; }
+  }
+  function storageRemove(key) {
+    try { sessionStorage.removeItem(key); } catch (e) {}
+  }
+  function storageAvailable() {
+    var ok = storageSet(LAYOUT_KEY + "_probe", "1");
+    storageRemove(LAYOUT_KEY + "_probe");
+    return ok;
+  }
+
+  function navigationType() {
+    try {
+      var nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+      return nav ? nav.type : (performance.navigation && performance.navigation.type === 1 ? "reload" : "");
+    } catch (e) { return ""; }
+  }
+
+  // Read once and remove on every load, so a record left by leaving some other
+  // way than Back to versions cannot reopen the workspace later. Restoring
+  // writes it again.
+  function takeSavedLayout() {
+    var raw = storageGet(LAYOUT_KEY);
+    if (raw === null) return null;
+    storageRemove(LAYOUT_KEY);
+    if (navigationType() !== "reload" || storageGet(UNLOCK_KEY) !== "1" || storageGet(PIN_KEY) !== "1") return null;
+    try {
+      var saved = JSON.parse(raw);
+      return saved && saved.v === 1 ? saved : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function returnToPrimary() {
     var info = window.MB_LOCAL_RETURN;
     if (!info || typeof info.href !== "string" || location.protocol !== "file:") return false;
@@ -20,6 +65,7 @@
   }
 
   function localVariantsInit() {
+    var saved = takeSavedLayout();
     var manifest = window.MB_LOCAL_VARIANTS;
     if (!manifest || manifest.active !== true || !Array.isArray(manifest.variants)) return;
     var section = document.getElementById("localAlternatives");
@@ -61,11 +107,11 @@
     if (choices.length) {
       section.hidden = false;
       choices.push({ label: "Local Prototype", description: "Your current checkout; not necessarily the original baseline.", href: "app/index.html" });
-      localCompareInit(choices);
+      localCompareInit(choices, saved);
     }
   }
 
-  function localCompareInit(choices) {
+  function localCompareInit(choices, saved) {
     var launch = document.getElementById("localCompare");
     var selector = document.getElementById("selectorScreen");
     if (!launch || !selector) return;
@@ -73,6 +119,40 @@
     var assignments = choices.map(function (_, index) { return index; });
     var previews = [];
     var visibleCount = Math.min(2, choices.length);
+    var savedTools = Object.create(null);
+
+    function choiceIndex(href) {
+      for (var i = 0; i < choices.length; i += 1) if (choices[i].href === href) return i;
+      return -1;
+    }
+
+    // Alternatives that left the manifest drop out; the defaults fill the gaps.
+    function restore(layoutRecord) {
+      var slots = [];
+      (Array.isArray(layoutRecord.slots) ? layoutRecord.slots : []).forEach(function (href) {
+        var index = choiceIndex(href);
+        if (index !== -1 && slots.indexOf(index) === -1) slots.push(index);
+      });
+      choices.forEach(function (_, index) { if (slots.indexOf(index) === -1) slots.push(index); });
+      assignments = slots;
+      var count = Number(layoutRecord.count);
+      visibleCount = Number.isInteger(count) && count >= 1 && count <= choices.length ? count : Math.min(2, choices.length);
+      (Array.isArray(layoutRecord.tools) ? layoutRecord.tools : []).forEach(function (href) {
+        if (choiceIndex(href) !== -1) savedTools[href] = true;
+      });
+    }
+
+    function saveLayout() {
+      if (!workspace || storageGet(PIN_KEY) !== "1") return;
+      var tools = [];
+      previews.forEach(function (preview, index) { if (preview && preview.tools) tools.push(choices[index].href); });
+      storageSet(LAYOUT_KEY, JSON.stringify({
+        v: 1,
+        count: visibleCount,
+        slots: assignments.map(function (index) { return choices[index].href; }),
+        tools: tools
+      }));
+    }
 
     function node(tag, text, parent) {
       var el = document.createElement(tag);
@@ -116,9 +196,10 @@
       node("p", choice.description, header);
       var actions = node("div", "", header);
       actions.className = "local-compare-actions";
-      var toolsButton = node("button", "Show tools", actions);
+      var toolsShown = !!savedTools[choice.href];
+      var toolsButton = node("button", toolsShown ? "Hide tools" : "Show tools", actions);
       toolsButton.type = "button";
-      toolsButton.setAttribute("aria-pressed", "false");
+      toolsButton.setAttribute("aria-pressed", String(toolsShown));
       toolsButton.addEventListener("click", function () {
         preview.tools = !preview.tools;
         toolsButton.textContent = preview.tools ? "Hide tools" : "Show tools";
@@ -138,7 +219,7 @@
       link.rel = "noopener";
       var frame = frameFor(index);
       card.appendChild(frame);
-      var preview = { card: card, select: select, caption: caption, frame: frame, tools: false };
+      var preview = { card: card, select: select, caption: caption, frame: frame, tools: toolsShown };
       previews[index] = preview;
       return preview;
     }
@@ -159,9 +240,11 @@
         widths.push(preview.tools ? "920px" : "460px");
       });
       stage.style.gridTemplateColumns = widths.join(" ");
+      saveLayout();
     }
 
-    launch.addEventListener("click", function () {
+    function open(layoutRecord) {
+      if (layoutRecord) restore(layoutRecord);
       workspace = node("section", "", document.body);
       workspace.className = "local-compare-workspace";
       workspace.setAttribute("aria-label", "Compare local alternatives");
@@ -170,10 +253,14 @@
       var back = node("button", "Back to versions", toolbar);
       back.type = "button";
       back.addEventListener("click", function () {
+        // Leaving keeps the pin; only the layout to reopen is dropped.
+        storageRemove(LAYOUT_KEY);
         workspace.remove();
+        workspace = null;
         previews = [];
         assignments = choices.map(function (_, index) { return index; });
         visibleCount = Math.min(2, choices.length);
+        savedTools = Object.create(null);
         document.body.classList.remove("local-comparing");
         selector.style.display = "flex";
         launch.focus();
@@ -192,7 +279,27 @@
         visibleCount = next;
         layout();
       });
-      node("p", "Progress lasts until refresh or exit. Restart resets only that variant; a new tab starts a separate session. Hidden previews keep running: pause audio before switching away. If a preview cannot display, use Open in new tab.", workspace);
+      var pinLabel = node("label", "", toolbar);
+      pinLabel.className = "local-compare-pin";
+      var pin = node("input", "", pinLabel);
+      pin.type = "checkbox";
+      var pinText = node("span", "Pin on refresh", pinLabel);
+      if (storageAvailable()) {
+        pin.checked = storageGet(PIN_KEY) === "1";
+        pin.addEventListener("change", function () {
+          if (pin.checked) {
+            storageSet(PIN_KEY, "1");
+            saveLayout();
+          } else {
+            storageRemove(PIN_KEY);
+            storageRemove(LAYOUT_KEY);
+          }
+        });
+      } else {
+        pin.disabled = true;
+        pinText.textContent = "Pin on refresh (unavailable: this browser blocks session storage)";
+      }
+      node("p", "Progress lasts until refresh or exit; with Pin on refresh, a refresh reopens these panes from the start. Restart resets only that variant; a new tab starts a separate session. Hidden previews keep running: pause audio before switching away. If a preview cannot display, use Open in new tab.", workspace);
       stage = node("div", "", workspace);
       stage.className = "local-compare-stage";
       stage.tabIndex = 0;
@@ -202,7 +309,10 @@
       document.body.classList.add("local-comparing");
       layout();
       back.focus();
-    });
+    }
+
+    launch.addEventListener("click", function () { open(null); });
+    if (saved) open(saved);
   }
 
   if (!returnToPrimary()) document.addEventListener("DOMContentLoaded", localVariantsInit);

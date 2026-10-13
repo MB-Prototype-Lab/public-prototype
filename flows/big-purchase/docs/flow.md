@@ -61,7 +61,8 @@ including allowed-looking mid-session links, start fresh setup. Unsupported rout
 cannot render. An old document's history cannot restore feature state into a fresh
 document.
 
-Refresh and Restart start this Flow fresh, dropping entered values, saved plans,
+Restart, and a refresh while the tab is pinned in Tools, start this Flow fresh; an
+unpinned refresh returns to the selector, like the full app. Either way drops entered values, saved plans,
 Buddy/help state, transient media and visit trail. Profile/participant parameters
 survive URL changes and Restart; a launch profile applies once per document.
 Exit returns to the selector. Local telemetry remains off, regardless of query
@@ -88,8 +89,10 @@ Opening, closing and reading it preserve participant answers and do not initiali
 feature sessions. Participant navigation uses the source headers, footers and
 contextual Back controls; there is no universal reviewer toolbar in the phone.
 
-Restart Flow clears the entire session by reloading; Exit Flow uses the release
-selector. Four themes, Copy State, navigation/error/session diagnostics and an
+Pin on refresh comes first: the tab-wide pin shared with Local Prototype, so a
+refresh restarts this Flow instead of returning to the selector. Restart Flow clears
+the entire session by reloading, pinned or not; Exit Flow uses the release selector
+and keeps the pin. Four themes, Copy State, navigation/error/session diagnostics and an
 explicit dispatcher expose only the current allowed screen with valid feature
 state. Setup offers only this Flow's steps and valid profiles. ESF calculations
 and help diagnostics use the fund session. Purchase fixtures, layout comparisons

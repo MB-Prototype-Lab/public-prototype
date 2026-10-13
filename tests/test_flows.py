@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -19,8 +20,9 @@ class FlowsTest(unittest.TestCase):
         self.git('init', '-b', 'main')
         self.git('config', 'user.email', 'test@example.com')
         self.git('config', 'user.name', 'Test')
-        self.write('app/index.html', '<script src="release-config.js"></script><script src="js/config.js"></script><script src="js/navigation.js"></script>')
+        self.write('app/index.html', '<script src="release-config.js"></script><script src="js/refresh-pin.js"></script><script src="js/config.js"></script><script src="js/navigation.js"></script>')
         self.write('app/release-config.js', '')
+        self.write('app/js/refresh-pin.js', '')
         self.write('app/js/config.js', '')
         self.write('app/js/navigation.js', 'bootV3();')
         self.write('app/css/keyboard.css', '')
@@ -65,6 +67,8 @@ class FlowsTest(unittest.TestCase):
         self.assertIn('state.adminCollapsed = true', runtime)
         self.assertIn('screen === "onboarding"', runtime)
         self.assertNotIn('mbFlowRestart()', (package / 'index.html').read_text())
+        self.assertIn('function mbFlowRestart() { refreshPinRestart(); }', runtime)
+        self.assertTrue((package / 'js/refresh-pin.js').exists())
         self.assertLess((package / 'index.html').read_text().index('flow-config.js'), (package / 'index.html').read_text().index('js/config.js'))
 
     def test_unsafe_ids_sources_and_collisions_preserve_catalog(self):
@@ -108,6 +112,20 @@ class FlowsTest(unittest.TestCase):
             flows.create(self.root, 'broken', broken, 'Broken', 'Bad entry')
         self.assertFalse((self.root / 'flows/broken').exists())
         self.assertEqual(before, {p.name: p.read_bytes() for p in (self.root / 'flows').iterdir()})
+
+    def test_source_without_refresh_pin_fails_before_install(self):
+        # A Flow from an app commit predating the shared refresh pin would keep an
+        # unconditional redirect and a Restart that calls a missing function.
+        for html in ('<script src="release-config.js"></script><script src="js/config.js"></script><script src="js/navigation.js"></script>',
+                     '<script src="release-config.js"></script><script src="js/config.js"></script><script src="js/refresh-pin.js"></script><script src="js/navigation.js"></script>'):
+            with self.subTest(html=html):
+                self.write('app/index.html', html)
+                self.git('add', 'app/index.html')
+                self.git('commit', '-m', 'refresh pin missing or late')
+                source = self.git('rev-parse', 'HEAD').strip()
+                with self.assertRaisesRegex(ValueError, 'refresh-pin|policy must load'):
+                    flows.create(self.root, 'stale', source, 'Stale', 'Old source')
+                self.assertFalse((self.root / 'flows/stale').exists())
 
     def test_scope_covers_staged_unstaged_untracked_and_integration(self):
         flows.scope(self.root, self.base, 'flow')
@@ -174,6 +192,37 @@ class FlowsTest(unittest.TestCase):
             with self.assertRaises(OSError):
                 flows.catalog(self.root)
         self.assertEqual(before, {p: p.read_bytes() for p in paths})
+
+
+class FlowShellParityTest(unittest.TestCase):
+    """Committed Flows keep the full app's page shell around the phone."""
+
+    ROOT = Path(__file__).resolve().parents[1]
+
+    @staticmethod
+    def shell(html):
+        head = html[:html.index('</head>')]
+        head = re.sub(r'  <title>.*</title>\n', '', head)
+        header = html[html.index('<div class="admin-header">'):html.index('<div id="adminRoot"')]
+        return head, header
+
+    def test_live_flows_match_adapted_app_shell(self):
+        with tempfile.TemporaryDirectory(prefix='flow shell ') as temporary:
+            starter = Path(temporary)
+            (starter / 'js').mkdir()
+            (starter / 'index.html').write_text((self.ROOT / 'app/index.html').read_text())
+            (starter / 'js/navigation.js').write_text('bootV3();')
+            flows.adapt_starter(starter)
+            expected = self.shell((starter / 'index.html').read_text())
+        self.assertEqual(expected[1].count('>Exit Flow<'), 1)
+        self.assertNotIn('Exit Prototype', expected[1])
+        self.assertNotIn('On browser refresh', expected[0])
+        for package in sorted((self.ROOT / 'flows').glob('*/flow.json')):
+            directory = package.parent
+            with self.subTest(flow=directory.name):
+                self.assertEqual(self.shell((directory / 'index.html').read_text()), expected)
+                for shared in ('js/refresh-pin.js', 'css/components.css'):
+                    self.assertEqual((directory / shared).read_bytes(), (self.ROOT / 'app' / shared).read_bytes(), shared)
 
 
 if __name__ == '__main__':

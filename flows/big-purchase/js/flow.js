@@ -31,10 +31,7 @@ function mbFlowEsfBack() {
 }
 function mbFlowRestart() {
   // Reload drops state, pending renders, media and trail. Participant URL parameters survive.
-  var url = new URL(location.href);
-  url.searchParams.delete('screen');
-  if (url.hash.indexOf('#v=') === 0) url.hash = '';
-  location.replace(url.href);
+  refreshPinRestart();
 }
 function mbFlowExit() { location.assign(window.MB_RELEASE.selector || '../../index.html'); }
 v3EntryScreen = function () { return window.MB_FLOW.entry; };

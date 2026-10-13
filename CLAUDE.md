@@ -3,8 +3,10 @@
 A static, mobile-shaped finance coaching prototype. One editable application lives
 in `app/`; contained proposals live in `flows/<id>/`. Open `index.html` directly,
 enter passcode `1337`, and choose Local Prototype or a Flow from the toggle. No server or dependency
-installation is needed. App refresh returns to the selector; Flow refresh/Restart
-starts that Flow fresh. Data loads through script tags so `file://` works.
+installation is needed. Refresh returns to the selector unless **Pin on refresh** is on
+in Tools (one pin per browser tab); pinned, refresh restarts the same app or Flow
+fresh. Restart Flow always restarts in place; Exit returns to the selector. Data
+loads through script tags so `file://` works.
 
 ## Collaboration
 
@@ -31,7 +33,9 @@ Escape interpolated text with `h()`. Inputs use `onchange`; live sliders use
 `debouncedRender()`. Keep slider maxima stable. `.item-card` is block; scope flex
 fixes to the specific instance. Use theme variables and check all four themes.
 No backend, localStorage, live LLM, or runtime API keys. Release-controlled Useberry
-on HTTP(S) is the narrow telemetry exception; development tracking is off.
+on HTTP(S) is the narrow telemetry exception; development tracking is off. The only
+sessionStorage is the tab's reviewer settings (passcode unlock, selector tab, refresh
+pin, pinned comparison layout), never participant data.
 Do not regenerate media as part of packaging. `MB_VERSION` is retired and errors.
 
 ## Project map and references

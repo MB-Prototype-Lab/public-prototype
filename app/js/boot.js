@@ -6,7 +6,8 @@
 // later edit can never write back into the loaded spec.
 //
 // In-memory only (D03). No localStorage, no backend. A refresh returns to the
-// gate, which re-boots this from scratch — that IS the reset.
+// gate (or, with Pin on refresh, reloads this page), which re-boots this from
+// scratch — that IS the reset.
 //
 // ── Slots that collide with live v2 code ─────────────────────────────────────
 // Three v2 slot names are still owned by running v2 code, so the v3 data is

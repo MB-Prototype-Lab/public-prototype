@@ -18,14 +18,17 @@ needed. Ask the agent for a browser file URL with the checkout path properly enc
 not a security boundary. Existing **Local alternatives** remain a separate workspace;
 Flow comparisons are outside that tool's current scope.
 
-Full-app refresh returns to the selector. Flow refresh and **Restart Flow** begin the
-same Flow at its canonical entry with fresh in-memory state. **Exit Flow** returns to
-the selector. Participant parameters survive navigation and restart; a recorded
-screen or trail does not recreate a previous session. Local tracking stays off.
+Refresh returns to the selector, exactly as in Local Prototype. **Pin on refresh**,
+the first control in Tools, keeps a refresh in place instead: the same Flow begins
+again at its canonical entry with fresh in-memory state. There is one pin per browser
+tab, shared with Local Prototype and the comparison workspace, and a new tab starts
+unpinned. **Restart Flow** always restarts in place, pinned or not. **Exit Flow**
+returns to the selector and leaves the pin as it is. Participant parameters survive
+navigation and restart; a recorded screen or trail does not recreate a previous session. Local tracking stays off.
 A participant URL cannot enable tracking or unlock excluded screens.
 
 Reviewer controls live outside the phone in the initially collapsed **Tools**
-panel, including in snapshots. Open the **›** button (accessible name **Tools**) for Restart Flow, Exit Flow, themes,
+panel, including in snapshots. Open the **›** button (accessible name **Tools**) for Pin on refresh, Restart Flow, Exit Flow, themes,
 Copy State and controls for the current initialized screen. The page around the
 phone matches Local Prototype exactly: the panel sits alongside the phone on desktop
 and below it at medium widths, and phone-width windows (768px and below) offer no Tools.

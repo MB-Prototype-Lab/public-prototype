@@ -1788,7 +1788,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   color: var(--chrome-accent);
   border: 1px solid var(--chrome-line);
 }
-.admin .button.secondary:hover { background: rgba(49, 94, 251, .06); }
+.admin .button.secondary:not(:disabled):hover { background: rgba(49, 94, 251, .06); }
 
 /* ─── Buddy stage (L15) ───────────────────────────────────────────────────────
    A described placeholder, not art. Fully round per 09-design-system, sage

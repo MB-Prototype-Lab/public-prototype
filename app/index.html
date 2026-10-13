@@ -4,19 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="release-config.js"></script>
-  <script>
-    // On browser refresh, return to the version gate (chooser) with a fresh app.
-    // Only fires for reloads — first navigation in from the gate and back/forward
-    // are left alone. App state is in-memory, so the gate round-trip clears inputs.
-    (function () {
-      var t = "";
-      try {
-        var nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
-        t = nav ? nav.type : (performance.navigation && performance.navigation.type === 1 ? "reload" : "");
-      } catch (e) {}
-      if (t === "reload") location.replace(window.MB_RELEASE.selector);
-    })();
-  </script>
+  <!-- Refresh returns to the selector unless Pin on refresh is on (js/refresh-pin.js). -->
+  <script src="js/refresh-pin.js"></script>
   <title>MoneyBuddy Prototype</title>
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/layout.css">
@@ -54,7 +43,11 @@
         <button class="admin-collapse-btn" type="button" onclick="state.adminCollapsed=true;render()" title="Collapse admin">‹</button>
       </div>
       <p class="admin-subtitle" id="adminSubtitle">Manual controls for the active screen.</p>
+      <!-- Pin on refresh: one per browser tab, off by default (js/refresh-pin.js). -->
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;font-weight:700;color:var(--chrome-text);cursor:pointer;"><input type="checkbox" id="refreshPinToggle" onchange="refreshPinSet(this.checked)" aria-describedby="refreshPinNote" style="margin:0;accent-color:var(--chrome-accent);">Pin on refresh</label>
+      <p id="refreshPinNote" style="margin:3px 0 0;font-size:10px;line-height:1.35;color:var(--chrome-muted);">Refresh restarts here instead of returning to the selector.</p>
       <button class="button secondary" style="margin-top:10px;width:100%;font-size:11px;" onclick="resetUserData()">Reset User Data</button>
+      <button id="refreshPinExitButton" class="button secondary" type="button" style="margin-top:6px;width:100%;font-size:11px;" onclick="refreshPinExit()">Exit Prototype</button>
       <!-- Theme picker (L21). Filled by render(); the four options live in
            THEMES (js/theme.js), not here. -->
       <p style="margin:10px 0 4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--chrome-muted);">Theme</p>

@@ -23,8 +23,11 @@ never a pass. No local browser installation or server is required.
 
 PM checklist: open root index.html on file://, enter 1337, open Local Prototype, exercise
 the changed flow, check narrow layout and all four themes, input focus and sliders,
-and audio when affected. Full-app refresh must return to the selector; Flow refresh
-and Restart must start the same Flow fresh, and Exit must return to the selector. For publication test
+and audio when affected. Unpinned refresh from Local Prototype or a Flow must return to
+the selector. With **Pin on refresh** checked in Tools, refresh must restart the same app
+or Flow fresh, and the pin must show as on in the other places in that tab (a new tab
+starts unpinned). Restart Flow always restarts in place; Exit Prototype and Exit Flow
+return to the selector and keep the pin. For publication test
 HTTP(S) screen/deep links with participant parameters; tracking follows the snapshot
 setting and never injects on file://. Check the Prototype/Flows toggle (hidden when
 no Flow snapshot is listed), archive expansion, hidden direct links, and retirement
@@ -52,7 +55,10 @@ For the side-by-side workspace, browser-check file embedding early on Windows/WS
 and macOS, including paths with spaces. Verify laptop and ultrawide layouts, all
 four app themes, keyboard scrolling and controls, input focus, independent progress,
 A+B → A+C → A+B, swaps, pane counts, tools widths, isolated restart, new tabs, refresh,
-and Back to versions. Hidden previews retain state and keep running audio; pause
+and Back to versions. With the toolbar's Pin on refresh checked, refresh must reopen
+the same pane count, assignments and tools widths with fresh panes; Back to versions
+keeps the pin. Inside a pane, Tools' pin and Exit are disabled with a note, and
+reloading one pane restarts it in place. Hidden previews retain state and keep running audio; pause
 playback before hiding them. A frame load event alone does not prove the app loaded.
 
 For preview sizing, check 1366×768, 1440×900, and 3440×1440 with two and four panes.

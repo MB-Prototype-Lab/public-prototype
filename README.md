@@ -104,8 +104,11 @@ without asking to see the token.
 With a local checkout, open `index.html` in a browser, enter passcode `1337`,
 and choose **Local Prototype** on the **Prototype** tab or a Flow on the **Flows** tab.
 **Historical versions** opens the published builds in a new tab. No server or package installation
-is needed. Full-app refresh returns to the selector; Flow refresh and Restart begin
-the same Flow fresh, and Exit Flow returns to the selector. If you are using Claude Desktop,
+is needed. Refresh returns to the selector, from Local Prototype or a Flow. To stay
+put while iterating, open **Tools** (the **›** beside the phone) and check **Pin on refresh**:
+refresh then restarts the same app or Flow fresh, for that browser tab only, until you
+uncheck it. **Exit Prototype** and **Exit Flow** return to the selector and leave the pin as
+it is; **Restart Flow** always restarts in place. If you are using Claude Desktop,
 ask the agent to show you the file in the Code tab's browser pane or open it
 from the checkout folder in File Explorer.
 
@@ -147,8 +150,9 @@ alternatives** on the selector's **Prototype** tab. Use **Open in new tab** and 
 windows side by side. Readable URL folders such as `variant-A` and `variant-B`
 help you identify the option; later comparisons may add a suffix such as `variant-A-2`.
 Each alternative runs independently; refresh returns to the
-primary selector. No server, package installation, or Git commands are needed from
-you.
+primary selector. In **Compare side by side**, **Pin on refresh** beside **Visible panes**
+makes a refresh reopen the same panes from the start. No server, package installation,
+or Git commands are needed from you.
 
 Continue with “Change option A,” then “Keep B” when you choose. The agent verifies
 and merges B into your task branch locally. Alternatives remain available to the

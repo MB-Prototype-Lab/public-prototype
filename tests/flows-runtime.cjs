@@ -5,7 +5,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
-function bootFlow(id, href = `file:///prototype/flows/${id}/index.html`, reload = false) {
+// sessionStorage stands in for the tab: the refresh pin and Restart's one-shot marker.
+function memoryStorage(initial = {}) {
+  const data = {...initial};
+  return {data, getItem: k => (k in data ? data[k] : null), setItem(k, v) { data[k] = String(v); }, removeItem(k) { delete data[k]; }};
+}
+function bootFlow(id, href = `file:///prototype/flows/${id}/index.html`, reload = false, extra = {}) {
   const folder = path.join(root, 'flows', id);
   const elements = new Map(), events = {}, pushes = [];
   function element(id) {
@@ -35,6 +40,7 @@ function bootFlow(id, href = `file:///prototype/flows/${id}/index.html`, reload 
   c.scrollTo=()=>{};c.getComputedStyle=()=>({});
   c.addEventListener=(name,fn)=>{events[name]=fn;};
   c.history={state:null,pushState(st){this.state=st;pushes.push(st);},replaceState(st,title,url){this.state=st;if(url)loc.href=new URL(url,loc.href).href;}};
+  Object.assign(c, extra);
   const html=fs.readFileSync(path.join(folder,'index.html'),'utf8');
   for(const match of html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"[^>]*><\/script>/g)) {
     vm.runInContext(fs.readFileSync(path.join(folder,match[1]),'utf8'),c,{filename:match[1]});
@@ -174,9 +180,13 @@ function esfTests() {
       const u=new URL(t.loc.href);assert.equal(u.searchParams.get('PROLIFIC_PID'),'p123');assert.equal(u.searchParams.get('study'),'sample');assert.equal(u.searchParams.get('profile'),'above_at');
     }
     // Explicit restart clears only Flow URL state; a new document clears data.
+    // Restart stays in the Flow whether or not the tab is pinned.
+    const storage=memoryStorage();c.sessionStorage=storage;
     c.mbFlowRestart();
     const restarted=new URL(t.loc.replaced);assert.equal(restarted.searchParams.get('PROLIFIC_PID'),'p123');assert.equal(restarted.searchParams.get('screen'),null);assert.equal(restarted.hash,'');
-    const fresh=bootFlow('emergency-fund',t.loc.replaced,true);
+    assert.equal(storage.data.mb_refresh_restart,'1');
+    const fresh=bootFlow('emergency-fund',t.loc.replaced,true,{sessionStorage:storage});
+    assert.equal(fresh.loc.replaced,undefined);assert.equal(storage.data.mb_refresh_restart,undefined);
     assert.equal(fresh.run('state.screen'),'onboarding');assert.equal(fresh.run('state.esf'),null);assert.equal(fresh.run('state.esfGoal'),null);assert.equal(fresh.run('ubTrailOrder.length'),0);
     c.mbFlowExit();assert.equal(t.loc.assigned,'../../index.html');
   }
@@ -207,7 +217,18 @@ function esfTests() {
   const prerequisite=bootFlow('emergency-fund');prerequisite.run('state.screen="esfPlan";renderScreen()');assert.equal(prerequisite.run('state.screen'),'onboarding');
   for(const slug of ['home','esf-plan','goals','onboarding-5','settings','bad%']) {
     const fresh=bootFlow('emergency-fund',`https://example.test/flows/emergency-fund/index.html?screen=${slug}`,true);
+    assert.equal(fresh.loc.replaced,'../../index.html'); // Unpinned refresh returns to the selector.
     assert.equal(fresh.run('state.screen'),'onboarding');assert.equal(fresh.run('state.onboarding.step'),0);
+  }
+  // Pinned refresh restarts the same Flow, keeping participant parameters.
+  for(const id of ['emergency-fund','big-purchase']) {
+    const storage=memoryStorage({mb_refresh_pin:'1'});
+    const pinned=bootFlow(id,`https://example.test/flows/${id}/index.html?screen=goals&PROLIFIC_PID=p9#v=old`,true,{sessionStorage:storage});
+    const url=new URL(pinned.loc.replaced);assert.equal(url.searchParams.get('screen'),null);assert.equal(url.hash,'');assert.equal(url.searchParams.get('PROLIFIC_PID'),'p9');
+    assert.equal(storage.data.mb_refresh_restart,'1');assert.equal(pinned.run('state.screen'),'onboarding');
+    const settled=bootFlow(id,url.href,true,{sessionStorage:storage});
+    assert.equal(settled.loc.replaced,undefined);assert.equal(settled.run('state.screen'),'onboarding');assert.equal(storage.data.mb_refresh_pin,'1');
+    assert.equal(bootFlow(id,`file:///My%20Project/flows/${id}/index.html`,true,{sessionStorage:storage}).loc.replaced,undefined);
   }
   const cold=bootFlow('emergency-fund','https://example.test/flows/emergency-fund/index.html?screen=goals&tracking=true',true);
   assert.equal(cold.run('state.screen'),'onboarding');assert.equal(cold.c.useberryActive(),false);
@@ -284,8 +305,10 @@ function bpTests() {
     const good=run('getNavSnapshot()'),poisoned=JSON.parse(JSON.stringify(good));poisoned.nav.stacks.home=['home','settings','goals'];c.restoreNavSnapshot(poisoned);assert.equal(run('state.nav.stacks.home.join(",")'),'goals');
     c.restoreNavSnapshot({...good,mbFlowSession:'prior-document'});assert.equal(run('state.screen'),'onboarding');
     run('state.screen="settings";renderScreen()');assert.equal(run('state.screen'),'onboarding');run('state.screen="budgetBuild";render()');assert.equal(run('state.screen'),'onboarding');
+    const storage=memoryStorage();c.sessionStorage=storage;
     c.mbFlowRestart();const url=new URL(t.loc.replaced);assert.equal(url.searchParams.get('screen'),null);assert.equal(url.hash,'');assert.equal(url.searchParams.get('PROLIFIC_PID'),'p123');assert.equal(url.searchParams.get('study'),'sample');assert.equal(url.searchParams.get('profile'),'above_at');
-    const fresh=bootFlow('big-purchase',t.loc.replaced,true);assert.equal(fresh.run('state.screen'),'onboarding');assert.equal(fresh.run('state.bp'),null);assert.equal(fresh.run('state.esf'),null);assert.equal(fresh.run('state.bigPurchase'),null);assert.equal(fresh.run('ubTrailOrder.length'),0);
+    assert.equal(storage.data.mb_refresh_restart,'1');
+    const fresh=bootFlow('big-purchase',t.loc.replaced,true,{sessionStorage:storage});assert.equal(fresh.loc.replaced,undefined);assert.equal(fresh.run('state.screen'),'onboarding');assert.equal(fresh.run('state.bp'),null);assert.equal(fresh.run('state.esf'),null);assert.equal(fresh.run('state.bigPurchase'),null);assert.equal(fresh.run('ubTrailOrder.length'),0);
     c.mbFlowExit();assert.equal(t.loc.assigned,'../../index.html');
   }
   // Before-purchase caller is separately exercised; Back and completion differ.
@@ -313,19 +336,25 @@ function bpTests() {
     const t=bootFlow('big-purchase');t.run(`state.screen=${JSON.stringify(screen)};renderScreen()`);assert.equal(t.run('state.screen'),'onboarding',screen);
   }
   for(const slug of ['home','bp-your-car','bp-finder','goals','esf-plan','onboarding-2','bad%']) {
-    const t=bootFlow('big-purchase',`https://example.test/flows/big-purchase/index.html?screen=${slug}&tracking=true`,true);assert.equal(t.run('state.screen'),'onboarding');assert.equal(t.run('state.onboarding.step'),0);assert.equal(t.c.useberryActive(),false);
+    const t=bootFlow('big-purchase',`https://example.test/flows/big-purchase/index.html?screen=${slug}&tracking=true`,true);assert.equal(t.loc.replaced,'../../index.html');assert.equal(t.run('state.screen'),'onboarding');assert.equal(t.run('state.onboarding.step'),0);assert.equal(t.c.useberryActive(),false);
   }
   const keyboard=bootFlow('big-purchase');let changes=0;
   const input={tagName:'INPUT',value:'',getAttribute:()=>null,scrollIntoView(){},blur(){},dispatchEvent(event){if(event.type==='change')changes++;keyboard.c.onbLiveInput('zip',this.value);}};
   keyboard.c.kbdOpen(input);for(const digit of '10001')keyboard.c.kbdInsert(digit);assert.equal(changes,1);assert.equal(keyboard.run('state.onboarding.zip'),'10001');assert.equal(keyboard.run('state.kbd.open'),false);
 }
 if(require.main===module) {esfTests();bpTests();console.log('Emergency fund and big purchase actual-script runtime journeys and containment checks passed.');}
-module.exports={bootFlow,esfTests,bpTests};
+module.exports={bootFlow,memoryStorage,esfTests,bpTests};
 
 function reviewerTests() {
  for (const id of ['emergency-fund','big-purchase']) {
   const t=bootFlow(id), {c,run}=t;
   assert.equal(run('state.adminCollapsed'),true);
+  // Tools leads with the shared pin; Exit Flow is the one way back.
+  assert(t.html.indexOf('id="refreshPinToggle"')>0 && t.html.indexOf('id="refreshPinToggle"')<t.html.indexOf('>Restart Flow<'));
+  assert.equal((t.html.match(/>Exit Flow</g)||[]).length,1);
+  assert(t.html.includes('id="refreshPinExitButton" class="button secondary" type="button" style="margin-top:6px;width:100%;font-size:11px;" onclick="mbFlowExit()">Exit Flow<'));
+  assert(!t.html.includes('Exit Prototype'));
+  assert.equal(fs.readFileSync(path.join(root,'flows',id,'js/refresh-pin.js'),'utf8'),fs.readFileSync(path.join(root,'app/js/refresh-pin.js'),'utf8'));
   assert.equal(c.renderTopBar(),'');
   const before=JSON.stringify(run('state.onboarding'));
   c.mbFlowToolsToggle(true);

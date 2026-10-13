@@ -34,8 +34,9 @@ request and any study-resolution decision in the catalog PR. Resolve ongoing_stu
 before retiring or demoting an active build. A null value means unknown, never false;
 all unknown study statuses block deployment. Confirm any new study status with PMs.
 Restoration changes state only; it serves the original bytes. Source tags stay forever.
-The shared selector intentionally changes. Full-app refresh returns there; Flow
-refresh restarts the same frozen Flow, with an explicit Exit to the selector.
+The shared selector intentionally changes. Refresh from a full app or Flow returns
+there unless the tab is pinned in Tools; pinned, it restarts the same frozen build.
+Restart Flow stays in the Flow, and Exit returns to the selector.
 Guarantees cover hosted bytes and stable paths, not Useberry service behavior or
 already-loaded browser copies.
 

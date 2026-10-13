@@ -37,8 +37,10 @@ behavior. Load policy before app config/state and load runtime hooks before the
 navigation boot. Adapt copied navigation/render/onboarding explicitly as needed;
 no runtime imports from mutable app or another Flow. Exact screen prerequisites
 belong beside runtime policy checks. Guard every navigation path, restored stacks,
-and render dispatch. Policy is active before first seed; startup and refresh use
-canonical entry even when a screen query is present. Participant parameters survive
+and render dispatch. Policy is active before first seed; startup, pinned refresh and
+restart use canonical entry even when a screen query is present. An unpinned refresh
+returns to the selector like the full app; the shared `js/refresh-pin.js` (byte-identical
+to the app's, loaded after `release-config.js` and before `js/config.js`) decides. Participant parameters survive
 HTTP URL writes and restart; parse profile parameters on file URLs too, once at
 boot. Keep reviewed existing start functions, calculations and state ownership.
 No arbitrary admin jump surface; reviewer controls and themes stay contained.
@@ -51,9 +53,12 @@ and below it at 769–900px. Like the full app, phone widths (768px and below) o
 no Tools. Its accessible name is **Tools**; opening hides it, and **‹** (Close Tools)
 reveals it and restores focus. Both controls inherit the full app’s styling.
 The phone preserves source contextual navigation without a universal toolbar.
-A package-owned Restart clears all session state by a fresh document load; Exit
-uses frozen MB_RELEASE selector or local ../../index.html. Full app is unchanged
-until both package baselines exist and explicit flag cleanup starts.
+Tools leads with the shared **Pin on refresh** control (one sessionStorage flag per
+tab, the only Flow storage). A package-owned Restart clears all session state by a
+fresh document load and stays in the Flow whether or not the tab is pinned; Exit
+uses frozen MB_RELEASE selector or local ../../index.html and keeps the pin. The
+full app changes only through explicit app-integration work, such as the shared pin
+and its Tools header, which Flows then mirror.
 
 ## Publication interfaces and ownership
 
