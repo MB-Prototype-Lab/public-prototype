@@ -26,7 +26,7 @@ Reviewer controls live outside the phone in the initially collapsed **Tools**
 panel, including in snapshots. Open the **›** button (accessible name **Tools**) for Restart Flow, Exit Flow, themes,
 Copy State and controls for the current initialized screen. Desktop places the
 panel alongside the phone; narrow screens place it below through page scrolling.
-The button appears only while collapsed; **Close** restores it and returns focus to it. Setup steps stay within each Flow's policy, and
+The button appears only while collapsed; **‹** (Close Tools) restores it and returns focus to it. Setup steps stay within each Flow's policy, and
 no unrestricted product screen picker is available. The phone retains the source
 participant headers, footers and contextual Back controls.
 

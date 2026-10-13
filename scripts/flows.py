@@ -294,7 +294,7 @@ def adapt_starter(directory):
     html = html.replace('<script src="js/flow.js"></script>', '<script src="js/flow-tools.js"></script>\n<script src="js/flow.js"></script>')
     html = html.replace('<div class="page">', '<div class="page admin-collapsed">')
     html = html.replace('<aside class="admin" aria-label="Admin Tools">', '<aside id="flowAdmin" class="admin" aria-label="Admin Tools" hidden>')
-    html = html.replace('onclick="state.adminCollapsed=true;render()" title="Collapse admin">‹', 'onclick="mbFlowToolsToggle(false)" aria-label="Close Tools">Close')
+    html = html.replace('onclick="state.adminCollapsed=true;render()" title="Collapse admin">‹', 'onclick="mbFlowToolsToggle(false)" aria-label="Close Tools" title="Collapse admin">‹')
     html = html.replace('onclick="state.adminCollapsed=false;render()" title="Expand admin">›', 'onclick="mbFlowToolsToggle(true)" aria-label="Tools" aria-controls="flowAdmin" aria-expanded="false">›')
     html = html.replace('onclick="resetUserData()">Reset User Data', 'onclick="mbFlowRestart()">Restart Flow')
     html = html.replace('<!-- Theme picker (L21).', '<button class="button secondary full" type="button" onclick="mbFlowExit()">Exit Flow</button>\n      <!-- Theme picker (L21).')

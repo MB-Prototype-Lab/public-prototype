@@ -26,6 +26,12 @@ async function referenceStyles(browser) {
    const normal = await style(button);
    await button.hover();
    result[theme] = {normal, hover:await style(button)};
+   await page.evaluate(() => {state.adminCollapsed=false; render();});
+   const close = page.locator('.admin-collapse-btn');
+   await page.mouse.move(0,0);
+   result[theme].close = await style(close);
+   await close.hover();
+   result[theme].closeHover = await style(close);
   }
  } finally {await page.close();}
  references.set(browser,result);
@@ -66,7 +72,13 @@ async function checkExpandButton(page, browser) {
    assert.equal(phone.width,phoneBefore.width);assert.equal(phone.height,phoneBefore.height);
    assert(width>900 ? admin.x>=phone.x+phone.width : admin.y>=phone.y+phone.height);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-   await page.getByRole('button',{name:'Close Tools',exact:true}).click();
+   const close = page.getByRole('button',{name:'Close Tools',exact:true});
+   assert.equal(await close.textContent(),'‹');
+   await page.mouse.move(0,0);
+   assert.deepEqual(await style(close),reference[theme].close,theme+' close normal');
+   await close.hover();
+   assert.deepEqual(await style(close),reference[theme].closeHover,theme+' close hover');
+   await close.click();
    assert.equal(await button.isVisible(),true);
    assert.equal(await button.evaluate(el=>el===document.activeElement),true);
   }

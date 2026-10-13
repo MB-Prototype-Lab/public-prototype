@@ -234,3 +234,20 @@ focus, plus the existing outside-phone reviewer and participant checks above.
 PM acceptance and Windows/WSL/macOS file-with-spaces acceptance remain pending.
 Linux automation does not establish those results. Merge and publication remain
 separately authorized.
+
+
+## Collapse-button visual parity — 2026-10-13
+
+Follow-up to `a0ff5a6`: both Flows and the creation adapter replace visible Close
+with the full app’s **‹**, retaining the accessible name **Close Tools** and
+focus restoration. Removing the Flow-specific collapse-button CSS restores the
+full app’s typography, padding, size, colors and hover styling.
+
+Linux Chromium passes `tests/flows-browser.cjs` for both packages and generated
+starters on file URLs with spaces and HTTP. The shared helper now compares the
+collapse control’s normal and hover styles against the full app across all four
+themes and widths 1440, 900, 390 and 320px, and retains focus/placement/overflow
+checks. Flow syntax (249), runtime, all nine Flow Python tests, package and scope
+checks pass. App and publication records remain unchanged from `021d406`.
+These targeted follow-up checks do not update earlier snapshot/platform or PM
+acceptance evidence. The PR remains unopened pending affected PM review.

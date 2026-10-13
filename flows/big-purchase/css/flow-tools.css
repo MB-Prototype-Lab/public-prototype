@@ -10,7 +10,6 @@
   top: 16px;
   right: 16px;
 }
-.admin-collapse-btn { min-height: 44px; padding: 8px; font-size: 14px; }
 #adminExpandTab[hidden], .admin[hidden] { display: none !important; }
 .admin-scroll { overflow-wrap: anywhere; }
 @media (max-width: 900px) {

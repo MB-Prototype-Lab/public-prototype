@@ -48,7 +48,8 @@ it cannot initialize features or change answers. Narrow layouts put it below the
 phone without overlay or shrinking; closing returns focus to the labeled toggle.
 The reviewer expand button matches the full app’s 28×48px **›** styling while
 retaining Flow positioning and narrow-screen availability. Its accessible name is
-**Tools**; opening hides it, and Close reveals it and restores focus.
+**Tools**; opening hides it, and **‹** (Close Tools) reveals it and restores focus.
+The collapse control also inherits the full app’s styling.
 The phone preserves source contextual navigation without a universal toolbar.
 A package-owned Restart clears all session state by a fresh document load; Exit
 uses frozen MB_RELEASE selector or local ../../index.html. Full app is unchanged
