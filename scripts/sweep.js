@@ -538,31 +538,37 @@ var ADVICE_PHRASES = ADVICE.concat([
   /\b(smartest|wisest|best) (first )?(move|choice|step)\b/i,
   /\bmost appropriate\b/i,
   /\bshould you\b/i,
-  /\byour (\w+ ){1,2}should\b/i
+  /\bshould your\b/i,
+  /\byour (\w+ ){1,2}should\b/i,
+  /\b(bad|good) idea\b/i
 ]);
-// A sentence opening on one of these verbs tells the reader what to do. Read
-// in authored sentences only: rendered text runs a button label into the prose
-// before it ("... ahead of it. Start"), and a quiz choice is an answer
-// fragment ("Keep everything in cash" is a wrong answer, not an instruction).
+// A sentence opening on one of these verbs tells the reader what to do, and so
+// does a clause after a colon, semicolon or dash ("A common rule: spend no more
+// than 28%"), where the verb is lower case and spend, budget and list join it
+// (capitalised they would flag the title "Budget Basics"). Read in authored
+// sentences only: rendered text runs a button label into the prose before it
+// ("... ahead of it. Start"), and a quiz choice is an answer fragment ("Keep
+// everything in cash" is a wrong answer, not an instruction).
 var ADVICE_IMPERATIVE = /(?:^|[.!?] )(Avoid|Exhaust|Start|Review|Match|Always|Never|Don't|Make sure|Consider|Try|Stop|Choose|Pick|Cancel|Switch|Invest|Keep|Put|Take|Buy|Sell|Pay|Save|Contribute|Use|Get)\b/;
+var ADVICE_CLAUSE = /(?:[:;] | ?[\u2014\u2013] ?)(avoid|exhaust|start|review|match|always|never|don't|make sure|consider|try|stop|choose|pick|cancel|switch|invest|keep|put|take|buy|sell|pay|save|contribute|use|get|spend|budget|list)\b/;
 // Exact authored text that matches a pattern without telling anyone what to
 // do. It is cut out of rendered pages too, so one entry covers both.
 var ADVICE_ALLOWED = [
   "The exact home you should buy",                               // q20: a wrong answer
   "What type of health plan do you need to qualify for an HSA?"   // q41: eligibility
 ];
-/** Each distinct advice-shaped phrase in `text`, with the text around it. */
+/** Each advice-shaped phrase in `text` that no earlier one overlaps, with the text around it. */
 function adviceIn(text, sentence) {
   text = String(text || "");
   ADVICE_ALLOWED.forEach(function (a) { text = text.split(a).join(" "); });
-  var found = [], seen = {};
-  (sentence ? ADVICE_PHRASES.concat([ADVICE_IMPERATIVE]) : ADVICE_PHRASES).forEach(function (re) {
+  var found = [];
+  (sentence ? ADVICE_PHRASES.concat([ADVICE_IMPERATIVE, ADVICE_CLAUSE]) : ADVICE_PHRASES).forEach(function (re) {
     var m = re.exec(text);
     if (!m) return;
-    var phrase = m[0].replace(/^[.!?] /, ""), at = m.index + m[0].length - phrase.length;
-    if (seen[phrase]) return;
-    seen[phrase] = true;
-    found.push({ phrase: phrase, around: text.slice(Math.max(0, at - 40), at + phrase.length + 20).trim() });
+    var phrase = m[0].replace(/^(?:[.!?:;] | ?[\u2014\u2013] ?)/, ""), at = m.index + m[0].length - phrase.length;
+    if (found.some(function (f) { return at < f.at + f.phrase.length && f.at < at + phrase.length; })) return;
+    found.push({ phrase: phrase, at: at,
+                 around: text.slice(Math.max(0, at - 40), at + phrase.length + 20).trim() });
   });
   return found;
 }
