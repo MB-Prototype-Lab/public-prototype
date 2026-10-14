@@ -61,8 +61,7 @@ function bootV3() {
   // ── The three spend layers (architecture §5) ───────────────────────────────
   // Plan layer, keyed by the 12-category taxonomy. This is v3's budget — it is
   // NOT v2's state.budget (5 nested buckets), which still backs the v2 budget
-  // screens until Phase 2 replaces them. Two models coexist deliberately; see
-  // the 0d divergence note in PROGRESS.md.
+  // screens until Phase 2 replaces them. Two models coexist deliberately.
   state.plan = {};
   CATEGORIES.forEach(c => { state.plan[c] = catValue(SEED_STATE.budget.monthly, c); });
   state.planTotal = catTotal(state.plan);

@@ -1,7 +1,7 @@
 // ─── Phase 6 correctness sweep ────────────────────────────────────────────────
 // Run:  bash scripts/sweep.sh
 //
-// PROGRESS.md's Phase 6 says "verified by actually clicking through, not by
+// Phase 6 means "verified by actually clicking through, not by
 // inspection". There is no browser here, so this automates everything that CAN
 // be checked mechanically and prints an explicit list of what cannot — rather
 // than letting the un-checkable items quietly pass.

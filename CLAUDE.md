@@ -51,7 +51,7 @@ with create-flow; see [one product](docs/app-contracts.md#one-product-no-journey
 | Resolving product requirements or a cited L##/D## ID | [docs/decisions.md](docs/decisions.md) |
 | Testing | [docs/testing.md](docs/testing.md) |
 | Tracking and participant URLs | [app/docs/useberry.md](app/docs/useberry.md) |
-| Looking up historical decisions | `docs/history/`, `app/PROGRESS.md` (reference, not a task queue) |
+| Looking up historical decisions | `docs/history/` |
 | Creating/editing/checking Flows or selectively integrating proposals | [docs/flows.md](docs/flows.md) |
 | A request to narrow, shorten or start the journey elsewhere | [create-flow](.claude/skills/create-flow/SKILL.md), [one product](docs/app-contracts.md#one-product-no-journey-switches) |
 | Local variants of the app or one Flow | [docs/local-variants.md](docs/local-variants.md) |

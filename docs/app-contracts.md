@@ -1,6 +1,6 @@
 # Current app contracts
 
-Read alongside app/docs/architecture.md. docs/workflow.md governs operations; progress logs are historical. Tracking is now frozen by release configuration; see docs/publishing.md. Decision IDs cited here (L##, D##) are in [decisions](decisions.md).
+Read alongside app/docs/architecture.md. docs/workflow.md governs operations. Tracking is now frozen by release configuration; see docs/publishing.md. Decision IDs cited here (L##, D##) are in [decisions](decisions.md).
 
 ## Combined prototype behavior
 
