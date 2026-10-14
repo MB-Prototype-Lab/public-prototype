@@ -1074,16 +1074,6 @@ section("7b. Unreferenced functions — inventory, not a verdict");
 // on this list is new, and warns.
 var DEAD_BASELINE = [
   "benchSelfTest",              // documents the benchmark formula by example
-  // The emergency fund's rent-or-own correction. The owner cut the card that
-  // called it, so state.esf.owns is now derived from the persona and never
-  // corrected by the tester — which still GATES the three owner-only bills on
-  // step 4. Kept because putting the correction back (most naturally on step 4,
-  // beside the rows it controls) is a markup change, not a rewrite.
-  "esfToggleOwns",
-  // Retained from the pinned PM prototype. Its band/dropdown and Buddy flows
-  // replaced these earlier bill, typed-buffer, explanation and help surfaces.
-  "esfBillsTotal", "esfMaintenanceEstimate", "esfPickChoice", "esfRowSource",
-  "esfRunHelp", "esfSetBufferRaw", "esfToggleExplain", "esfUtilitiesSplit",
   // v3.1 inverted the budget flow, so these two lost their callers THERE.
   // Both are still live in v3, which is why they are not deleted: the two
   // versions are an A/B pair and the files stay readable side by side.

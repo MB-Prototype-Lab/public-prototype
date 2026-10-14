@@ -199,7 +199,7 @@ function bbBack() {
  */
 function bbRunHelp(category) {
   if (!isCategory(category)) return;
-  hmoStart(category, { target: "budget" });
+  hmoStart(category);
 }
 
 /**

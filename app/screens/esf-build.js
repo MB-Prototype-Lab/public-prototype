@@ -127,13 +127,6 @@ function esfSetRow(rowId, raw) {
   render();
 }
 
-/** Rent or own is an assumption with a one-tap correction, never a question. */
-function esfToggleOwns() {
-  const s = esfSession();
-  s.owns = !s.owns;
-  render();
-}
-
 /** A range was picked — the row takes that range's midpoint. */
 function esfSetRange(rowId, mid) {
   const s = esfSession();
@@ -141,48 +134,6 @@ function esfSetRange(rowId, mid) {
   s.rows[rowId] = isFinite(n) ? Math.max(0, Math.round(n)) : 0;
   s.touched[rowId] = true;
   render();
-}
-
-function esfToggleExplain(key) {
-  const s = esfSession();
-  if (!s.explain) s.explain = {};
-  s.explain[key] = !s.explain[key];
-  render();
-}
-
-/**
- * Hand one line to the Help-me-out trees.
- *
- * The trees are keyed on the taxonomy, and two ESF rows share a category with
- * another row — so a tree's answer lands on the row that OWNS the category's
- * estimate, never on the typed one. Transport's tree prices running costs; it
- * has nothing to say about a car loan.
- */
-const ESF_HELP_ROW_FOR_CATEGORY = {
-  "Groceries": "groceries",
-  "Debt payments": "debt",
-  "Transport": "carCosts",
-  "Health": "medical",
-  "Utilities": "power"
-};
-
-function esfRunHelp(category) {
-  const s = esfSession();
-  if (!isCategory(category) || !hmoHasTree(category)) return;
-  s.returnTo = "esf";
-  if (!s.help) s.help = {};
-  s.help[category] = true;
-  hmoStart(category, { target: "esf" });
-}
-
-/** The tree calls back with the figure it reached. */
-function esfApplyHelp(category, amount) {
-  const s = esfSession();
-  const rowId = ESF_HELP_ROW_FOR_CATEGORY[category];
-  if (!rowId) return;
-  s.rows[rowId] = Math.max(0, Math.round(Number(amount) || 0));
-  s.touched[rowId] = true;
-  if (s.help) delete s.help[category];
 }
 
 function esfNext() {
@@ -198,44 +149,6 @@ function esfBack() {
   // A calculator detour returns to its caller; other entries use their own stack.
   if (state.bp && state.bp.esfReturn) { navBack(); return; }
   navBack();
-}
-
-// ── Where a figure came from ─────────────────────────────────────────────────
-// A disclosure, never a question flow. Each line names the source rather than
-// describing it vaguely — "we estimated this" tells a tester nothing about
-// whether to trust it.
-
-function esfRowSource(rowId) {
-  const place = (benchColIndex(state.profile.zip) || {}).place;
-  const where = place ? " for " + place : " for your area";
-  if (rowId === "power") {
-    return "Typical power and water for a household your size, priced at your state's own electricity rate" + where + ".";
-  }
-  if (rowId === "connect") {
-    return "Published average broadband, plus a mobile line for each person in your household. Priced the same everywhere — a carrier doesn't charge more in one city than another.";
-  }
-  if (rowId === "groceries") {
-    return "USDA's cost of food at home for a household your size, adjusted" + where + ".";
-  }
-  if (rowId === "debt") {
-    return "The smallest payment a lender would accept on a typical balance — not what people usually pay.";
-  }
-  // `carCosts`, not `carRunning` — carRunning is the GROUP name and this
-  // function is passed a ROW id, so the branch never fired and the car row fell
-  // through to the generic "public spending data" line.
-  if (rowId === "carCosts") {
-    return "AAA's running costs — fuel, upkeep and insurance. Insurance is most of it before a wheel turns.";
-  }
-  if (rowId === "propertyTax") {
-    return "About 14% of what housing costs" + where + ", which is roughly what owners pay in tax on it.";
-  }
-  if (rowId === "hoa") {
-    return "The typical monthly fee where a building or neighborhood charges one" + where + ".";
-  }
-  if (rowId === "medical") {
-    return "Typical out-of-pocket costs for visits, prescriptions and dental" + where + ".";
-  }
-  return "Based on public spending data for households like yours" + where + ".";
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -335,8 +248,8 @@ function esfRenderField(row, bare) {
   const annual = row.cadence === "annual";
   const note = esfFieldNote(row);
 
-  // `bare` drops the label: a choice group's segmented picker already names
-  // what the field is, and repeating it underneath reads as a second question.
+  // `bare` drops the label: the group label above already names what the
+  // field is, and repeating it underneath reads as a second question.
   //
   // An ANNUAL row puts its monthly conversion beside the box rather than under
   // it. "$5,160" and "$430 per month" are the same fact twice, and stacking

@@ -819,9 +819,9 @@ For other features, independent of the ESF:
 
 ### Unbuilt
 
-- **"Why that number?"** — `esfRowSource()` is still **written and never
-  called**, the same state the original spec found it in. It needs a voice pass:
-  written as on-screen disclosure, not as something a dog says out loud.
+- **"Why that number?"** — never shown; see [future work](future-work.md). It
+  needs a voice pass: written as on-screen disclosure, not as something a dog
+  says out loud.
 - **Medical per-person table with editable boxes.** Owner-approved, needs a
   read-only `esfPremiumBreakdown()` added to `js/esf.js`.
 - **Debt has no question set.** It is the one row with no estimate behind it, so
@@ -848,10 +848,6 @@ For other features, independent of the ESF:
   payment you must make"* and *"anything you must pay"*. `CLAUDE.md` lists "you
   must" as a forbidden D26 shape; these are definitional rather than
   prescriptive, and are the owner's own words. Unruled.
-- **`esfToggleExplain()` and `esfRunHelp()` remain orphaned** in
-  `screens/esf-build.js` — defined, never called. Per the repo's
-  do-not-delete-unused-code rule they stay; they belong in `DEAD_BASELINE` if
-  they are now permanently redundant.
 - **Amber against the four Buddy illustrations is unverified on device.**
 
 ### Resolved since the original spec

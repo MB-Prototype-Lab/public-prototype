@@ -38,15 +38,6 @@ function esfSetBuffer(pct) {
   render();
 }
 
-/** Typed straight into the buffer field — accepts "15", "15%", "-5". */
-function esfSetBufferRaw(raw) {
-  const s = esfSession();
-  const n = Number(String(raw == null ? "" : raw).replace(/[^0-9.\-]/g, ""));
-  s.buffer = isFinite(n) ? n / 100 : 0;
-  esfLog("buffer_changed", { buffer: s.buffer, monthly: esfBufferedMonthly() });
-  render();
-}
-
 /** Already saved — deducts from the goal. Defaults to nothing, typed by hand. */
 function esfSetStartingBalance(raw) {
   const s = esfSession();

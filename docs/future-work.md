@@ -17,3 +17,9 @@ deletion and Git history cleanup are outside this integration.
   are unreferenced in `app/`. Several entries give reasons that no longer hold, such
   as "v3 still renders", from the retired v3/v3.1 copies. Remove them as a separate
   task, checking each with §7b rather than by grep.
+
+## Half-wired features (deleted; Git history keeps the code)
+
+- **Help me out from an emergency fund row.** `esfRunHelp` handed one row to a Help me out tree and took the figure back, but no screen offered it.
+- **Showing where a figure came from.** `esfRowSource` wrote a source line for each estimated row, but nothing showed it; it needs a voice pass as on-screen disclosure.
+- **The rent-or-own correction.** `esfToggleOwns` let the tester correct whether they own their home after its card was cut; a correction would sit on the last step beside the owner-only rows.

@@ -724,7 +724,7 @@ Rules learned the hard way:
 ### Unbuilt
 
 - **Debt calculator** — §4.1. The largest outstanding piece.
-- **"Why that number?"** — `esfRowSource()` remains written and never called. It
+- **"Why that number?"** — never shown; see [future work](future-work.md). It
   needs a voice pass: written as on-screen disclosure, not as something a dog
   says out loud.
 - **Medical per-person table** — owner wants the age-factored breakdown shown

@@ -12,4 +12,5 @@
 //     --against and at the head of --series.
 module.exports = [
   { removed: 'xpConfig.discountedRate', why: 'the Learn Tools knob wrote it and nothing read it' },
+  { removed: 'helpMeOut.target', why: 'always "budget" once the emergency fund hook was deleted' },
 ];

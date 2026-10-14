@@ -20,8 +20,8 @@
 // Screens are grouped by how hard a number is to RECALL, not by what it belongs
 // to, so two categories split across screens: Transport becomes a car payment
 // (typed, screen 1) and running costs (estimated, screen 3); Utilities becomes
-// the locally-priced part and the nationally-priced part. esfRowsForCategory()
-// is the seam back.
+// the locally-priced part and the nationally-priced part. Every row names its
+// category, which is the seam back (esfExpensesByCategory).
 
 const ESF_CATEGORIES = ["Housing", "Utilities", "Groceries",
                         "Debt payments", "Transport", "Health"];
@@ -202,22 +202,6 @@ function esfPerGallon() {
 }
 
 /**
- * Miles a month implied by a fuel figure — the tester's number read BACK to
- * them, which is the whole point of the subtext. "$210 of fuel" is unverifiable;
- * "about 640 miles a month" is something they can immediately recognise as too
- * high or too low.
- *
- * cost ÷ price per gallon = gallons, × the fleet average = miles.
- */
-function esfImpliedMiles() {
-  const d = esfDriving();
-  const perGallon = esfPerGallon();
-  if (!perGallon) return 0;
-  const gallons = esfRowValue("fuel") / perGallon;
-  return Math.round(gallons * (Number(d.milesPerGallon) || 0));
-}
-
-/**
  * Insurance, from the two things this app actually knows: where they live, and
  * what their car payment implies about what the car is worth.
  *
@@ -271,13 +255,6 @@ function esfInsuranceStateMonthly() {
     if (isFinite(hit) && hit > 0) annual = hit;
   } catch (e) {}
   return annual / 12;
-}
-
-/** Maintenance follows DISTANCE, so it is derived from the fuel figure. */
-function esfMaintenanceEstimate() {
-  const d = esfDriving();
-  const miles = esfImpliedMiles();
-  return esfRound(miles * (Number(d.maintenancePerMile) || 0));
 }
 
 // ─── Phone and internet ──────────────────────────────────────────────────────
@@ -547,60 +524,6 @@ function esfRowShows(row) {
   return true;
 }
 
-// ── Choice groups ────────────────────────────────────────────────────────────
-// Two rows, one figure. Rent and a mortgage are the same question asked of two
-// different people, and so are a car payment and a transit pass — so the box
-// shows a segmented picker and ONE field rather than two fields where at least
-// one is always going to sit at zero.
-//
-// The rows both still exist underneath, which is what keeps the category maths
-// unchanged: whichever is picked carries the figure and the other contributes
-// nothing.
-
-/** Which row a choice group is currently answering. */
-function esfPickFor(groupId) {
-  const s = esfSession();
-  if (s.pick && s.pick[groupId]) return s.pick[groupId];
-  return ESF_PICK_DEFAULTS[groupId] || null;
-}
-
-/**
- * Defaults. `roof` opens on Mortgage deliberately — the owner's standing call
- * is that an unknown tester is treated as an owner so more of the tool is
- * visible during testing, and opening on Rent would hide the property tax and
- * HOA boxes on the last step before anybody had said anything.
- */
-const ESF_PICK_DEFAULTS = { roof: "mortgage", ride: "carPayment" };
-
-/** True when this row is the one its group is currently answering. */
-function esfRowPicked(row) {
-  if (!row || !row.choice) return true;
-  return esfPickFor(row.group) === row.id;
-}
-
-/**
- * Switch which option a choice group is answering, CARRYING the figure over.
- *
- * Somebody who typed 1,800 and then realises they picked the wrong label meant
- * the number either way; making them retype it would be the tool punishing them
- * for its own default.
- */
-function esfPickChoice(groupId, rowId) {
-  const s = esfSession();
-  if (!s.pick) s.pick = {};
-  const previous = esfPickFor(groupId);
-  if (previous === rowId) return;
-
-  const carried = s.rows[previous];
-  s.pick[groupId] = rowId;
-  if (carried != null) {
-    s.rows[rowId] = carried;
-    s.touched[rowId] = !!s.touched[previous];
-  }
-  s.rows[previous] = null;
-  render();
-}
-
 /** The boxes for a step, in order — rows sharing a `group` share a card. */
 function esfGroupsForStep(step) {
   const out = [];
@@ -680,24 +603,8 @@ function esfRowsForStep(step) {
   return ESF_ROWS.filter(r => r.step === step);
 }
 
-function esfRowsForCategory(category) {
-  return ESF_ROWS.filter(r => r.category === category);
-}
-
 // ─── Opening figures ─────────────────────────────────────────────────────────
 
-/**
- * Utilities is one peer figure and two rows, so this supplies the PROPORTION
- * and nothing else — the two rows always sum back to benchPeerValue.
- *
- * Deriving the split from the help-me-out rate table rather than inventing a
- * ratio keeps one definition of what a power bill costs relative to broadband.
- * The local/national division is that file's own: power and water follow the
- * place, a carrier and an ISP do not.
- *
- * Home size is not collected anywhere — it was cut from onboarding deliberately
- * — so household size proxies for it.
- */
 /**
  * Power, water and gas for this home — the LOCAL part of utilities.
  *
@@ -781,46 +688,6 @@ function esfHomeKey() {
   const table = (esfData().utilitiesSplit || {}).homeByHousehold || {};
   const hh = Math.max(1, parseInt((state.profile || {}).householdSize, 10) || 1);
   return table[String(Math.min(hh, 4))] || "apt2";
-}
-
-function esfUtilitiesSplit() {
-  const peer = Number(benchPeerValue("Utilities", benchOptsForUser())) || 0;
-  const rates = ((hmoTree("Utilities") || {}).rates) || {};
-  const table = (esfData().utilitiesSplit || {}).homeByHousehold || {};
-
-  const hh = Math.max(1, parseInt((state.profile || {}).householdSize, 10) || 1);
-  const home = table[String(Math.min(hh, 4))] || "apt2";
-
-  const power = (Number((rates.kwhByHome || {})[home]) || 0) *
-                (Number(rates.nationalCentsPerKwh) || 0) / 100;
-  const water = Number((rates.waterByHome || {})[home]) || 0;
-  const internet = Number(rates.internet) || 0;
-  const phone = (Number(rates.phonePerLine) || 0) *
-                Math.min(hh, Number(rates.maxLines) || 4);
-
-  const local = power + water;
-  const national = internet + phone;
-  const whole = local + national;
-
-  // No rate table (a failed data load) — split it evenly rather than putting
-  // the whole bill on one row and drawing the others at zero. D19: fabricate a
-  // plausible value, never render a blank.
-  if (!whole) {
-    const third = esfRound(peer / 3);
-    return { power: third, cellPhone: third, internet: Math.max(0, esfRound(peer - third * 2)) };
-  }
-
-  // Three shares now, not two — "Staying Connected" splits the national part
-  // into a phone bill and a broadband bill. The LAST one takes the remainder
-  // rather than its own rounded fraction, so the three always add back to the
-  // peer figure exactly instead of drifting by $5.
-  const powerShare = esfRound(peer * (local / whole));
-  const phoneShare = esfRound(peer * (phone / whole));
-  return {
-    power: powerShare,
-    cellPhone: phoneShare,
-    internet: Math.max(0, esfRound(peer - powerShare - phoneShare))
-  };
 }
 
 /**
@@ -919,22 +786,8 @@ function esfOpeningValues() {
 // nothing on screen would ever explain it, whereas an omission is what the
 // buffer exists to absorb.
 
-/** Does this bill's precondition hold — owner, has a car, or always? */
-function esfBillShows(bill, session) {
-  const s = session || esfSession();
-  if (!bill || !bill.showIf || bill.showIf === "always") return true;
-  if (bill.showIf === "owns")   return !!s.owns;
-  if (bill.showIf === "hasCar") return !!s.hasCar;
-  return true;
-}
-
 function esfBills() {
   return ((esfData().irregularBills || {}).bills) || [];
-}
-
-function esfVisibleBills() {
-  const s = esfSession();
-  return esfBills().filter(b => esfBillShows(b, s));
 }
 
 /**
@@ -976,22 +829,6 @@ function esfBillEstimate(bill) {
     const m = Number((benchColMultipliers(state.profile.zip).multipliers || {})[bill.col]);
     return esfRound(base * (isFinite(m) && m > 0 ? m : 1));
   } catch (e) { return esfRound(base); }
-}
-
-/** The figure in play for a bill — the tester's own if they changed it. */
-function esfBillValue(billId) {
-  const s = esfSession();
-  const typed = s.billAmounts[billId];
-  if (typed != null && isFinite(Number(typed))) return Number(typed);
-  return esfBillEstimate(esfBills().find(b => b.id === billId));
-}
-
-/** Only bills actually added contribute. An untouched row is worth zero. */
-function esfBillsTotal() {
-  const s = esfSession();
-  return esfVisibleBills()
-    .filter(b => s.added[b.id])
-    .reduce((sum, b) => sum + esfBillValue(b.id), 0);
 }
 
 // ─── The session ─────────────────────────────────────────────────────────────
@@ -1091,10 +928,6 @@ function esfReopen() {
  * so when that question ships the irrelevant rows drop out with no change here.
  */
 function esfOwnsHome() {
-  // What they actually typed beats everything. Box 1 asks for rent AND mortgage
-  // as separate figures precisely so this can be read off real numbers rather
-  // than inferred — and it handles the case a single question cannot, somebody
-  // carrying both.
   // An APARTMENT settles it: nobody owning their home calls it an apartment,
   // so there is no property tax and no home insurance to ask about. Condos and
   // houses are ambiguous — either can be rented — so they fall through to the
@@ -1102,14 +935,10 @@ function esfOwnsHome() {
   const place = esfPlaceType();
   if (place === "aptSmall" || place === "aptLarge") return false;
 
-  // The segmented picker in box 1 IS the answer — whichever side it is on says
-  // whether the roof is owned, whether or not a figure has been typed yet.
-  const s = state.esf;
-  if (s) {
-    const pick = (s.pick && s.pick.roof) || ESF_PICK_DEFAULTS.roof;
-    if (pick === "mortgage") return true;
-    if (pick === "rent") return false;
-  }
+  // Inside a running session anyone not in an apartment counts as an owner,
+  // whatever they type for rent or mortgage, so the owner-only rows stay
+  // visible during testing.
+  if (state.esf) return true;
 
   const profile = state.profile || {};
   if (profile.ownsHome != null) return !!profile.ownsHome;
@@ -1295,9 +1124,8 @@ function esfRowMonthly(rowId, ignoreOptIn) {
   }
   // A row the tester never sees must not be in their total. Filtering only the
   // render would leave property tax silently priced into a renter's target —
-  // invisible on screen and impossible to argue with. The same applies to the
-  // unpicked half of a choice group.
-  if (!esfRowShows(row) || !esfRowPicked(row)) return 0;
+  // invisible on screen and impossible to argue with.
+  if (!esfRowShows(row)) return 0;
   // An opt-in row is estimated but weightless until the tester adds it.
   if (row && row.optIn && !esfRowAdded(row.id)) return 0;
   const value = esfRowValue(rowId);
