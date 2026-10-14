@@ -1,4 +1,4 @@
-// ─── Budget category detail (04-budget-benchmarks) ───────────────────────────
+// ─── Budget category detail ──────────────────────────────────────────────────
 // TAB: Budget (sub-screen) | NAV BAR: Visible
 //
 // Reached by tapping a category on the budget tab or a "Worth a look" flag.

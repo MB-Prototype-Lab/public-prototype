@@ -1,4 +1,4 @@
-// ─── Login (03-home-daily-loop) ──────────────────────────────────────────────
+// ─── Login ───────────────────────────────────────────────────────────────────
 // TAB: None | NAV BAR: Hidden — full-bleed scene
 //
 // "A scene — happy, warm, day or night depending on local time. Animated

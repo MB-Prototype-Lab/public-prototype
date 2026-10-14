@@ -1,8 +1,8 @@
 // ─── Budget (v3) ─────────────────────────────────────────────────────────────
 // TAB: Budget | NAV BAR: Visible
 //
-// Replaces v2's about-me hub + budget-setup dashboard. Twelve flat categories
-// (A2), each with a slider, plus the plan-vs-actual signal per row.
+// Replaces v2's about-me hub + budget-setup dashboard. Twelve flat categories,
+// each with a slider, plus the plan-vs-actual signal per row.
 //
 // Empty state: no budget yet → the wizard is the only door (L6). D19 still
 // applies — the screen shows the seeded plan rather than a blank.

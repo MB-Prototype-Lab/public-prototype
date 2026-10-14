@@ -1,12 +1,12 @@
-// ─── My Progress (07-progress-bills, A3) ─────────────────────────────────────
+// ─── My Progress ─────────────────────────────────────────────────────────────
 // TAB: My Progress | NAV BAR: Visible
 //
 // The review surface. Mostly views over data other phases produce, which is why
 // it is built late.
 //
 // REWRITTEN IN 5b. v2's section order (Profile → Budget Results → Assumptions →
-// Comparisons → Goals → Commitments) was its own; A3 fixes a different one, so
-// this file is deliberately a list of six calls in that order:
+// Comparisons → Goals → Commitments) was its own; the order is now fixed as
+// below, so this file is deliberately a list of six calls in that order:
 //
 //   1 spend trend chart, with month-to-date above it
 //   2 three-layer comparison — plan, journal, peers
@@ -225,8 +225,8 @@ function renderMPSubscriptions() {
 }
 
 // ── 5. Badge and buddy level ─────────────────────────────────────────────────
-// The badge is vanity — it unlocks nothing, and that is the point
-// (06-education). The 5-tier model from lessons.json lands in 5c.
+// The badge is vanity — it unlocks nothing, and that is the point.
+// The 5-tier model from lessons.json lands in 5c.
 
 function renderMPBadges() {
   const badges = (state.badges || []).slice(0, 4);
@@ -272,7 +272,7 @@ function renderMyProgressAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">My Progress</p>
       <p class="helper" style="margin-bottom:10px;">
-        Six sections in A3's order: trend · comparison · bills · subscriptions ·
+        Six sections, in order: trend · comparison · bills · subscriptions ·
         badges · kibble.
       </p>
       <div class="input-group">

@@ -16,7 +16,6 @@ detail live in per-phase docs written just before that phase is built.
 Read alongside:
 - [`docs/decisions.md`](../../docs/decisions.md) — the product decisions in force
   (L## and D## IDs). Authoritative.
-- `v3 Files/spec/docs/ASSUMPTIONS.md` — A1–A13. A1 is overridden by L1.
 
 ---
 
@@ -27,7 +26,7 @@ page**: the gate navigates directly to `app/index.html`.
 
 **Consequence: `fetch()` and `XMLHttpRequest` cannot read local files.** Chrome
 and Firefox both treat `file://` as an opaque origin and block them. There is no
-dev server to fall back on — the spec assumed Vite (A1), and we overrode that.
+dev server to fall back on — the spec assumed Vite, and we overrode that.
 
 v2 never hit this because it has **zero runtime data loading** — all data is
 inline in `js/state.js` (verified: no `fetch`, no XHR, no `.json` anywhere in
@@ -51,7 +50,7 @@ Both files are kept:
 
 | File | Role |
 |---|---|
-| `data/*.json` | Verbatim copy of the spec. **Never edited.** Diffable against `v3 Files/spec/data/`. |
+| `data/*.json` | Verbatim copy of the spec. **Never edited.** |
 | `data/zip-cost-of-living.json` | The one exception — authored here, with no spec twin to diff against. Derived from public datasets; the derivation is recorded in its own `method._note`. |
 | `data/*.js` | Generated wrapper. What the app actually loads. |
 
@@ -199,9 +198,8 @@ out"`. Do not slugify; the data files key on the display string.
 **The self-reported layer is `monthToDateActuals`, not the sum of
 `journalHistory`.** This is easy to get backwards and the numbers don't survive
 it: six days of journal entries total roughly $150 of dining out, but the
-observation is built on **$429**. 07-progress-bills states the relationship —
-*"six days of journal detail sits inside fabricated month-to-date totals"*
-(D19).
+observation is built on **$429**. The six days of journal detail sit inside
+fabricated month-to-date totals (D19).
 
 ```
 monthToDateActuals[cat]   → the comparison figure ("what you told me")
@@ -283,7 +281,7 @@ peerValue = base[category][incomeBand][householdSize - 1]        // ARRAY INDEX
 
 Coverage is every ZIP in the 50 states and DC. US territories have no BEA
 figures and report themselves unsupported rather than being given an invented
-one; A12's CA/AR/NY/VA prefix list is superseded.
+one; the old CA/AR/NY/VA prefix list is superseded.
 
 ### Two answer-key traps in `lifestyleModifiers`
 
@@ -856,8 +854,8 @@ it matters more now.
 ## 8. Shared top bar
 
 **v2 has no shared top bar** — every screen renders its own header. v3 needs
-one, because 03-home puts kibble, streak, buddy level, and a hamburger overlay
-up there, and L5 puts the home/back control there too.
+one, because kibble, streak, buddy level and a hamburger overlay live up
+there, and L5 puts the home/back control there too.
 
 ```
 ┌──────────────────────────────────────────┐
@@ -911,7 +909,7 @@ id. Routes can carry a parameter (`lesson:apr`).
      The Hulu task must enter visibly differently — pre-focused on the watched
      question — or it reads as a broken duplicate.
      Frame it as a question, never an instruction: "Haven't heard about Hulu in
-     a while", not "cancel Hulu" (07-progress-bills is explicit). -->
+     a while", not "cancel Hulu". -->
 
 **`q_watched` is `signalOnly: true`** — its options carry a `signal` name, not a
 category or estimate, so it produces **no financial entry**. That's correct for
@@ -941,7 +939,7 @@ skipping anything on cooldown, then appends free text.
 
 `q_balance` — *"Roughly what's in your checking account right now?"* — carries
 **`updatesGoalProgress: true`**. This is not a goals-tab feature that happens to
-live in the journal; it is 05-goals' entire event-based update mechanism,
+live in the journal; it is the whole event-based goal update mechanism,
 implemented as a journal question.
 
 ```
@@ -1205,14 +1203,14 @@ Plus, new in v3: a **full-bleed mode class** if the screen hides the nav (§8).
     "cancel your", "switch to", "you must", "the best option is".
 - **Frame flags as questions, not instructions.** "Haven't heard about Hulu in a
   while" — not "cancel Hulu." The app has no idea whether they still want it.
-- **No exclamation marks in financial observations** (A13). The buddy may be
+- **No exclamation marks in financial observations.** The buddy may be
   encouraging; the numbers stay matter-of-fact.
 - **Voice: warm, plain, second person, sentence case.**
 - **Tip banner is a hard 90-character limit.**
 - **"Peers", never "average users"** — the data is an external mathematical
   aggregate, never other people's real data (D23). If a user asks, say exactly
   that.
-- **Vocabulary is fixed** (00-overview): Buddy · Money Journal (never "expense
+- **Vocabulary is fixed**: Buddy · Money Journal (never "expense
   tracker") · Kibble · Streak · Peers · Observation.
 
 ### Quality floor — verified in Phase 6, designed for from the start
@@ -1265,7 +1263,7 @@ Many answer tags match no variant: `unsure_apr`, `unknown_balance`,
 `partial` · `new`). They fall through to the fallback — and `apr_default`'s own
 note says *"Also serves every 'I don't know' path."*
 
-That is 06-education's *"'I don't know' is a first-class answer, not a failure"*
+That is *"'I don't know' is a first-class answer, not a failure"*
 implemented in data. Don't add variants to "cover" them.
 
 <!-- Coverage per lesson: apr 14 answer tags → 8 variant tags; emergency-fund
@@ -1365,7 +1363,7 @@ choice registers and is legible, which is what onboarding step 7 is there to
 test. A flat colour swatch would test nothing.
 
 - **Character creation stays real, with all five attributes**: breed,
-  fur, eyes, nose, size — as 01-onboarding step 7 originally specified.
+  fur, eyes, nose, size.
   Selections write to `state.buddy` and the description re-renders. Nothing is
   faked. The persona's default is `PERSONA.buddy` (golden retriever, cream,
   brown eyes, black nose, medium). The name is intentionally blank — naming the
@@ -1373,9 +1371,8 @@ test. A flat colour swatch would test nothing.
 - **The idle cycle is real too.** Pose text changes on the 4–6 second cadence
   the design system specifies, cycling poses 1, 3, 4, 5. Stops under
   `prefers-reduced-motion`.
-- **Six pose names** come from `10-ai-assets.md`'s table (sitting calm · head
-  tilted · drinking · sniffing · lying down · joyful). Poses 2 and 6 are
-  event-driven — chat open, and reward/streak.
+- **Six pose names**: sitting calm · head tilted · drinking · sniffing · lying
+  down · joyful. Poses 2 and 6 are event-driven — chat open, and reward/streak.
 - **Same treatment for the other assets**: the two login backgrounds render as
   described scenes (day/night per local time), and the kibble bowl as a labelled
   frame.

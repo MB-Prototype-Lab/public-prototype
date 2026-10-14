@@ -131,7 +131,7 @@ const state = {
   // One audio file per segment, so `index` IS the position — no playhead maths.
   du: { scriptId: null, index: 0, playing: false, timer: null, finished: false },
 
-  // Share — anonymization ON by default (A11). The preview shows the literal
+  // Share — anonymization ON by default. The preview shows the literal
   // payload, so it can never drift from what would actually be posted.
   share: { anonymized: true, previewOpen: false, copied: false },
   streakRegisteredDay: null,

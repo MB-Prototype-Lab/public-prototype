@@ -8,9 +8,8 @@ if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling u
 # `const NAME = {...};` assignment and loads via a <script> tag like every other
 # file in the app.
 #
-# The .json files stay byte-identical to v3 Files/spec/data/ so drift from the
-# spec is always one `diff -rq` away. The .js files are GENERATED — never
-# hand-edit them; edit nothing, or edit the .json and re-run this.
+# The .js files are GENERATED — never hand-edit them; edit the .json and
+# re-run this.
 #
 #   bash scripts/wrap-data.sh
 #

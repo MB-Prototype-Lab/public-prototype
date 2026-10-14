@@ -152,7 +152,7 @@ const SEED_STATE =
   },
 
   "dailyTasks": {
-    "_note": "Precomputed order (A7). Scoring engine specified in 03-home-daily-loop.md but not run at runtime.",
+    "_note": "Precomputed order. The scoring engine is not run at runtime.",
     "today": [
       { "id": "t_journal", "label": "Do your money journal", "route": "money_journal", "kibble": 20, "priority": 1 },
       { "id": "t_esf", "label": "Saving for an emergency", "route": "emergency_fund", "kibble": 15, "priority": 2 },

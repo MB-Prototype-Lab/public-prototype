@@ -56,7 +56,7 @@ function observationsRecompute() {
  * The peer-comparison counterpart to the seeded plan_gap (L11). Both framings
  * must appear and be labelled distinctly — "over your plan" and "over your
  * peers" are different numbers for the same category, and neither may stand in
- * for the other. 04-budget-benchmarks calls this out as a trap.
+ * for the other.
  *
  * Returns null when the peer model has nothing for the category.
  */
@@ -81,7 +81,7 @@ function observationPeerCounterpart(o) {
 // ── Copy ─────────────────────────────────────────────────────────────────────
 // Templated, so the number and the sentence can never disagree.
 //
-// Voice rules that bind here (A13, D26): no financial advice, ever — surface
+// Voice rules that bind here (D26): no financial advice, ever — surface
 // the number and the gap, never prescribe the action. Flags are framed as
 // questions, not instructions. No exclamation marks on a financial figure.
 

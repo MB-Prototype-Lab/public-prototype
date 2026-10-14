@@ -1,4 +1,4 @@
-// ─── Three-layer comparison (D24, 04-budget-benchmarks) ──────────────────────
+// ─── Three-layer comparison (D24) ────────────────────────────────────────────
 // TAB: Budget (sub-screen) | NAV BAR: Visible
 //
 //   Plan          state.plan     "Your plan"        what you intended
@@ -8,7 +8,7 @@
 // "Never blur these. The gaps between them are the product."
 //
 // TWO DIFFERENT GAPS exist for the same category and neither may stand in for
-// the other. 04-budget-benchmarks names this as a trap:
+// the other:
 //
 //   over your plan   $429 against a $320 budget  = 34%
 //   over your peers  $429 against a $370 peer    = 16%
@@ -249,7 +249,7 @@ function cmpFlagBar(r, v, cls) {
   return `<div class="cmp-bar"><span class="${cls}" style="width:${Math.max(2, (v / max) * 100)}%"></span></div>`;
 }
 
-// ─── Compact strip for My Progress (07-progress-bills) ───────────────────────
+// ─── Compact strip for My Progress ───────────────────────────────────────────
 // "Same data as the budget tab, framed for review rather than editing."
 function renderComparisonCompact(limit) {
   const rows = cmpAllRows()

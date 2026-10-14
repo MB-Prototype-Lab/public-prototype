@@ -1538,7 +1538,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .journal-slider { width: 100%; accent-color: var(--accent); }
 
 /* ─── Budget (v3) ─────────────────────────────────────────────────────────────
-   One row per category — twelve flat rows, no nesting (A2). */
+   One row per category — twelve flat rows, no nesting. */
 /* My Progress — the one place on that screen where something goes IN rather
    than out. Tinted so it reads as an action among a column of read-outs. */
 .mp-update { background: var(--accent-soft); border-color: var(--accent-border); }
@@ -1675,8 +1675,8 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .cmp-compact-name { font-size: 12px; font-weight: 700; flex: 1; }
 
 /* ─── Phase 2.5 repaint (D36) ─────────────────────────────────────────────────
-   Shape, depth and motion from 09-design-system, applied as overrides so the
-   v2 rules above stay readable rather than being rewritten line by line.
+   Shape, depth and motion, applied as overrides so the v2 rules above stay
+   readable rather than being rewritten line by line.
 
    Radius 16 on cards, 24 on primary buttons, full round on pills and the buddy
    stage. Shadows wide and soft. Nothing square, no hard edges, no heavy
@@ -1738,7 +1738,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 .screen input[type="range"] { accent-color: var(--accent-fill); }
 
-/* Focus must stay visible — 09-design-system's floor. */
+/* Focus must stay visible. */
 .screen :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -1750,7 +1750,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .screen .budget-row-amt,
 .screen .journal-amount { font-family: var(--font-display); font-weight: 850; }
 
-/* The buddy stage is fully round (09-design-system). */
+/* The buddy stage is fully round. */
 .screen .stage-card { border-radius: var(--radius-pill); }
 
 /* ─── Reduced motion ──────────────────────────────────────────────────────────
@@ -1791,8 +1791,8 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .admin .button.secondary:not(:disabled):hover { background: rgba(49, 94, 251, .06); }
 
 /* ─── Buddy stage ─────────────────────────────────────────────────────────────
-   A described placeholder, not art. Fully round per 09-design-system, sage
-   ground because the buddy stage is a positive surface. */
+   A described placeholder, not art. Fully round, sage ground because the
+   buddy stage is a positive surface. */
 .buddy-stage {
   background: var(--sage);
   border-radius: var(--radius-pill);
@@ -2640,8 +2640,8 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .onb-trial-list { margin: 0 0 14px; padding-left: 18px; font-size: 13px; line-height: 1.7; color: var(--text); }
 
 /* ─── Daily update ────────────────────────────────────────────────────────────
-   09-design-system: "the one place motion is orchestrated rather than ambient.
-   Let it be the memorable moment; keep everything else quiet." */
+   The one place motion is orchestrated rather than ambient. Let it be the
+   memorable moment; keep everything else quiet. */
 .du-shell {
   min-height: 100%;
   padding: calc(var(--topbar-h) + 8px) 18px 18px;
@@ -2751,7 +2751,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .mp-bill-unit { display: block; font-size: 9px; color: var(--muted); }
 .mp-bill-amt  { font-size: 13px; font-weight: 850; }
 /* A flagged bill uses clay, never alarm colouring — nothing here is an
-   emergency (09-design-system). */
+   emergency. */
 .mp-bill-flagged .mp-bill-when { background: var(--warn-bg); color: var(--warn); }
 .mp-bill-flagged .mp-bill-amt  { color: var(--warn); }
 

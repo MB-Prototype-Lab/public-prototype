@@ -1,11 +1,11 @@
-// ─── Daily update — completion summary (08-video-updates) ────────────────────
+// ─── Daily update — completion summary ───────────────────────────────────────
 // TAB: None | NAV BAR: Hidden
 //
 // "A summary screen: the observations, stacked, in plain language."
 //
 // The share sheet and its anonymization preview are Phase 4b. The streak
-// registers at the END of that flow, not here — 03-home-daily-loop is explicit
-// that it lands "after a completed journal entry, at the end of the share flow".
+// registers at the END of that flow, not here: it lands "after a completed
+// journal entry, at the end of the share flow".
 
 function renderDailySummary() {
   const obs = state.observations || [];
@@ -40,8 +40,8 @@ function renderDailySummary() {
   `;
 }
 
-// The streak registers at the END of the share flow (03-home-daily-loop), which
-// is now screens/daily-share.js — so skipping share means skipping the streak,
+// The streak registers at the END of the share flow, which is now
+// screens/daily-share.js — so skipping share means skipping the streak,
 // exactly as the spec describes the ordering.
 function dailySummaryDone() {
   navGoHome();

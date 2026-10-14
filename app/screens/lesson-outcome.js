@@ -1,8 +1,8 @@
-// ─── Lesson quiz · simulation · reward (06-education) ────────────────────────
+// ─── Lesson quiz · simulation · reward ───────────────────────────────────────
 // TAB: Education (sub-screens) | NAV BAR: Hidden
 //
-// The tail of a lesson: quiz → simulation → reward. 06-education biases toward
-// the simulation — "a sandbox a user can push numbers through beats a
+// The tail of a lesson: quiz → simulation → reward. It biases toward the
+// simulation — "a sandbox a user can push numbers through beats a
 // multiple-choice question about what a rate means" — so the quiz is short and
 // the simulation is the part with something to do.
 //

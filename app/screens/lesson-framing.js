@@ -1,4 +1,4 @@
-// ─── Lesson framing questions (06-education, D38) ────────────────────────────
+// ─── Lesson framing questions (D38) ──────────────────────────────────────────
 // TAB: Education (sub-screen) | NAV BAR: Hidden — full-bleed
 //
 // "Three to five, decision-tree branching. 'Do you know your card's APR?' Yes

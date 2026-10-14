@@ -1,7 +1,6 @@
 /* ─── Theme tokens ────────────────────────────────────────────────────────────
-   D36 / 09-design-system: Finch-like — soft pastels, cozy, rounded. Warm and
-   unhurried. "An app about money that is deliberately not trying to look like
-   a bank."
+   D36: Finch-like — soft pastels, cozy, rounded. Warm and unhurried. "An app
+   about money that is deliberately not trying to look like a bank."
 
    TWO SCOPES, deliberately separate:
 
@@ -124,7 +123,7 @@
   --tier-copper: #B87333;
   --scroll-thumb: rgba(61, 58, 54, .24);
 
-  /* ── Shape, depth, motion (09-design-system) ───────────────────────────── */
+  /* ── Shape, depth, motion ──────────────────────────────────────────────── */
   --radius-card:   16px;
   --radius-button: 24px;
   --radius-pill:   999px;

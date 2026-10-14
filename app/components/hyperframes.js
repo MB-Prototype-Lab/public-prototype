@@ -3,7 +3,7 @@
 // whose authoring model this borrows: animation described as code on a timeline
 // that can be advanced to any timestamp. Its MP4 exporter is not borrowed and is
 // not wanted here — the app is no-build and file:// (L1), the spec asks for
-// animated DOM rather than encoded video (A9), and the figures differ per user,
+// animated DOM rather than encoded video, and the figures differ per user,
 // which a pre-rendered file cannot do.
 //
 // ── THE CLOCK CONTRACT ───────────────────────────────────────────────────────

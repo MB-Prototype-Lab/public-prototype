@@ -1,4 +1,4 @@
-// ─── The 12-category taxonomy (A2) ───────────────────────────────────────────
+// ─── The 12-category taxonomy ────────────────────────────────────────────────
 // The single most load-bearing contract in the build. Frozen, ordered, and the
 // join key across four independent data surfaces:
 //

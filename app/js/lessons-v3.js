@@ -1,4 +1,4 @@
-// ─── Lesson framing + variant matching (D38, 06-education) ───────────────────
+// ─── Lesson framing + variant matching (D38) ─────────────────────────────────
 // The two gaps v2's pipeline does not cover:
 //   1. the pre-lesson framing decision tree
 //   2. answer-driven script personalization
@@ -236,8 +236,8 @@ function lessonBucketFor(lesson, figure) {
  * Unmatched tags are the DESIGN, not a gap: `unsure_apr`, `unknown_*` and all
  * of f3's confidence tags deliberately match no variant and fall through to the
  * fallback, whose own note says it "also serves every 'I don't know' path".
- * That is 06-education's "'I don't know' is a first-class answer, not a
- * failure". Do not add variants to cover them.
+ * "I don't know" is a first-class answer, not a failure. Do not add variants
+ * to cover them.
  */
 function lessonSelectVariant(lesson, tags, inputs) {
   const variants = lesson.scriptVariants || [];

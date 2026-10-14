@@ -10,7 +10,7 @@ const PEER_BENCHMARKS =
 
   "coverage": {
     "states": ["CA", "AR", "NY", "VA"],
-    "_note": "A12. Model structure supports all-US expansion by adding zipTiers entries only. No code changes required."
+    "_note": "Model structure supports all-US expansion by adding zipTiers entries only. No code changes required."
   },
 
   "method": {
@@ -134,7 +134,7 @@ const PEER_BENCHMARKS =
     "_check": "275 * 1.34 * 1.0 = 368.5, rounds to 370",
     "userActual": 429,
     "gapPercent": 16,
-    "_note_gap": "The seeded observation states 34% over. That figure compares against the user's own BUDGET of 320, not the peer value. Both framings appear in the UI and must be labelled distinctly — see 04-budget-benchmarks.md."
+    "_note_gap": "The seeded observation states 34% over. That figure compares against the user's own BUDGET of 320, not the peer value. Both framings appear in the UI and must be labelled distinctly."
   }
 }
 ;

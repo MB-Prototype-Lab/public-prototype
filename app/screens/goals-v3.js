@@ -1,4 +1,4 @@
-// ─── Goals (05-goals) ────────────────────────────────────────────────────────
+// ─── Goals ───────────────────────────────────────────────────────────────────
 // TAB: Goals (first tab, D34) | NAV BAR: Visible
 //
 // "The Goals tab tracks progress. It is not where most goals are born" — they
@@ -107,7 +107,7 @@ function renderGoalCardV3(goal) {
 /**
  * The contextual suggestion block. Rendered by whichever screen just finished a
  * meaningful action — pass a context so the suggestions are scoped to it.
- * "Create your own" is ALWAYS last (05-goals).
+ * "Create your own" is ALWAYS last.
  */
 function renderGoalSuggestions(context, title) {
   if (goalsAtCapacity()) {

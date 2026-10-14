@@ -3,9 +3,8 @@
 //
 // lessons.json declares 15 scriptVariants across three lessons but carries no
 // script body for any of them: only `id`, `matchTags`, `audioId`, `emphasis`
-// and `isFallback`. 06-education says the scripts are "pre-generated for every
-// combination of answers"; that generation never happened. These are the
-// bodies, written to the emphasis each variant declares.
+// and `isFallback`. These are the bodies, written to the emphasis each variant
+// declares.
 //
 // It lives in data/ beside the spec JSON but is deliberately a .js authored by
 // hand — the wrap-data.sh generator does not touch it, and there is no .json
@@ -17,7 +16,7 @@
 // mechanism works and what it costs; the reader decides what to do about it.
 // That rule is asserted over this file by the Phase 6 copy sweep.
 //
-// A13 — warm, plain, second person, sentence case. No exclamation marks on a
+// Warm, plain, second person, sentence case. No exclamation marks on a
 // financial figure. The buddy can be encouraging; the numbers stay
 // matter-of-fact.
 //

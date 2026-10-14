@@ -1,7 +1,7 @@
 // ─── Shared Top Bar ───────────────────────────────────────────────────────────
 // NEW IN v3 — v2 had no shared top bar; every screen rendered its own header.
-// 03-home-daily-loop puts kibble, streak and buddy level up here, and L5 puts
-// the home/back control in the top-left, so one component owns the strip.
+// Kibble, streak and buddy level live up here, and L5 puts the home/back
+// control in the top-left, so one component owns the strip.
 //
 //   ┌────────────────────────────────────────────┐
 //   │ [◄ or ⌂]   🦴 240 · 🔥 6 · Lv 3        [☰] │
@@ -76,8 +76,8 @@ function renderTopBar() {
   `;
 }
 
-// Half-screen overlay for system information (03-home-daily-loop). Contents are
-// Phase 3's job; the shell and the dismiss behaviour live here.
+// Half-screen overlay for system information. Contents are Phase 3's job;
+// the shell and the dismiss behaviour live here.
 function renderTopBarMenu() {
   return `
     <div class="topbar-menu-scrim" onclick="topbarToggleMenu()"></div>

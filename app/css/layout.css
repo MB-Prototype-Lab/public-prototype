@@ -7,7 +7,7 @@ body {
   color: var(--text);
 }
 
-/* Display face for headings, figures and the buddy's voice (09-design-system).
+/* Display face for headings, figures and the buddy's voice.
    Numbers are display face, heavier than their label, and always larger —
    financial figures are the thing people look for. */
 h1, h2, h3, .title, .section-title, .journal-total, .budget-row-amt,
@@ -118,7 +118,7 @@ h1, h2, h3, .title, .section-title, .journal-total, .budget-row-amt,
 .topbar-ico  { font-size: 12px; }
 .topbar-dot  { color: var(--muted); font-weight: 400; }
 
-/* Half-screen overlay for system info (03-home-daily-loop). */
+/* Half-screen overlay for system info. */
 .topbar-menu-scrim {
   position: absolute;
   inset: 0;

@@ -1,9 +1,9 @@
-// ─── Daily update (08-video-updates, D27–D30) ────────────────────────────────
+// ─── Daily update (D27–D30) ──────────────────────────────────────────────────
 // TAB: None | NAV BAR: Hidden — full-bleed, the payoff moment
 //
 // "A personalized read on how the week is going — the tone of a financial
-// podcast made for one person." An animated DOM sequence, not an encoded video
-// (A9). Daily only (D27).
+// podcast made for one person." An animated DOM sequence, not an encoded video.
+// Daily only (D27).
 //
 // ── THE SCRIPT / VISUAL SPLIT (D30) ──────────────────────────────────────────
 // Scripts stay GENERALIZED. Visuals carry the numbers.
@@ -340,7 +340,7 @@ function renderDailyUpdateAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">Daily Update</p>
       <div class="input-group">
-        <label>Engagement variant (all 3 selectable, A10)</label>
+        <label>Engagement variant (all 3 selectable)</label>
         <select onchange="duSelectVariant(this.value)">
           ${duScripts().map(x => `
             <option value="${h(x.id)}" ${s && s.id === x.id ? "selected" : ""}>

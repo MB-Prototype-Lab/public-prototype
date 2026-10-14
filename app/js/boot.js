@@ -112,7 +112,7 @@ function bootV3() {
   });
 
   // ── Daily tasks, v3 shape (Phase 3 wires home) ─────────────────────────────
-  // Precomputed order (A7). Routes use their own vocabulary — see the route map
+  // Precomputed order. Routes use their own vocabulary — see the route map
   // in architecture §9; `lesson:apr` shows they can carry a parameter.
   state.dailyTasks = v3Clone(SEED_STATE.dailyTasks.today);
 
@@ -164,7 +164,6 @@ function v3EntryScreen() {
 // peers", but its numbers (429 vs 320) are the PLAN comparison: 320 is the
 // user's budget, not the benchmark. The real peer value comes from the peer
 // model (benchPeerValue), so it follows the tester's own profile.
-// 04-budget-benchmarks says the seeded observation IS the plan comparison, and
 // peer-benchmarks.json flags the discrepancy itself in `_note_gap`.
 //
 // So the numbers are right and the headline is wrong. Reframed here at boot

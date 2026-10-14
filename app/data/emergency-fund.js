@@ -6,7 +6,7 @@
 // The .json beside this file is the byte-identical spec copy.
 const EMERGENCY_FUND =
 {
-  "_note": "Emergency fund tool. Unlike its neighbours this file is NOT a byte-identical copy of anything in 'v3 Files/spec/' — the ESF spec (docs/emergency-fund-spec.md) ships no data file, so these figures were sourced for it. Every figure carries the source it came from; the arithmetic that consumes them lives in js/esf.js.",
+  "_note": "Emergency fund tool. The ESF spec (docs/emergency-fund-spec.md) ships no data file, so these figures were sourced for it. Every figure carries the source it came from; the arithmetic that consumes them lives in js/esf.js.",
 
   "irregularBills": {
     "_note": "Screen 4 — bills that do not arrive monthly. Each row is opt-in: the tool ASSUMES the tester already counted the cost inside what they typed earlier, and [Add it] is the correction. So a row left untouched adds nothing, which is the safe direction for a double-count and the wrong direction for an omission. `showIf` gates which rows appear at all; `basis` says how the estimate is built.",

@@ -1,4 +1,4 @@
-// ─── Goals engine (05-goals) ─────────────────────────────────────────────────
+// ─── Goals engine ────────────────────────────────────────────────────────────
 // Rebuilt to the v3 model. v2's Goals V2 module — frozen baselines, derived
 // sprints, a seeded cohort, medals — is not carried over; it stays in
 // versions/v2/ and remains testable from the gate.
@@ -99,7 +99,7 @@ function goalStatusIsPoor(goal) {
 }
 
 /**
- * Pace matters more than the raw figure (05-goals): "$620 of $3,000 means
+ * Pace matters more than the raw figure: "$620 of $3,000 means
  * little; 41% of the pace you set means something."
  */
 function goalPaceLine(goal) {
@@ -116,7 +116,7 @@ function goalPaceLine(goal) {
   return pace + "% of the pace you set";
 }
 
-// ── Event-based progress (05-goals) ──────────────────────────────────────────
+// ── Event-based progress ─────────────────────────────────────────────────────
 // "Never ask someone to update a number directly. Ask something they actually
 // know." The journal's q_balance emits a checking_balance event; savings goals
 // consume it. The number moves as a CONSEQUENCE of an answer.
@@ -141,7 +141,7 @@ function goalsConsumeEvents() {
   return applied;
 }
 
-// ── Contextual suggestions (05-goals) ────────────────────────────────────────
+// ── Contextual suggestions ───────────────────────────────────────────────────
 // "Goals mostly happen elsewhere. After a meaningful action the app offers one
 // to three suggestions drawn from whatever is on screen. The last option is
 // always create your own."

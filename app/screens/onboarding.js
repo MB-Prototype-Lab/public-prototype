@@ -1,4 +1,4 @@
-// ─── Onboarding (01-onboarding, D06) ─────────────────────────────────────────
+// ─── Onboarding (D06) ────────────────────────────────────────────────────────
 // TAB: None | NAV BAR: Hidden — full-bleed flow
 //
 // Seven steps. A single config constant bypasses the whole thing — see
@@ -170,8 +170,8 @@ function onbLifestyleQuestions() {
   return LW_QUESTIONS.filter(q => ONB_LIFESTYLE_DIMS.indexOf(q.dim) !== -1);
 }
 
-// Five bands, presented as ranges (01-onboarding). `annual` is the seed the
-// slider opens on, and it is a representative figure inside the band so
+// Five bands, presented as ranges. `annual` is the seed the slider opens on,
+// and it is a representative figure inside the band so
 // benchIncomeBand() maps it back to the same band without a second code path.
 //
 // min/max mirror PEER_BENCHMARKS.incomeBands, which is the peer model's actual

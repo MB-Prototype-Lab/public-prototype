@@ -9,7 +9,7 @@
 // added without touching anything downstream.
 //
 // PORTED IN PHASE 2 — v2's version converted an 8-amount payload into 5 nested
-// buckets via HOUSING_SPLIT / BILLS_SPLIT. Under the flat 12 (A2) there is
+// buckets via HOUSING_SPLIT / BILLS_SPLIT. Under the flat 12 there is
 // nothing to split: a baseline carries a monthly figure per category and the
 // conversion disappears.
 

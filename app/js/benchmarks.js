@@ -24,7 +24,7 @@ const BENCH_LIFESTYLE_DIMS = ["foodie", "cooksAtHome", "hobbySpend",
 
 /**
  * Annual income → band id (b1–b5). Onboarding collects a BAND, never a precise
- * figure (01-onboarding step 4), so this is mostly for the persona's $68,000.
+ * figure, so this is mostly for the persona's $68,000.
  */
 function benchIncomeBand(annualIncome) {
   const bands = PEER_BENCHMARKS.incomeBands;

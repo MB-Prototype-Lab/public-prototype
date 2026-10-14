@@ -211,7 +211,7 @@ function journalSetFreeText(value) {
 }
 
 // Attachment affordances are present and tappable and accept a file; nothing is
-// processed (02-money-journal). Recording the name only so the UI can show it.
+// processed. Recording the name only so the UI can show it.
 function journalAddAttachment(kind) {
   state.journalSession.attachments.push({ kind: kind, at: Date.now() });
   render();
@@ -293,7 +293,7 @@ function journalBuildEntries() {
       const amt = ans.amount;
       if (amt == null || isNaN(amt) || amt <= 0) return;
       if (q.updatesGoalProgress) {
-        // 05-goals' event-based update, implemented as a journal question.
+        // The event-based goal update, implemented as a journal question.
         // Never ask someone to update a number directly — ask something they
         // actually know, and let the goal move as a consequence.
         journalEmitGoalEvent({ kind: "checking_balance", amount: amt });
@@ -382,7 +382,7 @@ function journalSubmit() {
     }
   });
 
-  // Engagement signals clear subscription flags (07-progress-bills).
+  // Engagement signals clear subscription flags.
   (s.signals || []).forEach(name => {
     const sub = (state.subs || []).find(x => x.name === name);
     if (sub) { sub.lastMentionedDay = journalDayIndex(); sub.status = "active_used"; sub.weeksSinceMention = 0; }

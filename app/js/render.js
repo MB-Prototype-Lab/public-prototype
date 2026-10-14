@@ -46,7 +46,7 @@ function adminSubtitle() {
   if (state.screen === "login")          return "Login scene — day/night by local time, then the daily-update prompt.";
   if (state.screen === "dailyUpdate")    return "Daily update — one audio file per segment; visuals carry the numbers (D30).";
   if (state.screen === "dailySummary")   return "Completion summary — observations stacked in plain language.";
-  if (state.screen === "dailyShare")     return "Share — anonymization on by default; the preview is the literal payload (A11).";
+  if (state.screen === "dailyShare")     return "Share — anonymization on by default; the preview is the literal payload.";
   if (state.screen === "onboarding")     return "Onboarding — " + ONB_STEPS.length +
                                                 " steps. Only ZIP, household and income override the persona (D09).";
   if (state.screen === "learn")          return "Adjust XP config, lesson states, badge progress.";

@@ -6,7 +6,7 @@
 // The .json beside this file is the byte-identical spec copy.
 const DAILY_SCRIPTS =
 {
-  "_note": "Daily update scripts (D27). Three engagement variants recorded (A10). Timing values live in a separate block from script text so they can be rewritten after a TTS pass without touching content (D29).",
+  "_note": "Daily update scripts (D27). Three engagement variants recorded. Timing values live in a separate block from script text so they can be rewritten after a TTS pass without touching content (D29).",
 
   "timingContract": {
     "_note": "READ THIS BEFORE IMPLEMENTING. The production pipeline is: script text → TTS → timing extraction → timings written back. Timings must be replaceable in isolation.",
@@ -106,7 +106,7 @@ const DAILY_SCRIPTS =
   ],
 
   "unwrittenVariants": {
-    "_note": "Structurally supported, not written (A10). Adding one means adding a scripts[] entry with the same segment ids — no code changes.",
+    "_note": "Structurally supported, not written. Adding one means adding a scripts[] entry with the same segment ids — no code changes.",
     "pending": ["not_engaged", "deeply_behind", "heavily_ahead"]
   },
 

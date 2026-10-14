@@ -1,4 +1,4 @@
-// ─── Home (03-home-daily-loop) ───────────────────────────────────────────────
+// ─── Home ────────────────────────────────────────────────────────────────────
 // TAB: none — reached by the top-left icon, not a tab (L5/D34)
 // NAV BAR: Visible
 //
@@ -128,8 +128,7 @@ function renderHomeAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">Daily Tasks</p>
       <p class="helper" style="margin-bottom:10px;">
-        Precomputed order (A7). The scoring engine is specified in
-        03-home-daily-loop but not run in the prototype.
+        Precomputed order. The scoring engine is not run in the prototype.
       </p>
       ${state.dailyTasks.map((t, i) => `
         <div class="input-group">

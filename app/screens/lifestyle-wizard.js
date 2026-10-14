@@ -1,4 +1,4 @@
-// ─── Lifestyle wizard (04-budget-benchmarks) ─────────────────────────────────
+// ─── Lifestyle wizard ────────────────────────────────────────────────────────
 // TAB: Budget (sub-screen) | NAV BAR: Hidden — full-bleed question flow
 //
 // The single budget builder (L6), replacing v2's 2 Minute Budget and Lifestyle

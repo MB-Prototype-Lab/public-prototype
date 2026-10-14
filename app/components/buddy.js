@@ -21,14 +21,14 @@
 // the dropped eye/nose colours were all consequences of raster art being
 // unable to recolour. The owner's art is SEPARATE FILES chosen by state, not
 // one sheet addressed by offset, so there is still nothing to crop — DO NOT
-// build the cropping machinery. See the "Don't" list in versions/v3/CLAUDE.md.
+// build the cropping machinery.
 //
 // The pickers are also NOT reduced to match whatever the art covers: the
 // image varies along whichever stats the owner's plan names, and the
 // description carries the attributes it does not.
 
-// The six poses from 10-ai-assets.md, in its cell order. Poses 1/3/4/5 are the
-// ambient idle cycle; 2 and 6 are event-driven (chat open, reward/streak).
+// The six poses. Poses 1/3/4/5 are the ambient idle cycle; 2 and 6 are
+// event-driven (chat open, reward/streak).
 const BUDDY_POSES = [
   { id: 1, name: "sitting, facing forward, calm",     idle: true  },
   { id: 2, name: "head tilted, looking up at you",    idle: false },
@@ -145,8 +145,8 @@ const BUDDY_EYE_COLOR_CSS = {
   "brown": "#6B4423", "amber": "#D99B2B", "blue": "#4A90D9", "green": "#4A9D5B"
 };
 
-// 09-design-system: "a small movement every four to six seconds, never
-// constant." Randomised inside that window so the cadence never feels metronomic.
+// A small movement every four to six seconds, never constant. Randomised
+// inside that window so the cadence never feels metronomic.
 const BUDDY_IDLE_MIN_MS = 4000;
 const BUDDY_IDLE_MAX_MS = 6000;
 

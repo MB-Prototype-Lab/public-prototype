@@ -1,4 +1,4 @@
-// ─── Badges, XP and rewards (06-education, L9) ───────────────────────────────
+// ─── Badges, XP and rewards (L9) ─────────────────────────────────────────────
 // "Per lesson. Metal tier plus level number, Overwatch-style. XP from correct
 // answers, bonus XP when the lesson came from the daily task list. The badge is
 // vanity — it unlocks nothing. That's the point."

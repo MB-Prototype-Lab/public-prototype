@@ -1,4 +1,4 @@
-// ─── Share (08-video-updates, A11) ───────────────────────────────────────────
+// ─── Share ───────────────────────────────────────────────────────────────────
 // TAB: None | NAV BAR: Hidden
 //
 // "A sheet offering copy link, and platform buttons that don't connect to
@@ -77,7 +77,7 @@ function renderDailyShare() {
           </label>
         </div>
 
-        <!-- The expansion view. This is the trust mechanic (A11): the exact
+        <!-- The expansion view. This is the trust mechanic: the exact
              string that would be posted, shown character for character. -->
         <div class="card">
           <button class="share-expand" type="button" onclick="shareTogglePreview()">
@@ -145,7 +145,7 @@ function shareCopy() {
 }
 
 /**
- * End of the share flow — where the streak registers (03-home-daily-loop).
+ * End of the share flow — where the streak registers.
  * Guarded so replaying the update cannot inflate it.
  */
 function shareDone() {
@@ -190,7 +190,7 @@ function renderDailyShareAdmin() {
         </div>
       </div>
       <p class="helper" style="font-size:10px;">
-        Platform buttons are inert by design (A11). The toggle and preview are
+        Platform buttons are inert by design. The toggle and preview are
         fully functional, because that is the part worth testing.
       </p>
     </div>

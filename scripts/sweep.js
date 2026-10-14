@@ -556,7 +556,7 @@ chk(state.chat.messages.length === 0 && (state.chat.bubbles || []).join(",") ===
     "mid-chat: " + midChat + "\n          after reset: " + (state.chat.bubbles || []).join(","));
 
 // ─────────────────────────────────────────────────────────────────────────────
-section("5. A13 — tone");
+section("5. Tone");
 var exclam = [];
 SCREENS.forEach(function (sc) {
   var t = textOf(renderSafe(sc));
