@@ -29,4 +29,7 @@ module.exports = [
   { removed: 'lifestyleWizard', why: 'the removed lifestyle wizard\'s session; always null without its screens' },
   { removed: 'onboarding.buddyIndex', why: 'the position inside the removed buddy creator sub-steps; the buddy step is one screen' },
   { removed: 'bp.ui.pick', why: 'the row the removed Big purchase range-picker sheet was open on' },
+  { removed: 'bigPurchase.stack5.resale', why: 'Big purchase resale value: excluded from every total and never read' },
+  { removed: 'bigPurchase.stack5.valueLost', why: 'Big purchase depreciation: excluded from every total and never read' },
+  { removed: 'bigPurchase.stack5.balanceAtSale', why: 'the loan balance left at five years, read only by the removed resale arithmetic' },
 ];

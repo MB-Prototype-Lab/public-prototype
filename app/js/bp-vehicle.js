@@ -105,12 +105,6 @@ function bpVAgeKey(inputs) {
   return inputs.condition === "used" ? (inputs.age || "1-3") : "new";
 }
 
-function bpVStartAge(inputs) {
-  if (inputs.condition !== "used") return 0;
-  const band = (bpVData().ages || []).find(a => a.id === inputs.age);
-  return band ? Number(band.startAge) || 0 : 2;
-}
-
 function bpVFactor(table, key, fallback) {
   const t = ((bpVData().factors || {})[table]) || {};
   const v = Number(t[key]);
@@ -239,29 +233,8 @@ function bpVUpkeep(inputs) {
   return bpRound(perYear / 12, 5);
 }
 
-function bpVSubscriptions(inputs) {
-  return Number((bpVData().subscriptions || {})[inputs.tier]) || 0;
-}
-
 function bpVRenewal() {
   return bpRound(Number(bpVState().renewal) || 0, 5);
-}
-
-/**
- * Value kept after N years, walking the retention curve from the car's own age.
- * A used car starts at its age band, so it skips the steep first year — that is
- * the whole of why its value-lost row is smaller.
- */
-function bpVResale(inputs, years) {
-  const r = bpVData().retention || {};
-  const adj = Number((r.tierAdjust || {})[inputs.tier] || 0) + Number((r.fuelAdjust || {})[inputs.fuel] || 0);
-  let v = Number(inputs.price) || 0;
-  const start = bpVStartAge(inputs);
-  for (let y = start + 1; y <= start + years; y++) {
-    const base = y === 1 ? r.year1 : (y <= 5 ? r.years2to5 : r.year6plus);
-    v *= Math.min(0.98, Math.max(0.5, (Number(base) || 0.85) + adj));
-  }
-  return Math.round(v);
 }
 
 function bpVLoanRate(inputs, tier) {
@@ -319,9 +292,7 @@ const BP_VEHICLE_ROWS = [
   // NO SUBSCRIPTIONS ROW (owner, 2026-09-27): "that is an add-on that I
   // wouldn't consider for a car alone." Satellite radio and the connected-car
   // app are things a person opts into, not a cost of owning the car, and a
-  // screen that claims to price the car should not price them. The figures
-  // stay in the data file and bpVSubscriptions() still reads them, so putting
-  // the row back is one entry in this array.
+  // screen that claims to price the car should not price them.
   { id: "other", label: "Parking, tolls, anything else", bucket: "monthly", scope: "about", typed: true, default: 0 },
 
   { id: "renewal", label: "Registration renewal", bucket: "yearly", scope: "car", estimate: bpVRenewal,
@@ -362,14 +333,6 @@ function bpVDescribe(inputs) {
   return bpVNoun(inputs) + " · " + bpVFuelLabel(inputs.fuel) + " · " + cond;
 }
 
-/** Only a financed NEW vehicle can qualify (§9.2). Used cars and leases can't. */
-function bpVTaxBreak(inputs) {
-  const tb = bpData().taxBreak || {};
-  if (tb.expires && todayISO() > tb.expires) return null;
-  if (tb.newOnly && inputs.condition !== "new") return null;
-  return tb.id || null;
-}
-
 // ── The setup rows (§6) ──────────────────────────────────────────────────────
 // What a priced car has answered. bpEnsureSetup() checks them without knowing
 // about cars.
@@ -388,9 +351,7 @@ bpRegisterCategory({
   setupInputs: BP_VEHICLE_SETUP,
   costRows: BP_VEHICLE_ROWS,
   horizons: { primary: 5, secondary: 3 },
-  resaleValue: bpVResale,
   loanRate: bpVLoanRate,
-  taxBreak: bpVTaxBreak,
   alternatives: bpVAlternatives,
   describe: bpVDescribe,
   noun: bpVNoun

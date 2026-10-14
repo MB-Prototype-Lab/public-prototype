@@ -220,7 +220,7 @@ function bpPayment(principal, apr, term) {
 }
 
 /**
- * Interest paid, and the balance still owed, after `months` of payments.
+ * Interest paid after `months` of payments.
  * Walked month by month so a term shorter than the horizon simply stops.
  */
 function bpAmortize(principal, apr, term, months) {
@@ -240,7 +240,7 @@ function bpAmortize(principal, apr, term, months) {
     interest += i;
     bal = Math.max(0, bal + i - pay);
   }
-  return { interest: interest, balance: bal, payment: pay };
+  return { interest: interest, payment: pay };
 }
 
 /** The APR a card carries. A typed rate applies to the user's pick ONLY (§3.4). */
@@ -249,12 +249,6 @@ function bpRate(card) {
   const cat = bpCategory();
   if (card && card.id === "pick" && s.pay.typedRate != null) return Number(s.pay.typedRate) || 0;
   return cat ? cat.loanRate(card.inputs, s.pay.credit) : 0;
-}
-
-/** The rate at a given tier, ignoring any typed rate — the credit sheet's table. */
-function bpRateAtTier(card, tier) {
-  const cat = bpCategory();
-  return cat ? cat.loanRate(card.inputs, tier) : 0;
 }
 
 function bpDownPayment(card) {
@@ -269,13 +263,11 @@ function bpDownPayment(card) {
 /**
  * Everything one card costs over N years.
  *
- * `opts.mode` and `opts.tier` let the sheets ask "what if" without touching the
- * session: the credit sheet prices the same car at every tier, and the
- * cash-vs-loan block prices a cash buyer's car as if it were financed.
+ * `opts.mode` asks "what if" without touching the session: the finder prices
+ * peers' payment as a loan whatever the tester chose.
  */
 function bpStack(card, years, opts) {
   const s = bpSession();
-  const cat = bpCategory();
   const o = opts || {};
   const N = years || ((bpData().horizons || {}).primary) || 5;
   const price = Number(card.inputs.price) || 0;
@@ -290,17 +282,6 @@ function bpStack(card, years, opts) {
     lines.push({ id: r.id, bucket: r.bucket, value: v });
   });
 
-  // ── RESALE IS NOT IN ANY TOTAL (owner, 2026-09-26) ────────────────────────
-  // "I don't want resale value at all… it should never be included." So the
-  // cost of the car is the PRICE, in full, and nothing is credited back for
-  // what it might sell for one day. The curve is still computed — the category
-  // owns it and a later feature may want it — but nothing downstream reads it.
-  //
-  // This is NOT the double count §3.3 warns about: the price is counted once
-  // and depreciation is not counted at all. Counting both would be the error.
-  const resale = cat ? cat.resaleValue(card.inputs, N) : price;
-  const valueLost = Math.max(0, price - resale);
-
   // Financing. The loan covers the price plus the tax and fees charged on the
   // day, less what is put down and the trade-in (§3.4). The other upfront costs
   // — a charger, riding gear — are paid in cash on the day and never financed.
@@ -308,17 +289,15 @@ function bpStack(card, years, opts) {
   const fees = bpRowValue(card, "fees");
   const tradeIn = bpRowValue(card, "tradeIn");
   const down = mode === "loan" ? bpDownPayment(card) : 0;
-  const apr = o.tier ? bpRateAtTier(card, o.tier) : bpRate(card);
+  const apr = bpRate(card);
   const term = s.pay.term;
-  let principal = 0, payment = 0, interest = 0, balance = 0;
+  let principal = 0, payment = 0, interest = 0;
   if (mode === "loan") {
     principal = Math.max(0, price + salesTax + fees - down - tradeIn);
-    // Only interest paid WHILE OWNED counts. If the term runs past N the rest
-    // of the balance is repaid from the sale, and that is already in valueLost.
+    // Only interest paid within the N years counts.
     const am = bpAmortize(principal, apr, term, 12 * N);
     payment = am.payment;
     interest = am.interest;
-    balance = am.balance;
   }
 
   const trueCost = price + buckets.upfront + buckets.monthly * 12 * N +
@@ -328,9 +307,8 @@ function bpStack(card, years, opts) {
     years: N, price: price, mode: mode,
     upfront: buckets.upfront, monthly: buckets.monthly, yearly: buckets.yearly,
     lines: lines,
-    resale: resale, valueLost: valueLost,
     down: down, tradeIn: tradeIn, principal: principal, apr: apr, term: term,
-    payment: payment, interest: interest, balanceAtSale: balance,
+    payment: payment, interest: interest,
     trueCost: trueCost,
     monthlyToOwn: trueCost / (12 * N)
   };
@@ -444,8 +422,7 @@ function bpCashAtPurchase(st) {
  *
  * Month by month rather than the spec's closed form: the closed form assumes
  * the payment runs all 60 months, and a 36-month loan stops paying at 36. For a
- * 60- or 72-month loan the two agree exactly. `endDiff` is subtracted because
- * the pricier car usually sells for more.
+ * 60- or 72-month loan the two agree exactly.
  */
 function bpOpportunity(pickSt, altSt, rate) {
   const i = rate != null ? Number(rate) : bpSession().savingsRate;
@@ -462,29 +439,6 @@ function bpOpportunity(pickSt, altSt, rate) {
   // no "the pricier car sells for more" credit to subtract. What is left is
   // what the cheaper car leaves in the pocket, month by month, grown.
   return fv;
-}
-
-// ── Cash vs loan (§3.7) ──────────────────────────────────────────────────────
-
-/**
- * Loan interest against what the same cash could grow by. Shown whichever way
- * the user pays; a cash buyer's figure is priced as if the car were financed on
- * the loan settings, so the comparison is still visible.
- *
- * NO VERDICT. The block never says which is better. The closing sentence —
- * "Loan interest is certain. Savings growth is not." — is required and never
- * removed: the two figures look comparable and are not the same kind of number.
- */
-function bpCashVsLoan(card) {
-  const s = bpSession();
-  const st = bpStack(card, null, { mode: "loan" });
-  const i = s.savingsRate;
-  const years = Math.min(st.term, 12 * st.years) / 12;
-  return {
-    interest: st.interest,
-    growth: st.principal * (Math.pow(1 + i, years) - 1),
-    rate: i
-  };
 }
 
 // ── Save to afford (§3.5) ────────────────────────────────────────────────────
