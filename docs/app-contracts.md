@@ -326,9 +326,8 @@ The three factors are asserted separately — see architecture §5.
 - **Remove genuinely dead code when it is in scope and verified.** `app/` is the
   source of truth and Git keeps history, so nothing is kept in case it comes back.
   Never keep dormant branches for alternate journeys (see One product: no journey
-  switches). `sweep.sh` §7b still inventories unreferenced functions against
-  `DEAD_BASELINE` and **warns when a function newly loses its callers** — a
-  function that was referenced and now isn't was likely orphaned by accident.
+  switches). `sweep.sh` §7b **fails when any function in `app/` has no
+  reference**: wire it back or delete it, along with what only it used.
 - **Never judge "is this used?" by grepping for `name(`.** Functions here are
   reached four ways: ordinary calls, `onclick` in screen template literals,
   `onclick` in `index.html`, and bare identifiers in dispatch tables. Only the

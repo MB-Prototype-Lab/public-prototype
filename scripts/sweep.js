@@ -1124,23 +1124,16 @@ var missingScripts = [];
 chk(missingScripts.length === 0, "all 15 lesson variants have a script body", missingScripts.join(", "));
 
 // ─────────────────────────────────────────────────────────────────────────────
-section("7b. Unreferenced functions — inventory, not a verdict");
+section("7b. Unreferenced functions");
 
-// POLICY: app/ is the source of truth and Git keeps history. Genuinely dead
-// code is removed when it is in scope and verified, and dormant branches for
-// alternate journeys are never kept (docs/app-contracts.md, "One product: no
-// journey switches").
-//
-// This check does not fail on dead code. What it watches for is MOVEMENT: a
-// function that used to be referenced and now is not was probably orphaned by
-// accident — a handler left behind when its button moved, a cue dropped from a
-// dispatch table. That is a refactor bug, and it looks identical to existing
-// dead code unless you know which ones were already here.
-//
-// Hence the baseline: everything below was already unreferenced when it was
-// recorded. Purging it is a separate task (docs/future-work.md). Anything NOT
-// on this list is new, and warns.
-var DEAD_BASELINE = [];
+// Every function in app/ must be reached. sweep.sh counts the four ways one is
+// (ordinary calls, onclick in screen templates and in index.html, bare names in
+// dispatch tables), ignoring comments. One that is not was orphaned by a
+// refactor — a handler left behind when its button moved, a cue dropped from a
+// dispatch table — or is dead code. Wire it back or delete it: Git keeps
+// history, so nothing is kept in case it comes back (docs/app-contracts.md).
+chk(__UNREFERENCED.length === 0, "every function is referenced",
+    __UNREFERENCED.map(function (d) { return d.name + "  " + d.file; }).join("\n          "));
 
 // Everything shares one global namespace, so a name declared in two files is
 // not an error — the later <script> wins and the earlier becomes unreachable.
@@ -1152,22 +1145,6 @@ chk(__DUPLICATE_DECLS.length === 0, "no name declared twice",
       return d.name + "  →  " + d.files.join(" , ") + "   (" + d.scope +
              "; last one wins for function/var, SyntaxError for const/let)";
     }).join("\n          "));
-
-var deadNames = __UNREFERENCED.map(function (d) { return d.name; });
-var appeared = __UNREFERENCED.filter(function (d) { return DEAD_BASELINE.indexOf(d.name) === -1; });
-var resolved = DEAD_BASELINE.filter(function (n) { return deadNames.indexOf(n) === -1; });
-
-ok(deadNames.length + " unreferenced, " + DEAD_BASELINE.length + " expected (baseline)");
-if (appeared.length) {
-  warn("newly unreferenced since the baseline — orphaned by a refactor?",
-       appeared.map(function (d) { return d.name + "  " + d.file; }).join("\n          "));
-} else {
-  ok("nothing newly orphaned");
-}
-if (resolved.length) {
-  ok(resolved.length + " baseline entr" + (resolved.length === 1 ? "y is" : "ies are") +
-     " now referenced", "check before pruning from DEAD_BASELINE: " + resolved.join(", "));
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("7c. The rendered films agree with the app's clock");

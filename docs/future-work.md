@@ -11,13 +11,6 @@ require a separate scope decision; do not restore editable `versions/` directori
 Publication and team cutover remain separate work. GitHub Issues, remote branch
 deletion and Git history cleanup are outside this integration.
 
-## Open cleanup
-
-- **Purge `DEAD_BASELINE`.** The six functions on `scripts/sweep.js` §7b's baseline
-  are unreferenced in `app/`. Several entries give reasons that no longer hold, such
-  as "v3 still renders", from the retired v3/v3.1 copies. Remove them as a separate
-  task, checking each with §7b rather than by grep.
-
 ## Half-wired features (deleted; Git history keeps the code)
 
 - **Help me out from an emergency fund row.** `esfRunHelp` handed one row to a Help me out tree and took the figure back, but no screen offered it.
