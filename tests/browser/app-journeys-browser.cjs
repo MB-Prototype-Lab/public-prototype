@@ -12,7 +12,10 @@
 //        compare the pictures and write a report a PM can open.
 //   Options: [--only id,id] [--variants naturalLight,dark,...]
 //   --compare REF   instead of --base: check REF out into a temporary worktree
-//   --allow-declared  do not fail on changes the PR body declares (CI)
+//   --allow-declared  do not fail on changes the PR body declares (CI, pull requests)
+//   --report    print and write the report but pass with changed pictures (CI,
+//               pushes to main, whose PR already declared them); a journey that
+//               breaks after the change, or a new page error, still fails
 //
 // When comparing, every journey must reach its last step on both sides. One
 // that stops early after the change, or on both sides, fails the run; one that
@@ -80,6 +83,7 @@ function parseArgs(argv) {
     else if (v === '--only') a.only = next().split(',');
     else if (v === '--variants') a.variants = next().split(',');
     else if (v === '--allow-declared') a.allowDeclared = true;
+    else if (v === '--report') a.report = true;
     else throw new UsageError('unknown argument ' + v);
   }
   return a;
@@ -366,6 +370,8 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const comparing = !!(args.base || args.compare);
   if (!comparing && args.allowDeclared) throw new UsageError('--allow-declared needs --base DIR or --compare REF');
+  if (!comparing && args.report) throw new UsageError('--report needs --base DIR or --compare REF');
+  if (args.report && args.allowDeclared) throw new UsageError('--report never fails on changed pictures, so --allow-declared has nothing to allow; use one');
   const out = comparing || args.out ? path.resolve(args.out || path.join(REPO, '.journeys', 'browser')) : null;
   const head = path.resolve(args.head || REPO);
   let base = args.base ? path.resolve(args.base) : null;
@@ -472,13 +478,18 @@ async function main() {
       ' · journeys that broke: ' + summary.broken + (summary.brokenBeforeOnly ? ' (' + summary.brokenBeforeOnly + ' only before the change)' : ''));
     console.log('Report: ' + pathToFileURL(report).href);
     if (summary.brokenAfter) ok = false;
-    // In CI, say what the PR body said, as --justify does.
-    const undeclared = (what, channel) => {
-      ok = false;
-      if (args.allowDeclared) console.log('DECLARE  ' + what + ' changed, but ' + readAs(body, channel) + '; say what changed and why');
-    };
-    if ((summary.phoneChanged || summary.brokenBeforeOnly) && !phoneDeclared) undeclared('the phone', 'Participant');
-    if (summary.toolsChanged && !toolsDeclared) undeclared('Tools pictures', 'Tools');
+    if (args.report) {
+      // Changed pictures are reported, not failed: the PR that made them declared them.
+      if (summary.phoneChanged || summary.toolsChanged || summary.brokenBeforeOnly) console.log('--report: changed pictures are reported, not failed' + (summary.brokenAfter ? '; the journeys that broke still fail' : ''));
+    } else {
+      // In CI, say what the PR body said, as --justify does.
+      const undeclared = (what, channel) => {
+        ok = false;
+        if (args.allowDeclared) console.log('DECLARE  ' + what + ' changed, but ' + readAs(body, channel) + '; say what changed and why');
+      };
+      if ((summary.phoneChanged || summary.brokenBeforeOnly) && !phoneDeclared) undeclared('the phone', 'Participant');
+      if (summary.toolsChanged && !toolsDeclared) undeclared('Tools pictures', 'Tools');
+    }
   } finally {
     await browser.close();
     if (cleanup) cleanup();

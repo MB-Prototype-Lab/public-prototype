@@ -98,7 +98,10 @@ in `tests/browser/pixels.cjs` and `tests/browser/app-journeys-browser.cjs`, and
 may still change). A changed phone or Tools picture fails the check unless the PR
 declares it under "Phone and Tools changes", as for the journey checks. A change
 only the pictures show (a colour, a one-pixel shift) is declared the same way; the
-journey checks then print a note instead of failing.
+journey checks then print a note instead of failing. After a merge, main is
+compared with the previous main in report mode (`--report`): changed pictures,
+which the PR declared, are reported but do not fail; a journey that breaks or a
+new page error still fails.
 
 To see the pictures for a PR, open its **Checks** tab, choose the **Browser
 journeys** job, open the run's summary and download the

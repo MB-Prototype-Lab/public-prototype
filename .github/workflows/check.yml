@@ -109,13 +109,15 @@ jobs:
         run: |
           git worktree add --detach "$RUNNER_TEMP/base" "$BASE"
           node tests/browser/app-journeys-browser.cjs --base "$RUNNER_TEMP/base" --head . --out "$RUNNER_TEMP/browser" --allow-declared
+      # --report: changed pictures were declared by the merged PR, so they are
+      # reported, not failed; a journey that breaks or a new page error still fails.
       - name: Browser journeys compared with the previous main
         if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
         env:
           BEFORE: ${{ github.event.before }}
         run: |
           git worktree add --detach "$RUNNER_TEMP/base" "$BEFORE"
-          node tests/browser/app-journeys-browser.cjs --base "$RUNNER_TEMP/base" --head . --out "$RUNNER_TEMP/browser"
+          node tests/browser/app-journeys-browser.cjs --base "$RUNNER_TEMP/base" --head . --out "$RUNNER_TEMP/browser" --report
       # Run even after a failed picture comparison, so one run reports every
       # browser check.
       - name: Flow browser tests (file and HTTP)
