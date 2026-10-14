@@ -56,6 +56,10 @@ node tests/app-journeys.cjs --trace esf-full@at_at   # watch one journey step by
 node tests/app-journeys.cjs --mutations      # prove it catches breakage (run after harness changes)
 ```
 
+`--series` compares each commit's phone with the newest main commit it contains
+(its merge base), so a later sync with main is not blamed on the commits made
+before it; Tools and wiring are compared with the commit before it on the branch.
+
 Journeys live in `tests/app-journeys/journeys/`, written as taps on visible
 labels. A journey that can no longer find a label fails loudly with the controls
 it can see. This robot does not judge layout or colour; the browser check below

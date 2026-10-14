@@ -1,11 +1,14 @@
 'use strict';
 // Unit checks for the harness's own pieces: the parser, the selector engine,
-// the control finder, the clock, the rename detector, the PR declaration
-// parser, and that a different machine locale or time zone changes nothing.
+// the control finder, the clock, the rename detector, the series comparison's
+// bases, the PR declaration parser, and that a different machine locale or time
+// zone changes nothing.
 
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const html = require('../lib/html.cjs');
 const { Document } = require('../lib/mini-dom.cjs');
 const { createClock } = require('../lib/virtual-clock.cjs');
@@ -83,6 +86,52 @@ check('rename detection accepts consistent renames only', () => {
   assert.ok(renameMap('button onclick=fooA(1)\nbutton onclick=fooA(2)', 'button onclick=fooB(1)\nbutton onclick=fooB(2)'));
   assert.equal(renameMap('button onclick=fooA(1)\nbutton onclick=barA(2)', 'button onclick=fooB(1)\nbutton onclick=fooB(2)'), null);
   assert.equal(renameMap('button onclick=fooA(1)', 'button onclick=fooA(2)'), null);
+});
+
+check('a series compares each commit with its merge base, so a later sync with main is not blamed on it', async () => {
+  const { seriesCompare, compare } = require('../app-journeys.cjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mb-series-'));
+  const g = (...args) => execFileSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false',
+    '-c', 'core.hooksPath=' + path.join(dir, 'no-hooks')].concat(args), { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  // One file per channel; a "run" of a commit reads them back as one step.
+  const commit = (files, msg) => {
+    for (const [f, v] of Object.entries(files)) fs.writeFileSync(path.join(dir, f), v);
+    g('add', '.'); g('commit', '-q', '-m', msg);
+    return g('rev-parse', 'HEAD');
+  };
+  try {
+    g('init', '-q', '-b', 'main');
+    const m0 = commit({ phone: 'A', tools: 'T0', wiring: 'W0' }, 'm0');
+    g('checkout', '-q', '-b', 'work');
+    const b1 = commit({ tools: 'T1' }, 'b1: Tools change on the branch');
+    g('checkout', '-q', 'main');
+    const m1 = commit({ phone: 'B' }, 'm1: main changes the phone');
+    g('checkout', '-q', 'work');
+    g('merge', '-q', '--no-edit', 'main');
+    const b2 = g('rev-parse', 'HEAD');
+    const b3 = commit({ phone: 'C' }, 'b3: the branch changes the phone');
+    const ran = [];
+    const runAt = async sha => {
+      ran.push(sha);
+      const read = f => g('show', sha + ':' + f);
+      return [{ id: 'j', errors: [], gate: [], records: [{ label: '001 step', participant: read('phone'), tools: read('tools'), wiring: read('wiring') }] }];
+    };
+    // The trap is real: b1 against main's tip shows main's phone change.
+    assert.equal(compare(await runAt(m1), await runAt(b1)).participant.length, 1);
+    ran.length = 0;
+    const rows = [];
+    await seriesCompare('main', [b1, b2, b3], runAt, r => rows.push(r), args => g(...args));
+    const summary = rows.map(r => [r.mergeBase, r.parent, r.vsBase.participant.length, r.vsParent.tools.length]);
+    assert.deepEqual(summary, [[m0, m0, 0, 1], [m1, b1, 0, 0], [m1, b2, 1, 0]]);
+    assert.equal(ran.length, new Set(ran).size, 'each commit runs once');
+    // From an older base the merged main commit is in the range; the merge's
+    // Tools are compared with the branch before it, not with that main commit.
+    rows.length = 0;
+    await seriesCompare(m0, [b1, m1, b2, b3], runAt, r => rows.push(r), args => g(...args));
+    assert.deepEqual(rows.map(r => [r.parent, r.vsParent.tools.length]), [[m0, 1], [m0, 0], [b1, 0], [b2, 0]]);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 check('handler identifiers skip members, keys, locals and strings', () => {

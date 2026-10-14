@@ -10,7 +10,9 @@
 //   node tests/app-journeys.cjs --against main  also compare with another commit:
 //                                               the phone must be identical; Tools
 //                                               text and handler wiring are reported
-//   node tests/app-journeys.cjs --series A..B   compare every commit in A..B with A
+//   node tests/app-journeys.cjs --series A..B   compare every commit in A..B with its
+//                                               merge base with A (Tools and wiring
+//                                               with its first parent)
 //   node tests/app-journeys.cjs --justify --base SHA
 //                                               CI: the PR body must declare any
 //                                               phone, Tools or wiring change
@@ -251,41 +253,69 @@ async function againstMode(args, journeys) {
   return { ok: gatesOk && (args.report || !cmp.participant.length), cmp };
 }
 
+// Compares each commit's phone with its merge base with baseRef, so a commit
+// made before a sync with main is not blamed for main's own changes, and its
+// Tools and wiring with its first parent, so a merge's changes land on the
+// merge. runAt(sha) runs the journeys at one commit; each run is cached until
+// the last commit that needs it. Calls onRow(row) per commit, in order.
+async function seriesCompare(baseRef, commits, runAt, onRow, gitFn = git) {
+  const plan = commits.map(c => {
+    const mergeBase = gitFn(['merge-base', baseRef, c]);
+    const parent = gitFn(['rev-list', '--parents', '-n', '1', c]).split(' ')[1] || mergeBase;
+    return { commit: c, mergeBase, parent };
+  });
+  const lastUse = new Map();
+  plan.forEach((p, i) => { for (const s of [p.commit, p.mergeBase, p.parent]) lastUse.set(s, i); });
+  const cache = new Map();
+  const get = async sha => {
+    if (!cache.has(sha)) cache.set(sha, (await runAt(sha)).map(r => Object.assign({}, r, { app: undefined })));
+    return cache.get(sha);
+  };
+  for (let i = 0; i < plan.length; i++) {
+    const p = plan[i];
+    const res = await get(p.commit);
+    const vsBase = compare(await get(p.mergeBase), res);
+    const vsParent = compare(await get(p.parent), res);
+    const gate = res.flatMap(r => r.errors.concat(r.gate));
+    onRow(Object.assign({ vsBase, vsParent, gate }, p));
+    for (const [s, last] of lastUse) if (last <= i) { cache.delete(s); lastUse.delete(s); }
+  }
+}
+
 async function seriesMode(args, journeys) {
   const [baseRef, headRef] = args.series.split('..');
   const commits = git(['rev-list', '--reverse', baseRef + '..' + (headRef || 'HEAD')]).split('\n').filter(Boolean);
   const runs = expand(journeys);
+  const short = sha => git(['rev-parse', '--short', sha]);
   const rows = [];
   let failed = false;
   await withWorktree(async wt => {
-    checkout(wt, baseRef);
-    const base = await runAll(runs, path.join(wt, 'app'));
-    let prev = base;
-    for (const c of commits) {
-      checkout(wt, c);
+    const runAt = sha => { checkout(wt, sha); return runAll(runs, path.join(wt, 'app')); };
+    await seriesCompare(baseRef, commits, runAt, ({ commit: c, mergeBase, parent, vsBase, vsParent, gate }) => {
       const subject = git(['log', '-1', '--format=%h %s', c]);
-      const res = await runAll(runs, path.join(wt, 'app'));
-      const vsBase = compare(base, res);
-      const vsPrev = compare(prev, res);
-      const gate = res.flatMap(r => r.errors.concat(r.gate));
+      const baseName = 'merge base ' + short(mergeBase) + ' of ' + baseRef;
       const row = {
         commit: subject,
+        mergeBase: short(mergeBase),
+        parent: short(parent),
         participant: vsBase.participant.length,
-        tools: vsPrev.tools.length,
-        renames: [...vsPrev.renames].map(([k, n]) => k + ' (' + n + ')'),
-        wiring: vsPrev.wiring.length,
+        tools: vsParent.tools.length,
+        renames: [...vsParent.renames].map(([k, n]) => k + ' (' + n + ')'),
+        wiring: vsParent.wiring.length,
         gate: gate.length,
       };
       if (row.participant || row.gate) failed = true;
       rows.push(row);
       console.log((row.participant || row.gate ? 'FAIL ' : 'ok   ') + subject);
-      if (row.participant) console.log(formatComparison({ participant: vsBase.participant, tools: [], wiring: [], renames: new Map() }, baseRef, c).split('\n').slice(1, 25).map(l => '       ' + l).join('\n'));
-      if (row.tools) console.log('       Tools changed in ' + row.tools + ' steps (vs previous commit)');
+      if (row.participant) {
+        console.log('       Phone differs from its ' + baseName);
+        console.log(formatComparison({ participant: vsBase.participant, tools: [], wiring: [], renames: new Map() }, baseName, c).split('\n').slice(1, 25).map(l => '       ' + l).join('\n'));
+      }
+      if (row.tools) console.log('       Tools changed in ' + row.tools + ' steps (vs first parent ' + row.parent + ')');
       if (row.renames.length) console.log('       Wiring renames: ' + row.renames.join(', '));
-      if (row.wiring) console.log('       Wiring changed in ' + row.wiring + ' steps (vs previous commit)');
+      if (row.wiring) console.log('       Wiring changed in ' + row.wiring + ' steps (vs first parent ' + row.parent + ')');
       if (row.gate) console.log('       ' + gate.slice(0, 5).join('\n       '));
-      prev = res;
-    }
+    });
   });
   const text = rows.map(r => [r.participant ? 'PHONE CHANGED' : 'phone same', r.tools ? 'tools changed' : '', r.renames.length ? 'renames ' + r.renames.join(', ') : '', r.wiring ? 'wiring changed' : '', r.gate ? 'GATE' : '', '·', r.commit].filter(Boolean).join(' ')).join('\n');
   if (args.out) {
@@ -293,7 +323,7 @@ async function seriesMode(args, journeys) {
     fs.writeFileSync(path.join(args.out, 'series.txt'), text + '\n');
     fs.writeFileSync(path.join(args.out, 'series.json'), JSON.stringify(rows, null, 2) + '\n');
   }
-  console.log((failed ? 'FAIL' : 'PASS') + '  ' + commits.length + ' commits compared with ' + baseRef);
+  console.log((failed ? 'FAIL' : 'PASS') + '  ' + commits.length + ' commits compared with their merge base of ' + baseRef);
   return args.report || !failed;
 }
 
@@ -358,7 +388,11 @@ async function listMode(args, journeys) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (args.help) { console.log(fs.readFileSync(__filename, 'utf8').split('\n').slice(2, 25).map(l => l.replace(/^\/\/ ?/, '')).join('\n')); return true; }
+  if (args.help) {
+    const header = fs.readFileSync(__filename, 'utf8').split('\n').slice(2);
+    console.log(header.slice(0, header.findIndex(l => !l.startsWith('//'))).map(l => l.replace(/^\/\/ ?/, '')).join('\n'));
+    return true;
+  }
   if (args.selftest) return require('./app-journeys/selftest.cjs').run();
   if (args.mutations) return require('./app-journeys/mutations.cjs').run({ loadJourneys, expand, runAll, compare, formatComparison, coverage, sameRun });
   const journeys = loadJourneys(args.only);
@@ -374,4 +408,4 @@ if (require.main === module) {
   main().then(ok => process.exit(ok ? 0 : 1), err => { console.error(err && err.stack || err); process.exit(2); });
 }
 
-module.exports = { loadJourneys, expand, runAll, compare, formatComparison, coverage, renameMap, PROFILES };
+module.exports = { loadJourneys, expand, runAll, compare, formatComparison, coverage, renameMap, seriesCompare, PROFILES };
