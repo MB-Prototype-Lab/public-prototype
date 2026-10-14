@@ -1,0 +1,39 @@
+'use strict';
+const { tap, slide, wait, expect } = require('../dsl.cjs');
+const { skipToProfile } = require('../common.cjs');
+
+module.exports = {
+  id: 'lesson-topic',
+  title: 'A lesson from the Learn tab: badge, topic, player, quiz, calculator, reward, Return Home',
+  steps: skipToProfile().concat([
+    tap('Learn'),
+    tap({ name: 'Open', nth: 0 }),
+    expect({ screen: 'topic' }),
+    tap({ name: 'Start', nth: 0 }),
+    tap('Begin Lesson'),
+    wait(30000),
+    tap('Next'),
+    tap('1 month of expenses'),
+    tap('3–6 months of expenses'),
+    tap('Next'),
+    tap('Taking on credit card debt for unexpected costs'),
+    tap('Next'),
+    tap('Invested in the stock market'),
+    tap('Submit'),
+    expect({ screen: 'lessonSimulation' }),
+    slide('Each month', 400),
+    tap(/^Healthy outcome/),
+    tap('Finish lesson'),
+    wait(5000),
+    tap('Return Home'),
+    expect({ screen: 'home' }),
+    tap('Learn'),
+    tap({ name: 'Open', nth: 1 }),
+    tap('Quiz'),
+    tap('Back'),
+    tap('Simulation'),
+    tap('Back'),
+    tap('Revisit'),
+    tap({ name: 'Back', nth: 0 }),
+  ]),
+};

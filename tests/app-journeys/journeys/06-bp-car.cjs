@@ -1,0 +1,40 @@
+'use strict';
+const { tap, type, expect } = require('../dsl.cjs');
+const { skipToProfile } = require('../common.cjs');
+
+module.exports = {
+  id: 'bp-car',
+  title: 'Big purchase from Goals: a known car, new, every payment choice, then save a goal',
+  matrix: 'profiles',
+  browser: true,
+  steps: p => skipToProfile(p).concat([
+    tap('Goals'),
+    tap(/^Estimate a big purchase/),
+    expect({ screen: 'bpLanding' }),
+    tap('Ask me later'),
+    tap('A vehicle ›'),
+    tap('Select a make'),
+    tap('Toyota'),
+    tap('Select a model'),
+    tap('Camry'),
+    tap(/^New \$/),
+    tap('See the real cost to own'),
+    tap('See how we calculated this'),
+    tap({ name: /^Camry Same car, used/, role: 'button' }),
+    tap({ name: /^Camry Your pick/, role: 'button' }),
+    tap('Continue'),
+    expect({ screen: 'bpYourCar' }),
+    tap(/^Down payment 20%/),
+    tap(/^10% · /),
+    tap(/^Loan length/),
+    tap('72 months (6 years)'),
+    tap(/^Credit score/),
+    tap('781+'),
+    tap('Yes'),
+    type('Already saved, dollars', '800'),
+    tap({ name: 'Cash', nth: 0 }),
+    tap({ name: 'Loan', nth: 0 }),
+    tap(/^Set goal: save /),
+    expect({ screen: 'goals' }),
+  ]),
+};
