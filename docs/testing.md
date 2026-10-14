@@ -60,6 +60,11 @@ node tests/app-journeys.cjs --mutations      # prove it catches breakage (run af
 (its merge base), so a later sync with main is not blamed on the commits made
 before it; Tools and wiring are compared with the commit before it on the branch.
 
+Both sides of a comparison run the PR's own journeys and normalization, so the
+PR check lists any harness files the PR changed under "Harness changed". A PR
+that edits journeys, state aliases or normalization says why in its text, and
+reviewers check that no step that showed a change was dropped.
+
 Journeys live in `tests/app-journeys/journeys/`, written as taps on visible
 labels. A journey that can no longer find a label fails loudly with the controls
 it can see. This robot does not judge layout or colour; the browser check below

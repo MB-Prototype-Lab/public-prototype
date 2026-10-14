@@ -15,7 +15,8 @@
 //                                               with its first parent)
 //   node tests/app-journeys.cjs --justify --base SHA
 //                                               CI: the PR body must declare any
-//                                               phone, Tools or wiring change
+//                                               phone, Tools or wiring change;
+//                                               lists the harness files changed
 //   node tests/app-journeys.cjs --trace ID      print one journey step by step
 //   node tests/app-journeys.cjs --list          journeys and screen coverage
 //   node tests/app-journeys.cjs --mutations     prove the checks catch breakage
@@ -428,6 +429,11 @@ async function justifyMode(args, journeys) {
       else problems.push(label + ' did not change; the PR should say "' + label + ': none"');
     }
   }
+  // Both sides ran this checkout's journeys and normalization, so a PR that
+  // edits them can hide its own change; list the edits for the reviewer.
+  const harness = git(['diff', '--name-only', args.base, '--', 'tests/lib', 'tests/app-journeys*', 'tests/browser',
+    ':(exclude)tests/browser/node_modules']).split('\n').filter(Boolean);
+  console.log('Harness changed:' + (harness.length ? '\n' + harness.map(f => '  ' + f).join('\n') : ' none'));
   for (const n of notes) console.log('NOTE     ' + n);
   for (const p of problems) console.log('JUSTIFY  ' + p);
   console.log((problems.length ? 'FAIL' : 'PASS') + '  PR declaration of phone, Tools and wiring changes');
