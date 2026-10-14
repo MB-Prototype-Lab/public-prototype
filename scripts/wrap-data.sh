@@ -4,7 +4,7 @@ if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling u
 #
 # WHY THIS EXISTS (L13, architecture.md §1): the app is opened as a file:// page
 # with no dev server, and browsers block fetch()/XHR against local files. So the
-# spec's JSON cannot be loaded over the network — it ships wrapped in a plain
+# JSON cannot be loaded over the network — it ships wrapped in a plain
 # `const NAME = {...};` assignment and loads via a <script> tag like every other
 # file in the app.
 #
@@ -61,8 +61,7 @@ for json in "$DIR"/*.json; do
     echo "// Regenerate: bash scripts/wrap-data.sh"
     echo "//"
     echo "// The app runs on file://, where fetch() is blocked and there is no dev"
-    echo "// server, so spec data ships as a script-loadable assignment (L13)."
-    echo "// The .json beside this file is the byte-identical spec copy."
+    echo "// server, so the data ships as a script-loadable assignment (L13)."
     echo "const $name ="
     cat "$json"
     echo ";"

@@ -175,9 +175,8 @@ function onbLifestyleQuestions() {
 // benchIncomeBand() maps it back to the same band without a second code path.
 //
 // min/max mirror PEER_BENCHMARKS.incomeBands, which is the peer model's actual
-// lookup key and is a verbatim spec copy we never edit. The bands themselves
-// therefore cannot change — the slider refines the FIGURE inside a band, it
-// does not add bands.
+// lookup key. The slider refines the FIGURE inside a band; it does not add
+// bands.
 //
 // THESE IDS ARE UI-LOCAL. They look like the peer model's b1–b5 and are not
 // the same thing: benchIncomeBand() derives the lookup band from the FIGURE,
@@ -530,9 +529,9 @@ function onbLiveInput(field, value, commit) {
 // ── Income: a band, then a slider inside it ──────────────────────────────────
 // "Over $140,000" covered a software director and a surgeon with one figure.
 // The five bands stay — they are PEER_BENCHMARKS.incomeBands, the peer model's
-// lookup key, and that file is a verbatim spec copy. The slider refines the
-// figure WITHIN the picked band, so the band lookup is untouched and the
-// budget's monthly figure stops being the same number for everyone above 140k.
+// lookup key. The slider refines the figure WITHIN the picked band, so the band
+// lookup is untouched and the budget's monthly figure stops being the same
+// number for everyone above 140k.
 
 function onbIncomeBand(id) {
   return ONB_INCOME_BANDS.find(b => b.id === id) || null;

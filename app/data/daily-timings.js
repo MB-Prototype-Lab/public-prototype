@@ -6,7 +6,7 @@
 // shifts everything after it and the visuals follow automatically.
 //
 // Takes precedence over the static block in daily-scripts.json, which
-// remains the byte-identical spec copy and the fallback.
+// remains the fallback.
 const DAILY_TIMINGS =
 {
   "daily_slightly_behind": {

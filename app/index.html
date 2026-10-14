@@ -88,7 +88,7 @@ window.onunhandledrejection = function(e) {
 
 <!-- 1. Config + seed data — must load BEFORE anything that reads them.
      The app runs on file://, where fetch() is blocked and there is no dev
-     server, so spec JSON ships as script-loadable assignments (L13).
+     server, so the data ships as script-loadable assignments (L13).
      The .js files are GENERATED — run scripts/wrap-data.sh, never hand-edit. -->
 <script src="js/config.js"></script>
 <script src="data/persona.js"></script>
@@ -99,7 +99,7 @@ window.onunhandledrejection = function(e) {
      that consumes them lives in js/help-me-out.js. -->
 <script src="data/help-me-out.js"></script>
 <!-- Emergency fund: irregular-bill figures, the Utilities row split, the crisis
-     rule. Not a spec copy — the ESF spec ships no data file. -->
+     rule. -->
 <script src="data/emergency-fund.js"></script>
 <!-- Nine starting profiles: the picker's options and the sweep's test matrix -->
 <script src="data/test-profiles.js"></script>

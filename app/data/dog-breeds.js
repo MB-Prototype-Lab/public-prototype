@@ -2,8 +2,7 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const DOG_BREEDS =
 {
   "_note": "Breed -> body-type lookup for the buddy creator's step 1 search. The buddy is always a PUPPY, so every mapping means the puppy build of that breed, not the adult. Body type is derived from `group` via groupBody; a breed carries an explicit `body` ONLY where it breaks its group, and each of those carries a `why`. That keeps ~370 rows reviewable: you check the group rule once, then read the exceptions.",

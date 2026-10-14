@@ -54,11 +54,9 @@ function isCategory(c) {
 // "Health" is the join key across five independent surfaces — PEER_BENCHMARKS
 // .base and .colTiers, SEED_STATE.budget.monthly, SEED_STATE.monthToDateActuals,
 // ESTIMATOR_QUESTIONS.categories, and ZIP_COST_OF_LIVING's categoryBucket and
-// weights. Renaming the key means editing all of them, including
-// peer-benchmarks.json, which js/benchmarks.js documents as a never-edited
-// verbatim spec copy. Every file missed is a lookup that silently returns
-// undefined and contributes 1.0 or 0 — the exact class of plausible-looking
-// wrong number this taxonomy exists to prevent.
+// weights. Renaming the key means editing all of them. Every file missed is a
+// lookup that silently returns undefined and contributes 1.0 or 0 — the exact
+// class of plausible-looking wrong number this taxonomy exists to prevent.
 //
 // So the owner's "change the name across all screens" is done where it was
 // asked: on the screens. Data keys never move.

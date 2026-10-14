@@ -35,7 +35,7 @@ front.
 
 ### The contract: data ships as script-wrapped JSON
 
-Each spec JSON gets a sibling `.js` that assigns it to a global, loaded by a
+Each data JSON gets a sibling `.js` that assigns it to a global, loaded by a
 plain `<script>` tag like everything else:
 
 ```js
@@ -50,25 +50,21 @@ Both files are kept:
 
 | File | Role |
 |---|---|
-| `data/*.json` | Verbatim copy of the spec. **Never edited.** |
-| `data/zip-cost-of-living.json` | The one exception — authored here, with no spec twin to diff against. Derived from public datasets; the derivation is recorded in its own `method._note`. |
+| `data/*.json` | The source data. Edit it here, then re-run `scripts/wrap-data.sh`. |
+| `data/zip-cost-of-living.json` | Derived from public datasets; the derivation is recorded in its own `method._note`. |
 | `data/*.js` | Generated wrapper. What the app actually loads. |
 
 **Two authored files are `.js` with no `.json` sibling** — `data/lesson-scripts.js`
-and `data/onboarding-storyboard.js`. Neither is spec data and neither has a
-reason to be JSON: `wrap-data.sh` hard-errors on any `.json` it has no global
-mapped for, so a JSON twin would mean editing the generator to gain nothing.
-The rule is: **JSON when something outside the app has to read it** (the spec
-diff, or `gen-audio.sh`'s TTS extractor), plain `.js` otherwise.
+and `data/onboarding-storyboard.js`. Neither has a reason to be JSON:
+`wrap-data.sh` hard-errors on any `.json` it has no global mapped for, so a JSON
+twin would mean editing the generator to gain nothing.
+The rule is: **JSON when something outside the app has to read it**
+(`gen-audio.sh`'s TTS extractor), plain `.js` otherwise.
 That is why `onboarding-script.json` *is* JSON and its storyboard is not.
 
 `scripts/wrap-data.sh` regenerates the `.js` from the `.json`. It is run by hand
 when data changes — that's not a build step in the npm sense, and nothing about
 opening `index.html` depends on it having been run recently.
-
-<!-- Why keep both rather than only the .js: the .json stays byte-identical to
-     the spec, so "did we drift from the spec's numbers?" is one diff away.
-     Collapsing to .js only saves seven files and loses that check. -->
 
 **Globals** (load order: data before everything that reads it):
 
@@ -81,7 +77,7 @@ opening `index.html` depends on it having been run recently.
 | `DAILY_SCRIPTS` | `daily-scripts.json` |
 | `BUDDY_RESPONSES` | `buddy-responses.json` |
 | `LESSONS_V3` | `lessons.json` |
-| `ZIP_COST_OF_LIVING` | `zip-cost-of-living.json` — **authored here, not a spec copy** |
+| `ZIP_COST_OF_LIVING` | `zip-cost-of-living.json` |
 
 <!-- LESSONS_V3, not LESSONS — v2's state.lessons still exists and holds the
      48-question quiz pool we're keeping (L9). Two different things; distinct
@@ -338,8 +334,8 @@ and Groceries**. Still implement it as a product — but that's the blast radius
    PO-box-only and "unique" ZIPs no county dataset lists. Widens to numeric
    neighbours if the prefix itself is unlisted, but never across a territory
    boundary — 969 is Guam and 968 is Honolulu.
-3. **The old 4-tier prefix table**, as a guard. `peer-benchmarks.json` is a
-   verbatim spec copy and is never edited; it is simply no longer the model.
+3. **The old 4-tier prefix table** (`colTiers` in `peer-benchmarks.json`), as a
+   guard. It is no longer the model.
 
 **Why it replaced the tiers.** Three digits mapped to one of four hand-set
 tiers, so every ZIP sharing a tier was *identical* — Manhattan, Palo Alto, Santa
@@ -546,8 +542,8 @@ The persona's $68,000 → `b3`.
 
 **The band is still the peer model's only lookup key**, and `ONB_INCOME_BANDS`
 now mirrors `PEER_BENCHMARKS.incomeBands`' `min`/`max` so the two cannot drift.
-The five bands are fixed by that file, which is spec data — a sixth band is not
-available, which is why the fix for "over $140,000 is everything upwards" is a
+The five bands are fixed by that file, whose peer figures cover five bands only,
+which is why the fix for "over $140,000 is everything upwards" is a
 **slider inside the band**, not more bands.
 
 Onboarding collects the band, then refines the *figure* within it
@@ -772,10 +768,9 @@ hunt — and it means adding a surface is a data edit, not a code edit.
      typo'd rather than a screen being missed. -->
 
 <!-- L11 applies here: obs_dining_over_peers ships typed `peer_gap` with the
-     PLAN numbers (429 vs 320). Reframe its headline to "over your plan" and
-     add a separate peer card at 429 vs the derived peer value. Fix it in
-     state at boot, not by
-     editing data/*.json — that file stays a verbatim spec copy (§1). -->
+     PLAN numbers (429 vs 320). Boot reframes its headline to "over your plan"
+     (`v3ReframeDiningObservation`), and a separate peer card compares 429 with
+     the derived peer value. -->
 
 ---
 

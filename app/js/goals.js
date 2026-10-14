@@ -29,8 +29,8 @@ function goalType(goal) {
 /**
  * A spend-limit goal tracks a live category rather than a stored number, so a
  * journal entry moves it (L17). The seed carries no category field, so it is
- * matched from the label once at boot — the same shaping the L11 observation
- * reframe does, and for the same reason: data/*.json stays verbatim.
+ * matched from the label once at boot, the same shaping the L11 observation
+ * reframe does.
  */
 function goalInferCategory(goal) {
   if (goal.category) return goal.category;

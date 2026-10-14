@@ -29,9 +29,8 @@ if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling u
 # advance, there is just no voice.
 #
 # The timings are written to a SEPARATE generated file, not back into
-# daily-scripts.json — that stays a byte-identical copy of the spec so drift is
-# always one `diff -rq` away (L13). The player prefers the generated timings,
-# falls back to the spec's static block, then to a 165 wpm estimate.
+# daily-scripts.json. The player prefers the generated timings, falls back to
+# the static block in daily-scripts.json, then to a 165 wpm estimate.
 #
 #   bash scripts/gen-audio.sh
 #
@@ -146,7 +145,7 @@ with open(sys.argv[2], "w") as f:
     f.write("// shifts everything after it and the visuals follow automatically.\n")
     f.write("//\n")
     f.write("// Takes precedence over the static block in daily-scripts.json, which\n")
-    f.write("// remains the byte-identical spec copy and the fallback.\n")
+    f.write("// remains the fallback.\n")
     f.write("const DAILY_TIMINGS =\n")
     f.write(json.dumps(out, indent=2))
     f.write(";\n")

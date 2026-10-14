@@ -2,8 +2,7 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const BUDDY_BP =
 {
   "_note": "Buddy's copy for the Big Purchase Calculator (spec §11). Same contract as buddy-esf.json: steps -> the entries offered on that screen, rows -> what Buddy says. Explain-only: no chips, no lifestyle questions. Owner 2026-09-22: every expense on the costs screen gets an entry that says what it is, how it was worked out, and what it means. D26 + the owner's voice rule: facts only, never call a cost high, never recommend an option, never 'should'. The credit tier is 'the score we used', never the user's own.",

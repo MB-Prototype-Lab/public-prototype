@@ -2,8 +2,7 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const PERSONA =
 {
   "_note": "Fixed persona. Onboarding inputs override zip, householdSize, and incomeAnnual where the tester provides them (D09). Everything else always falls back to these values.",

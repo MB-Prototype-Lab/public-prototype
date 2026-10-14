@@ -25,8 +25,7 @@
 // "what would you do" and nine other natural phrasings all slip past it and
 // would be answered by whichever topic happened to share a noun.
 //
-// So advice detection is keywords OR these shapes. This layer lives in code
-// rather than in data/*.json, which stays a byte-identical copy of the spec.
+// So advice detection is keywords OR these shapes.
 //
 // Tuned against the eleven real bubble labels — none of them matches. Being
 // over-eager here is the safer failure: a wrongly-deflected question costs the

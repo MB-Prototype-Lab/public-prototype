@@ -91,14 +91,12 @@ function bootV3() {
   state.strategicGoal = v3Clone(PERSONA.goals.strategic);
   // The seeded "Build a $3,000 emergency fund" is dropped: the ESF tool owns
   // that goal now, and a pre-existing one is a fund the tester never created,
-  // sitting next to the one they did with a different target. Filtered HERE
-  // rather than edited out of persona.json — that file stays byte-identical to
-  // the spec copy, the same reason the L11 observation is reframed in state.
+  // sitting next to the one they did with a different target.
   state.tacticalGoals = v3Clone(PERSONA.goals.tactical)
     .filter(g => !/emergency\s*(savings\s*)?fund/i.test(String((g && g.label) || "")));
-  // Shape the seed the same way the L11 observation reframe does — in state, so
-  // data/*.json stays verbatim. A spend-limit goal needs its category to track
-  // month-to-date live, and a savings goal needs a start date to compute pace.
+  // Shape the seed in state, as the L11 observation reframe does. A spend-limit
+  // goal needs its category to track month-to-date live, and a savings goal
+  // needs a start date to compute pace.
   state.tacticalGoals.forEach(g => {
     if (g.period) g.category = goalInferCategory(g);
     if (g.targetDate && !g.startedAt) {
@@ -165,8 +163,7 @@ function v3EntryScreen() {
 // model (benchPeerValue), so it follows the tester's own profile.
 // peer-benchmarks.json flags the discrepancy itself in `_note_gap`.
 //
-// So the numbers are right and the headline is wrong. Reframed here at boot
-// rather than by editing data/*.json, which stays a byte-identical spec copy.
+// So the numbers are right and the headline is wrong. Reframed here at boot.
 // Phase 2 adds the separate peer card (observationPeerCounterpart) alongside
 // it — both framings must appear, labelled distinctly, and neither may stand
 // in for the other.

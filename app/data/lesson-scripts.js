@@ -1,14 +1,11 @@
 // ─── Lesson script bodies ─────────────────────────────────────────────────────
-// AUTHORED IN PHASE 5c — this is NOT spec data.
-//
 // lessons.json declares 15 scriptVariants across three lessons but carries no
 // script body for any of them: only `id`, `matchTags`, `audioId`, `emphasis`
 // and `isFallback`. These are the bodies, written to the emphasis each variant
 // declares.
 //
-// It lives in data/ beside the spec JSON but is deliberately a .js authored by
-// hand — the wrap-data.sh generator does not touch it, and there is no .json
-// twin to diff against, because there is nothing upstream to diff with.
+// It lives in data/ but is deliberately a .js authored by hand — the
+// wrap-data.sh generator does not touch it.
 //
 // ── HARD CONSTRAINTS ON THIS FILE ────────────────────────────────────────────
 // D26/L20 — NO FINANCIAL ADVICE. Not "you should", not "we recommend", not

@@ -407,9 +407,8 @@ function benchOptsForUser() {
 // "Services: Other", which for Los Angeles is 107.1 — so the col factor is now
 // 1.071 and the peer value is 295.
 //
-// That is a DELIBERATE change to a number the spec states, so it is recorded
-// here rather than absorbed: peer-benchmarks.json is a verbatim spec copy and
-// is never edited, and `worked_example.result` still reads 370.
+// `worked_example.result` in peer-benchmarks.json still reads 370; the test
+// reports it beside the new figure but no longer asserts it.
 //
 // Worth knowing about the new figure: BEA's "Other services" bucket lumps
 // restaurants together with healthcare and insurance, which vary far less by

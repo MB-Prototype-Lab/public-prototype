@@ -2,8 +2,7 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const DAILY_SCRIPTS =
 {
   "_note": "Daily update scripts (D27). Three engagement variants recorded. Timing values live in a separate block from script text so they can be rewritten after a TTS pass without touching content (D29).",
