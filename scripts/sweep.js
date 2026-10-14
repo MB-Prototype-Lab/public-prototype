@@ -457,32 +457,41 @@ if (acceptedThin.length) {
 bootV3();
 
 // ─────────────────────────────────────────────────────────────────────────────
-section("3. D18 — every observation reachable from >= 2 surfaces, and rendered");
-var SURFACES = ["home_tip","home_task","budget_comparison","progress","progress_bills","goals","daily_update"];
-var reach = {};
-SURFACES.forEach(function (su) {
-  observationsFor(su).forEach(function (o) { reach[o.id] = (reach[o.id] || 0) + 1; });
-});
+section("3. D18 — every observation renders on >= 2 screens");
+// The screens that show observations, each in the state that shows them. A
+// headline found in the rendered text counts; the seed's `surfaces` tags do
+// not, because these screens never read them.
+var D18_SCREENS = {
+  journalDone:  function () { return renderSafe("journalDone"); },
+  dailySummary: function () { return renderSafe("dailySummary"); },
+  myProgress:   function () { return renderSafe("myProgress"); },
+  dailyShare:   function () {                 // with the post preview open
+    var share = state.share;
+    state.share = Object.assign({}, share, { previewOpen: true });
+    try { return renderSafe("dailyShare"); } finally { state.share = share; }
+  },
+  dailyUpdate:  function () {                 // paused on its summary_stack cue
+    var du = state.du, script = duScript();
+    var cue = script.segments.map(function (seg) { return seg.cue; }).indexOf("summary_stack");
+    state.du = { scriptId: script.id, index: cue, playing: false, timer: null, finished: false };
+    try { return cue === -1 ? "" : renderSafe("dailyUpdate"); } finally { state.du = du; }
+  }
+};
 var ids = (state.observations || []).map(function (o) { return o.id; });
 chk(ids.length === 4, "four seeded observations", ids.join(", "));
-ids.forEach(function (id) {
-  chk((reach[id] || 0) >= 2, "  " + id + " on " + (reach[id] || 0) + " surfaces");
-});
-// Registry membership is not the same as appearing on screen — check the text.
-var appears = {};
-["home", "aboutMe", "comparison", "myProgress", "dailySummary", "goals"].forEach(function (sc) {
-  var t = textOf(renderSafe(sc));
+var shownOn = {};
+Object.keys(D18_SCREENS).forEach(function (sc) {
+  var t = textOf(D18_SCREENS[sc]());
   ids.forEach(function (id) {
-    var o = observationById(id);
-    var head = observationHeadline(o);
-    if (head && t.indexOf(head.slice(0, 24)) !== -1) appears[id] = (appears[id] || 0) + 1;
+    var head = textOf(observationHeadline(observationById(id)));
+    if (head && t.indexOf(head) !== -1) (shownOn[id] = shownOn[id] || []).push(sc);
   });
 });
 ids.forEach(function (id) {
-  var n = appears[id] || 0;
-  n >= 1 ? ok("  " + id + " actually renders on " + n + " screen(s)")
-         : warn("  " + id + " is registered but its headline renders nowhere",
-                "registry says " + (reach[id] || 0) + " surfaces");
+  var on = shownOn[id] || [];
+  chk(on.length >= 2, "  " + id + " renders on " + on.length + " screen" + (on.length === 1 ? "" : "s") +
+      (on.length ? ": " + on.join(", ") : ""),
+      "needs at least 2 of " + Object.keys(D18_SCREENS).join(", "));
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
