@@ -13,7 +13,6 @@ const EMERGENCY_FUND =
     "bills": [
       { "id": "homeInsurance", "label": "Home insurance", "showIf": "owns",
         "basis": "monthly", "value": 110, "col": "Housing", "category": "Housing",
-        "qualifier": "Often bundled into a mortgage payment too.",
         "_source": "NAIC Homeowners Insurance Report: US average annual premium about $1,320, so roughly $110 a month." }
     ]
   },

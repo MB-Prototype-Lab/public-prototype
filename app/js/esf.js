@@ -23,9 +23,6 @@
 // the locally-priced part and the nationally-priced part. Every row names its
 // category, which is the seam back (esfExpensesByCategory).
 
-const ESF_CATEGORIES = ["Housing", "Utilities", "Groceries",
-                        "Debt payments", "Transport", "Health"];
-
 // ── ROWS GROUP INTO BOXES ────────────────────────────────────────────────────
 // `group` is what shares a card. Two rows with the same group sit side by side
 // in one box; a group of one gets its own. That is how "Rent | Mortgage" and
@@ -1219,8 +1216,8 @@ function esfToBaseline() {
   const monthly = {};
 
   // A category the tester was ASKED about carries their figure; everything else
-  // opens on the peer value. Keyed on whether a row covers it rather than on
-  // ESF_CATEGORIES, so the catch-all row's Other figure is carried too.
+  // opens on the peer value. Keyed on whether a row covers it, so the
+  // catch-all row's Other figure is carried too.
   const asked = {};
   ESF_ROWS.forEach(r => { asked[r.category] = true; });
 

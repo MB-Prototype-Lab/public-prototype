@@ -301,11 +301,6 @@ function esfFieldNote(row) {
 function esfRenderGroup(group) {
   const rows = group.rows;
   const lead = rows[0];
-  const help = rows.map(r => r.help).filter(Boolean)[0];
-  const qualifier = rows.map(r => {
-    const bill = r.bill && esfBills().find(b => b.id === r.bill);
-    return bill && bill.qualifier;
-  }).filter(Boolean)[0];
 
   // ── Opt-in: estimated, but worth nothing until added ──────────────────────
   if (lead.optIn) {
@@ -365,8 +360,6 @@ function esfRenderGroup(group) {
       ${rows.some(r => !r.prefill)
         ? `<div class="esf-fields">${rows.filter(r => !r.prefill).map(r => esfRenderField(r, bare)).join("")}</div>`
         : ""}
-      ${help ? `<p class="helper esf-row-help">${h(help)}</p>` : ""}
-      ${qualifier ? `<p class="helper esf-qualifier">${h(qualifier)}</p>` : ""}
     </div>
   `;
 }
