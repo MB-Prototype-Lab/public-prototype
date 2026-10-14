@@ -244,11 +244,6 @@ function renderComparisonFlag(r) {
   `;
 }
 
-function cmpFlagBar(r, v, cls) {
-  const max = Math.max(r.plan, r.user, r.peer || 0, 1);
-  return `<div class="cmp-bar"><span class="${cls}" style="width:${Math.max(2, (v / max) * 100)}%"></span></div>`;
-}
-
 // ─── Compact strip for My Progress ───────────────────────────────────────────
 // "Same data as the budget tab, framed for review rather than editing."
 function renderComparisonCompact(limit) {

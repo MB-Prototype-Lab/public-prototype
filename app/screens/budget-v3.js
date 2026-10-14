@@ -61,44 +61,6 @@ function renderBudgetV3() {
   `;
 }
 
-// Per-row: plan vs what the journal says. The two gaps are NEVER blurred — this
-// row shows the PLAN gap; the peer gap is its own card (L11, 2b).
-function renderBudgetCategoryRow(category) {
-  const plan   = catValue(state.plan, category);
-  const actual = catValue(state.mtd, category);
-  const pct    = plan ? Math.round(((actual - plan) / plan) * 100) : null;
-  const over   = pct != null && pct > 0;
-  const max    = budgetSliderMax(category);
-  const idx    = CATEGORIES.indexOf(category);
-
-  const catArg = h(category).replace(/'/g, "\\'");
-  return `
-    <div class="card budget-row">
-      <div class="row budget-row-head" style="align-items:baseline;margin-bottom:2px;">
-        <button class="budget-row-open" type="button" onclick="goToCategory('${catArg}')">
-          <span class="budget-row-name">${h(catLabel(category))}</span>
-        </button>
-        <span class="budget-row-amt" id="planAmt${idx}">${budgetFmt(plan)}</span>
-        <button class="budget-row-chev" type="button" onclick="goToCategory('${catArg}')"
-                aria-label="Open ${h(catLabel(category))}">›</button>
-      </div>
-      <div class="row" style="align-items:baseline;margin-bottom:6px;">
-        <span class="helper" style="font-size:11px;">
-          You told me ${budgetFmt(actual)}
-        </span>
-        ${pct == null ? "" : `
-          <span class="pill ${over ? "pill-warn" : "pill-good"}" style="font-size:9px;padding:2px 7px;">
-            ${over ? "+" : ""}${pct}% vs plan
-          </span>`}
-      </div>
-      <input class="journal-slider" type="range" min="0" max="${max}" step="5"
-             value="${plan}"
-             oninput="budgetSetPlan('${h(category)}', this.value, true)"
-             aria-label="${h(catLabel(category))} planned amount">
-    </div>
-  `;
-}
-
 /**
  * The slider's ceiling. Derived ONLY from things a drag cannot change — the
  * seeded plan and the peer benchmark, both stable for the session.
@@ -139,20 +101,6 @@ function budgetSetPlan(category, amount, live) {
   const el = document.getElementById("planAmt" + CATEGORIES.indexOf(category));
   if (el) el.textContent = budgetFmt(state.plan[category]);
   debouncedRender();
-}
-
-function renderBudgetObservationCards(surface) {
-  const obs = observationsFor(surface);
-  if (!obs.length) return "";
-  return obs.map(o => `
-    <div class="card obs-card">
-      <div class="row" style="align-items:baseline;margin-bottom:3px;">
-        <p class="task-title" style="margin:0;">${h(observationHeadline(o))}</p>
-        ${observationFigure(o) ? `<span class="obs-figure">${h(observationFigure(o))}</span>` : ""}
-      </div>
-      <p class="helper" style="margin:0;">${h(observationDetail(o))}</p>
-    </div>
-  `).join("");
 }
 
 // No budget yet. One door — the wizard (L6). A picker with one option is a

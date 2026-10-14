@@ -1140,19 +1140,7 @@ section("7b. Unreferenced functions — inventory, not a verdict");
 // Hence the baseline: everything below was already unreferenced when it was
 // recorded. Purging it is a separate task (docs/future-work.md). Anything NOT
 // on this list is new, and warns.
-var DEAD_BASELINE = [
-  "budgetDelta",
-  // Both orphaned deliberately when the Budget tab became the review surface:
-  // the twelve slider rows moved to the per-category screen, and "Worth a look"
-  // replaced the observation cards. Kept because a future edit mode wants them.
-  "renderBudgetCategoryRow",
-  "renderBudgetObservationCards",
-  // Orphaned when the three stacked Budget/Peers/You bars became one band
-  // track (components/budget-band.js). Kept, not deleted: it is the only
-  // implementation of the old per-flag bar scaling, and v3 still renders that
-  // layout — the two versions stay diffable.
-  "cmpFlagBar"
-];
+var DEAD_BASELINE = [];
 
 // Everything shares one global namespace, so a name declared in two files is
 // not an error — the later <script> wins and the earlier becomes unreachable.

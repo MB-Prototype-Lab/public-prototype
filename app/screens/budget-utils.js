@@ -14,12 +14,6 @@ function budgetFmt(n) {
   return "$" + Math.round(Number(n) || 0).toLocaleString();
 }
 
-/** Signed percentage difference, for "x% over" style copy. */
-function budgetDelta(spend, peer) {
-  if (!peer) return null;
-  return Math.round(((spend - peer) / peer) * 100);
-}
-
 function debtTotalBalance() {
   return (state.budget.debts || []).reduce((s, d) => s + (Number(d.balance) || 0), 0);
 }
