@@ -327,3 +327,34 @@ PM acceptance uses a throwaway Emergency fund comparison:
 - Rows open in place, and Exit Flow and an unpinned refresh return to the Flows tab.
 - Side by side shows A, B and **Local Emergency fund**, with a pinned layout restore.
 - **Back to versions** returns to the Flows tab.
+
+## create-flow skill and the one-product rule — 2026-10-13
+
+Change base `e58daaf3e7cb908bf777e3896cb3130c9f125ddf`. Docs and skills only; `app/`
+and `flows/` bytes are unchanged.
+
+- **The create-flow skill** sends requests such as "only show the emergency fund",
+  "skip onboarding" or "start at the calculator" to a contained Flow.
+- **`docs/flows.md` "Configure the journey"** turns the two shipped Flows into a
+  step-by-step recipe:
+  1. policy (`flow.json`);
+  2. containment (`js/flow.js`);
+  3. setup hand-off;
+  4. unreachable surfaces;
+  5. Tools;
+  6. notes and tests.
+- **`docs/app-contracts.md` "One product: no journey switches"** defines a banned
+  switch by structure, not name, and lists what is allowed.
+  - `SKIP_ONBOARDING` is marked deprecated. It is a build-time entry switch from spec
+    D07, not the Skip button.
+  - CLAUDE.md, start-work, README and AGENTS.md route narrowing requests to the skill.
+
+Python discovery passed (73 tests, one skipped because Node is unavailable), along
+with the Flow check, path checks, publication check and a relative-link check.
+Whether the skill triggers is checked in a fresh Claude Code session.
+
+Deferred until this PR merges, as a separate task from the updated main:
+- remove the inert docked-onboarding and onboarding-return branches from `app/`;
+- replace the "do not delete unused code" rule;
+- add the PR review gate;
+- remove the remaining flag names from docs.

@@ -11,7 +11,7 @@ loads through script tags so `file://` works.
 ## Collaboration
 
 Use the project skills in `.claude/skills/` for ordinary requests to start work,
-sync, ship, publish, or compare local variants. Read [workflow](docs/workflow.md) for the operating procedure.
+sync, ship, publish, compare local variants, or create a Flow. Read [workflow](docs/workflow.md) for the operating procedure.
 Start a unique task branch from current main; preserve dirty files and local-only
 commits. Sync by merging main, never rebasing or force pushing. Ship through a
 reviewed PR and passing CI with applicable PM testing. Publishing is a separate,
@@ -37,6 +37,9 @@ on HTTP(S) is the narrow telemetry exception; development tracking is off. The o
 sessionStorage is the tab's reviewer settings (passcode unlock, selector tab, refresh
 pin, pinned comparison layout), never participant data.
 Do not regenerate media as part of packaging. `MB_VERSION` is retired and errors.
+`app/` is one product: never add a journey switch (the retired `ESF_ONLY`/`BP_ENTRY`
+pattern, under any name). A focused, shortened or reordered journey is a Flow, made
+with create-flow; see [one product](docs/app-contracts.md#one-product-no-journey-switches).
 
 ## Project map and references
 
@@ -50,6 +53,7 @@ Do not regenerate media as part of packaging. `MB_VERSION` is retired and errors
 | Tracking and participant URLs | [app/docs/useberry.md](app/docs/useberry.md) |
 | Looking up historical decisions | `docs/history/`, `app/PROGRESS.md` (reference, not a task queue) |
 | Creating/editing/checking Flows or selectively integrating proposals | [docs/flows.md](docs/flows.md) |
+| A request to narrow, shorten or start the journey elsewhere | [create-flow](.claude/skills/create-flow/SKILL.md), [one product](docs/app-contracts.md#one-product-no-journey-switches) |
 | Local variants of the app or one Flow | [docs/local-variants.md](docs/local-variants.md) |
 | Future PM feature ports | [docs/future-work.md](docs/future-work.md) |
 

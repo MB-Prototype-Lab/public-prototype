@@ -63,9 +63,56 @@ problem and retry with an unused ID. Do not overwrite a package to recover.
 
 The generated package is a contained **onboarding-only authoring starter**, not a
 finished participant journey. Configure its setup, feature initialization, precise
-allowlist, transitions and prerequisites before participant use. Retaining unused
-copied code/assets is allowed; participant reachability is constrained independently.
-There is no automatic JavaScript dependency slicer.
+allowlist, transitions and prerequisites before participant use (below). Retaining
+unused copied code/assets is allowed; participant reachability is constrained
+independently. There is no automatic JavaScript dependency slicer.
+
+## Configure the journey
+
+A PM request to narrow, shorten, reorder or start the prototype elsewhere becomes
+this configuration inside the package, never a switch in `app/` (see
+[one product](app-contracts.md#one-product-no-journey-switches)). The
+[create-flow](../.claude/skills/create-flow/SKILL.md) skill routes such requests here.
+`flows/emergency-fund` (setup, then one feature) and `flows/big-purchase` (shortened
+setup, then a feature with detours) are the references;
+[runtime interfaces](flows-contract.md#runtime-interfaces) lists the invariants.
+
+1. **Policy (`flow.json`).** Set `entry` and `completion`, the exact
+   `allowed_screens` (screen IDs declared in `js/state.js`), and `setup_steps` as an
+   ordered subset of the source `ONB_STEPS` (`[]` for no setup). Describe
+   `profile_behavior` and PM-readable `proposed_differences`, then run
+   `python3 scripts/flows.py catalog`. Never hand-edit generated files.
+2. **Containment (`js/flow.js`).** Replace the generic starter runtime.
+   `mbFlowAllowed(screen)` checks the allowlist, then each screen's prerequisites
+   (setup complete, feature state present). `mbFlowSeed()` sets the canonical entry
+   on a single stack. `mbFlowInstall()` resets unrelated state, applies a URL profile
+   once, and guards `renderScreen`, `render`, `go`, `navCommit` and `navBack`, tab and
+   admin jumps (`navGoTab`, `navAdminJump`), restored snapshots and cold or deep links
+   (`screenLinkApply` returns the entry) before any stack write; `renderNav` returns
+   nothing when product tabs are out of scope. Give Back at the entry and at the
+   completion screen a defined result inside the Flow. Keep the starter's Restart
+   (`refreshPinRestart()`) and Exit.
+3. **Setup hand-off (the package's `screens/onboarding.js`).** Read `ONB_STEPS` from
+   `window.MB_FLOW.setup_steps`. Have `onbFinish()` set `state.mbFlowSetupComplete`
+   and call the feature's existing start function (Emergency fund: `esfStart()`; Big
+   purchase: `bpStart("vehicle")`, then its landing). Have Skip apply the default
+   profile and finish setup.
+4. **Unreachable surfaces.** In the package's copies, remove or replace product
+   controls the Flow does not offer (topbar Home and Menu, unrelated Goals entries,
+   queues) instead of leaving buttons that lead nowhere.
+5. **Reviewer Tools (`js/flow-tools.js`).** Add a case per allowed screen to
+   `mbFlowRenderAdmin()` behind the same prerequisites, and route fixture buttons
+   through `mbFlowAdminAction()`. Reading or toggling Tools never initializes a
+   feature or changes answers.
+6. **Notes and tests.** Write the package's `docs/flow.md`: reachable screens and
+   prerequisites, setup, Back/Restart/Exit, proposed differences and checks. Add
+   journey tests to `tests/flows-runtime.cjs` with its `bootFlow('<id>')` helper:
+   entry, setup completion, prerequisites, forbidden screens and cold links.
+
+Common requests: “only show X” is a narrow allowlist with product tabs hidden;
+“start at X” seeds through X's start function with the default profile and empty
+`setup_steps`; “shorter setup” is a smaller `setup_steps`. None of them changes
+`app/js/config.js` or adds any other switch to `app/`.
 
 ## Edit and check
 

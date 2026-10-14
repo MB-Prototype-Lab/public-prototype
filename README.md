@@ -124,13 +124,14 @@ prints the selector URL and each option's URL.
 
 ## 4. Ask your agent to use the project skills
 
-The repository has five skills in `.claude/skills/`. Name the relevant skill in
+The repository has six skills in `.claude/skills/`. Name the relevant skill in
 your request; the agent reads its instructions and the linked project guides.
 
 | When you want to… | Ask for… | What the agent does |
 | --- | --- | --- |
 | Begin a task or resume unfinished work | [start-work](.claude/skills/start-work/SKILL.md) | Checks branches and uncommitted files, then starts or resumes a task branch without losing existing work. |
 | Compare local variants | [compare-local](.claude/skills/compare-local/SKILL.md) | Creates independent previews of the app or one Flow, keeps a chosen variant, and cleans up only selected work. |
+| Make or change a focused journey (a Flow) | [create-flow](.claude/skills/create-flow/SKILL.md) | Turns “only show…”, “skip onboarding…” or “start at…” into a contained Flow on the selector's Flows tab; the full app stays unchanged. |
 | Bring in changes from `main` | [sync](.claude/skills/sync/SKILL.md) | Fetches and merges current `main` into your task branch, then checks affected work. |
 | Get tested work into a pull request | [ship](.claude/skills/ship/SKILL.md) | Reviews changes, runs checks, prepares the PR, and records your testing. A merge needs separate authorization. |
 | Update the live selector or add a snapshot | [publish](.claude/skills/publish/SKILL.md) | Follows the release procedure after an explicit publication request. Publication needs separate authorization. |
@@ -163,9 +164,11 @@ returns when the comparison closes. See [local comparisons](docs/local-variants.
 
 ## Iterate on a contained Flow
 
-Ask your agent: “Create a Flow for this proposal” or “Change the Emergency Fund
-Flow.” The agent handles committed source selection, package setup and checks; you
-review it from the selector or its standalone file link. `app/` stays the approved
+Ask your agent: “Create a Flow for this proposal,” “Make a version that only shows
+the emergency fund,” or “Change the Emergency Fund Flow.” The
+[create-flow](.claude/skills/create-flow/SKILL.md) skill handles committed source
+selection, package setup and checks; you review it from the selector's Flows tab or
+its standalone file link. Such requests never become switches in the full app. `app/` stays the approved
 product. Merging a Flow shares the proposal; adopting it means selectively integrating
 the chosen behavior into the full app, then verifying that app before the PR opens.
 Publication requires a separate explicit request. See [Working with Flows](docs/flows.md).

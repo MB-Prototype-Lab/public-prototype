@@ -39,7 +39,7 @@ docs/big-purchase-spec.md and docs/history/big-purchase-notes.md. The calculator
 opens from the Goals tab's "Estimate a big purchase" card (`bpOpen()`) and the
 full-app admin jump list. Full onboarding and all product tabs remain available.
 Calculator-first setup and contained presentation belong to the standalone Big
-Purchase Flow; the full app has no BP_ENTRY/ESF_ONLY entry flags.
+Purchase Flow (see One product: no journey switches).
 
 The calculator writes `state.bp` (in-flight run, reset by `bpStart()`),
 `state.bigPurchase` (the saved plan) and `state.bpEvents` (session log). Commit
@@ -48,6 +48,54 @@ the budget. "Start mine first" opens the ESF with `state.bp.esfReturn`, so Back 
 the fund returns to the calculator rather than onboarding. The `bp`/`bpf` prefix
 belongs to the calculator; the Budget paywall uses `paywall*` names. Figures marked
 `_prototype` in data/big-purchase.json are estimates, not quotes.
+
+## One product: no journey switches
+
+`app/` is the full product as one cohesive journey. A focused, shortened or
+reordered journey for a study, demo or feature review is a Flow, made with the
+[create-flow](../.claude/skills/create-flow/SKILL.md) skill
+([Flows](flows.md#configure-the-journey)), never a switch in `app/`. The retired
+`ESF_ONLY` and `BP_ENTRY` forked the product into journeys that were never exercised
+together, nested inside each other, and left dormant branches behind. What matters
+is the structure, not the name.
+
+**A journey switch** is a value decided before or outside the tester's session (a
+constant, config entry, build step, URL or storage value, or an edited default) that
+makes the app present a different journey from the full product. It changes where
+the app starts or hands off; which steps, screens, tabs or controls exist or are
+reachable; or what Skip, Back, Continue or completion do. Or it exists to be flipped
+for a particular study, demo or feature focus. Telltales: `typeof X !== "undefined"
+&& X` guards; one name read across unrelated files; parallel data such as alternate
+step lists; switches that only work in combination; branches no tester can reach by
+using the app or Tools; comments such as “for this build” or “for this study”.
+
+**Not journey switches:**
+
+- Session state set by what the tester does (answers, Skip, picks, saved plans):
+  every branch is reachable by using the app.
+- Reviewer Tools actions such as the theme picker, profile switcher, jump list and
+  fixtures: explicit choices made during the session, visible to the reviewer.
+- The existing participant URL parameters (`?screen=` deep links, profiles; see
+  app/docs/useberry.md), which place a tester inside the same full journey.
+- Decided product settings in `js/config.js`, such as `BUDGET_PAYWALL` (plan.md §0
+  L27): one value for every session, backed by a recorded owner decision. A new one
+  needs a PM decision recorded in plan.md §0. A value that has to be flipped to run a
+  particular study is never a product setting.
+
+**Deprecated:** `SKIP_ONBOARDING` (spec D07) is a build-time entry switch. When true,
+every session starts at the returning-user login with a six-day streak instead of
+onboarding. It is kept, off, pending a decision on its replacement. Do not extend
+it, flip it for a study or copy its pattern; a shortened or returning-user start
+belongs in a Flow. It is not the onboarding Skip button, which is session state.
+
+**Review questions** for any `app/` change, at intake and before a PR:
+
+1. Is a new or changed value decided outside the tester's session?
+2. Does it change the journey as described above?
+3. If unsure: can a tester reach every branch by using the app or Tools?
+
+A yes to the first two (or a no to the third) means a journey switch. Move the
+behavior into a Flow, or record an approved product decision first.
 
 ## Traps that fail silently
 
