@@ -94,11 +94,7 @@ feature. If building Home requires changing the engine, the engine was wrong.
 | `js/bp-engine.js` | All engine arithmetic. No DOM. Category-blind. |
 | `js/bp-vehicle.js` | Vehicle config + estimators. No DOM. Implements §3.1. |
 | `screens/bp-landing.js` | Landing (fund question included) + the Goals-tab cards |
-| `screens/bp-setup.js` | Screen 1 |
-| `screens/bp-cost.js` | Screen 2 — the cost table |
-| `screens/bp-options.js` | Screen 3 — ways to spend less |
-| `screens/bp-finance.js` | Screen 4 — paying for it |
-| `screens/bp-commit.js` | Screen 5 — plan for it |
+| `screens/bp-controls.js` | The tiles, financing rows and plan handlers Your car shares. The five step screens this spec describes are not in the app; the Big purchase Flow keeps its copies. |
 | `screens/bp-sheet.js` | Every in-frame sheet: credit, tax break, the simulated IRS page, savings rate, financing choices, loan-vs-cash |
 | `js/buddy-bp.js` + `screens/bp-buddy.js` | Buddy's model and panel, drawn with the ESF panel's classes |
 | `data/big-purchase.json` | Every figure, sourced or flagged. Wrap with `scripts/wrap-data.sh`. |

@@ -371,13 +371,12 @@ function bpVTaxBreak(inputs) {
   return tb.id || null;
 }
 
-// ── Screen 1's rows (§6) ─────────────────────────────────────────────────────
-// Declarative so the screen can render them and the Continue gate can count
-// them without either knowing about cars.
+// ── The setup rows (§6) ──────────────────────────────────────────────────────
+// What a priced car has answered. bpEnsureSetup() checks them without knowing
+// about cars.
 const BP_VEHICLE_SETUP = [
   { id: "type",      label: "Type",      ask: "What kind of vehicle?", options: () => bpVData().types || [] },
-  { id: "tier",      label: "Brand",     ask: "What kind of brand?", options: () => (bpVData().tierOrder || []).map(t => ({ id: t, label: bpVTierLabel(t) })),
-    examples: i => ((bpVData().tierExamples || {})[i.type || "car"]) || {} },
+  { id: "tier",      label: "Brand",     ask: "What kind of brand?", options: () => (bpVData().tierOrder || []).map(t => ({ id: t, label: bpVTierLabel(t) })) },
   { id: "fuel",      label: "Runs on",   ask: "What does it run on?", options: i => (bpVData().fuels || []).filter(f => !(f.hideFor || []).includes(i.type)) },
   { id: "condition", label: "Condition", ask: "New or used?", options: () => [{ id: "new", label: "New" }, { id: "used", label: "Used" }] },
   { id: "age",       label: "Age",       ask: "How old is it?", options: () => bpVData().ages || [], showIf: i => i.condition === "used" },

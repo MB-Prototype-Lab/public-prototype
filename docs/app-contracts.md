@@ -51,7 +51,7 @@ Purchase Flow (see One product: no journey switches).
 The calculator writes `state.bp` (in-flight run, reset by `bpStart()`),
 `state.bigPurchase` (the saved plan) and `state.bpEvents` (session log). Commit
 creates at most one `purchaseSaving` goal and replaces it on repeat; it never writes
-the budget. "Start mine first" opens the ESF with `state.bp.esfReturn`, so Back from
+the budget. "Start One Now" opens the ESF with `state.bp.esfReturn`, so Back from
 the fund returns to the calculator rather than onboarding. The `bp`/`bpf` prefix
 belongs to the calculator; the Budget paywall uses `paywall*` names. Figures marked
 `_prototype` in data/big-purchase.json are estimates, not quotes.

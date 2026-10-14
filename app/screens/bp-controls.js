@@ -6,7 +6,7 @@
 
 // ── Choice tiles ─────────────────────────────────────────────────────────────
 
-/** A row of tiles. Shared by all three screens. */
+/** A row of tiles. */
 function bpTiles(opts, current, onPick, cls) {
   return `
     <div class="bp-tiles ${cls || ""}" role="group">
@@ -46,8 +46,8 @@ function bpDockLayout(opts, hasExamples) {
 }
 
 /**
- * D19 — no screen renders empty. Screens 2 and 3 reached by the admin jump,
- * with nothing answered, open on the spec's own example car rather than on
+ * D19 — no screen renders empty. Your car reached by the admin jump, with
+ * nothing answered, opens on the spec's own example car rather than on
  * "undefined · $0".
  */
 function bpEnsureSetup() {

@@ -13,8 +13,7 @@
 // The tester chooses a PRICE, not a car (owner): tapping "Used $30,200" on the
 // 4Runner card fills in make, model and new/used in one go.
 //
-// Continue hands the chosen car to the original four steps, which stay as they
-// were (owner: "keep the original screens in at the end").
+// Continue hands the chosen car to Your car (screens/bp-yourcar.js).
 //
 // Model and money: js/bp-finder.js. Nothing here does arithmetic.
 
@@ -872,7 +871,7 @@ function renderBpFinder() {
 // these costs are calculated. when clicked it will open the buddy chat that
 // will display these expenses... with options to edit them. If edited, it will
 // change the monthly, etc." The edits land on the pick card, so they carry
-// into steps 1–4 exactly as if they had been made there.
+// into Your car exactly as if they had been made there.
 
 function bpfOpenCalc() {
   const b = bpBuddy();

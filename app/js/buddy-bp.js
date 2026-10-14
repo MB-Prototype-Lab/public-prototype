@@ -21,8 +21,7 @@ function buddyBpData() {
   return (typeof BUDDY_BP !== "undefined" && BUDDY_BP) || {};
 }
 
-const BP_BUDDY_SCREENS = { bpLanding: "0", bpFinder: "pick", bpYourCar: "4", bpQuiz: "quiz", bpSetup: "1", bpCost: "2",
-                           bpOptions: "3", bpFinance: "4", bpCommit: "5" };
+const BP_BUDDY_SCREENS = { bpLanding: "0", bpFinder: "pick", bpYourCar: "4" };
 
 function bpBuddyAvailable() {
   return !!state.bp && BP_BUDDY_SCREENS.hasOwnProperty(state.screen);

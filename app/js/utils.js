@@ -251,7 +251,7 @@ function activeTabFor(screen) {
   // the budget on the way through.
   if (["esfBuild", "esfPlan"].includes(screen)) return "goals";
   // So does the big purchase calculator — it ends in a savings goal.
-  if (["bpLanding", "bpFinder", "bpYourCar", "bpSetup", "bpQuiz", "bpCost", "bpOptions", "bpFinance", "bpCommit"].includes(screen)) return "goals";
+  if (["bpLanding", "bpFinder", "bpYourCar"].includes(screen)) return "goals";
   if (screen === "myDebts")           return "aboutMe";
   if (screen === "debtAnalyzer")      return "aboutMe";
   if (screen === "comparison")        return "aboutMe";

@@ -255,7 +255,7 @@ function renderBpCvlSheet() {
 
 /** The whole BP layer, painted into #buddyRoot by render(). */
 function renderBpLayer() {
-  if (!state.bp || ["bpLanding", "bpFinder", "bpYourCar", "bpSetup", "bpQuiz", "bpCost", "bpOptions", "bpFinance", "bpCommit"].indexOf(state.screen) === -1) return "";
+  if (!state.bp || ["bpLanding", "bpFinder", "bpYourCar"].indexOf(state.screen) === -1) return "";
   const s = state.bp;
   const sheet = s.ui && s.ui.sheet;
   if (sheet === "pick")         return renderBpPickSheet();

@@ -39,14 +39,14 @@ function bpPickCategory(id) {
   if (id !== "vehicle") return;          // the rest are named, not built
   s.category = id;
   bpLog("bp_landing_pick", { category: id, esfAnswer: s.esfAnswer || null });
-  // The finder comes first now (owner, 2026-09-29); steps 1–4 follow it.
+  // The finder comes first, then Your car.
   bpfOpen();
 }
 
 /**
  * The fund box's three answers.
  *
- * "Start mine first" hands over to the ESF and parks a flag, so when the fund
+ * "Start One Now" hands over to the ESF and parks a flag, so when the fund
  * is committed the Goals tab offers "Back to your car" (renderBpGoalsCards).
  * The other two answer in place and leave the tester on the landing.
  */

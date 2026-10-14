@@ -8,8 +8,8 @@
 // ── ONE MONEY MODEL, STILL ───────────────────────────────────────────────────
 // Every figure here comes out of bpBreakdown(), called on a card built from a
 // catalog entry. Nothing in this file adds, rounds or multiplies a cost of its
-// own, so a car priced on the finder costs exactly what it costs on steps 2–4.
-// The used price is `alternatives.usedCut`, the same cut the options screen
+// own, so a car priced on the finder costs exactly what it costs on Your car.
+// The used price is `alternatives.usedCut`, the same cut bpVAlternatives()
 // applies, for the same reason.
 //
 // ── PEERS ARE INFORMATION, NEVER A LINE ─────────────────────────────────────
@@ -143,7 +143,7 @@ function bpfFigures(card, opts) {
 // ── The tester's pick ────────────────────────────────────────────────────────
 // Choosing a car on the finder WRITES the session's setup, so the card the rest
 // of the tool calls "pick" is that car. Edits made in Buddy's breakdown land on
-// the pick card and carry into steps 1–4 untouched.
+// the pick card and carry into Your car untouched.
 
 function bpfSelect(modelId, cond) {
   const s = bpSession();

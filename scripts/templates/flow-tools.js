@@ -72,13 +72,11 @@ function mbFlowRenderGoalsAdmin() {
     return '<p class="helper">' + h(g.label) + ' · ' + h(goalType(g)) + ' · ' + h(budgetFmt(goalCurrent(g))) + ' / ' + h(budgetFmt(g.target)) + ' · ' + h(goalStatus(g)) + '</p>';
   }).join('') + '</div>' + (window.MB_FLOW.id === 'big-purchase' && state.bp ? renderBpAdminCommon() : '');
 }
-function mbFlowAdminAction(action, value) {
+function mbFlowAdminAction(action) {
   if (!mbFlowAllowed(state.screen)) return false;
-  if (action === 'fixture' && state.screen === 'bpSetup' && state.bp) bpAdminFillSetup();
-  else if (action === 'car' && state.screen === 'bpFinder' && state.bp && state.bp.finder) bpfChoose('4runner', 'new');
-  else if (action === 'variant' && state.screen === 'bpCost' && bpSetupComplete() && ['A','B'].indexOf(value) !== -1) bpSetCostVariant(value);
+  if (action === 'car' && state.screen === 'bpFinder' && state.bp && state.bp.finder) bpfChoose('4runner', 'new');
   else if (['reach','due'].indexOf(action) !== -1 && state.bp && state.bigPurchase &&
-      ['goals','bpLanding','bpFinder','bpYourCar','bpSetup','bpQuiz','bpCost','bpOptions','bpFinance','bpCommit'].indexOf(state.screen) !== -1) {
+      ['goals','bpLanding','bpFinder','bpYourCar'].indexOf(state.screen) !== -1) {
     if (action === 'reach') bpAdminReachGoal(); else bpAdminDueToday();
   } else return false;
   return true;
@@ -95,18 +93,10 @@ function mbFlowRenderAdmin() {
     case 'helpMeOut': if (state.esf && state.helpMeOut && state.helpMeOut.target === 'esf') html = renderHelpMeOutAdmin(); break;
     case 'goals': html = mbFlowRenderGoalsAdmin(); break;
     case 'bpLanding': if (state.bp) html = renderBpLandingAdmin(); break;
-    case 'bpSetup': if (state.bp) html = renderBpSetupAdmin(); break;
     case 'bpFinder': if (state.bp && state.bp.finder) html = renderBpFinderAdmin(); break;
     case 'bpYourCar': if (state.bp && state.bp.finder && bpfSelected()) html = renderBpYourCarAdmin(); break;
-    case 'bpQuiz': if (state.bp && state.bp.quiz) html = renderBpQuizAdmin(); break;
-    case 'bpCost': if (state.bp && bpSetupComplete()) html = renderBpCostAdmin(); break;
-    case 'bpOptions': if (state.bp && bpSetupComplete()) html = renderBpOptionsAdmin(); break;
-    case 'bpFinance': if (state.bp && bpSetupComplete()) html = renderBpFinanceAdmin(); break;
-    case 'bpCommit': if (state.bp && bpSetupComplete()) html = renderBpCommitAdmin(); break;
   }
-  return html.replace(/bpAdminFillSetup\(\)/g, "mbFlowAdminAction('fixture')")
-    .replace(/bpfChoose\('4runner','new'\)/g, "mbFlowAdminAction('car')")
-    .replace(/bpSetCostVariant\('([AB])'\)/g, "mbFlowAdminAction('variant','$1')")
+  return html.replace(/bpfChoose\('4runner','new'\)/g, "mbFlowAdminAction('car')")
     .replace(/bpAdminReachGoal\(\)/g, "mbFlowAdminAction('reach')")
     .replace(/bpAdminDueToday\(\)/g, "mbFlowAdminAction('due')");
 }

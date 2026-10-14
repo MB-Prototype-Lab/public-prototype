@@ -61,15 +61,8 @@ const BIG_PURCHASE =
       { "id": "motorcycle", "label": "Motorcycle" }
     ],
     "tierOrder": ["luxury", "premium", "everyday", "value"],
-    "_tierNote": "The DISPLAY label for the third tier is Standard (owner, 2026-09-26). The data KEY stays everyday: it is a join key across tierExamples, the factor tables and saved sessions, and renaming it would silently return undefined wherever one spot was missed. Same trick as Health displaying as Medical and Dental in the taxonomy.",
+    "_tierNote": "The DISPLAY label for the third tier is Standard (owner, 2026-09-26). The data KEY stays everyday: it is a join key across the factor tables and saved sessions, and renaming it would silently return undefined wherever one spot was missed. Same trick as Health displaying as Medical and Dental in the taxonomy.",
     "tierLabels": { "luxury": "Luxury", "premium": "Premium", "everyday": "Standard", "value": "Value" },
-    "tierExamples": {
-      "car":        { "luxury": "Porsche, Range Rover, Mercedes S-Class", "premium": "BMW, Lexus, Audi, Acura", "everyday": "Toyota, Honda, Ford, Chevy, Subaru", "value": "Kia, Hyundai, Nissan, Mitsubishi" },
-      "suv":        { "luxury": "Porsche, Range Rover, Mercedes S-Class", "premium": "BMW, Lexus, Audi, Acura", "everyday": "Toyota, Honda, Ford, Chevy, Subaru", "value": "Kia, Hyundai, Nissan, Mitsubishi" },
-      "minivan":    { "luxury": "Porsche, Range Rover, Mercedes S-Class", "premium": "BMW, Lexus, Audi, Acura", "everyday": "Toyota, Honda, Ford, Chevy, Subaru", "value": "Kia, Hyundai, Nissan, Mitsubishi" },
-      "truck":      { "luxury": "Ram Limited, GMC Denali", "premium": "Ford F-150 Platinum", "everyday": "Toyota Tacoma, Chevy Silverado", "value": "Nissan Frontier" },
-      "motorcycle": { "luxury": "Ducati, BMW", "premium": "Harley-Davidson, Triumph", "everyday": "Honda, Yamaha, Kawasaki", "value": "Royal Enfield, Kymco" }
-    },
     "fuels": [
       { "id": "gas",      "label": "Gas" },
       { "id": "diesel",   "label": "Diesel", "hideFor": ["motorcycle", "minivan"] },
@@ -81,44 +74,6 @@ const BIG_PURCHASE =
       { "id": "4-6", "label": "4-6 yrs", "startAge": 5 },
       { "id": "7+",  "label": "7+ yrs",  "startAge": 8 }
     ],
-
-    "quiz": {
-      "_note": "Four questions for somebody who has no car in mind yet (owner, 2026-09-26: 'the experience assumes the user has a car in mind, but they may not'). Every option carries SCORES, and the highest-scoring type wins — so a new question is a data entry, not a branch in the code. `tier` and `fuel` are nudges, applied only when the answers point somewhere clearly. It suggests a shape of vehicle, never a purchase: the tester can take it or pick for themselves, and the figures do not change until they do.",
-      "_prototype": true,
-      "questions": [
-        { "id": "who", "ask": "Who's usually in the car?", "options": [
-          { "id": "justMe",  "label": "Mostly just me",   "scores": { "car": 2, "motorcycle": 1 } },
-          { "id": "plusOne", "label": "Me and one other", "scores": { "car": 2, "suv": 1 } },
-          { "id": "family",  "label": "Three or more",    "scores": { "suv": 2, "minivan": 1 } },
-          { "id": "crowd",   "label": "Six or more",      "scores": { "minivan": 3, "suv": 1 } }
-        ] },
-        { "id": "use", "ask": "What do you use it for most?", "options": [
-          { "id": "commute", "label": "Getting to work",        "scores": { "car": 2, "motorcycle": 1 } },
-          { "id": "errands", "label": "Errands and school runs", "scores": { "suv": 1, "minivan": 1, "car": 1 } },
-          { "id": "haul",    "label": "Hauling or towing",       "scores": { "truck": 3 }, "fuel": "diesel" },
-          { "id": "trips",   "label": "Long road trips",         "scores": { "suv": 2, "car": 1 } }
-        ] },
-        { "id": "where", "ask": "Where do you do most of your driving?", "options": [
-          { "id": "city",  "label": "City streets",              "scores": { "car": 2, "motorcycle": 1 } },
-          { "id": "mixed", "label": "A bit of everything",       "scores": { "suv": 1, "car": 1 } },
-          { "id": "rural", "label": "Country roads and highways", "scores": { "truck": 1, "suv": 1 } },
-          { "id": "snow",  "label": "Snow, ice or steep hills",  "scores": { "suv": 2, "truck": 1 } }
-        ] },
-        { "id": "fuel", "ask": "How would you like to fuel it?",
-          "_note": "NEVER asks 'do you want an EV' cold. Each option says what it means for the person day to day — where you fill up, what it costs to run, what goes wrong — and the last one hands the choice back to the answers they already gave.",
-          "options": [
-            { "id": "electric", "emoji": "🔌", "label": "Plug it in",      "sub": "Charge at home, no gas stations, fewer moving parts to fix", "fuel": "electric" },
-            { "id": "hybrid",   "label": "A bit of both",   "sub": "Still uses gas, just a lot less of it", "fuel": "hybrid" },
-            { "id": "gas",      "label": "Stick with gas",  "sub": "Fill up anywhere, cheapest to buy", "fuel": "gas" },
-            { "id": "either",   "label": "No preference",   "sub": "We'll pick what suits your answers" }
-          ] },
-        { "id": "age", "ask": "New, or a few years old?", "options": [
-          { "id": "new",  "label": "Brand new",        "sub": "Full warranty, nothing worn out yet", "condition": "new" },
-          { "id": "used", "label": "A few years old",  "sub": "Someone else paid for the first few years", "condition": "used" },
-          { "id": "open", "label": "Show me both",     "sub": "We'll start new and price the used one beside it", "condition": "new" }
-        ] }
-      ]
-    },
 
     "finder": {
       "_note": "The car finder (owner, 2026-09-29): a SPECIFIC make and model, never a shape of vehicle. Three types, three uses each, three price tiers, three models per tier = 81 cars. Base trim only (owner: 'display the basic make/model'). Prices are approximate 2026 base MSRP including destination, fixed at build time (_prototype). Tier keys are the ones the insurance and upkeep factor tables already use; the tier's price RANGE on screen is derived from the three models in it, never typed. The used price is the same usedCut every other screen uses, so a used car costs the same wherever it appears.",

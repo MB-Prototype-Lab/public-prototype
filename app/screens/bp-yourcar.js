@@ -1,19 +1,19 @@
 // ─── Big Purchase — Your car: pay for it, plan for it (one screen) ────────────
 // TAB: Goals (sub-screen) | NAV BAR: Hidden — full-bleed
 //
-// Owner, 2026-10-03: once a car is chosen, ONE screen replaces steps 1 to 4:
+// Owner, 2026-10-03: once a car is chosen, ONE screen does the rest:
 // the car's name at the top, a single "Change your mind?" button that opens the
 // other options, "Paying for it" (just price, loan or cash, down payment, loan
 // length, credit score, amount financed) and "Planning for it" (the down payment,
 // what is already saved, what is still to save, by when, and the goal). A sentence
 // at the top says what the screen is doing.
 //
-// Nothing here has its own arithmetic: the pieces are the old steps' own
-// controls (bpFinance/bpFinChoose, bpSetSaved, bpShiftMonths, bpCommit) and
-// their own figures (bpStack, bpBreakdown, bpSaveToAfford), so a figure here is
-// the figure the steps would have printed.
+// Nothing here has its own arithmetic: the pieces are the shared controls in
+// screens/bp-controls.js (bpFinRow/bpFinChoose, bpSetSaved, bpCommit) and the
+// engine's figures (bpStack, bpBreakdown, bpSaveToAfford), so a figure here is
+// the figure the finder printed.
 //
-// "Choose a different car" opens the same options the cost screen offered
+// "Choose a different car" opens the same options the finder offered
 // (bpfOrigin and renderBpfSave), and trying one changes the car, the price and
 // every figure on this screen at once.
 

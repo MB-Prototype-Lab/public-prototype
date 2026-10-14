@@ -581,13 +581,6 @@ function bpBandOptions(value) {
   return out;
 }
 
-function bpBandLabel(value) {
-  const v = Number(value) || 0;
-  if (!v) return "$0";
-  const b = bpBandFor(v);
-  return bpMoney(b.lo) + " – " + bpMoney(b.hi);
-}
-
 // ── Log (§12) ────────────────────────────────────────────────────────────────
 // In-memory under D03, same lifetime and cap as the ESF's.
 const BP_LOG_CAP = 300;

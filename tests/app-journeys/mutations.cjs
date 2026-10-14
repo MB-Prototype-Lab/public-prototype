@@ -93,8 +93,8 @@ const SPECS = [
   },
   {
     id: 'swap-to-untapped-fn', expect: 'wiring', journeys: ['tools-tour'],
-    why: 'the reminder switch calling bpLeaseAfford, an existing function no journey taps, instead of bpToggleRemind',
-    edits: { 'screens/bp-commit.js': [['onclick="bpToggleRemind()"', 'onclick="bpLeaseAfford()"']] },
+    why: 'the Big purchase landing\'s Back button calling bpLeaseAfford, an existing function no journey taps, instead of bpLandingBack',
+    edits: { 'screens/bp-landing.js': [['onclick="bpLandingBack()"', 'onclick="bpLeaseAfford()"']] },
   },
   {
     id: 'consistent-rename', expect: 'rename', journeys: ['picker-tour'],
