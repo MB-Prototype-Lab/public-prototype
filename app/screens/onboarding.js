@@ -1,8 +1,7 @@
 // ─── Onboarding (D06) ────────────────────────────────────────────────────────
 // TAB: None | NAV BAR: Hidden — full-bleed flow
 //
-// Seven steps. A single config constant bypasses the whole thing — see
-// js/config.js. Flipping it must not require unwinding anything here.
+// Seven steps.
 //
 //   1 name   2 improvement areas (multi-select)
 //   3 ZIP   4 household   5 income band
@@ -327,8 +326,7 @@ function onbStart() {
     improveAreas: [],      // multi-select, max 3 (folds into strategicGoal)
     // The creator opens on the ILLUSTRATION rather than the persona's golden
     // retriever -- it is the one option with real art behind it, so it is what
-    // the creator should be showing off. PERSONA.buddy is untouched, so a
-    // SKIP_ONBOARDING run still boots to the description frame.
+    // the creator should be showing off. PERSONA.buddy is untouched.
     buddy: Object.assign({}, PERSONA.buddy, {
       bodyType:   BUDDY_PROTOTYPE,
       breed:      BUDDY_PROTOTYPE,
@@ -2385,9 +2383,6 @@ function renderOnboardingAdmin() {
            card you are looking at while wondering why a figure looks wrong, and
            "which profile am I" is the first thing that answers it. -->
       ${renderProfileAdminSwitcher()}
-      <p class="helper" style="font-size:10px;margin:0 0 12px;">
-        SKIP_ONBOARDING = ${SKIP_ONBOARDING}
-      </p>
       ${!o ? `<p class="helper">Not running.</p>` : `
         <div class="input-group">
           <label>Step ${o.step + 1}/${ONB_STEPS.length} — ${h(ONB_STEPS[o.step])}</label>

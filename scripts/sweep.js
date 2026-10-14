@@ -2101,7 +2101,7 @@ if (typeof __COMPONENTS_CSS === "string") {
 
 // ── one buddy, one picture ────────────────────────────────────────────────
 // Every stage draws the one illustration, also for a buddy whose attributes
-// name a real breed and coat -- the persona, a profile, SKIP_ONBOARDING.
+// name a real breed and coat -- the persona's, a profile's.
 state.buddy = Object.assign({}, PERSONA.buddy, { breed: "golden_retriever",
   furColor: "cream", furPattern: "solid", eyeColor: "brown", noseColor: "black", size: "medium" });
 var homeStage = "";

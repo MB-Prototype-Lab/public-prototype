@@ -1,17 +1,6 @@
 // ─── Build configuration ──────────────────────────────────────────────────────
 // Loads FIRST, before any data or app file. Nothing here depends on anything.
 
-// DEPRECATED — a build-time entry switch kept off pending a decision on its
-// replacement (docs/future-work.md). Do not extend it or flip it for a study:
-// a shortened or returning-user start is a Flow (docs/app-contracts.md, "One
-// product: no journey switches"). It is not the onboarding Skip button.
-//
-//   false → onboarding runs → streak shows 1  (PERSONA.state.streakDaysIfOnboarded)
-//   true  → returning-user login → streak shows 6  (PERSONA.state.streakDays)
-//
-// Default is false per the spec.
-const SKIP_ONBOARDING = false;
-
 // The version's own name, for admin-panel strings that would otherwise name a
 // folder they are no longer in.
 //

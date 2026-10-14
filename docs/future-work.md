@@ -17,6 +17,3 @@ deletion and Git history cleanup are outside this integration.
   are unreferenced in `app/`. Several entries give reasons that no longer hold, such
   as "v3 still renders", from the retired v3/v3.1 copies. Remove them as a separate
   task, checking each with §7b rather than by grep.
-- **Decide `SKIP_ONBOARDING`'s replacement.** The entry switch is
-  deprecated and kept off in `app/js/config.js`. A shortened or returning-user start
-  belongs in a Flow ([one product](app-contracts.md#one-product-no-journey-switches)).

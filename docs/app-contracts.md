@@ -5,8 +5,9 @@ Read alongside app/docs/architecture.md. docs/workflow.md governs operations. Tr
 ## Combined prototype behavior
 
 The single editable `app/` combines blue `b9e0332` with HoffDemo-Chat `ddee54e`
-(including HoffDemo/ESF `8c7a252`). Full onboarding ends at Home,
-all tabs remain available, and emergency savings is reached from tasks and Goals.
+(including HoffDemo/ESF `8c7a252`). Every session starts at full onboarding,
+which ends at Home; all tabs remain available, and emergency savings is reached
+from tasks and Goals.
 Onboarding combines ZIP/income refinement, household ages/kids, housing type,
 coverage and driving questions with the single Buddy picture and name/pronouns.
 
@@ -107,13 +108,6 @@ Telltales:
   [decisions](decisions.md).
 - Dormant code that nothing turns on, such as unused onboarding steps. The ban
   applies to whatever would turn it on.
-
-**Deprecated:** `SKIP_ONBOARDING` is a build-time entry switch. When true,
-every session starts at the returning-user login with a six-day streak instead of
-onboarding. It is kept, off, pending a decision on its replacement. Do not extend
-it, flip it for a study or copy its pattern; a shortened or returning-user start
-belongs in a Flow. Older comments suggesting a flip for a session are superseded.
-It is not the onboarding Skip button, which is session state.
 
 **Review questions** for any `app/` change, at intake and before a PR:
 

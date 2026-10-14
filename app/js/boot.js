@@ -53,10 +53,8 @@ function bootV3() {
   state.trialAccepted = null;
   state.buddyLevel = PERSONA.state.buddyLevel;
 
-  // D06 — the only thing SKIP_ONBOARDING changes at boot.
-  state.streak = SKIP_ONBOARDING
-    ? PERSONA.state.streakDays              // 6 — straight to home
-    : PERSONA.state.streakDaysIfOnboarded;  // 1 — after onboarding
+  // D06 — the app starts at onboarding, which lands on a one-day streak.
+  state.streak = PERSONA.state.streakDaysIfOnboarded;
 
   // ── The three spend layers (architecture §5) ───────────────────────────────
   // Plan layer, keyed by the 12-category taxonomy. This is v3's budget — it is
@@ -127,12 +125,10 @@ function bootV3() {
   state.chat = { messages: [], bubbles: (BUDDY_RESPONSES.openingBubbles || []).slice() };
 
   // ── Entry point (D06) ──────────────────────────────────────────────────────
-  // The whole seam is this one branch plus the streak above. Flipping
-  // SKIP_ONBOARDING must not require unwinding anything else.
   // The home stack's ROOT is always "home" — it is where every task and every
-  // tab-escape lands. A pre-home entry screen (login, later onboarding) is
-  // PUSHED on top of it, so answering the prompt is a pop rather than a jump,
-  // and the top bar's back arrow doubles as "skip".
+  // tab-escape lands. A pre-home entry screen (onboarding) is PUSHED on top of
+  // it, so answering the prompt is a pop rather than a jump, and the top bar's
+  // back arrow doubles as "skip".
   //
   // Seeding the root as the entry screen instead made login the permanent root,
   // and navGoHome() returned to login forever.
@@ -146,15 +142,10 @@ function bootV3() {
   state.screen = entry;
 }
 
-// false → onboarding step 1 · true → straight to home.
-// Phase 3 builds the onboarding screen; until it exists both paths land on
-// home, so the flag is wired and testable now rather than retrofitted later.
+// Every session starts at onboarding (D06). A Flow's generated starter
+// replaces this to enter elsewhere (scripts/flows.py).
 function v3EntryScreen() {
-  // Returning user: the login scene, which prompts for the daily update and
-  // then lands on home. First run: onboarding (Phase 3b) — until that exists,
-  // both paths go through login so the loop is walkable.
-  if (SKIP_ONBOARDING) return "login";
-  return typeof renderOnboarding === "function" ? "onboarding" : "login";
+  return "onboarding";
 }
 
 // L11 — obs_dining_over_peers ships typed `peer_gap` and headlined "than your
