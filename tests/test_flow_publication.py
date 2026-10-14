@@ -133,8 +133,8 @@ class FlowPublicationTests(unittest.TestCase):
                 with self.assertRaises(ValueError): pub.package(row,self.repo,False)
 
     def test_frozen_tracking_resists_participant_urls(self):
-        node=shutil.which('node') or '/tmp/node-v22.23.3-linux-arm64/bin/node'
-        if not Path(node).exists(): self.skipTest('Node unavailable')
+        node=shutil.which('node')
+        if not node: self.skipTest('Node unavailable')
         root=Path(pub.__file__).resolve().parents[1]
         fixture={'config':(root/'app/js/config.js').read_text(),
                  'tracking':(root/'app/js/useberry.js').read_text()}
