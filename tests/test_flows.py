@@ -191,6 +191,15 @@ class FlowsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r'^flow\.json \(sample\): entry/completion must be in a unique allowlist$'):
             flows.validate_metadata(m, 'sample')
 
+    def test_scope_refuses_a_shallow_clone(self):
+        self.write('app/js/config.js', '// second commit')
+        self.git('commit', '-am', 'second')
+        clone = self.root / 'shallow'
+        subprocess.run(['git', 'clone', '-q', '--depth', '1', (self.root).as_uri(), str(clone)], check=True, capture_output=True)
+        for against in (None, 'origin/main'):
+            with self.subTest(against=against), self.assertRaisesRegex(ValueError, '^this clone is shallow.*git fetch --unshallow'):
+                flows.scope(clone, 'app-integration', against)
+
     def test_allowed_screens_must_be_in_the_destinations_registry(self):
         self.create()
         package = self.root / 'flows/sample'

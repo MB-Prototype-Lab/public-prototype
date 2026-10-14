@@ -383,6 +383,9 @@ def scope(root, selected_scope, against=None):
             raise ValueError('no origin/main or main to compare with; name the main this branch merged with --against REF')
     elif not is_commit(root, against):
         raise ValueError(f'--against {against!r} is not a commit')
+    # A shallow clone lacks the history a merge base needs, whatever ref is named.
+    if git(root, 'rev-parse', '--is-shallow-repository').decode().strip() == 'true':
+        raise ValueError('this clone is shallow, so its merge base with main is unknown; run git fetch --unshallow, then retry')
     try:
         base = git(root, 'merge-base', against, 'HEAD').decode().strip()
     except ValueError:
