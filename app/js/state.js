@@ -9,10 +9,11 @@
 //   tasks           — home screen daily task cards
 //   userProfile     — user-entered name, income, housing (cleared by resetUserData)
 //
-// resetUserData() (Tools "Reset User Data") gives the next tester a fresh start:
-// it clears what a tester entered — setup answers, the chosen profile, every
-// tab's history, the emergency fund, chat — and re-seeds through bootV3, which
-// reopens onboarding. The v2 seed content (lessons, badges) and the theme stay.
+// resetUserData() (Tools "Reset User Data") leaves exactly the state a fresh
+// load has: this object as the page loaded it (STATE_AT_LOAD), then bootV3's
+// seed, which reopens onboarding. Only the reviewer's Tools settings carry over
+// (RESET_KEEPS): the theme, whether Tools is open, the lesson stage style and
+// the XP knobs.
 //
 // destinations[] is the screen registry: each screen's id and the label it
 // shows in the Tools "Jump to screen" list (js/render.js) and the page title
@@ -998,66 +999,33 @@ const state = {
 
 };
 
-// Wipes user-entered profile data and re-renders. Called from admin panel.
+// The state as the page loads it, before bootV3 seeds the v3 data. Taken here,
+// straight after the literal, so nothing has written to it yet.
+const STATE_AT_LOAD = JSON.parse(JSON.stringify(state));
+
+// Reviewer settings from the Tools panel, not tester data: a reset keeps them.
+const RESET_KEEPS = ["settings", "adminCollapsed", "lpStageStyle", "xpConfig"];
+
+// Tools "Reset User Data": the next tester starts from exactly what a fresh load
+// gives (D03), without the reload. Every field goes back to STATE_AT_LOAD, so a
+// field added later is reset without anyone remembering to list it here.
 function resetUserData() {
-  // The value trail is user-entered data too, and it is the kind that LEAVES:
-  // it rides in a URL a third party records. Left behind, the next tester on
-  // this browser would carry the previous one's figures into their checkpoint
-  // (js/value-trail.js).
+  // The value trail lives outside `state`, and it is user-entered data that
+  // LEAVES: it rides in a URL a third party records. Left behind, the next
+  // tester on this browser would carry the previous one's figures into their
+  // checkpoint (js/value-trail.js).
   if (typeof ubTrailReset === "function") ubTrailReset();
-  state.userProfile = { name: "", monthlyIncome: "", housingCost: "", notes: "" };
-  state.budget.debts         = [];
-  state.selectedDebt         = null;
-  state.debtAnalyzerIncluded = {};
-  state.selectedOffer        = null;
-  state.rewardBadgeGains     = null;
-  state.rewardXp             = 0;
-  state.rewardLessonTitle    = "";
-  state.rewardPoints         = null;
-  state.accountBalances      = [];
-  state.commitments          = [];
-  state.flowOrigin           = null;
-  state.postResultContext    = null;
-  state.postResultTheme      = null;
-  state.postResultReaction   = null;
-  state.nextAction           = null;
-  state.monthlyUpdateGap     = null;
-  state.editingGoalId        = null;
-  state.pendingBaseline      = null;
-  state.esf                  = null;
-  state.expenses             = null;
-  state.esfGoal              = null;
-  state.esfEvents            = [];
-  state.esfSelfReported      = null;
-  state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1, scrubWasPlaying: false };
-  state.chat                 = { messages: [], bubbles: [] };
-  // Lesson framing answers and the derived visual plan. Without these a reset
-  // keeps the last run's figures.
-  state.lessonFraming        = null;
-  state.lessonProfile        = {};
-  state.lessonVisualPlan     = null;
-  // Estimator cooldowns are keyed to the day clock, which bootV3() re-seeds —
-  // leaving them behind makes every category open on "All caught up" with no
-  // data behind it.
-  state.estimator            = null;
-  state.estimatorAsked       = {};
-  state.selectedCategory     = null;
-  // Setup answers that unlock follow-ups — without this, a reset leaves the
-  // streaming list and statement week behind and the follow-ups stay unlocked
-  // against questions the user no longer appears to have answered.
-  state.journalProfile       = {};
-  state.kbd                  = { open: false, layer: "abc", shift: false };
-  // Setup answers, the chosen profile and every tab's history. Left behind, the
-  // next tester resumes a half-finished onboarding, and a kept activeProfileId
-  // stops onbFinish applying the default profile, so a skip keeps the persona's
-  // ZIP and income instead (L26).
-  state.onboarding           = null;
-  state.activeProfileId      = null;
-  state.profilePick          = null;
-  Object.keys(state.nav.stacks).forEach(k => { state.nav.stacks[k] = [k]; });
-  // Re-seed from the v3 data files and reopen onboarding, the same start a
-  // fresh load gives (D03). Unlike a refresh, the theme and Tools stay as the
-  // reviewer left them.
+  // Stop whatever is playing while its timers are still reachable: they are
+  // held on the state about to be replaced, and nothing could clear them after.
+  if (typeof lpStopPlayback === "function") lpStopPlayback();
+  if (typeof onbVideoStop === "function") onbVideoStop();
+  if (typeof duClearTimer === "function") duClearTimer();
+  if (typeof buddyStopIdle === "function") buddyStopIdle();
+  const kept = {};
+  RESET_KEEPS.forEach(k => { kept[k] = state[k]; });
+  Object.keys(state).forEach(k => { delete state[k]; });
+  Object.assign(state, JSON.parse(JSON.stringify(STATE_AT_LOAD)), kept);
+  // Re-seed from the v3 data files and reopen onboarding, as the first boot does.
   bootV3();
   render();
 }
