@@ -34,7 +34,7 @@ const { mediaDurations, shimSource } = require('./media-shim.cjs');
 const { openComparer } = require('./pixels.cjs');
 const { writeReport } = require('./report.cjs');
 const journeysApi = require('../app-journeys.cjs');
-const { declaresChange } = require('../lib/pr-declarations.cjs');
+const { declaresChange, readAs } = require('../lib/pr-declarations.cjs');
 
 const { chromium } = require(process.env.MB_PLAYWRIGHT_MODULE || path.join(__dirname, 'node_modules', 'playwright'));
 
@@ -458,8 +458,13 @@ async function main() {
       ' · journeys that broke: ' + summary.broken + (summary.brokenBeforeOnly ? ' (' + summary.brokenBeforeOnly + ' only before the change)' : ''));
     console.log('Report: ' + pathToFileURL(report).href);
     if (summary.brokenAfter) ok = false;
-    if ((summary.phoneChanged || summary.brokenBeforeOnly) && !phoneDeclared) ok = false;
-    if (summary.toolsChanged && !toolsDeclared) ok = false;
+    // In CI, say what the PR body said, as --justify does.
+    const undeclared = (what, channel) => {
+      ok = false;
+      if (args.allowDeclared) console.log('DECLARE  ' + what + ' changed, but ' + readAs(body, channel) + '; say what changed and why');
+    };
+    if ((summary.phoneChanged || summary.brokenBeforeOnly) && !phoneDeclared) undeclared('the phone', 'Participant');
+    if (summary.toolsChanged && !toolsDeclared) undeclared('Tools pictures', 'Tools');
   } finally {
     await browser.close();
     if (cleanup) cleanup();

@@ -105,16 +105,30 @@ check('PR declarations are read from the "Phone and Tools changes" section', () 
   assert.equal(declared('## Phone and Tools changes\n<!--\nPhone: a change\n-->\n', 'Participant'), undefined);
 });
 
-check('placeholders such as n/a declare no change; descriptions do', () => {
+check('ways of writing "nothing changed" declare no change; descriptions do', () => {
   const { isNone, declaresChange } = require('../lib/pr-declarations.cjs');
-  for (const v of ['', 'none', 'None.', 'none (docs only)', 'n/a', 'N/A.', 'na', '-', '—', '–', 'nothing', 'No change',
-    'no changes.', 'Unchanged', 'TBD']) assert.equal(isNone(v), true, JSON.stringify(v));
-  for (const v of ['the dark background is one step darker', 'nav bar colour', 'nonexistent screen removed',
-    'Tools heading reworded', '- the dark background is darker', 'no-change banner added']) assert.equal(isNone(v), false, JSON.stringify(v));
+  for (const v of ['', 'none', 'None.', 'none (docs only)', 'none except the dark background', '(none)', '`none`', '**none**',
+    '[none]', '"none"', '- none', '-none', '* none', '*', '...', '…', '-', '—', '–', 'no', 'No.', 'not applicable',
+    'Not applicable.', 'no visual change', 'No visual changes.', 'same', 'Same as main', 'n/a', 'N/A.', '`n/a`', '(n/a)',
+    'N/A — docs', 'N/A (docs only)', 'na', 'nothing', 'Nothing changed', 'no change', 'no changes.', 'No changes; docs only',
+    'unchanged', 'Unchanged.', 'TBD', 'TBD — later']) assert.equal(isNone(v), true, JSON.stringify(v));
+  for (const v of ['the dark background is one step darker', '- the dark background is darker', '— the dark background is darker',
+    'unchanged except the strict-mode label wording', 'nothing changed except the label', 'no change except the colour',
+    'same layout, darker background', 'nav bar colour', 'nonexistent screen removed', 'no-change banner added',
+    'N/A buttons restyled', 'TBD button added', 'Tools heading reworded']) assert.equal(isNone(v), false, JSON.stringify(v));
   const body = v => '## Phone and Tools changes\nPhone: ' + v + '\nTools: none\n';
-  assert.equal(declaresChange(body('n/a'), 'Participant'), false);
+  assert.equal(declaresChange(body('(none)'), 'Participant'), false);
   assert.equal(declaresChange(body('a darker background'), 'Participant'), true);
   assert.equal(declaresChange('## Problem\n', 'Participant'), false);
+});
+
+check('gate messages say what was read and name an unclosed comment', () => {
+  const { readAs, unclosedNote } = require('../lib/pr-declarations.cjs');
+  const open = '## Phone and Tools changes\n<!-- say what changed\nPhone: none\nTools: none\n';
+  assert.match(readAs(open, 'Participant'), /no "Phone:" line .*unclosed "<!--"/);
+  assert.equal(unclosedNote('## Phone and Tools changes\n<!-- ok -->\nPhone: none\n'), '');
+  assert.match(readAs('## Phone and Tools changes\nPhone: n/a\n', 'Participant'), /says "n\/a", which declares no change/);
+  assert.match(readAs('## Phone and Tools changes\r\nTools:\r\n', 'Tools'), /nothing \(an empty "Tools:" line\)/);
 });
 
 check('a different machine locale and time zone change nothing', () => {

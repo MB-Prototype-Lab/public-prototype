@@ -31,7 +31,7 @@ const { execFileSync } = require('node:child_process');
 const { REPO, routedScreens } = require('./lib/app-vm.cjs');
 const { runJourney } = require('./app-journeys/runner.cjs');
 const snap = require('./lib/snapshot.cjs');
-const { CHANNEL_NAMES, declared, isNone } = require('./lib/pr-declarations.cjs');
+const { CHANNEL_NAMES, declared, isNone, unclosedNote, readAs } = require('./lib/pr-declarations.cjs');
 
 const JOURNEY_DIR = path.join(__dirname, 'app-journeys', 'journeys');
 const ALIASES = require('./app-journeys/state-aliases.cjs');
@@ -311,9 +311,9 @@ async function justifyMode(args, journeys) {
   for (const [name, n] of channels) {
     const d = declared(body, name);
     const label = CHANNEL_NAMES[name][0];
-    if (d === undefined) { problems.push('the PR body needs a "' + label + ':" line under "## Phone and Tools changes"'); continue; }
+    if (d === undefined) { problems.push('the PR body needs a "' + label + ':" line under "## Phone and Tools changes"' + unclosedNote(body)); continue; }
     const none = isNone(d);
-    if (n && none) problems.push(label + ' changed in ' + n + ' step(s) but the PR says ' + (d ? '"' + d + '"' : 'nothing') + ', which declares no change; say what changed and why');
+    if (n && none) problems.push(label + ' changed in ' + n + ' step(s), but ' + readAs(body, name) + '; say what changed and why');
     if (!n && !none) {
       if (pictured.includes(name)) notes.push(label + ': the journeys show no change; the PR declares one, which only the browser picture check may see');
       else problems.push(label + ' did not change; the PR should say "' + label + ': none"');
