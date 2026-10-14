@@ -70,7 +70,7 @@ function resolve(app, query) {
   catch (err) { throw new JourneyError(err.message); }
 }
 
-function typeText(app, query, text, commit) {
+function typeText(app, query, text, commit, clear) {
   const c = resolve(app, query);
   if (c.disabled) throw new JourneyError('field is disabled: ' + controls.describe(c));
   dispatchClick(app, c.el);
@@ -87,6 +87,17 @@ function typeText(app, query, text, commit) {
     return true;
   };
   const open = () => !!app.run('state.kbd && state.kbd.open');
+  if (clear) {
+    // Select what the field holds, then delete it with whichever keyboard is up.
+    const el = app.document.activeElement;
+    if (!el || !el._supportsSelection()) throw new JourneyError('cannot select the contents of ' + controls.describe(c));
+    el.select();
+    if (open()) press('⌫');
+    else if (el.value) {
+      el.setRangeText('', el.selectionStart, el.selectionEnd, 'end');
+      el.dispatchEvent(new eventClasses.Event('input', { bubbles: true }));
+    }
+  }
   for (const ch of text) {
     if (!open()) {
       // No simulated keyboard (touch device, or a field it does not serve):
@@ -353,8 +364,8 @@ async function runJourney(journey, opts = {}) {
           break;
         }
         case 'type':
-          label += ' ' + JSON.stringify(step.text) + ' into ' + JSON.stringify(step.query.name);
-          typeText(app, step.query, step.text, step.commit);
+          label += ' ' + JSON.stringify(step.text) + ' into ' + JSON.stringify(step.query.name) + (step.clear ? ', emptied first' : '');
+          typeText(app, step.query, step.text, step.commit, step.clear);
           if (/[a-z]/i.test(step.text)) typed.push(step.text);
           break;
         case 'choose':

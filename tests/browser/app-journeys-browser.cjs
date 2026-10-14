@@ -177,7 +177,7 @@ async function click(f) {
   }
 }
 
-async function typeText(page, query, text, commit) {
+async function typeText(page, query, text, commit, clear) {
   const f = await find(page, query);
   if (f.disabled) throw new StepError('field is disabled: ' + f.desc);
   await click(f);
@@ -188,6 +188,13 @@ async function typeText(page, query, text, commit) {
   const has = async label => (await (await keyHandle(label)).jsonValue()) !== null;
   const press = async label => { const h = await keyHandle(label); if (await h.jsonValue() === null) return false; await h.asElement().click({ timeout: 5000 }); return true; };
   const open = () => page.evaluate(() => !!(state.kbd && state.kbd.open));
+  if (clear) {
+    // Select what the field holds, then delete it with whichever keyboard is up.
+    const filled = await page.evaluate(() => { const el = document.activeElement; if (!el || typeof el.select !== 'function') return null; el.select(); return el.value !== ''; });
+    if (filled === null) throw new StepError('cannot select the contents of ' + f.desc);
+    if (await open()) await press('⌫');
+    else if (filled) await page.keyboard.press('Backspace');
+  }
   for (const ch of text) {
     if (!(await open())) { await page.keyboard.type(ch); continue; }
     const label = ch === ' ' ? 'space' : ch.toLowerCase();
@@ -222,7 +229,7 @@ async function runSteps(page, journey, variant, steps, id, shoot) {
         if (!f.disabled) await click(f);
         break;
       }
-      case 'type': label += ' ' + JSON.stringify(step.text); await typeText(page, step.query, step.text, step.commit); break;
+      case 'type': label += ' ' + JSON.stringify(step.text); await typeText(page, step.query, step.text, step.commit, step.clear); break;
       case 'choose': {
         const f = await find(page, step.query);
         const o = step.option;

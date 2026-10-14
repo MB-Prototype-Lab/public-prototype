@@ -6,7 +6,8 @@ const q = (query, extra) => Object.assign(typeof query === 'object' && !(query i
 
 module.exports = {
   tap: (query, opts = {}) => ({ op: 'tap', query: q(query, opts.query), expectDisabled: !!opts.expectDisabled }),
-  type: (query, text, opts = {}) => ({ op: 'type', query: q(query), text: String(text), commit: opts.commit !== false }),
+  // {clear: true} empties the field first, as a person would retype a figure.
+  type: (query, text, opts = {}) => ({ op: 'type', query: q(query), text: String(text), commit: opts.commit !== false, clear: !!opts.clear }),
   choose: (query, option) => ({ op: 'choose', query: q(query), option }),
   slide: (query, value) => ({ op: 'slide', query: q(query), value }),
   check: (query, on = true) => ({ op: 'check', query: q(query), on }),
