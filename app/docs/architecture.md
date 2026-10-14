@@ -1443,8 +1443,10 @@ tokens for this, and new rules should use them rather than reaching for
 | `--accent-fill` | `--accent-fill-text` |
 | a genuinely always-dark surface (lesson stage, night login) | `--on-dark` |
 
-The sweep checks 12 foreground/background pairs across all four themes at a
+The sweep checks 16 foreground/background pairs across all four themes at a
 4.5:1 floor. That gate caught `--info` shipping at 3.92:1 in Natural Light.
+Pairs in its `KNOWN_LOW` list (Natural Light's tab labels and text on `--soft`)
+warn at their measured ratio instead of failing, until the palette is decided.
 
 ---
 

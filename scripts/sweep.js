@@ -237,21 +237,49 @@ function ratio(a, b) {
   var la = lum(a), lb = lum(b); if (la === null || lb === null) return null;
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
+// Text token, background token, and where the app draws the pair when that is
+// not obvious from the names.
 var PAIRS = [["--text","--card"],["--text","--screen"],["--muted","--card"],["--accent","--card"],
   ["--accent-fill-text","--accent-fill"],["--on-accent","--accent"],
   ["--good","--good-bg"],["--warn","--warn-bg"],["--info","--info-bg"],
   ["--good-pill-text","--good-pill-bg"],["--warn-pill-text","--warn-pill-bg"],
-  ["--warn-pill-strong-text","--warn-pill-strong-bg"]];
-var lowContrast = [];
+  ["--warn-pill-strong-text","--warn-pill-strong-bg"],
+  ["--muted","--screen","inactive tab labels"],["--accent","--accent-soft","the active tab label, accent pills"],
+  ["--muted","--soft","muted text on item cards and soft panels"],["--accent","--soft","accent text on soft panels"]];
+// Pairs that measure under 4.5:1 today, left for the PMs' palette decision
+// (D36): reported as warnings so the sweep stays green and still says so. Each
+// keeps its measured ratio, so a pair that gets darker fails like any other.
+var KNOWN_LOW = [
+  ["naturalLight", "--muted",  "--screen",      4.38],
+  ["naturalLight", "--accent", "--accent-soft", 4.27],
+  ["naturalLight", "--muted",  "--soft",        4.05],
+  ["naturalLight", "--accent", "--soft",        4.17]
+];
+var lowContrast = [], knownLow = [], lowSeen = [];
 THEMES.forEach(function (t) {
   PAIRS.forEach(function (p) {
     var fg = resolve(t.cls, p[0]), bg = resolve(t.cls, p[1]), r = ratio(fg, bg);
-    if (r !== null && r < 4.5) lowContrast.push(t.id + " " + p[0] + " on " + p[1] +
-      " = " + r.toFixed(2) + ":1 (" + fg + " / " + bg + ")");
+    if (r === null || r >= 4.5) return;
+    var line = t.label + " " + p[0] + " on " + p[1] + " = " + r.toFixed(2) + ":1 (" + fg + " / " + bg + ")" +
+               (p[2] ? ", " + p[2] : "");
+    var known = KNOWN_LOW.filter(function (k) { return k[0] === t.id && k[1] === p[0] && k[2] === p[1]; })[0];
+    if (known) lowSeen.push(known);
+    if (known && Number(r.toFixed(2)) >= known[3]) knownLow.push(line);
+    else lowContrast.push(line + (known ? ", below its recorded " + known[3].toFixed(2) + ":1" : ""));
   });
 });
-chk(lowContrast.length === 0, THEMES.length + " themes x " + PAIRS.length + " pairs clear 4.5:1",
+chk(lowContrast.length === 0,
+    THEMES.length + " themes x " + PAIRS.length + " text pairs clear 4.5:1, apart from the known low ones",
     lowContrast.join("\n          "));
+if (knownLow.length) {
+  warn(knownLow.length + " known low text pair" + (knownLow.length === 1 ? "" : "s") +
+       " under 4.5:1 (palette is the PMs' decision)", knownLow.join("\n          "));
+}
+var lowCleared = KNOWN_LOW.filter(function (k) { return lowSeen.indexOf(k) === -1; });
+if (lowCleared.length) {
+  ok(lowCleared.length + " known low pair" + (lowCleared.length === 1 ? " now clears" : "s now clear") + " 4.5:1",
+     "drop from KNOWN_LOW: " + lowCleared.map(function (k) { return k.slice(0, 3).join(" "); }).join(", "));
+}
 
 // ── The one NON-TEXT boundary that carries meaning ──────────────────────────
 // A budget slider's rail IS the scale — where the thumb sits along it is the
@@ -2698,9 +2726,10 @@ print("    · prefers-reduced-motion actually stilling the buddy idle and the");
 print("      daily-update sequence");
 print("    · Narration audio lining up with the visuals it is cued to");
 print("    · Whether the repaint reads as 'not a bank'");
-print("    · The four themes side by side (L21). The contract and contrast are");
-print("      checked above, but not whether Light/Dark actually LOOK like v2,");
-print("      nor whether the frame and admin panel hold still while switching");
+print("    · The four themes side by side (L21). The token contract and the text");
+print("      pairs listed in §1b are checked above, but not every colour pairing");
+print("      on screen, nor whether Light/Dark actually LOOK like v2, nor whether");
+print("      the frame and admin panel hold still while switching");
 
 // ─────────────────────────────────────────────────────────────────────────────
 print("");
