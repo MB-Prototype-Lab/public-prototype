@@ -3,25 +3,23 @@
 //
 // PURPOSE
 // First screen of the post-input loop. After completing any major Budget input
-// (2 Minute Budget, lifestyle chain, monthly update), shows a context summary, then asks
+// (2 Minute Budget, monthly update), shows a context summary, then asks
 // "How does this feel?" with a 4-notch slider before the user decides next steps.
 //
 // NAVIGATION
-//   Entry: Triggered after completing the 2 Minute Budget, lifestyle chain, or monthly update
+//   Entry: Triggered after completing the 2 Minute Budget or monthly update
 //   Exit:  Reaction selected → nextAction screen
 //
 // PRODUCTION NOTES
-//   state.postResultContext: "budget" | "lifestyle" | "monthlyUpdate" | "goal"
+//   state.postResultContext: "budget" | "monthlyUpdate" | "goal"
 //   state.postResultReaction: "worried" | "ok" | "good" | "excited" (or null)
 //   state.flowOrigin: set before entering this screen; preserved through finish
 
 function renderPostResult() {
   const context = state.postResultContext;
-  const theme   = state.postResultTheme;
 
   const headlines = {
     budget:       { title: "Budget updated",           sub: "Your spending plan has been saved." },
-    lifestyle:    { title: "Lifestyle answers saved",  sub: lifestyleThemeLabel(theme) + " has been recorded." },
     monthlyUpdate:{ title: "Monthly check-in done",    sub: "Your account and debt balances are logged." },
     goal:         { title: "Goal saved",               sub: "Your new goal has been added to My Progress." }
   };
@@ -132,88 +130,6 @@ function updateFeelingDescription() {
   };
   const el = $("feelingDesc");
   if (el) el.textContent = descs[val] || descs[2];
-}
-
-// The six dimensions, in spec order. `value` is usually the DATA key, but not
-// always — paysRent values (rent/mortgage/family/other) map to the data keys
-// "true"/"false"/"shared" via benchLifestyleKey, and "mostly walk" is stored as
-// `none`. A value that resolves to no key silently contributes 1.0.
-// `meaning` is what the option says about how you live, in behaviour rather
-// than numbers (D26 — describe, never prescribe). The FIGURES beside it are
-// computed at render time from the peer model, so they already carry the ZIP's
-// cost-of-living multiplier; never author a dollar amount here.
-const LW_QUESTIONS = [
-  { dim: "foodie", prompt: "How into food are you?",
-    help: "Eating out, good coffee, trying places.",
-    options: [
-      { label: "Not much",  value: "low",
-        meaning: "Food is mostly fuel. You eat what's easy, and where it comes from isn't something you think about much." },
-      { label: "Moderate",  value: "moderate",
-        meaning: "You eat out when it suits you — a few times a week, nothing built around it." },
-      { label: "Very into it", value: "high",
-        meaning: "Eating out is something you do for its own sake. Good coffee, new places, the meal is the point." }
-    ] },
-  { dim: "cooksAtHome", prompt: "How often do you cook?",
-    help: "Cooking at home pulls spending out of dining out and into groceries.",
-    options: [
-      { label: "Rarely",    value: "rarely",
-        meaning: "The kitchen is mostly storage. Most meals turn up already made." },
-      { label: "Sometimes", value: "sometimes",
-        meaning: "You cook when there's time and pick something up when there isn't." },
-      { label: "Usually",   value: "usually",
-        meaning: "Groceries carry the week. Eating out is an occasion rather than a habit." }
-    ] },
-  { dim: "hobbySpend", prompt: "Hobbies and going out?",
-    help: "Entertainment, gigs, kit, the stuff you do for fun.",
-    options: [
-      { label: "Low key",   value: "low",
-        meaning: "Your free time costs close to nothing — home, outdoors, things you already own." },
-      { label: "Moderate",  value: "moderate",
-        meaning: "A night out here, a bit of kit there. It adds up without being the main line." },
-      { label: "A lot",     value: "high",
-        meaning: "Gigs, gear, going out. Your weekends have a price on them." }
-    ] },
-  { dim: "paysRent", prompt: "What's your housing setup?",
-    help: "Housing is the single biggest swing between households.",
-    // These values are NOT the data keys — benchLifestyleKey maps them:
-    // rent/mortgage → "true", family → "false", other → "shared".
-    options: [
-      { label: "Rent",             value: "rent",
-        meaning: "The whole housing cost lands on you each month, on someone else's terms." },
-      { label: "Mortgage",         value: "mortgage",
-        meaning: "The whole housing cost lands on you each month, and part of it is buying the place." },
-      { label: "Live with family", value: "family",
-        meaning: "Housing barely registers — you're covering a share of the bills rather than a market rate." },
-      { label: "Other",            value: "other",
-        meaning: "Housing is split with someone, so you carry part of a market rate instead of all of it." }
-    ] },
-  { dim: "commute", prompt: "How do you get around?",
-    help: null,
-    options: [
-      { label: "Car",         value: "car",
-        meaning: "A car means fuel, insurance, and the repair you didn't plan for." },
-      { label: "Transit",     value: "transit",
-        meaning: "Fares and passes. No repair bills, no parking." },
-      { label: "Mostly walk", value: "none",     // stored as `none`, not "walk"
-        meaning: "Getting around costs you almost nothing — the odd fare and not much else." }
-    ] },
-  { dim: "travelFrequency", prompt: "How often do you travel?",
-    help: null,
-    options: [
-      { label: "Rarely",   value: "rare",
-        meaning: "A trip is a rare thing, so nothing is going aside for one month to month." },
-      { label: "Now and then", value: "moderate",
-        meaning: "A couple of trips a year — enough that it shows up in an ordinary month." },
-      { label: "Often",    value: "frequent",
-        meaning: "You're away often, and the flights, rooms and everything around them sit in your normal spending." }
-    ] }
-];
-
-// 2b: v2's lifestyle themes were retired with their screens. The post-result
-// loop still labels its context, so fall back to the generic word.
-function lifestyleThemeLabel(themeKey) {
-  const q = LW_QUESTIONS.find(function(x) { return x.dim === themeKey; });
-  return q ? q.prompt : "Lifestyle";
 }
 
 function selectReaction(sliderValue) {

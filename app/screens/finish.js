@@ -12,7 +12,6 @@
 //
 // PRODUCTION NOTES
 //   Impact landing: budget/monthlyUpdate → My Progress (Budget Results at top).
-//   lifestyle → My Progress (Assumptions Used is section 3, user scrolls).
 //   goal → My Progress (Goals section).
 //   state.flowOrigin and state.postResultContext cleared after use.
 
@@ -32,8 +31,6 @@ function renderFinish() {
     detail = "Budget accepted. Your results are updated.";
   } else if (context === "budget") {
     detail = "Budget saved. Review your results in My Progress.";
-  } else if (context === "lifestyle") {
-    detail = "Lifestyle answers saved. Your assumptions have been updated.";
   } else if (context === "monthlyUpdate") {
     detail = "Monthly check-in complete. Results are in My Progress.";
   } else if (action === "review-later") {

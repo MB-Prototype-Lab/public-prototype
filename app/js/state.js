@@ -952,9 +952,8 @@ const state = {
   // ── Post-result loop context ──────────────────────────────────────────────
   // Describes what was just completed. Drives the context headline on post-result
   // screen and the impact-landing destination on the finish screen.
-  // "budget" | "lifestyle" | "monthlyUpdate" | "goal" | null
+  // "budget" | "monthlyUpdate" | "goal" | null
   postResultContext:  null,
-  postResultTheme:    null,   // lifestyle theme key when context === "lifestyle"
   postResultReaction: null,   // reaction selected on post-result screen
   nextAction:         null,   // action chosen on next-action screen
   monthlyUpdateGap:   null,   // detected gap from monthly update flow

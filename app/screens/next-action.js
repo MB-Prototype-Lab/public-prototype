@@ -54,7 +54,6 @@ function selectNextAction(value) {
   } else if (value === "adjust") {
     // Mid-loop exit: preserve flowOrigin so the user can still return; clear context
     state.postResultContext  = null;
-    state.postResultTheme    = null;
     state.postResultReaction = null;
     navGoTab("aboutMe");
   } else if (value === "compare") {
@@ -71,7 +70,6 @@ function selectNextAction(value) {
 function clearFlowState() {
   state.flowOrigin         = null;
   state.postResultContext  = null;
-  state.postResultTheme    = null;
   state.postResultReaction = null;
   state.nextAction         = null;
 }

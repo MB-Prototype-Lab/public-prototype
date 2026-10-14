@@ -34,4 +34,5 @@ module.exports = [
   { removed: 'bigPurchase.stack5.balanceAtSale', why: 'the loan balance left at five years, read only by the removed resale arithmetic' },
   { removed: 'lifestyleAnswered', why: 'which lifestyle answers Help me out marked as the tester\'s own; nothing read it' },
   { removed: 'lifestyleDetail', why: 'stated lifestyle amounts nothing filled or read' },
+  { removed: 'postResultTheme', why: 'the lifestyle theme for a post-result context nothing sets' },
 ];
