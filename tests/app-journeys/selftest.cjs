@@ -91,12 +91,30 @@ check('handler identifiers skip members, keys, locals and strings', () => {
 });
 
 check('PR declarations are read from the "Phone and Tools changes" section', () => {
-  const { declared } = require('../app-journeys.cjs');
+  const { declared } = require('../lib/pr-declarations.cjs');
   const body = '## Problem\nx\n## Phone and Tools changes\nPhone: none\nTools: wording of a Tools heading\n## Limitations\n';
   assert.equal(declared(body, 'Participant'), 'none');
   assert.equal(declared(body, 'Tools'), 'wording of a Tools heading');
   assert.equal(declared(body, 'Wiring'), undefined);
+  assert.equal(declared(body.replace(/\n/g, '\r\n'), 'Tools'), 'wording of a Tools heading');
   assert.equal(declared('## Phone and Tools changes\nPhone:\nTools: none\n', 'Participant'), '');
+  // Guidance inside a comment never counts, even across lines.
+  const commented = '## Phone and Tools changes\n<!-- e.g.\nPhone: the dark background is darker -->\nPhone: none <!-- or say why -->\n';
+  assert.equal(declared(commented, 'Participant'), 'none');
+  assert.equal(declared(commented.replace(/\n/g, '\r\n'), 'Participant'), 'none');
+  assert.equal(declared('## Phone and Tools changes\n<!--\nPhone: a change\n-->\n', 'Participant'), undefined);
+});
+
+check('placeholders such as n/a declare no change; descriptions do', () => {
+  const { isNone, declaresChange } = require('../lib/pr-declarations.cjs');
+  for (const v of ['', 'none', 'None.', 'none (docs only)', 'n/a', 'N/A.', 'na', '-', '—', '–', 'nothing', 'No change',
+    'no changes.', 'Unchanged', 'TBD']) assert.equal(isNone(v), true, JSON.stringify(v));
+  for (const v of ['the dark background is one step darker', 'nav bar colour', 'nonexistent screen removed',
+    'Tools heading reworded', '- the dark background is darker', 'no-change banner added']) assert.equal(isNone(v), false, JSON.stringify(v));
+  const body = v => '## Phone and Tools changes\nPhone: ' + v + '\nTools: none\n';
+  assert.equal(declaresChange(body('n/a'), 'Participant'), false);
+  assert.equal(declaresChange(body('a darker background'), 'Participant'), true);
+  assert.equal(declaresChange('## Problem\n', 'Participant'), false);
 });
 
 check('a different machine locale and time zone change nothing', () => {

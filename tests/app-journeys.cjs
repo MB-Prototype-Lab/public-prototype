@@ -31,6 +31,7 @@ const { execFileSync } = require('node:child_process');
 const { REPO, routedScreens } = require('./lib/app-vm.cjs');
 const { runJourney } = require('./app-journeys/runner.cjs');
 const snap = require('./lib/snapshot.cjs');
+const { CHANNEL_NAMES, declared, isNone } = require('./lib/pr-declarations.cjs');
 
 const JOURNEY_DIR = path.join(__dirname, 'app-journeys', 'journeys');
 const ALIASES = require('./app-journeys/state-aliases.cjs');
@@ -296,21 +297,6 @@ async function seriesMode(args, journeys) {
   return args.report || !failed;
 }
 
-// The PR body's "## Phone and Tools changes" section: one line per channel.
-// "Phone:" is the PM-facing name for the participant channel.
-const CHANNEL_NAMES = { Participant: ['Phone', 'Participant'], Tools: ['Tools'], Wiring: ['Wiring'] };
-
-function declared(body, channel) {
-  const sec = /##\s*Phone and Tools changes\s*\n([\s\S]*?)(\n##\s|$)/i.exec(body || '');
-  if (!sec) return undefined;
-  for (const name of CHANNEL_NAMES[channel] || [channel]) {
-    // [ \t], not \s: an empty line must not read the next line as its value.
-    const m = new RegExp('^[ \\t]*[-*]?[ \\t]*' + name + '[ \\t]*:[ \\t]*(.*)$', 'im').exec(sec[1]);
-    if (m) return m[1].replace(/<!--[\s\S]*?-->/g, '').trim();
-  }
-  return undefined;
-}
-
 async function justifyMode(args, journeys) {
   if (!args.base) throw new Error('--justify needs --base SHA');
   const { ok: gatesOk, cmp } = await againstMode(Object.assign({}, args, { against: args.base, report: true }), journeys);
@@ -326,9 +312,8 @@ async function justifyMode(args, journeys) {
     const d = declared(body, name);
     const label = CHANNEL_NAMES[name][0];
     if (d === undefined) { problems.push('the PR body needs a "' + label + ':" line under "## Phone and Tools changes"'); continue; }
-    if (!d) { problems.push('the PR\'s "' + label + ':" line is empty; write "none" or say what changed and why'); continue; }
-    const none = /^none\.?$/i.test(d);
-    if (n && none) problems.push(label + ' changed in ' + n + ' step(s) but the PR says "none"; say what changed and why');
+    const none = isNone(d);
+    if (n && none) problems.push(label + ' changed in ' + n + ' step(s) but the PR says ' + (d ? '"' + d + '"' : 'nothing') + ', which declares no change; say what changed and why');
     if (!n && !none) {
       if (pictured.includes(name)) notes.push(label + ': the journeys show no change; the PR declares one, which only the browser picture check may see');
       else problems.push(label + ' did not change; the PR should say "' + label + ': none"');
@@ -389,4 +374,4 @@ if (require.main === module) {
   main().then(ok => process.exit(ok ? 0 : 1), err => { console.error(err && err.stack || err); process.exit(2); });
 }
 
-module.exports = { loadJourneys, expand, runAll, compare, formatComparison, coverage, renameMap, declared, PROFILES };
+module.exports = { loadJourneys, expand, runAll, compare, formatComparison, coverage, renameMap, PROFILES };

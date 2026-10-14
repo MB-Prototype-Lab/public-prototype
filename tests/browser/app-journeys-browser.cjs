@@ -34,6 +34,7 @@ const { mediaDurations, shimSource } = require('./media-shim.cjs');
 const { openComparer } = require('./pixels.cjs');
 const { writeReport } = require('./report.cjs');
 const journeysApi = require('../app-journeys.cjs');
+const { declaresChange } = require('../lib/pr-declarations.cjs');
 
 const { chromium } = require(process.env.MB_PLAYWRIGHT_MODULE || path.join(__dirname, 'node_modules', 'playwright'));
 
@@ -429,8 +430,8 @@ async function main() {
     await comparer.close();
 
     const body = process.env.PR_BODY || '';
-    const phoneDeclared = args.allowDeclared && !/^none\.?$/i.test(journeysApi.declared(body, 'Participant') || 'none');
-    const toolsDeclared = args.allowDeclared && !/^none\.?$/i.test(journeysApi.declared(body, 'Tools') || 'none');
+    const phoneDeclared = args.allowDeclared && declaresChange(body, 'Participant');
+    const toolsDeclared = args.allowDeclared && declaresChange(body, 'Tools');
     const summary = { base: describeTree(base), head: describeTree(head), seconds: Math.round((Date.now() - t0) / 1000), phoneChanged: 0, toolsChanged: 0, flaky: 0, broken: 0, brokenAfter: 0, brokenBeforeOnly: 0 };
     for (const row of rows) {
       const changed = row.items.filter(i => i.status === 'changed' || i.status === 'missing').length;
