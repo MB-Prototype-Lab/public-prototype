@@ -73,8 +73,9 @@ Journeys live in `tests/app-journeys/journeys/`, written as taps on visible
 labels. A journey that can no longer find a label fails loudly with the controls
 it can see. They open the app at a hosted (https) address, as participants do, so
 they also record each screen's address and the value trail Useberry reads; a word
-the robot typed (a name, a note) showing up in the address fails the check. This
-robot does not judge layout or colour; the browser check below does.
+the robot typed (a name, a note) showing up in the address or the page title fails
+the check. This robot does not judge layout or colour; the browser check below
+does.
 
 The clock is fixed at Wednesday 15 April 2026, 15:00 UTC (one journey visits at
 22:00). The journeys whose screens depend on the date (the emergency fund's

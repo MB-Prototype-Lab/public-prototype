@@ -1,8 +1,9 @@
 'use strict';
 // Unit checks for the harness's own pieces: the parser, the selector engine,
 // the control finder, the clock, the rename detector, the series comparison's
-// bases, the state removal list, the PR declaration parser, and that the
-// harness pins en-US and UTC whatever the machine's locale and time zone.
+// bases, the state removal list, the PR declaration parser, the typed-text
+// check on the page address and title, and that the harness pins en-US and UTC
+// whatever the machine's locale and time zone.
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -247,6 +248,20 @@ check('gate messages say what was read and name an unclosed comment', () => {
   assert.equal(unclosedNote('## Phone and Tools changes\n<!-- ok -->\nPhone: none\n'), '');
   assert.match(readAs('## Phone and Tools changes\nPhone: n/a\n', 'Participant'), /says "n\/a", which declares no change/);
   assert.match(readAs('## Phone and Tools changes\r\nTools:\r\n', 'Tools'), /nothing \(an empty "Tools:" line\)/);
+});
+
+check('typed text is found in the page address or title, written as one word too, without false alarms', () => {
+  const { typedLeaks } = require('./runner.cjs');
+  const own = new Set(['budget', 'home', 'moneybuddy']);
+  const page = 'https://x.example/app/index.html?screen=home';
+  const at = (typed, href, title = 'MoneyBuddy — Home') => typedLeaks(typed, href, title, own);
+  assert.deepEqual(at(['Riley Q'], page + '#v=setup.buddy-rileyq'), ['Riley Q']);
+  assert.deepEqual(at(['Long day'], page + '#v=journal.note-long-day'), ['Long day']);
+  assert.deepEqual(at(['Scout'], page, 'MoneyBuddy — Home · Scout'), ['Scout']);
+  // Short words, the app's own words and the trail's checkpoint are not looked for.
+  assert.deepEqual(at(['Al', 'Budget', 'Setup notes'], page.replace('home', 'al-budget') + '#v=setup.zip-37203'), []);
+  // A word inside a longer one is not the word.
+  assert.deepEqual(at(['Long day'], page + '#v=journal.note-longer'), []);
 });
 
 check('the harness pins en-US and UTC whatever the machine locale and time zone', () => {

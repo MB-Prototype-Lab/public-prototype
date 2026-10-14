@@ -299,6 +299,43 @@ function checkHandlers(app, ctx) {
   return problems;
 }
 
+// ── Typed text in the page address or title ─────────────────────────────────
+// Useberry records the address (value trail included) and the title, so words
+// a person typed, such as a name or a note, must never reach either.
+
+const tokens = s => String(s).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+// The title's own wording around the screen name (js/screen-url.js screenTitle).
+const TITLE_WORDS = ['moneybuddy', 'step', 'question', 'confirm'];
+
+// Words the app writes there by itself: screen names as addresses and as
+// titles, budget categories, the title's wording and the address it opened at.
+function appWords(app, routed) {
+  const words = new Set(TITLE_WORDS);
+  const add = s => { for (const w of tokens(s)) words.add(w); };
+  for (const s of routed) add(s.replace(/([a-z0-9])([A-Z])/g, '$1 $2'));
+  add(app.run('typeof destinations === "undefined" ? "" : destinations.map(function (d) { return d[1]; }).join(" ")'));
+  add(app.run('typeof CATEGORIES === "undefined" ? "" : CATEGORIES.join(" ")'));
+  add(app.location.href);
+  return words;
+}
+
+// The typed texts found in this address or title. A text is looked for word by
+// word and, when it has several, written as one ("Riley Q" as "rileyq"). Words
+// under four characters or without a letter, the app's own words and the value
+// trail's checkpoint and keys are not looked for, so they raise no false alarm.
+function typedLeaks(typed, href, title, own) {
+  let addr = href;
+  try { addr = decodeURIComponent(addr); } catch (e) { /* a stray %: read it as written */ }
+  const frag = addr.split('#')[1] || '';
+  const trailKeys = frag.startsWith('v=') ? frag.slice(2).split('.').map((p, i) => (i ? p.split('-')[0] : p).toLowerCase()) : [];
+  const shown = new Set(tokens(addr + ' ' + title));
+  return typed.filter(t => {
+    const parts = tokens(t);
+    return parts.concat(parts.length > 1 ? [parts.join('')] : [])
+      .some(w => w.length >= 4 && /[a-z]/.test(w) && !own.has(w) && !trailKeys.includes(w) && shown.has(w));
+  });
+}
+
 /**
  * @returns {{id, records, visits, errors, gate, warnings, liveRemoved, app}}
  *   records: [{label, screen, participant, tools, wiring}]
@@ -322,6 +359,7 @@ async function runJourney(journey, opts = {}) {
   const tab = { storage: memoryStorage(bootOpts.storage || {}) };
 
   const apps = [];
+  const own = new Map();
   const boot = (o = {}) => {
     const merged = Object.assign({}, bootOpts, o);
     const app = loadApp({
@@ -331,6 +369,7 @@ async function runJourney(journey, opts = {}) {
     });
     ctx.seen = {};
     apps.push(app);
+    own.set(app, appWords(app, routed));
     return app;
   };
 
@@ -437,13 +476,9 @@ async function runJourney(journey, opts = {}) {
     if (!app.left) note(app, via);
     records.push(recordStep(app, ctx, label));
     gate.push(...checkHandlers(app, ctx).map(p => id + ' @ ' + label + ': ' + p));
-    // The address is the study's record (the value trail): words a person
-    // typed, such as a name, must never reach it, as typed or as a slug.
-    const words = s => '-' + s.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-';
-    let href = app.location.href;
-    try { href = decodeURIComponent(href); } catch (e) { /* a stray %: read it as written */ }
-    const url = words(href);
-    for (const t of typed) if (url.includes(words(t))) gate.push(id + ' @ ' + label + ': typed text ' + JSON.stringify(t) + ' is in the address');
+    for (const t of typedLeaks(typed, app.location.href, app.document.title, own.get(app))) {
+      gate.push(id + ' @ ' + label + ': typed text ' + JSON.stringify(t) + ' is in the page address or title');
+    }
   }
   const warnings = [];
   for (const a of apps) {
@@ -456,4 +491,4 @@ async function runJourney(journey, opts = {}) {
   return { id, records, visits, errors, gate: [...new Set(gate)], warnings: [...new Set(warnings)], liveRemoved: [...ctx.liveRemoved], app };
 }
 
-module.exports = { runJourney, JourneyError, CALL_ALLOWLIST };
+module.exports = { runJourney, JourneyError, CALL_ALLOWLIST, typedLeaks };
