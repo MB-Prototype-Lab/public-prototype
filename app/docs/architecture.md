@@ -1435,8 +1435,7 @@ sweep until all three themes define it.
 **`--chrome-*`, `--bg`, `--phone`.** These style the admin panel, the page and
 the bezel — all of which live *outside* `.screen`, where theme classes are
 applied. An override is therefore inert as well as unwanted: the frame is meant
-to hold still while the app repaints. The sweep asserts this. (Eight such dead
-overrides existed in the old `.dark-mode` and were removed — see `plan.md` §17.3.)
+to hold still while the app repaints. The sweep asserts this.
 
 ### Colours that pair, and must be declared as pairs
 
