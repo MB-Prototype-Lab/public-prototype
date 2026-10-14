@@ -1,21 +1,24 @@
 #!/usr/bin/env node
 'use strict';
 // Real-browser journeys: replays the journeys marked `browser: true` in
-// Chromium, in all four themes at phone width plus Tools at desktop width, on
-// two copies of the repository (before and after), screenshots every new view,
-// compares the pictures and writes a report a PM can open.
+// Chromium, in all four themes at phone width plus Tools at desktop width.
 //
+//   node tests/browser/app-journeys-browser.cjs [--head DIR] [--out DIR]
+//        one tree (default: this repository): fail if a journey stops early,
+//        a control cannot be tapped or the page throws. No pictures are
+//        compared; --out keeps a picture of every new view and a report.
 //   node tests/browser/app-journeys-browser.cjs --base DIR --head DIR --out DIR
-//        [--only id,id] [--variants naturalLight,dark,...] [--allow-declared]
-//
+//        two trees (before and after): screenshot every new view on both,
+//        compare the pictures and write a report a PM can open.
+//   Options: [--only id,id] [--variants naturalLight,dark,...]
 //   --compare REF   instead of --base: check REF out into a temporary worktree
 //   --allow-declared  do not fail on changes the PR body declares (CI)
 //
-// Every journey must reach its last step on both sides. One that stops early
-// after the change, or on both sides, fails the run; one that stopped only
-// before the change counts as a phone change, like a changed picture.
+// When comparing, every journey must reach its last step on both sides. One
+// that stops early after the change, or on both sides, fails the run; one that
+// stopped only before the change counts as a phone change, like a changed picture.
 //
-// Needs Playwright: (cd tests/browser && npm ci && npx playwright install chromium).
+// Needs Playwright: (cd tests/browser && npm ci && npx playwright install --with-deps chromium).
 
 const { ensurePinnedEnv, PRELUDE_SRC, hashSeed } = require('../lib/determinism.cjs');
 ensurePinnedEnv();
@@ -302,9 +305,11 @@ async function runOne(browser, tree, variant, journey, outDir) {
   const steps = typeof journey.steps === 'function' ? journey.steps(variantParams.params) : journey.steps;
   const { ctx, page, errors } = await newPage(browser, tree, variant, id + ':boot', journey.boot);
   const shots = [];
-  const dir = path.join(outDir, variant.id, journey.id);
-  fs.mkdirSync(dir, { recursive: true });
+  // Without a folder the views are only counted: one tree, nothing to keep.
+  const dir = outDir && path.join(outDir, variant.id, journey.id);
+  if (dir) fs.mkdirSync(dir, { recursive: true });
   const shoot = async (label, key) => {
+    if (!dir) { shots.push({ label, key }); return; }
     const file = path.join(dir, String(shots.length).padStart(3, '0') + '.png');
     const inApp = page.url().includes('/app/');
     const before = inApp ? await growPhone(page) : null;
@@ -344,10 +349,11 @@ function git(args) { return execFileSync('git', args, { cwd: REPO, encoding: 'ut
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const out = path.resolve(args.out || path.join(REPO, '.journeys', 'browser'));
+  const comparing = !!(args.base || args.compare);
+  if (!comparing && args.allowDeclared) throw new UsageError('--allow-declared needs --base DIR or --compare REF');
+  const out = comparing || args.out ? path.resolve(args.out || path.join(REPO, '.journeys', 'browser')) : null;
   const head = path.resolve(args.head || REPO);
   let base = args.base ? path.resolve(args.base) : null;
-  if (!base && !args.compare) throw new UsageError('give --base DIR or --compare REF');
 
   const every = journeysApi.loadJourneys();
   const unknownJourneys = (args.only || []).filter(id => !every.some(j => j.id === id));
@@ -362,6 +368,7 @@ async function main() {
   const idle = (args.only || []).filter(id => !plan.some(p => p.journeys.some(j => j.id === id)));
   if (idle.length) throw new UsageError(idle.join(', ') + ' would not run: the phone variants run ' + every.filter(j => j.browser).map(j => j.id).join(', ') + '; tools-desktop also runs tools-tour');
   if (!plan.some(p => p.journeys.length)) throw new UsageError('nothing to run');
+  if (!comparing) return checkTree(head, plan, out);
 
   let cleanup = null;
   if (!base) {
@@ -373,8 +380,7 @@ async function main() {
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(out, { recursive: true });
 
-  const browser = await chromium.launch({ headless: true, args: JSON.parse(process.env.MB_CHROMIUM_ARGS || '[]'),
-    ...(process.env.MB_CHROMIUM_EXECUTABLE ? { executablePath: process.env.MB_CHROMIUM_EXECUTABLE } : {}) });
+  const browser = await launch();
   let ok = true;
   try {
     const t0 = Date.now();
@@ -459,6 +465,40 @@ async function main() {
   }
   console.log(ok ? 'PASS' : 'FAIL');
   return ok;
+}
+
+// One tree, nothing to compare: every journey must reach its last step without
+// a page error. Pictures and a report only when --out names a folder.
+async function checkTree(tree, plan, out) {
+  if (out) {
+    fs.rmSync(out, { recursive: true, force: true });
+    fs.mkdirSync(out, { recursive: true });
+  }
+  const browser = await launch();
+  try {
+    const t0 = Date.now();
+    const results = await runTree(browser, tree, plan, out && path.join(out, 'shots'));
+    const rows = results.map(r => ({ id: r.id, variant: r.variant, headFailure: r.failure, pageErrors: r.pageErrors,
+      broken: !!(r.failure || r.pageErrors.length),
+      items: r.shots.filter(s => s.file).map(s => ({ label: s.label, head: path.relative(out, s.file) })) }));
+    const summary = { head: describeTree(tree), seconds: Math.round((Date.now() - t0) / 1000), broken: rows.filter(r => r.broken).length };
+    console.log('Browser journeys: ' + rows.length + ' runs, ' + results.reduce((n, r) => n + r.shots.length, 0) + ' views in ' + summary.seconds + 's');
+    for (const row of rows.filter(r => r.broken)) {
+      console.log('  ' + row.variant + ' / ' + row.id + ': BROKEN' + (row.headFailure ? ' [' + row.headFailure + ']' : '') +
+        (row.pageErrors.length ? ' [page errors: ' + row.pageErrors.join(' | ') + ']' : ''));
+    }
+    console.log('Journeys that broke: ' + summary.broken);
+    if (out) console.log('Report: ' + pathToFileURL(writeReport(out, rows, summary, VARIANTS)).href);
+    console.log(summary.broken ? 'FAIL' : 'PASS');
+    return !summary.broken;
+  } finally {
+    await browser.close();
+  }
+}
+
+function launch() {
+  return chromium.launch({ headless: true, args: JSON.parse(process.env.MB_CHROMIUM_ARGS || '[]'),
+    ...(process.env.MB_CHROMIUM_EXECUTABLE ? { executablePath: process.env.MB_CHROMIUM_EXECUTABLE } : {}) });
 }
 
 function describeTree(dir) {

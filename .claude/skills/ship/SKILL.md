@@ -11,7 +11,7 @@ authorization boundary in CLAUDE.md; branch/PR/CI authorization does not authori
 merge, settings changes or publication. Report observed results, not assumed remote success.
 
 For a Flow task, read [Flows](../../../docs/flows.md), check its recorded task-base
-scope and run all Flow plus existing app/publication checks. A Flow PR shares a
+scope and run all Flow plus existing app, publication and browser checks. A Flow PR shares a
 proposal without product approval or publication. For app-integration, obtain PM
 verification of the integrated full app before opening the PR; repeat affected
 verification after material changes. Merge still requires separate authorization.

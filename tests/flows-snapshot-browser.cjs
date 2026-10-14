@@ -2,10 +2,10 @@
 // rehearsal-emergency-fund (tracking on) and rehearsal-big-purchase (tracking off).
 // MB_FLOW_SNAPSHOT_FILE_ROOT optionally adds file URLs (use an artifact path with spaces).
 // Same Playwright/Chromium environment as flows-browser.cjs; MB_FLOW_SNAPSHOT_BASE_URL required.
-const {chromium}=require(process.env.MB_PLAYWRIGHT_MODULE || 'playwright');
 const assert=require('node:assert/strict');
 const {pathToFileURL}=require('node:url');
 const path=require('node:path');
+const {chromium}=require(process.env.MB_PLAYWRIGHT_MODULE || path.join(__dirname,'browser','node_modules','playwright'));
 const {checkExpandButton}=require('./flows-tools-browser.cjs');
 (async()=>{
  const base=process.env.MB_FLOW_SNAPSHOT_BASE_URL;

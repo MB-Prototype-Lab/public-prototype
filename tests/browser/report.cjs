@@ -1,6 +1,7 @@
 'use strict';
-// Writes the before/after picture report: one self-contained index.html beside
-// the screenshots, readable on file:// and as a CI artifact.
+// Writes the picture report: one self-contained index.html beside the
+// screenshots, readable on file:// and as a CI artifact. With a base it shows
+// before/after/difference; without one, one version's pictures.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -13,19 +14,25 @@ const VARIANT_LABELS = {
 const STATUS_TEXT = { same: 'Same', changed: 'Changed', flaky: 'Flaky', missing: 'Missing' };
 
 function writeReport(outDir, rows, summary, variants) {
+  const single = !summary.base;
   const byVariant = variants.map(v => ({ v, rows: rows.filter(r => r.variant === v.id) })).filter(x => x.rows.length);
-  const changedTotal = summary.phoneChanged + summary.toolsChanged;
+  const changedTotal = single ? 0 : summary.phoneChanged + summary.toolsChanged;
   const focus = changedTotal || summary.broken;
   const headline = summary.broken ? 'Some journeys broke'
+    : single ? 'Every journey finished'
     : changedTotal ? changedTotal + ' picture' + (changedTotal === 1 ? '' : 's') + ' changed'
     : 'No visible change';
+  const facts = single
+    ? [[rows.length, 'journey runs'], [rows.reduce((n, r) => n + r.items.length, 0), 'pictures'], [summary.broken, 'journeys that broke']]
+    : [[summary.phoneChanged, 'phone pictures changed'], [summary.toolsChanged, 'Tools pictures changed'],
+      [summary.flaky, 'flaky (did not repeat)'], [summary.broken, 'journeys that broke']];
   const tabs = byVariant.map((x, i) => {
     const n = x.rows.reduce((k, r) => k + (r.broken ? 1 : 0) + r.items.filter(it => it.status === 'changed' || it.status === 'missing').length, 0);
     return `<button class="tab" role="tab" aria-selected="${i === 0}" data-tab="${esc(x.v.id)}">${esc(VARIANT_LABELS[x.v.id] || x.v.id)}${n ? ` <span class="count">${n}</span>` : ''}</button>`;
   }).join('');
   const panels = byVariant.map((x, i) => `
     <section class="panel" data-panel="${esc(x.v.id)}"${i ? ' hidden' : ''}>
-      ${x.rows.map(r => journeyBlock(r)).join('')}
+      ${x.rows.map(r => journeyBlock(r, single)).join('')}
     </section>`).join('');
 
   const html = `<!doctype html>
@@ -78,16 +85,15 @@ body.only-changes .step.same, body.only-changes .journey.all-same { display: non
 <body class="${focus ? 'only-changes' : ''}">
 <main>
   <h1>${esc(headline)}</h1>
-  <p class="sub">Before: ${esc(summary.base)}<br>After: ${esc(summary.head)}</p>
+  <p class="sub">${single ? 'Version: ' + esc(summary.head) : 'Before: ' + esc(summary.base) + '<br>After: ' + esc(summary.head)}</p>
   <div class="facts">
-    <div class="fact"><b>${summary.phoneChanged}</b><span>phone pictures changed</span></div>
-    <div class="fact"><b>${summary.toolsChanged}</b><span>Tools pictures changed</span></div>
-    <div class="fact"><b>${summary.flaky}</b><span>flaky (did not repeat)</span></div>
-    <div class="fact"><b>${summary.broken}</b><span>journeys that broke</span></div>
+    ${facts.map(([n, text]) => `<div class="fact"><b>${n}</b><span>${esc(text)}</span></div>`).join('\n    ')}
   </div>
-  <p class="note">Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken whenever a new view appears. "Changed" means more than 0.05% of its pixels differ, by any amount, and the difference repeated on a second run. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.</p>
+  <p class="note">${single
+    ? 'Each journey ran in Chromium, tapping the same buttons in the same order, with the clock fixed. A picture is taken whenever a new view appears. "Broke" means a journey stopped before its last step, or the page raised an error.'
+    : 'Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken whenever a new view appears. "Changed" means more than 0.05% of its pixels differ, by any amount, and the difference repeated on a second run. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.'}</p>
   <div class="tabs" role="tablist">${tabs}</div>
-  <label class="only"><input type="checkbox" id="only"${focus ? ' checked' : ''}> Show only changes</label>
+  <label class="only"><input type="checkbox" id="only"${focus ? ' checked' : ''}> ${single ? 'Show only journeys that broke' : 'Show only changes'}</label>
   ${panels}
 </main>
 <script>
@@ -109,26 +115,32 @@ body.only-changes .step.same, body.only-changes .journey.all-same { display: non
   return file;
 }
 
-function journeyBlock(r) {
+function journeyBlock(r, single) {
   const counts = {};
-  for (const it of r.items) counts[it.status] = (counts[it.status] || 0) + 1;
-  const allSame = !r.broken && r.items.every(it => it.status === 'same');
+  for (const it of r.items) if (it.status) counts[it.status] = (counts[it.status] || 0) + 1;
+  const allSame = !r.broken && r.items.every(it => !it.status || it.status === 'same');
   const badges = (r.broken ? '<span class="badge broke">Broke</span>' : '') +
     Object.entries(counts).map(([k, n]) => `<span class="badge ${k}">${n} ${esc(STATUS_TEXT[k] || k)}</span>`).join(' ');
-  const failure = r.baseFailure || r.headFailure
+  const failure = single ? (r.headFailure ? `<p class="note step">Stopped: ${esc(r.headFailure)}</p>` : '')
+    : r.baseFailure || r.headFailure
     ? `<p class="note step">Before: ${esc(r.baseFailure || 'finished')} · After: ${esc(r.headFailure || 'finished')}${r.headFailure ? '' : ' · It now goes further than before: a phone change.'}</p>` : '';
-  const errors = r.pageErrors.length ? `<p class="note step">New page errors: ${esc(r.pageErrors.join(' | '))}</p>` : '';
+  const errors = r.pageErrors.length ? `<p class="note step">${single ? 'Page errors' : 'New page errors'}: ${esc(r.pageErrors.join(' | '))}</p>` : '';
+  const picture = (src, alt) => `<img loading="lazy" src="${esc(src)}" alt="${esc(alt)}">`;
   return `
   <details class="journey${allSame ? ' all-same' : ''}"${allSame ? '' : ' open'}>
     <summary><h2>${esc(r.id)}</h2>${badges}</summary>
     ${failure}${errors}
-    ${r.items.map(it => `
+    ${r.items.map(it => single ? `
+    <div class="step">
+      <h3>${esc(it.label)}</h3>
+      <div class="pics"><figure>${picture(it.head, it.label)}</figure></div>
+    </div>` : `
     <div class="step ${it.status}">
       <h3>${esc(it.label)} <span class="badge ${it.status}">${esc(STATUS_TEXT[it.status] || it.status)}</span></h3>
       <div class="pics">
-        <figure><figcaption>Before</figcaption>${it.base ? `<img loading="lazy" src="${esc(it.base)}" alt="Before: ${esc(it.label)}">` : '<p class="note">None</p>'}</figure>
-        <figure><figcaption>After</figcaption>${it.head ? `<img loading="lazy" src="${esc(it.head)}" alt="After: ${esc(it.label)}">` : '<p class="note">None</p>'}</figure>
-        <figure><figcaption>Difference</figcaption>${it.diff ? `<img loading="lazy" src="${esc(it.diff)}" alt="Difference: ${esc(it.label)}">` : '<p class="note">' + (it.status === 'same' ? 'No difference' : '—') + '</p>'}</figure>
+        <figure><figcaption>Before</figcaption>${it.base ? picture(it.base, 'Before: ' + it.label) : '<p class="note">None</p>'}</figure>
+        <figure><figcaption>After</figcaption>${it.head ? picture(it.head, 'After: ' + it.label) : '<p class="note">None</p>'}</figure>
+        <figure><figcaption>Difference</figcaption>${it.diff ? picture(it.diff, 'Difference: ' + it.label) : '<p class="note">' + (it.status === 'same' ? 'No difference' : '—') + '</p>'}</figure>
       </div>
     </div>`).join('')}
   </details>`;

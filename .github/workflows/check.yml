@@ -76,3 +76,62 @@ jobs:
         run: python3 scripts/publish.py check --base "$BASE"
       - name: Rehearse packaging without creating tags
         run: python3 scripts/publish.py build --offline --output "$RUNNER_TEMP/rehearsal"
+  browser:
+    name: Browser journeys
+    runs-on: ubuntu-latest
+    env:
+      MB_PLAYWRIGHT_MODULE: ${{ github.workspace }}/tests/browser/node_modules/playwright
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/browser/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+        working-directory: tests/browser
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tests/browser/package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/browser
+      - name: Browser journeys compared with the PR base
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/base" "$BASE"
+          node tests/browser/app-journeys-browser.cjs --base "$RUNNER_TEMP/base" --head . --out "$RUNNER_TEMP/browser" --allow-declared
+      - name: Browser journeys compared with the previous main
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/base" "$BEFORE"
+          node tests/browser/app-journeys-browser.cjs --base "$RUNNER_TEMP/base" --head . --out "$RUNNER_TEMP/browser"
+      - name: Flow browser tests (file and HTTP)
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory . >/dev/null 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          for _ in $(seq 1 50); do
+            curl -fsS http://127.0.0.1:8765/index.html >/dev/null 2>&1 && break
+            sleep 0.2
+          done
+          MB_FLOW_BASE_URL=http://127.0.0.1:8765/ node tests/flows-browser.cjs
+      - name: Flow snapshot rehearsal
+        run: bash tests/browser/snapshot-smoke.sh "$RUNNER_TEMP/snapshot-smoke"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-journey-pictures
+          path: ${{ runner.temp }}/browser
+          if-no-files-found: ignore
+          retention-days: 14

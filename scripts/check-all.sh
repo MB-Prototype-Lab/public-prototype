@@ -24,13 +24,42 @@ PYTHON="$(command -v python3 2>/dev/null || true)"
 [ -n "$NODE" ] && export PATH="$(dirname "$NODE"):$PATH"
 
 LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/mb-check-all.XXXXXX")"
-trap 'rm -rf "$LOG_DIR"' EXIT
+SERVER_PID=""
+trap '[ -n "$SERVER_PID" ] && kill "$SERVER_PID" 2>/dev/null; rm -rf "$LOG_DIR"' EXIT
+
+# One Playwright module for the probe below and every browser check.
+export MB_PLAYWRIGHT_MODULE="${MB_PLAYWRIGHT_MODULE:-$PWD/tests/browser/node_modules/playwright}"
+BROWSER_FIX="cd tests/browser && npm ci && npx playwright install --with-deps chromium"
+BROWSER_MISSING="unchecked"
+
+# Says what the browser checks lack, or nothing when Chromium launches.
+browser_missing() {
+  if ! "$NODE" -e 'require(process.argv[1])' "$MB_PLAYWRIGHT_MODULE" >/dev/null 2>&1; then
+    echo "the Playwright module, not found at $MB_PLAYWRIGHT_MODULE; fix: $BROWSER_FIX"
+    return
+  fi
+  local err
+  err="$("$NODE" -e '
+    const env = process.env;
+    require(process.argv[1]).chromium.launch({ headless: true, args: JSON.parse(env.MB_CHROMIUM_ARGS || "[]"),
+      ...(env.MB_CHROMIUM_EXECUTABLE ? { executablePath: env.MB_CHROMIUM_EXECUTABLE } : {}) })
+      .then(b => b.close(), e => { console.log(String(e && e.message || e)); process.exit(1); });
+  ' "$MB_PLAYWRIGHT_MODULE" 2>&1)" && return
+  case "$err" in
+    *"Executable doesn't exist"*) echo "Chromium, which is not installed; fix: $BROWSER_FIX" ;;
+    *"shared libraries"*|*"missing dependencies"*)
+      local lib
+      lib="$(printf '%s' "$err" | grep -o 'lib[^ :/]*\.so[^ :]*' | head -n 1)"
+      echo "Chromium's system libraries${lib:+ ($lib is missing)}; fix: $BROWSER_FIX" ;;
+    *) echo "a Chromium that launches ($(printf '%s' "$err" | head -n 1)); fix: $BROWSER_FIX" ;;
+  esac
+}
 
 FAILED=0
 BLOCKED=0
 n=0
 
-# run <name> <needs: node|python|both> <command...>
+# run <name> <needs: node|python|both|browser> <command...>
 run() {
   local name="$1" needs="$2"; shift 2
   n=$((n + 1))
@@ -38,8 +67,13 @@ run() {
   case "$needs" in
     node)   [ -z "$NODE" ] && missing="node" ;;
     python) [ -z "$PYTHON" ] && missing="python3" ;;
-    both)   [ -z "$NODE" ] && missing="node"; [ -z "$PYTHON" ] && missing="${missing:+$missing, }python3" ;;
+    both|browser)
+      [ -z "$NODE" ] && missing="node"; [ -z "$PYTHON" ] && missing="${missing:+$missing, }python3" ;;
   esac
+  if [ "$needs" = browser ] && [ -z "$missing" ]; then
+    [ "$BROWSER_MISSING" = unchecked ] && BROWSER_MISSING="$(browser_missing)"
+    missing="$BROWSER_MISSING"
+  fi
   if [ -n "$missing" ]; then
     printf 'BLOCKED  %s  (needs %s)\n' "$name" "$missing"
     BLOCKED=$((BLOCKED + 1))
@@ -64,6 +98,33 @@ publication_rehearsal() {
   "$PYTHON" scripts/publish.py build --offline --output "$out"
 }
 
+free_port() {
+  "$PYTHON" -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()'
+}
+
+# Both Flows on file:// and over HTTP, from a local server on the repository root.
+flow_browser_tests() {
+  local port rc
+  port="$(free_port)" || return 1
+  "$PYTHON" -m http.server "$port" --bind 127.0.0.1 --directory . >/dev/null 2>&1 &
+  SERVER_PID=$!
+  for _ in $(seq 1 50); do
+    "$PYTHON" -c 'import sys, urllib.request; urllib.request.urlopen(sys.argv[1], timeout=1)' \
+      "http://127.0.0.1:$port/index.html" >/dev/null 2>&1 && break
+    sleep 0.2
+  done
+  MB_FLOW_BASE_URL="http://127.0.0.1:$port/" "$NODE" tests/flows-browser.cjs
+  rc=$?
+  kill "$SERVER_PID" 2>/dev/null
+  wait "$SERVER_PID" 2>/dev/null
+  SERVER_PID=""
+  return "$rc"
+}
+
+snapshot_rehearsal() {
+  MB_SNAPSHOT_PORT="$(free_port)" bash tests/browser/snapshot-smoke.sh "$LOG_DIR/snapshot-smoke"
+}
+
 run "JS syntax (app, gate)"            node   bash scripts/check-syntax.sh
 run "Sweep"                            both   bash scripts/sweep.sh
 run "Local paths"                      python "$PYTHON" scripts/check-paths.py
@@ -79,6 +140,9 @@ run "Journeys (every flow, twice)"     node   "$NODE" tests/app-journeys.cjs
 run "Python tests"                     python "$PYTHON" -m unittest discover -s tests
 run "Catalog policy"                   python "$PYTHON" scripts/publish.py check
 run "Publication rehearsal"            python publication_rehearsal
+run "Browser journeys (one tree)"      browser "$NODE" tests/browser/app-journeys-browser.cjs
+run "Flow browser tests (file + HTTP)" browser flow_browser_tests
+run "Flow snapshot rehearsal"          browser snapshot_rehearsal
 
 echo
 if [ "$FAILED" -gt 0 ]; then

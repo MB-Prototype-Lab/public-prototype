@@ -1,11 +1,11 @@
 // Real-browser Flow verification; runs in CI's Browser journeys job (tests/browser).
-// MB_PLAYWRIGHT_MODULE=/path/to/playwright node tests/flows-browser.cjs
+// node tests/flows-browser.cjs  (Playwright from tests/browser; MB_PLAYWRIGHT_MODULE=/path/to/playwright overrides)
 // Add MB_FLOW_BASE_URL=http://127.0.0.1:8765 for HTTP participant-link checks.
 // MB_CHROMIUM_ARGS is an optional JSON array; MB_CHROMIUM_EXECUTABLE selects a binary.
-const { chromium } = require(process.env.MB_PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { chromium } = require(process.env.MB_PLAYWRIGHT_MODULE || path.join(__dirname, 'browser', 'node_modules', 'playwright'));
 const os = require('node:os');
 const {execFileSync} = require('node:child_process');
 const { pathToFileURL } = require('node:url');

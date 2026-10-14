@@ -77,8 +77,9 @@ Without CLI, prepare https://github.com/MB-Prototype-Lab/public-prototype/compar
 (URL-encode the branch), plus exact PR title/body in a file. After the authorized push:
 1. Open comparison; choose base `main`, compare the task branch; inspect Files changed.
 2. Click Create pull request, paste prepared title/body, and submit.
-3. On Checks, wait for App checks and Publication checks. Resolve failures; verify
-   the branch is current with main and record operator testing in the PR description.
+3. On Checks, wait for App checks, Publication checks and Browser journeys. Resolve
+   failures; verify the branch is current with main and record operator testing in
+   the PR description.
 4. When shipping is authorized, select Squash and merge, review message, Confirm.
 5. Reload the PR and confirm Merged and the commit SHA. Supply that evidence before
    the agent updates local main or cleans up. A link alone proves nothing happened.

@@ -7,8 +7,9 @@ bash scripts/check-all.sh
 ```
 
 Each check prints PASS, FAIL or BLOCKED. BLOCKED means this machine lacks what
-the check needs (usually Node); it is never a pass. The script exits 0 only when
-every check ran and passed. It runs, in CI order:
+the check needs (Node, or Playwright and Chromium for the browser checks) and
+says how to fix it; it is never a pass. The script exits 0 only when every check
+ran and passed. It runs, in CI order:
 
 ```sh
 bash scripts/check-syntax.sh
@@ -26,6 +27,9 @@ node tests/app-journeys.cjs
 python3 -m unittest discover -s tests -v
 python3 scripts/publish.py check
 python3 scripts/publish.py build --offline --output <temporary folder>
+node tests/browser/app-journeys-browser.cjs
+MB_FLOW_BASE_URL=http://127.0.0.1:<port>/ node tests/flows-browser.cjs   # with python3 -m http.server <port> on the repository root
+bash tests/browser/snapshot-smoke.sh <temporary folder>
 ```
 
 ## Journey checks: is the app's flow unchanged?
@@ -53,12 +57,58 @@ node tests/app-journeys.cjs --mutations      # prove it catches breakage (run af
 
 Journeys live in `tests/app-journeys/journeys/`, written as taps on visible
 labels. A journey that can no longer find a label fails loudly with the controls
-it can see. The robot cannot hear audio, watch video, judge layout or colour, or
-use a real phone; those stay in the PM checklist below.
+it can see. This robot does not judge layout or colour; the browser check below
+does.
 
 Node or macOS JavaScriptCore is needed for JS checks; Python 3.11+ for publication
-checks. CI explicitly installs Node and Python. A missing engine is a blocked check,
-never a pass. No local browser installation or server is required.
+checks; Playwright with Chromium for the browser checks. CI explicitly installs all
+of them. A missing engine is a blocked check, never a pass.
+
+## Browser check: does the phone look the same?
+
+A second robot taps through the main journeys in a real browser (Chromium): in
+all four themes at phone width, with Tools open at desktop width, and through the
+passcode, selector and Pin on refresh. It takes a picture whenever a new view
+appears. On every pull request it does this on main and on the PR and compares
+the pictures. Phone pictures must match main exactly, apart from a tiny allowance
+for the rendering noise measured between two identical copies (the exact rule is
+in `tests/browser/pixels.cjs` and `tests/browser/app-journeys-browser.cjs`, and
+may still change). A changed phone or Tools picture fails the check unless the PR
+declares it under "Phone and Tools changes", as for the journey checks.
+
+To see the pictures for a PR, open its **Checks** tab, choose the **Browser
+journeys** job, open the run's summary and download the
+`browser-journey-pictures` artifact. Unzip it and open `index.html`: each view
+shows Before, After and the Difference, with a tab per theme and one for Tools.
+
+- **Changed**: the picture differs from main, and differed again when the robot
+  repeated the journey. **Missing** means one side has a picture the other does
+  not; it counts as a change.
+- **Flaky**: it differed once but not on the repeat, so it is not counted.
+- **Broke**: the journey stopped before its last step (a button it needed was
+  missing, disabled or covered), or the page raised an error.
+
+The same job also runs both Flows in Chromium from file:// (a folder with spaces)
+and over HTTP, and rehearses exporting Flow snapshots in a throwaway copy of the
+repository.
+
+To run it on your machine, set it up once:
+
+```sh
+(cd tests/browser && npm ci && npx playwright install --with-deps chromium)
+```
+
+then, from the repository root:
+
+```sh
+node tests/browser/app-journeys-browser.cjs                    # every journey must finish; no pictures
+node tests/browser/app-journeys-browser.cjs --compare main --out DIR   # pictures and report against main
+```
+
+The comparison takes a few minutes and prints a link to the report. Without the
+setup, check-all marks the three browser checks BLOCKED with the fix; BLOCKED is
+not a pass. Still manual: audio and video playback, real phones, and file:// on
+Windows and macOS (CI runs Chromium on Linux).
 
 PM checklist: open root index.html on file://, enter 1337, open Local Prototype, exercise
 the changed flow, check narrow layout and all four themes, input focus and sliders,
@@ -70,8 +120,8 @@ return to the selector and keep the pin. For publication test
 HTTP(S) screen/deep links with participant parameters; tracking follows the snapshot
 setting and never injects on file://. Check the Prototype/Flows toggle (hidden when
 no Flow snapshot is listed), archive expansion, hidden direct links, and retirement
-notices. Record results in PR text. Optional authorized browser
-checks supplement PM testing. Re-run affected checks after material changes.
+notices. Record results in PR text. The automated browser checks supplement
+PM testing; they do not replace it. Re-run affected checks after material changes.
 
 Publication tests use disposable Git repositories and do not push. Historical exports
 are compared byte-for-byte against their immutable identities. Repository cutover
@@ -165,15 +215,14 @@ links and frozen tracking. No Windows/WSL or macOS browser acceptance is implied
 this guide; absent platform evidence remains pending and must be named in the PR.
 
 
-Optional Flow browser checks: `tests/flows-browser.cjs` exercises package journeys,
-outside-phone Tools and the actual creation adapter on file URLs with spaces and
-HTTP. `tests/flows-snapshot-browser.cjs` exercises offline exported packages; its
-header describes the required snapshot IDs and environment. Set
-`MB_FLOW_SNAPSHOT_FILE_ROOT` to an artifact directory with spaces to also check
-file URLs. The shared `tests/flows-tools-browser.cjs` helper compares normal/hover
+Flow browser checks (check-all and CI): `tests/flows-browser.cjs` exercises package
+journeys, outside-phone Tools and the actual creation adapter on file URLs with
+spaces and HTTP. `tests/browser/snapshot-smoke.sh` exports two Flow snapshots in a
+throwaway clone and runs `tests/flows-snapshot-browser.cjs` on the offline build,
+over HTTP and from a file path with spaces; the snapshot test blocks all external
+requests. The shared `tests/flows-tools-browser.cjs` helper compares normal/hover
 button styles against the full app in all four themes, compares phone, **›** and
 panel positions with the full app at 1440, 1000, 900, 390 and 320px (collapsed and
 open; no Tools at phone widths), and checks Enter/Space, hidden-while-open behavior
-and Close focus. Both require an
-existing Playwright/browser installation. Snapshot smoke blocks all external
-requests. Record these results separately from PM and platform acceptance.
+and Close focus. They need the Playwright setup above. Record these results
+separately from PM and platform acceptance.
