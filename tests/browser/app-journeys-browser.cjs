@@ -6,10 +6,10 @@
 //   node tests/browser/app-journeys-browser.cjs [--head DIR] [--out DIR]
 //        one tree (default: this repository): fail if a journey stops early,
 //        a control cannot be tapped or the page throws. No pictures are
-//        compared; --out keeps a picture of every new view and a report.
+//        compared; --out keeps a picture of every step and a report.
 //   node tests/browser/app-journeys-browser.cjs --base DIR --head DIR --out DIR
-//        two trees (before and after): screenshot every new view on both,
-//        compare the pictures and write a report a PM can open.
+//        two trees (before and after): screenshot every step on both, compare
+//        each step's pictures and write a report a PM can open.
 //   Options: [--only id,id] [--variants naturalLight,dark,...]
 //   --compare REF   instead of --base: check REF out into a temporary worktree
 //   --allow-declared  do not fail on changes the PR body declares (CI, pull requests)
@@ -20,6 +20,11 @@
 // When comparing, every journey must reach its last step on both sides. One
 // that stops early after the change, or on both sides, fails the run; one that
 // stopped only before the change counts as a phone change, like a changed picture.
+//
+// A picture is taken at boot and after every step, so states within one view (a
+// picked tile, the open keyboard, a sheet) are compared too. Before and after
+// are paired by the step number that starts each label, not the whole label,
+// which carries live figures; a step only one side reached counts as a change.
 //
 // Needs Playwright: (cd tests/browser && npm ci && npx playwright install --with-deps chromium).
 
@@ -35,7 +40,7 @@ const controls = require('../lib/controls.cjs');
 const { REPO, DEFAULT_CLOCK } = require('../lib/app-vm.cjs');
 const { mediaDurations, shimSource } = require('./media-shim.cjs');
 const { openComparer } = require('./pixels.cjs');
-const { writeReport } = require('./report.cjs');
+const { writeReport, STATUS_TEXT, countsAsChange } = require('./report.cjs');
 const journeysApi = require('../app-journeys.cjs');
 const { declaresChange, readAs } = require('../lib/pr-declarations.cjs');
 
@@ -99,6 +104,8 @@ class StepError extends Error {}
 // entries, which would hide a reload from the app's refresh pin. Keep the real
 // object aside before the clock installs, then hand its navigation timing back.
 const KEEP_PERFORMANCE = 'window.__mbRealPerformance = window.performance;';
+// The clock fakes requestAnimationFrame too; the real one waits for a drawn frame.
+const KEEP_FRAME = 'window.__mbRealFrame = window.requestAnimationFrame.bind(window);';
 const RESTORE_NAVIGATION = `(function () {
   var real = window.__mbRealPerformance, page = window.performance;
   delete window.__mbRealPerformance;
@@ -126,6 +133,13 @@ function scriptMotion(reduce) {
 
 // Pages booted as a touch phone, where a person taps rather than clicks.
 const TOUCH_PAGES = new WeakSet();
+// A tap also draws Chromium's tap highlight, which fades on real time, outside
+// the page clock; pictures would catch it part-way.
+const NO_TAP_HIGHLIGHT = `document.addEventListener('DOMContentLoaded', function () {
+  var s = document.createElement('style');
+  s.textContent = '* { -webkit-tap-highlight-color: transparent !important; }';
+  document.head.appendChild(s);
+});`;
 
 async function newPage(browser, tree, variant, seedId, boot = {}) {
   // A touch screen makes Chromium report a coarse pointer, as a phone does, so
@@ -138,6 +152,8 @@ async function newPage(browser, tree, variant, seedId, boot = {}) {
   await ctx.addInitScript({ content: shimSource(mediaDurations(path.join(tree, 'app'))) });
   await ctx.addInitScript({ content: scriptMotion(boot.reducedMotion) });
   await ctx.addInitScript({ content: KEEP_PERFORMANCE });
+  await ctx.addInitScript({ content: KEEP_FRAME });
+  if (boot.coarsePointer) await ctx.addInitScript({ content: NO_TAP_HIGHLIGHT });
   const page = await ctx.newPage();
   if (boot.coarsePointer) TOUCH_PAGES.add(page);
   // Paused on the start time, the page's clock moves only when a step runs it,
@@ -172,19 +188,32 @@ async function find(page, query) {
     } catch (e) { return { ok: false, message: String(e.message || e) }; }
   }, pack(query));
   if (!res.ok) throw new StepError(res.message);
-  return Object.assign(res, { handle: await page.evaluateHandle(() => window.__mbTarget), touch: TOUCH_PAGES.has(page) });
+  return Object.assign(res, { page, handle: await page.evaluateHandle(() => window.__mbTarget), touch: TOUCH_PAGES.has(page) });
 }
 
 // A real click lands on whatever is on top. When that is another control (an
 // open sheet, say), a person could not tap this one either: the journey's fault.
 async function click(f) {
   try {
+    // Scroll the control into view, then let a frame draw before the click: the
+    // page hears of a scroll only in the next frame, so a view that keeps its
+    // offset from scroll events (Big purchase's "How we worked it out") would
+    // otherwise repaint at the old offset in some runs and the new one in others.
+    await f.handle.scrollIntoViewIfNeeded({ timeout: 5000 });
+    await Promise.race([f.handle.evaluate(() => new Promise(r => window.__mbRealFrame(r))), new Promise(r => setTimeout(r, 1000))]);
     if (f.touch) await f.handle.tap({ timeout: 5000 });
     else await f.handle.click({ timeout: 5000 });
   } catch (err) {
     const covered = /([^\n]*intercepts pointer events)/.exec(String(err && err.message).replace(/\x1b\[[0-9;]*m/g, ''));
     if (covered) throw new StepError('cannot tap ' + f.desc + ': ' + covered[1].replace(/^\s*-\s*/, ''));
     throw err;
+  }
+  // A tap holds the control :active for Chromium's minimum of 150 ms of real
+  // time, which the paused page clock does not count: wait it out, so a picture
+  // never catches the pressed look on some runs and not others.
+  if (f.touch) {
+    const pressed = () => f.page.evaluate(() => !!document.querySelector(':active')).catch(() => false);
+    for (const end = Date.now() + 2000; Date.now() < end && await pressed();) await new Promise(r => setTimeout(r, 20));
   }
 }
 
@@ -222,13 +251,7 @@ async function typeText(page, query, text, commit, clear) {
 }
 
 async function runSteps(page, journey, variant, steps, id, shoot) {
-  let lastKey = null;
-  const checkpoint = async (label, force) => {
-    const key = await page.evaluate(() => (typeof scrollKey === 'function' ? scrollKey() : (typeof state !== 'undefined' ? state.screen : location.pathname))).catch(() => 'navigated');
-    if (key !== lastKey || force) await shoot(label, key);
-    lastKey = key;
-  };
-  await checkpoint('000 boot', true);
+  await shoot('000 boot');
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
     let label = String(i + 1).padStart(3, '0') + ' ' + step.op;
@@ -279,7 +302,7 @@ async function runSteps(page, journey, variant, steps, id, shoot) {
       default: throw new StepError('step "' + step.op + '" is not supported in the browser');
     }
     await settle(page, hashSeed(id + ':' + (i + 1)));
-    await checkpoint(label, i === steps.length - 1);
+    await shoot(label);
   }
 }
 
@@ -290,32 +313,32 @@ const GATE_JOURNEY = { id: 'gate', title: 'Passcode, selector, Local Prototype, 
 async function runGate(page, tree, shoot) {
   const root = pathToFileURL(path.join(tree, 'index.html')).href;
   await page.goto(root);
-  await shoot('000 passcode', 'passcode');
+  await shoot('000 passcode');
   await page.fill('#gateInput', '1337');
   await page.keyboard.press('Enter');
   await page.waitForSelector('#selectorScreen', { state: 'visible' });
-  await shoot('001 selector', 'selector');
+  await shoot('001 selector');
   await page.getByRole('link', { name: 'Local Prototype', exact: true }).click();
   await waitApp(page);
   await settle(page, hashSeed('gate:2'));
-  await shoot('002 Local Prototype', 'app');
+  await shoot('002 Local Prototype');
   await page.reload();
   await page.waitForSelector('#selectorScreen', { state: 'visible' });
-  await shoot('003 refresh returns to the selector', 'selector-again');
+  await shoot('003 refresh returns to the selector');
   await page.getByRole('link', { name: 'Local Prototype', exact: true }).click();
   await waitApp(page);
   await page.click('#adminExpandTab');
   await page.getByLabel('Pin on refresh', { exact: true }).check();
   await settle(page, hashSeed('gate:5'));
-  await shoot('004 Pin on refresh checked', 'pinned');
+  await shoot('004 Pin on refresh checked');
   await page.reload();
   await waitApp(page);
   await settle(page, hashSeed('gate:6'));
-  await shoot('005 pinned refresh restarts the app', 'restarted');
+  await shoot('005 pinned refresh restarts the app');
   await page.click('#adminExpandTab');      // the restart closed Tools
   await page.getByRole('button', { name: 'Exit Prototype', exact: true }).click();
   await page.waitForSelector('#selectorScreen', { state: 'visible' });
-  await shoot('006 Exit Prototype', 'exited');
+  await shoot('006 Exit Prototype');
 }
 
 async function runOne(browser, tree, variant, journey, outDir) {
@@ -324,17 +347,23 @@ async function runOne(browser, tree, variant, journey, outDir) {
   const steps = typeof journey.steps === 'function' ? journey.steps(variantParams.params) : journey.steps;
   const { ctx, page, errors } = await newPage(browser, tree, variant, id + ':boot', journey.boot);
   const shots = [];
-  // Without a folder the views are only counted: one tree, nothing to keep.
+  // Without a folder the steps are only counted: one tree, nothing to keep.
   const dir = outDir && path.join(outDir, variant.id, journey.id);
   if (dir) fs.mkdirSync(dir, { recursive: true });
-  const shoot = async (label, key) => {
-    if (!dir) { shots.push({ label, key }); return; }
-    const file = path.join(dir, String(shots.length).padStart(3, '0') + '.png');
+  const shoot = async label => {
+    const step = stepOf(label);
+    if (shots.some(s => s.step === step)) throw new Error('two pictures for step ' + step);
+    if (!dir) { shots.push({ label, step }); return; }
+    const file = path.join(dir, step + '.png');
+    // The pointer rests where the last click landed, and Chromium updates which
+    // element it hovers only on a later frame: park it in the page margin first,
+    // so no picture shows a hover look on some runs and not others.
+    await page.mouse.move(0, 0);
     const inApp = page.url().includes('/app/');
     const before = inApp ? await growPhone(page) : null;
     await page.locator(inApp ? variant.shot : 'body').first().screenshot({ path: file, animations: 'disabled', caret: 'hide', mask: [page.locator('video')] });
     if (inApp) await restorePhone(page, before);
-    shots.push({ label, key, file });
+    shots.push({ label, step, file });
   };
   let failure = null;
   try {
@@ -353,6 +382,22 @@ async function runOne(browser, tree, variant, journey, outDir) {
   }
   await ctx.close();
   return { id: journey.id, variant: variant.id, shots, failure, pageErrors: errors };
+}
+
+// The step number that starts a picture's label.
+function stepOf(label) {
+  const m = /^\d+(?= )/.exec(label);
+  if (!m) throw new Error('picture label without a step number: ' + label);
+  return m[0];
+}
+
+// One entry per step either side pictured, in step order: { step, b, h }, with b
+// or h missing for a step only one side reached.
+function pairShots(before, after) {
+  const byStep = new Map();
+  for (const s of before) byStep.set(s.step, { step: s.step, b: s });
+  for (const s of after) byStep.set(s.step, Object.assign(byStep.get(s.step) || { step: s.step }, { h: s }));
+  return [...byStep.values()].sort((x, y) => Number(x.step) - Number(y.step));
 }
 
 async function runTree(browser, tree, plan, outDir) {
@@ -411,19 +456,18 @@ async function main() {
     const rows = [];
     for (const h of headRes) {
       const b = baseRes.find(r => r.id === h.id && r.variant === h.variant);
-      const n = Math.max(b.shots.length, h.shots.length);
       const items = [];
-      for (let i = 0; i < n; i++) {
-        const bs = b.shots[i], hs = h.shots[i];
-        const item = { label: (hs || bs).label, base: bs && path.relative(out, bs.file), head: hs && path.relative(out, hs.file) };
-        if (!bs || !hs) item.status = 'missing';
+      for (const { step, b: bs, h: hs } of pairShots(b.shots, h.shots)) {
+        const item = { step, label: (hs || bs).label, base: bs && path.relative(out, bs.file), head: hs && path.relative(out, hs.file) };
+        if (!hs) item.status = 'onlyBefore';
+        else if (!bs) item.status = 'onlyAfter';
         else {
           const r = await comparer.compare(fs.readFileSync(bs.file), fs.readFileSync(hs.file));
           const changed = !r.sameSize || r.diffPixels / r.totalPixels > FAIL_RATIO;
           item.status = changed ? 'changed' : 'same';
           item.diffPixels = r.diffPixels; item.size = [r.sizeA, r.sizeB];
           if (r.diffPng && changed) {
-            const file = path.join(out, 'diffs', h.variant, h.id, String(i).padStart(3, '0') + '.png');
+            const file = path.join(out, 'diffs', h.variant, h.id, step + '.png');
             fs.mkdirSync(path.dirname(file), { recursive: true });
             fs.writeFileSync(file, Buffer.from(r.diffPng.split(',')[1], 'base64'));
             item.diff = path.relative(out, file);
@@ -441,9 +485,11 @@ async function main() {
       const tmp = path.join(out, 'recheck');
       const b2 = await runOne(browser, base, variant, journey, path.join(tmp, 'base'));
       const h2 = await runOne(browser, head, variant, journey, path.join(tmp, 'head'));
-      for (const [i, item] of row.items.entries()) {
-        if (item.status !== 'changed' || !b2.shots[i] || !h2.shots[i]) continue;
-        const r = await comparer.compare(fs.readFileSync(b2.shots[i].file), fs.readFileSync(h2.shots[i].file));
+      const again = new Map(pairShots(b2.shots, h2.shots).map(p => [p.step, p]));
+      for (const item of row.items) {
+        const p = item.status === 'changed' && again.get(item.step);
+        if (!p || !p.b || !p.h) continue;
+        const r = await comparer.compare(fs.readFileSync(p.b.file), fs.readFileSync(p.h.file));
         if (r.sameSize && r.diffPixels / r.totalPixels <= FAIL_RATIO) item.status = 'flaky';
       }
     }
@@ -454,7 +500,7 @@ async function main() {
     const toolsDeclared = args.allowDeclared && declaresChange(body, 'Tools');
     const summary = { base: describeTree(base), head: describeTree(head), seconds: Math.round((Date.now() - t0) / 1000), phoneChanged: 0, toolsChanged: 0, flaky: 0, broken: 0, brokenAfter: 0, brokenBeforeOnly: 0 };
     for (const row of rows) {
-      const changed = row.items.filter(i => i.status === 'changed' || i.status === 'missing').length;
+      const changed = row.items.filter(i => countsAsChange(i.status)).length;
       if (row.variant === 'tools-desktop') summary.toolsChanged += changed; else summary.phoneChanged += changed;
       summary.flaky += row.items.filter(i => i.status === 'flaky').length;
       // A journey that stops early after the change, or on both sides (its
@@ -470,7 +516,7 @@ async function main() {
     for (const row of rows) {
       const bad = row.items.filter(i => i.status !== 'same');
       if (!bad.length && !row.broken) continue;
-      console.log('  ' + row.variant + ' / ' + row.id + ':' + (row.broken ? ' BROKEN' : '') + (bad.length ? ' ' + bad.map(i => i.status + ' @ ' + i.label).join('; ') : '') +
+      console.log('  ' + row.variant + ' / ' + row.id + ':' + (row.broken ? ' BROKEN' : '') + (bad.length ? ' ' + bad.map(i => STATUS_TEXT[i.status].toLowerCase() + ' @ ' + i.label).join('; ') : '') +
         (row.baseFailure || row.headFailure ? ' [before: ' + (row.baseFailure || 'finished') + ' | after: ' + (row.headFailure || 'finished') + ']' : '') +
         (row.pageErrors.length ? ' [new page errors: ' + row.pageErrors.join(' | ') + ']' : ''));
     }
@@ -513,7 +559,7 @@ async function checkTree(tree, plan, out) {
       broken: !!(r.failure || r.pageErrors.length),
       items: r.shots.filter(s => s.file).map(s => ({ label: s.label, head: path.relative(out, s.file) })) }));
     const summary = { head: describeTree(tree), seconds: Math.round((Date.now() - t0) / 1000), broken: rows.filter(r => r.broken).length };
-    console.log('Browser journeys: ' + rows.length + ' runs, ' + results.reduce((n, r) => n + r.shots.length, 0) + ' views in ' + summary.seconds + 's');
+    console.log('Browser journeys: ' + rows.length + ' runs, ' + results.reduce((n, r) => n + r.shots.length, 0) + ' pictures in ' + summary.seconds + 's');
     for (const row of rows.filter(r => r.broken)) {
       console.log('  ' + row.variant + ' / ' + row.id + ': BROKEN' + (row.headFailure ? ' [' + row.headFailure + ']' : '') +
         (row.pageErrors.length ? ' [page errors: ' + row.pageErrors.join(' | ') + ']' : ''));
@@ -527,8 +573,11 @@ async function checkTree(tree, plan, out) {
   }
 }
 
+// Partial raster redraws only the changed part of a tile, so an anti-aliased
+// rounded edge comes out a shade different depending on what was redrawn
+// before; whole-tile raster draws the same page the same way every run.
 function launch() {
-  return chromium.launch({ headless: true, args: JSON.parse(process.env.MB_CHROMIUM_ARGS || '[]'),
+  return chromium.launch({ headless: true, args: ['--disable-partial-raster'].concat(JSON.parse(process.env.MB_CHROMIUM_ARGS || '[]')),
     ...(process.env.MB_CHROMIUM_EXECUTABLE ? { executablePath: process.env.MB_CHROMIUM_EXECUTABLE } : {}) });
 }
 

@@ -11,7 +11,9 @@ const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g,
 const VARIANT_LABELS = {
   naturalLight: 'Natural Light', light: 'Light', dark: 'Dark', naturalDark: 'Natural Dark', 'tools-desktop': 'Tools (desktop)',
 };
-const STATUS_TEXT = { same: 'Same', changed: 'Changed', flaky: 'Flaky', missing: 'Missing' };
+const STATUS_TEXT = { same: 'Same', changed: 'Changed', flaky: 'Flaky', onlyBefore: 'Only before', onlyAfter: 'Only after' };
+// A step pictured on one side only (the journey stopped early on the other) counts as changed.
+const countsAsChange = status => status === 'changed' || status === 'onlyBefore' || status === 'onlyAfter';
 
 function writeReport(outDir, rows, summary, variants) {
   const single = !summary.base;
@@ -27,7 +29,7 @@ function writeReport(outDir, rows, summary, variants) {
     : [[summary.phoneChanged, 'phone pictures changed'], [summary.toolsChanged, 'Tools pictures changed'],
       [summary.flaky, 'flaky (did not repeat)'], [summary.broken, 'journeys that broke']];
   const tabs = byVariant.map((x, i) => {
-    const n = x.rows.reduce((k, r) => k + (r.broken ? 1 : 0) + r.items.filter(it => it.status === 'changed' || it.status === 'missing').length, 0);
+    const n = x.rows.reduce((k, r) => k + (r.broken ? 1 : 0) + r.items.filter(it => countsAsChange(it.status)).length, 0);
     return `<button class="tab" role="tab" aria-selected="${i === 0}" data-tab="${esc(x.v.id)}">${esc(VARIANT_LABELS[x.v.id] || x.v.id)}${n ? ` <span class="count">${n}</span>` : ''}</button>`;
   }).join('');
   const panels = byVariant.map((x, i) => `
@@ -70,7 +72,7 @@ label.only { display: inline-flex; gap: 8px; align-items: center; color: var(--m
 .note { color: var(--muted); font-size: 13px; }
 .badge { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; }
 .badge.same { background: var(--ok-bg); color: var(--ok); }
-.badge.changed, .badge.missing, .badge.broke { background: var(--bad-bg); color: var(--bad); }
+.badge.changed, .badge.onlyBefore, .badge.onlyAfter, .badge.broke { background: var(--bad-bg); color: var(--bad); }
 .badge.flaky { background: var(--warn-bg); color: var(--warn); }
 .step { border-top: 1px solid var(--line); padding: 12px 16px; }
 .step h3 { font-size: 14px; font-weight: 600; margin: 0 0 8px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
@@ -90,8 +92,8 @@ body.only-changes .step.same, body.only-changes .journey.all-same { display: non
     ${facts.map(([n, text]) => `<div class="fact"><b>${n}</b><span>${esc(text)}</span></div>`).join('\n    ')}
   </div>
   <p class="note">${single
-    ? 'Each journey ran in Chromium, tapping the same buttons in the same order, with the clock fixed. A picture is taken whenever a new view appears. "Broke" means a journey stopped before its last step, or the page raised an error.'
-    : 'Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken whenever a new view appears. "Changed" means more than 0.05% of its pixels differ, by any amount, and the difference repeated on a second run. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.'}</p>
+    ? 'Each journey ran in Chromium, tapping the same buttons in the same order, with the clock fixed. A picture is taken at the start and after every step. "Broke" means a journey stopped before its last step, or the page raised an error.'
+    : 'Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken at the start and after every step, and each step\'s pictures are compared. "Changed" means more than 0.05% of its pixels differ, by any amount, and the difference repeated on a second run. "Only before" or "Only after" means only one version reached that step; it counts as changed. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.'}</p>
   <div class="tabs" role="tablist">${tabs}</div>
   <label class="only"><input type="checkbox" id="only"${focus ? ' checked' : ''}> ${single ? 'Show only journeys that broke' : 'Show only changes'}</label>
   ${panels}
@@ -146,4 +148,4 @@ function journeyBlock(r, single) {
   </details>`;
 }
 
-module.exports = { writeReport };
+module.exports = { writeReport, STATUS_TEXT, countsAsChange };

@@ -6,6 +6,7 @@ const key = label => tap({ name: label, region: 'keyboard' });
 module.exports = {
   id: 'keyboard',
   title: 'The simulated keyboard: capitals, numbers and symbols, backspace, Done, the ZIP keypad and a typed income',
+  browser: true,
   steps: [
     type('Your name', 'Jo-Ann 2', { commit: false }),
     key('⌫'),

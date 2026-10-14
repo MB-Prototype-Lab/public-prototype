@@ -90,9 +90,11 @@ of them. A missing engine is a blocked check, never a pass.
 
 A second robot taps through the main journeys in a real browser (Chromium): in
 all four themes at phone width, with Tools open at desktop width, and through the
-passcode, selector and Pin on refresh. It takes a picture whenever a new view
-appears. On every pull request it does this on main and on the PR and compares
-the pictures. Phone pictures must match main exactly, apart from a tiny allowance
+passcode, selector and Pin on refresh. It takes a picture at the start and after
+every tap or other step, so it also sees changes within one view: a picked
+option, the open keyboard, a sheet. On every pull request it does this on main
+and on the PR and compares each step's pictures, matched by step number. Phone
+pictures must match main exactly, apart from a tiny allowance
 for the rendering noise measured between two identical copies (the exact rule is
 in `tests/browser/pixels.cjs` and `tests/browser/app-journeys-browser.cjs`, and
 may still change). A changed phone or Tools picture fails the check unless the PR
@@ -105,12 +107,13 @@ new page error still fails.
 
 To see the pictures for a PR, open its **Checks** tab, choose the **Browser
 journeys** job, open the run's summary and download the
-`browser-journey-pictures` artifact. Unzip it and open `index.html`: each view
+`browser-journey-pictures` artifact. Unzip it and open `index.html`: each step
 shows Before, After and the Difference, with a tab per theme and one for Tools.
 
 - **Changed**: the picture differs from main, and differed again when the robot
-  repeated the journey. **Missing** means one side has a picture the other does
-  not; it counts as a change.
+  repeated the journey. **Only before** or **Only after** means only one version
+  reached that step (the journey stopped early on the other); it counts as a
+  change.
 - **Flaky**: it differed once but not on the repeat, so it is not counted.
 - **Broke**: the journey stopped before its last step (a button it needed was
   missing, disabled or covered), or the page raised an error.
