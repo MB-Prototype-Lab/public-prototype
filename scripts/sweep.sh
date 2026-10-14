@@ -154,6 +154,10 @@ printf ';\n' >> "$OUT"
 # Comments are stripped first: a function named only in a comment is still
 # dead. Strings, template literals and regex literals are kept whole, because
 # onclick handlers live in templates and `https://` is not a comment.
+#
+# One step deep: dead functions that call each other or themselves, or a name
+# that appears only in a string, still count as referenced, and only top-level
+# `function` declarations are checked.
 printf '\nvar __UNREFERENCED = ' >> "$OUT"
 python3 - "$APP" <<'PY' >> "$OUT"
 import re, sys, glob, json, os

@@ -28,8 +28,8 @@ const USEBERRY_TRACKING = window.MB_RELEASE.tracking === true;
 // A FLAG RATHER THAN A DELETION. It is a recorded product setting
 // (docs/decisions.md L27), and turning it off must bring the real tab back
 // without unwinding anything. The eight functions in screens/budget-v3.js are
-// that tab; deleting its call site would orphan them into sweep.sh §7b's
-// newly-unreferenced warning.
+// that tab; deleting its call site would fail sweep.sh §7b (every function
+// must be referenced).
 //
 // ⚠ IT GUARDS THE TAB, NOT THE BUDGET. Owner's call, and deliberately narrow
 // (L27): chat, the ☰ menu, budget-update-confirm's Rebuild and two deep links
