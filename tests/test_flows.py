@@ -76,14 +76,14 @@ class FlowsTest(unittest.TestCase):
     def test_unsafe_ids_sources_and_collisions_preserve_catalog(self):
         before = (self.root / 'flows/catalog.js').read_bytes()
         for ident in ('../app', 'A', '-a', 'a/b', 'a..b', 'a' * 65):
-            with self.assertRaises(ValueError):
+            with self.subTest(ident=ident), self.assertRaisesRegex(ValueError, '^ID must be lowercase kebab-case, at most 64 characters$'):
                 self.create(ident)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, '^source must be an existing full commit SHA'):
             flows.create(self.root, 'sample', 'HEAD', 'x', 'x')
         self.assertEqual(before, (self.root / 'flows/catalog.js').read_bytes())
         self.create()
         package = (self.root / 'flows/sample/flow.json').read_bytes()
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'flows/sample: destination exists; choose another ID, never overwrite a Flow$'):
             self.create()
         self.assertEqual(package, (self.root / 'flows/sample/flow.json').read_bytes())
 
@@ -98,7 +98,7 @@ class FlowsTest(unittest.TestCase):
         self.assertFalse((self.root / 'flows/linked').exists())
         before = (self.root / 'flows/catalog.js').read_bytes()
         with patch.object(flows, 'atomic_write', side_effect=OSError('interrupted')):
-            with self.assertRaises(OSError):
+            with self.assertRaisesRegex(OSError, '^interrupted$'):
                 self.create()
         self.assertFalse((self.root / 'flows/sample').exists())
         self.assertEqual(before, (self.root / 'flows/catalog.js').read_bytes())
@@ -188,7 +188,7 @@ class FlowsTest(unittest.TestCase):
         self.assertEqual(outside.read_text(), 'unchanged')
         m = json.loads((self.root / 'flows/sample/flow.json').read_text())
         m['allowed_screens'] = ['goals']
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r'^flow\.json \(sample\): entry/completion must be in a unique allowlist$'):
             flows.validate_metadata(m, 'sample')
 
     def test_allowed_screens_must_be_in_the_destinations_registry(self):
@@ -222,16 +222,30 @@ class FlowsTest(unittest.TestCase):
     def test_dependencies_negative_and_dynamic_prefixes(self):
         valid = {'index.html': b'<script src="js/main.js"></script>', 'js/main.js': b'const asset = `assets/img/${name}.png`;', 'assets/img/example.png': b'image'}
         flows.validate_dependencies(valid)
-        for html in ('<script src="../app/js/main.js"></script>', '<img src="/tmp/a.png">', '<script src="https://evil.test/a.js"></script>', '<link href="../../index.html" rel="stylesheet">', '<img src="%2e%2e/app/a.png">'):
-            with self.subTest(html=html), self.assertRaises(ValueError):
-                flows.validate_dependencies({'index.html': html.encode()})
-        for js in ('const x="assets/missing/";', 'const x="../app/a.js";', 'const x="flows/other/a.js";', 'const x="assets/../a.png";', 'const x="file:///tmp/a.png";', 'const x="//server/a.js";', 'const html=`<img src="assets/missing.png">`;'):
-            with self.subTest(js=js), self.assertRaises(ValueError):
-                flows.validate_dependencies({'js/main.js': js.encode()})
+        def rejects(name, text, message):
+            with self.subTest(text=text), self.assertRaisesRegex(ValueError, '/' + re.escape(name + ': ' + message) + '$'):
+                flows.validate_dependencies({name: text.encode()})
+        for html, message in (('<script src="../app/js/main.js"></script>', "traversal dependency '../app/js/main.js'"),
+                              ('<img src="/tmp/a.png">', "forbidden dependency '/tmp/a.png'"),
+                              ('<script src="https://evil.test/a.js"></script>', "forbidden dependency 'https://evil.test/a.js'"),
+                              ('<link href="../../index.html" rel="stylesheet">', "traversal dependency '../../index.html'"),
+                              ('<img src="%2e%2e/app/a.png">', "traversal dependency '../app/a.png'"),
+                              # Only the selector exit is exempt; an escaping link with no
+                              # file extension is seen by the anchor check alone.
+                              ('<a href="../../">Selector folder</a>', "traversal dependency '../../'"),
+                              ('<a href="../../../app/">App</a>', "traversal dependency '../../../app/'")):
+            rejects('index.html', html, message)
+        for js, message in (('const x="assets/missing/";', "missing dependency 'assets/missing'"),
+                            ('const x="../app/a.js";', "traversal dependency '../app/a.js'"),
+                            ('const x="flows/other/a.js";', "missing dependency 'flows/other/a.js'"),
+                            ('const x="assets/../a.png";', "traversal dependency 'assets/../a.png'"),
+                            ('const x="file:///tmp/a.png";', "forbidden dependency 'file:///tmp/a.png'"),
+                            ('const x="//server/a.js";', "forbidden dependency '//server/a.js'"),
+                            ('const html=`<img src="assets/missing.png">`;', "missing dependency 'assets/missing.png'")):
+            rejects('js/main.js', js, message)
         flows.validate_dependencies({'index.html': b'<a href="../../index.html">Exit</a>'})
         flows.validate_dependencies({'screens/onboarding.js': b'const x="assets/audio/onboarding/";'})
-        with self.assertRaises(ValueError):
-            flows.validate_dependencies({'screens/other.js': b'const x="assets/audio/onboarding/";'})
+        rejects('screens/other.js', 'const x="assets/audio/onboarding/";', "missing dependency 'assets/audio/onboarding'")
 
     def test_catalog_write_failure_restores_both_discovery_files(self):
         self.create()
@@ -245,7 +259,7 @@ class FlowsTest(unittest.TestCase):
                 raise OSError('interrupted')
             real(path, content)
         with patch.object(flows, 'atomic_write', side_effect=interrupted):
-            with self.assertRaises(OSError):
+            with self.assertRaisesRegex(OSError, '^interrupted$'):
                 flows.catalog(self.root)
         self.assertEqual(before, {p: p.read_bytes() for p in paths})
 
