@@ -3,7 +3,7 @@
 #
 #   bash scripts/check-all.sh
 #
-# PASS     the check ran and passed
+# PASS     the check ran and passed; any warnings it printed are listed under it
 # FAIL     the check ran and failed (the end of its output is printed)
 # BLOCKED  this machine lacks what the check needs; it did NOT pass
 #
@@ -59,6 +59,14 @@ FAILED=0
 BLOCKED=0
 n=0
 
+# A log's warnings with their indented detail lines: the sweep's "  warn  "
+# lines and the journey harness's "WARNING  " lines.
+warn_lines() {
+  awk '/^(  warn  |WARNING  )/ { on = 1; print; next }
+       on && /^          / { print; next }
+       { on = 0 }' "$1"
+}
+
 # run <name> <needs: node|python|both|browser> <command...>
 run() {
   local name="$1" needs="$2"; shift 2
@@ -81,7 +89,14 @@ run() {
   fi
   local log="$LOG_DIR/$n.log"
   if "$@" >"$log" 2>&1; then
-    printf 'PASS     %s\n' "$name"
+    local count
+    count="$(grep -cE '^(  warn  |WARNING  )' "$log")"
+    if [ "$count" -gt 0 ]; then
+      printf 'PASS     %s  (%s warning%s)\n' "$name" "$count" "$([ "$count" -eq 1 ] || echo s)"
+      warn_lines "$log" | sed 's/^/         | /'
+    else
+      printf 'PASS     %s\n' "$name"
+    fi
   else
     printf 'FAIL     %s\n' "$name"
     tail -n 25 "$log" | sed 's/^/         | /'

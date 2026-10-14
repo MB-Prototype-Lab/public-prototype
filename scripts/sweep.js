@@ -590,12 +590,11 @@ SCREENS.forEach(function (sc) {
 var jumpList = (typeof destinations !== "undefined" ? destinations : []).map(function (d) { return d[0]; });
 SCREENS.forEach(function (sc) { if (jumpList.indexOf(sc) === -1) noJump.push(sc); });
 
-noSubtitle.length === 0
-  ? ok("every screen has an admin subtitle")
-  : warn(noSubtitle.length + " screens fall back to the generic subtitle", noSubtitle.join(", "));
-noJump.length === 0
-  ? ok("every screen is in the admin jump list")
-  : warn(noJump.length + " screens are not in destinations[]", noJump.join(", "));
+// Failures, not warnings: nothing else enforces a new screen's Tools wiring.
+chk(noSubtitle.length === 0, "every screen has an admin subtitle",
+    noSubtitle.length + " screens fall back to the generic subtitle: " + noSubtitle.join(", "));
+chk(noJump.length === 0, "every screen is in the admin jump list",
+    noJump.length + " screens are not in destinations[]: " + noJump.join(", "));
 
 var noTab = SCREENS.filter(function (sc) {
   var t = activeTabFor(sc);

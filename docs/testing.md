@@ -6,11 +6,13 @@ Run every automated check from the repository root with one command:
 bash scripts/check-all.sh
 ```
 
-Each check prints PASS, FAIL or BLOCKED. BLOCKED means this machine lacks what
-the check needs (Node, or Playwright and Chromium for the browser checks) and
-says how to fix it; it is never a pass. The script exits 0 only when every check
-ran and passed. The Flow snapshot rehearsal works on a clone, so it checks the
-last commit, not uncommitted edits. It runs, in CI order:
+Each check prints PASS, FAIL or BLOCKED. A check that passed with warnings says
+how many and lists them under its PASS line; they do not fail the run, so read
+them. BLOCKED means this machine lacks what the check needs (Node, or Playwright
+and Chromium for the browser checks) and says how to fix it; it is never a pass.
+The script exits 0 only when every check ran and passed. The Flow snapshot
+rehearsal works on a clone, so it checks the last commit, not uncommitted edits.
+It runs, in CI order:
 
 ```sh
 bash scripts/check-syntax.sh
