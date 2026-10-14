@@ -13,7 +13,6 @@
 // and the same nine are the sweep's test matrix.
 
 function ppStart() {
-  const d = profileDefaults();
   state.profilePick = { tier: null, level: null, from: state.screen };
   go("profilePicker");
 }

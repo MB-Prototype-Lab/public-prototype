@@ -2427,7 +2427,7 @@ if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "u
 
   var k7 = { screen: state.screen, prof: state.lessonProfile, fr: state.lessonFraming };
   // No card: the plan renders, one beat per map entry, timed to the no-card cues.
-  state.lessonProfile = { apr: { inputs: {}, figure: null, bucket: null, variantId: "apr_default" } };
+  state.lessonProfile = { apr: { inputs: {}, figure: null, bucket: null } };
   lessonOpenPlayer(aprL, "apr_default");
   var ffPlan = state.lessonVisualPlan;
   var ffSb = ffPlan && ffPlan.storyboard;
@@ -2445,7 +2445,7 @@ if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "u
       "the figure-free cut shows no unresolved figure, dash or \"your card\"");
 
   // A card: untouched -- the full spine, figures required.
-  state.lessonProfile = { apr: { inputs: { enteredApr: 24 }, figure: 24, bucket: "slightly_above", variantId: "apr_slightly_above" } };
+  state.lessonProfile = { apr: { inputs: { enteredApr: 24 }, figure: 24, bucket: "slightly_above" } };
   lessonOpenPlayer(aprL, "apr_slightly_above");
   chk(state.lessonVisualPlan.storyboard === aprL.visualTemplate,
       "a run with a card APR keeps the full storyboard");

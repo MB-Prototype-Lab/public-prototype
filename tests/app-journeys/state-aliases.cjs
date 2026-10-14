@@ -22,4 +22,5 @@ module.exports = [
   { removed: 'expenses.declined', why: 'copied from esf.declined, which nothing sets' },
   { removed: 'expenses.extras', why: 'copied from esf.extras, which nothing fills' },
   { removed: 'estimator.target', why: 'always "mtd": no caller asked for the budget mode' },
+  { removed: 'lessonProfile.*.variantId', why: 'written when framing finished and never read' },
 ];

@@ -31,7 +31,6 @@ const PERSONA =
 
   "state": {
     "healthState": "slightly_behind",
-    "streakDays": 6,
     "streakDaysIfOnboarded": 1,
     "buddyLevel": 3,
     "kibbleBalance": 240,

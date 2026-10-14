@@ -155,8 +155,7 @@ function lessonFramingFinish() {
   state.lessonProfile[lesson.id] = {
     inputs: Object.assign({}, f.inputs),
     figure: figure,
-    bucket: variant.bucket || null,
-    variantId: variant.id
+    bucket: variant.bucket || null
   };
   lessonOpenPlayer(lesson, variant.id);
 }
