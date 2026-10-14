@@ -1283,10 +1283,10 @@ kept apart so only the content changes.
 
 ### The first image: `prototype`
 
-**`prototype` is a MODE, not a breed.** The illustration is one fixed picture
-with its background painted in, so it cannot vary by breed, coat, eyes or size.
-Rather than pretend otherwise, `prototype` is the **first value in every
-attribute list** (`BUDDY_BREEDS`, `BUDDY_FUR_COLORS`, `BUDDY_FUR_PATTERNS`,
+**`prototype` names the picture; it is not a breed.** The illustration is one
+fixed picture with its background painted in, so it cannot vary by breed, coat,
+eyes or size. Rather than pretend otherwise, `prototype` is the **first value in
+every attribute list** (`BUDDY_BREEDS`, `BUDDY_FUR_COLORS`, `BUDDY_FUR_PATTERNS`,
 `BUDDY_EYE_COLORS`, plus the admin-only `BUDDY_NOSE_COLORS` / `BUDDY_SIZES`).
 **Every stage draws the one illustration whatever the attributes hold**
 (`renderBuddyInner`); the description shows only when the image fails to load.
@@ -1324,12 +1324,11 @@ is precisely the feedback the stage exists to give.
 previous session's missing file suppressing art that is now present, with
 nothing in the state inspector to explain why.
 
-The rest of this section describes the description layer, which still governs
-every combination the art does not cover.
+The rest of this section describes the description layer: the missing-image
+fallback, shown only when the illustration fails to load.
 
-No AI-generated art and no hand-drawn SVG. The buddy stage renders a **labelled
-placeholder frame that describes, in text, what the user would be seeing** given
-their choices.
+No AI-generated art and no hand-drawn SVG. The fallback is a **labelled
+placeholder frame that describes the buddy's attributes in text**.
 
 ```
 ┌───────────────────────────────┐
@@ -1344,17 +1343,12 @@ their choices.
 └───────────────────────────────┘
 ```
 
-**Why this and not a square:** it proves the customization plumbing works
-end-to-end. A tester picks a breed, and the stage visibly reflects it — the
-choice registers and is legible, which is what onboarding step 7 is there to
-test. A flat colour swatch would test nothing.
-
-- **Character creation stays real, with all five attributes**: breed,
-  fur, eyes, nose, size.
-  Selections write to `state.buddy` and the description re-renders. Nothing is
-  faked. The persona's default is `PERSONA.buddy` (golden retriever, cream,
-  brown eyes, black nose, medium). The name is intentionally blank — naming the
-  buddy is required in onboarding, and it falls back to "Buddy" until then.
+- **The attributes stay real**: breed, fur, eyes, nose and size live in
+  `state.buddy`, set from Tools (the creator asks only for a name and pronouns),
+  and the frame prints them. Nothing is faked. The persona's default is
+  `PERSONA.buddy` (golden retriever, cream, brown eyes, black nose, medium). The
+  name is intentionally blank — naming the buddy is required in onboarding, and
+  it falls back to "Buddy" until then.
 - **The idle cycle is real too.** Pose text changes on the 4–6 second cadence
   the design system specifies, cycling poses 1, 3, 4, 5. Stops under
   `prefers-reduced-motion`.
@@ -1370,10 +1364,9 @@ test. A flat colour swatch would test nothing.
      With a text placeholder there is no sheet to crop and no recolour cost, so
      none of those constraints bind. Do not build the background-position
      machinery for art that will never exist. -->
-<!-- This note called it: real art arrived (L22), and the separation held. The
-     swap is inside renderBuddyInner — prefer an <img> when one resolves for the
-     current state, fall through to the description when it does not. Nothing
-     about renderBuddyStage, the idle tick, the pickers or state.buddy moves. -->
+<!-- The swap is inside renderBuddyInner — draw the <img>, and fall through to
+     the description when the file fails to load. Nothing about
+     renderBuddyStage, the idle tick, the pickers or state.buddy moves. -->
 
 ---
 
