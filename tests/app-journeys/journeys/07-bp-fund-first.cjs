@@ -4,7 +4,7 @@ const { skipToProfile } = require('../common.cjs');
 
 module.exports = {
   id: 'bp-fund-first',
-  title: 'Big purchase: start the fund first, Back twice to Goals, then the car quiz and a lease',
+  title: 'Big purchase: start the fund first, Back twice to Goals, the car quiz to a used car (no lease), Save it by, then Search all cars',
   steps: skipToProfile().concat([
     tap('Goals'),
     tap(/^Estimate a big purchase/),
@@ -37,5 +37,12 @@ module.exports = {
     tap({ name: 'Cash', nth: 0 }),
     tap('No'),
     tap('Change your mind? Choose a different car ›'),
+    tap('Close'),
+    tap('Yes'),
+    tap(/^Save it by/),
+    tap('Dec 2027'),
+    tap('Change your mind? Choose a different car ›'),
+    tap('Search all cars'),
+    expect({ screen: 'bpFinder' }),
   ]),
 };

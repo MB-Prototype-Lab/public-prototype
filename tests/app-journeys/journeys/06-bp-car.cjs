@@ -16,6 +16,8 @@ module.exports = {
     tap('A vehicle ›'),
     tap('Select a make'),
     tap('Toyota'),                  // the Model list opens by itself
+    tap('Close'),
+    tap('Select a model'),
     tap('Camry'),
     tap(/^New \$/),
     tap('See the real cost to own'),
