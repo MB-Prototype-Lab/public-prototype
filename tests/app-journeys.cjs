@@ -4,8 +4,9 @@
 // records what the phone shows after every tap.
 //
 //   node tests/app-journeys.cjs                 run every journey twice; fail on
-//                                               app errors, broken handlers,
-//                                               unvisited screens or any run-to-run
+//                                               app errors, broken handlers, a
+//                                               screen no journey but the Tools
+//                                               tour visits, or any run-to-run
 //                                               difference
 //   node tests/app-journeys.cjs --against main  also compare with another commit:
 //                                               the phone must be identical; Tools
@@ -102,10 +103,18 @@ async function runAll(runs, folder, opts = {}) {
 
 // ── Gates ────────────────────────────────────────────────────────────────────
 
+// The Tools tour jumps to every routed screen, so counting it would make this
+// gate unfailable. A screen no other journey reaches belongs in the reviewed
+// Tools-only list, journeys/17-tools-only-screens.cjs.
+const COVERAGE_SKIP = 'tools-tour';
+
 function coverage(results, folder) {
   const routed = routedScreens(folder);
   const counts = Object.fromEntries(routed.map(s => [s, { user: 0, tools: 0, boot: 0 }]));
-  for (const r of results) for (const v of r.visits) if (counts[v.screen]) counts[v.screen][v.via]++;
+  for (const r of results) {
+    if (r.id.split('@')[0] === COVERAGE_SKIP) continue;
+    for (const v of r.visits) if (counts[v.screen]) counts[v.screen][v.via]++;
+  }
   const missing = routed.filter(s => !counts[s].user && !counts[s].tools && !counts[s].boot);
   return { routed, counts, missing };
 }
@@ -120,6 +129,7 @@ function sameRun(a, b) {
   return null;
 }
 
+// cov is null when only some journeys ran: coverage is a whole-suite property.
 function printGateSummary(results, cov, nondeterministic) {
   const errors = results.flatMap(r => r.errors);
   const gate = results.flatMap(r => r.gate);
@@ -127,12 +137,12 @@ function printGateSummary(results, cov, nondeterministic) {
   for (const e of errors) console.log('JOURNEY  ' + e);
   for (const g of gate) console.log('GATE     ' + g);
   for (const n of nondeterministic) console.log('UNSTABLE ' + n);
-  if (cov.missing.length) console.log('COVERAGE no journey reaches: ' + cov.missing.join(', '));
+  if (cov && cov.missing.length) console.log('COVERAGE no journey reaches (the Tools tour does not count): ' + cov.missing.join(', '));
   for (const w of warnings) console.log('WARNING  ' + w);
   const steps = results.reduce((n, r) => n + r.records.length, 0);
-  const ok = !errors.length && !gate.length && !nondeterministic.length && !cov.missing.length;
+  const ok = !errors.length && !gate.length && !nondeterministic.length && !(cov && cov.missing.length);
   console.log((ok ? 'PASS' : 'FAIL') + '  ' + results.length + ' journey runs, ' + steps + ' recorded steps, ' +
-    (cov.routed.length - cov.missing.length) + '/' + cov.routed.length + ' screens reached' +
+    (cov ? (cov.routed.length - cov.missing.length) + '/' + cov.routed.length + ' screens reached' : 'coverage not checked (--only)') +
     (warnings.length ? ', ' + warnings.length + ' warnings' : ''));
   return ok;
 }
@@ -311,17 +321,13 @@ async function gateMode(args, journeys) {
   const second = await runAll(runs, folder);
   const nondeterministic = [];
   first.forEach((r, i) => { const why = sameRun(r, second[i]); if (why) nondeterministic.push(r.id + ': ' + why); });
-  const cov = coverage(first, folder);
-  if (args.only) cov.missing = [];            // coverage is a whole-suite property
-  return printGateSummary(first, cov, nondeterministic);
+  return printGateSummary(first, args.only ? null : coverage(first, folder), nondeterministic);
 }
 
 async function againstMode(args, journeys) {
   const runs = expand(journeys);
   const head = await runAll(runs, path.join(REPO, 'app'));
-  const cov = coverage(head, path.join(REPO, 'app'));
-  if (args.only) cov.missing = [];
-  const gatesOk = printGateSummary(head, cov, []);
+  const gatesOk = printGateSummary(head, args.only ? null : coverage(head, path.join(REPO, 'app')), []);
   const sha = git(['rev-parse', '--short', args.against]);
   const base = await withWorktree(async wt => { checkout(wt, args.against); return runAll(runs, path.join(wt, 'app')); });
   const cmp = compare(base, head);
@@ -465,7 +471,7 @@ async function listMode(args, journeys) {
     console.log(j.id.padEnd(28) + String(rs.length).padStart(2) + ' run(s) ' + String(rs.reduce((n, r) => n + r.records.length, 0)).padStart(5) + ' steps  ' + (j.title || ''));
   }
   const cov = coverage(results, path.join(REPO, 'app'));
-  console.log('\nScreen coverage (user / tools / boot visits):');
+  console.log('\nScreen coverage without the Tools tour (user / tools / boot visits):');
   for (const s of cov.routed) { const c = cov.counts[s]; console.log('  ' + s.padEnd(26) + String(c.user).padStart(5) + String(c.tools).padStart(6) + String(c.boot).padStart(6)); }
   if (cov.missing.length) console.log('Not reached: ' + cov.missing.join(', '));
   return true;

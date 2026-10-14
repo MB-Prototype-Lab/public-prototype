@@ -2,10 +2,12 @@
 // Proof that the journey checks catch what they claim to: each mutation edits
 // the app in memory (no file changes), runs the affected journeys, and
 // compares with an unedited run. Breakage must be caught; harmless edits must
-// pass. Run when the harness changes:  node tests/app-journeys.cjs --mutations
+// pass. Screen coverage is a whole-suite property, so a spec with `drop`
+// instead leaves journeys out of the whole suite and expects the coverage gate
+// to fail. Run when the harness changes:  node tests/app-journeys.cjs --mutations
 //
-// A spec whose `find` text no longer exists reports STALE: update it to the
-// current code rather than deleting it.
+// A spec whose `find` text or dropped journey no longer exists reports STALE:
+// update it to the current code rather than deleting it.
 
 const path = require('node:path');
 const { REPO } = require('../lib/app-vm.cjs');
@@ -71,6 +73,10 @@ const SPECS = [
     edits: { 'screens/budget-paywall.js': [[/budgetPaywallTap/, 'paywallPlanTap']] },
   },
   {
+    id: 'journey-dropped', expect: 'coverage', drop: ['lesson-topic'],
+    why: 'the topic lesson journey deleted, leaving its screens reached only by the Tools tour',
+  },
+  {
     id: 'dead-code-and-comment', expect: 'none', journeys: ['themes', 'onboarding-full'],
     why: 'an unused function deleted and a comment trimmed (nothing changes)',
     edits: {
@@ -105,11 +111,33 @@ function outcome(cmp, results) {
   return 'none';
 }
 
+// The whole suite with and without the dropped journeys. The full suite must
+// reach every screen, or the spec proves nothing.
+async function dropOutcome(h, spec, journeys, appDir) {
+  const results = await h.runAll(h.expand(journeys), appDir);
+  const full = h.coverage(results, appDir).missing;
+  if (full.length) return { got: 'none', detail: ' (the full suite already misses ' + full.join(', ') + ')' };
+  const missing = h.coverage(results.filter(r => !spec.drop.includes(r.id.split('@')[0])), appDir).missing;
+  return missing.length ? { got: 'coverage', detail: ' (' + missing.join(', ') + ')' } : { got: 'none', detail: '' };
+}
+
 async function run(h) {
   const appDir = path.join(REPO, 'app');
   const journeys = h.loadJourneys(null);
   let ok = true;
+  const report = (spec, got, detail) => {
+    const pass = got === spec.expect;
+    if (!pass) ok = false;
+    console.log((pass ? 'ok       ' : 'MISSED   ') + spec.id.padEnd(22) + ' expected ' + spec.expect.padEnd(7) + ' got ' + got + detail + ' — ' + spec.why);
+  };
   for (const spec of SPECS) {
+    if (spec.drop) {
+      const unknown = spec.drop.filter(id => !journeys.some(j => j.id === id));
+      if (unknown.length) { ok = false; console.log('STALE    ' + spec.id + ': no journey ' + unknown.join(', ')); continue; }
+      const { got, detail } = await dropOutcome(h, spec, journeys, appDir);
+      report(spec, got, detail);
+      continue;
+    }
     const js = journeys.filter(j => spec.journeys.includes(j.id));
     let runs = h.expand(js);
     if (!spec.profiles) runs = runs.filter(r => !r.variant || r.variant.id === 'at_at');
@@ -123,10 +151,7 @@ async function run(h) {
     const mutated = await h.runAll(runs, appDir, { sourceOverrides: overrides });
     const cmp = h.compare(base, mutated);
     const got = outcome(cmp, mutated);
-    const pass = got === spec.expect;
-    if (!pass) ok = false;
-    const detail = got === 'rename' ? ' (' + [...cmp.renames.keys()].join(', ') + ')' : '';
-    console.log((pass ? 'ok       ' : 'MISSED   ') + spec.id.padEnd(22) + ' expected ' + spec.expect.padEnd(7) + ' got ' + got + detail + ' — ' + spec.why);
+    report(spec, got, got === 'rename' ? ' (' + [...cmp.renames.keys()].join(', ') + ')' : '');
   }
   console.log((ok ? 'PASS' : 'FAIL') + '  ' + SPECS.length + ' mutations');
   return ok;

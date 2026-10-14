@@ -49,7 +49,7 @@ base branch and on the PR, and compares them step by step:
   declared when they change.
 
 ```sh
-node tests/app-journeys.cjs                  # every journey, twice; all 58 screens reached
+node tests/app-journeys.cjs                  # every journey, twice; every screen reached without the Tools tour
 node tests/app-journeys.cjs --against main   # compare this checkout with main
 node tests/app-journeys.cjs --series main..HEAD   # the same, commit by commit
 node tests/app-journeys.cjs --trace esf-full@at_at   # watch one journey step by step

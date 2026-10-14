@@ -6,7 +6,7 @@ const { routedScreens } = require('../../lib/app-vm.cjs');
 
 // Every routed screen through the Tools jump, then the Tools panel's own
 // controls. Screens come from this checkout's router, so a new screen is
-// toured automatically.
+// toured automatically; for that reason the coverage gate does not count it.
 const screens = routedScreens(path.join(__dirname, '..', '..', '..', 'app'));
 
 module.exports = {
