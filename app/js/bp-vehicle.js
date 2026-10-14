@@ -301,7 +301,6 @@ const BP_VEHICLE_ROWS = [
         (inputs.condition === "used" ? "used " : "new ") + bpVNoun(inputs).toLowerCase() + ".";
     } },
   { id: "fuel", label: "Fuel", bucket: "monthly", scope: "car", estimate: bpVFuel,
-    labelFor: i => i.fuel === "electric" ? "Charging" : "Fuel",
     based: function (inputs) {
       if (inputs.fuel === "electric") return bpVMilesLine() + ", at your state's electricity rate.";
       const d = bpVData();

@@ -103,7 +103,7 @@ function bpStart(category) {
       monthsOut: ((d.plan || {}).defaultMonthsOut) || 12,
       remind: false
     },
-    ui: { sheet: null, pick: null, edit: null },
+    ui: { sheet: null, edit: null },
     buddy: null
   };
   bpLog("bp_started", { category: state.bp.category });
@@ -543,38 +543,6 @@ function bpSaveToAfford(card) {
 function bpBudgetFigure(card) {
   const st = bpStack(card);
   return bpRound(st.mode === "loan" ? st.payment : st.monthly, 5);
-}
-
-// ── Bands (the ESF range-dropdown pattern, generalised) ──────────────────────
-// Estimated rows are picked from ranges, never typed. The step follows the
-// magnitude — a flat band is absurd on a $30 registration and useless on a
-// $2,400 tax bill.
-const BP_BANDS = [
-  { under: 100,   width: 25 },
-  { under: 500,   width: 25 },
-  { under: 1000,  width: 100 },
-  { under: 3000,  width: 200 },
-  { under: 10000, width: 500 },
-  { under: Infinity, width: 1000 }
-];
-
-function bpBandFor(value) {
-  const v = Math.max(0, Number(value) || 0);
-  const w = (BP_BANDS.find(b => v < b.under) || BP_BANDS[BP_BANDS.length - 1]).width;
-  const lo = Math.floor(v / w) * w;
-  return { lo: lo, hi: lo + w, mid: lo + w / 2, width: w };
-}
-
-function bpBandOptions(value) {
-  const here = bpBandFor(value);
-  const out = [{ lo: 0, hi: 0, mid: 0, zero: true }];
-  for (let i = -4; i <= 5; i++) {
-    const lo = here.lo + i * here.width;
-    if (lo < 0) continue;
-    if (lo === 0 && here.lo > 0 && i < 0 && here.width === here.lo) continue;
-    out.push({ lo: lo, hi: lo + here.width, mid: lo + here.width / 2 });
-  }
-  return out;
 }
 
 // ── Log (§12) ────────────────────────────────────────────────────────────────

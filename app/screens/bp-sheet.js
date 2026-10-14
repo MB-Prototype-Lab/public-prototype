@@ -8,7 +8,6 @@
 // lives there: the simulated keypad's 250px reflow cannot move it.
 //
 // Sheets:
-//   pick          the range picker for one estimated cost row
 //   credit        "Why does my score matter?" — the user's OWN loan at each tier
 //   taxBreak      "A tax break for car loan interest"
 //   taxBreakPage  the simulated in-app web page behind "See who qualifies"
@@ -48,22 +47,7 @@ function bpOpenSheet(name) {
 function bpCloseSheet() {
   const s = bpSession();
   s.ui.sheet = null;
-  s.ui.pick = null;
   render();
-}
-
-function bpOpenPick(rowId) {
-  const s = bpSession();
-  s.ui.pick = rowId;
-  s.ui.sheet = "pick";
-  render();
-}
-
-function bpPickBand(rowId, mid) {
-  const card = bpSelectedCard();
-  const row = bpRowDef(rowId);
-  bpSetRow(row && row.scope === "about" ? "pick" : card.id, rowId, mid);
-  bpCloseSheet();
 }
 
 function bpSetSavingsRate(r) {
@@ -85,28 +69,6 @@ function renderBpSheetFrame(title, body, foot) {
       <div class="bp-sheet-body">${body}</div>
       <div class="bp-sheet-foot">${foot || `<button class="button secondary full" type="button" onclick="bpCloseSheet()">Close</button>`}</div>
     </div>`;
-}
-
-function renderBpPickSheet() {
-  const s = bpSession();
-  const card = bpSelectedCard();
-  const row = bpRowDef(s.ui.pick);
-  if (!row) return "";
-  const v = bpRowValue(card, row.id);
-  const here = bpBandFor(v);
-  const per = row.bucket === "monthly" ? "a month" : row.bucket === "yearly" ? "a year" : "when you buy";
-  const label = row.labelFor ? row.labelFor(card.inputs) : row.label;
-  const body = `
-    <p class="bp-based" style="margin:0 0 10px;">${h(per.charAt(0).toUpperCase() + per.slice(1))}${
-      row.scope === "car" && card.id !== "pick" ? " · this option only" : ""}</p>
-    <div class="bp-sheet-list">
-      ${bpBandOptions(v).map(b => {
-        const on = b.zero ? v === 0 : (!!v && b.lo === here.lo);
-        return `<button class="bp-opt ${on ? "on" : ""}" type="button" onclick="bpPickBand('${row.id}', ${b.mid})">
-          ${h(b.zero ? "$0" : bpMoney(b.lo) + " – " + bpMoney(b.hi))}</button>`;
-      }).join("")}
-    </div>`;
-  return renderBpSheetFrame(label, body);
 }
 
 /**
@@ -258,7 +220,6 @@ function renderBpLayer() {
   if (!state.bp || ["bpLanding", "bpFinder", "bpYourCar"].indexOf(state.screen) === -1) return "";
   const s = state.bp;
   const sheet = s.ui && s.ui.sheet;
-  if (sheet === "pick")         return renderBpPickSheet();
   if (sheet === "credit")       return renderBpCreditSheet();
   if (sheet === "taxBreak")     return renderBpTaxSheet();
   if (sheet === "taxBreakPage") return renderBpTaxPage();

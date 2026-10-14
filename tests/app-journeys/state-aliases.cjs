@@ -28,4 +28,5 @@ module.exports = [
   { removed: 'onboarding.lifestyleDetail', why: 'only the removed commute sliders wrote it; onbFinish now resets state.lifestyleDetail directly' },
   { removed: 'lifestyleWizard', why: 'the removed lifestyle wizard\'s session; always null without its screens' },
   { removed: 'onboarding.buddyIndex', why: 'the position inside the removed buddy creator sub-steps; the buddy step is one screen' },
+  { removed: 'bp.ui.pick', why: 'the row the removed Big purchase range-picker sheet was open on' },
 ];
