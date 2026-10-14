@@ -31,9 +31,9 @@ const USEBERRY_TRACKING = window.MB_RELEASE.tracking === true;
 // that tab; deleting its call site would orphan them into sweep.sh §7b's
 // newly-unreferenced warning.
 //
-// ⚠ IT GUARDS THE TAB, NOT THE BUDGET. Owner's call, and deliberately narrow:
-// the daily task, the Home task, budget-update-confirm's Rebuild and two deep
-// links all reach budget screens without rendering the tab. They are listed in
-// CLAUDE.md as known. Widening it is moving renderBudgetPaywall's guard into
-// renderScreen() against a list of screen ids.
+// ⚠ IT GUARDS THE TAB, NOT THE BUDGET. Owner's call, and deliberately narrow
+// (L27): chat, the ☰ menu, budget-update-confirm's Rebuild and two deep links
+// all reach budget screens without rendering the tab; the paywall's Tools card
+// lists them (renderBudgetPaywallAdmin). Widening it is moving
+// renderBudgetPaywall's guard into renderScreen() against a list of screen ids.
 const BUDGET_PAYWALL = true;

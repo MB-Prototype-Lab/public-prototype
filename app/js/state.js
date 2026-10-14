@@ -83,7 +83,8 @@ const destinations = [
 ];
 
 const state = {
-  // Navigation — opens on the streak splash on every fresh load/refresh.
+  // Navigation — bootV3 replaces this with onboarding before the first render
+  // (D06), so the streak splash is reached only from Tools.
   screen: "streak",
 
   // ── Per-stack navigation history (L5, architecture §7) ────────────────────

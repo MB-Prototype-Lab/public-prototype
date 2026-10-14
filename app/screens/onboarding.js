@@ -7,9 +7,12 @@
 //   3 ZIP   4 household   5 income band
 //   6 buddy creation (five sub-steps)   7 intro video (how it works)
 //
-// PERSONA OVERRIDE (D09): steps 3, 4 and 5 override the hardcoded persona.
-// Everything else falls back to persona.json. If a tester skips a field, the
-// persona value stands — NEVER block progress to collect data.
+// WHAT FINISHING WRITES (onbFinish): the name, ZIP, household and income
+// override the persona (D09), and the place, coverage, miles, goal areas and
+// buddy are written too. A skipped name, ZIP, household or income keeps the
+// starting profile's value — the default profile unless one is already applied
+// (L26); the other skipped answers stay unset, and lifestyle stays as the
+// persona seeded it. NEVER block progress to collect data.
 //
 // ── v3.1: WHY THE GOAL QUESTION IS SECOND ────────────────────────────────────
 // It used to be sixth, which asked for a ZIP, a household size and an income
@@ -433,9 +436,9 @@ function onbResetStep() {
   if (key === "name") o.name = "";
   render();}
 
-// Top-right Skip. Writes no value, so the persona fallback stands for the
-// financial fields. The name step is special — it opens a confirmation instead
-// (skip only this screen, or skip the whole setup).
+// Top-right Skip. Writes no value, so the starting profile's figure stands for
+// the financial fields (onbFinish). The name step is special — it opens a
+// confirmation instead (skip only this screen, or skip the whole setup).
 function onbSkip() {
   const o = state.onboarding;
   const key = ONB_STEPS[o.step];
@@ -783,7 +786,8 @@ function onbJoinAreas(areas) {
 
 /**
  * Apply everything and land on home with a 1-day streak.
- * Only ZIP, household size and income touch the persona (D09).
+ * The name, ZIP, household size and income override the persona (D09); a
+ * skipped answer keeps the starting profile's value.
  */
 function onbFinish() {
   const o = state.onboarding;
@@ -876,12 +880,10 @@ function onbFinish() {
   // wins if that step is ever put back into ONB_STEPS.
   if (state.trialAccepted == null) state.trialAccepted = true;
 
-  // The budget is NOT built here — the setup wizard is the first thing the
-  // Budget tab shows ("the wizard, before the budget exists"). We only
-  // carry the lifestyle answers forward (written above), which pre-fill the
-  // wizard when the tester opens Budget or taps the "Set up your budget" task.
-  // Leaving planStatus empty is what makes renderBudgetEmpty (the wizard door)
-  // appear on first visit.
+  // The budget is NOT built here. "empty" is what every reader takes as "no
+  // budget yet": comparison, My Progress, and the Budget tab's start card
+  // (renderBudgetEmpty) when the tab is not the paywall. A save through the
+  // baseline seam sets it to "complete".
   state.planStatus = "empty";
 
   if (typeof ubTrailRecord === "function") {
@@ -991,8 +993,8 @@ function onbSkipPrompt() {
   `;
 }
 
-// Nothing blocks progress — an unanswered step is skippable and the persona
-// value stands (D09).
+// Nothing blocks progress — an unanswered step is skippable and the starting
+// profile's value stands (onbFinish).
 function onbAnswered(key, o) {
   if (key === "name")      return !!o.name;
   if (key === "zip")       return !!o.zip;
@@ -2391,15 +2393,18 @@ function renderOnboardingAdmin() {
           </select>
         </div>
         <div class="input-group">
-          <label>Overrides the persona (D09 — only these three)</label>
+          <label>Written at the end — name, ZIP, household and income override the persona (D09)</label>
           <div class="helper" style="line-height:1.7;">
-            zip → ${h(o.zip || "—")}<br>
+            name → ${h(o.name || "—")}<br>
+            zip → ${h(o.zipDeclined ? "declined (national figures)" : (o.zip || "—"))}<br>
             household → ${h(o.householdSize || "—")}<br>
             income band → ${h(o.incomeBand || "—")}
             ${onbIncomeValue(o) != null
               ? ` · ${h(budgetFmt(onbIncomeValue(o)))}/yr
                   · ${h(budgetFmt(onbIncomeValue(o) / 12))}/mo`
-              : ""}
+              : ""}<br>
+            place → ${h(o.placeType || "—")} · coverage → ${h(o.coverage || "—")} · miles → ${h(o.miles || "—")}<br>
+            goal areas → ${h((o.improveAreas || []).join(", ") || "—")}
           </div>
         </div>
         <div class="input-group">
@@ -2415,7 +2420,11 @@ function renderOnboardingAdmin() {
           </div>
         </div>
         <p class="helper" style="font-size:10px;">
-          Everything else falls back to persona.json. Skipping never blocks.
+          A skipped name, ZIP, household or income keeps the starting
+          profile's value: the default profile unless one is applied above
+          (L26). A skipped place, coverage or miles stays unset, and the
+          emergency fund estimates from household size. Lifestyle stays as the
+          persona seeded it. Skipping never blocks.
         </p>
       `}
       <button class="button secondary full" type="button" onclick="onbStart();go('onboarding')">Restart onboarding</button>

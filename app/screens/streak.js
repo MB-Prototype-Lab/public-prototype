@@ -1,9 +1,10 @@
 // ─── Streak Splash (screen) ───────────────────────────────────────────────────
 // TAB: none | NAV BAR: hidden (omitted from NAV_VISIBLE_SCREENS)
 //
-// The first screen on every fresh load/refresh — state.screen seeds to "streak"
-// in js/state.js. A full-bleed branded sunburst that hosts the reusable streak
-// counter component, an encouraging line, and the "Let's go!" CTA into Home.
+// Reached only from the Tools jump list: state.screen seeds to "streak" in
+// js/state.js, but bootV3 opens onboarding before anything renders. A
+// full-bleed branded sunburst that hosts the reusable streak counter
+// component, an encouraging line, and the "Let's go!" CTA into Home.
 // Static + non-persistent: nothing here is stored or computed. Independent of
 // home.js by design, so either screen can be iterated without touching the other.
 // Full-height is handled by render.js + the .streak-mode CSS class (no nav).
@@ -35,8 +36,9 @@ function renderStreak() {
 function renderStreakAdmin() {
   return '<div class="admin-card">'
        +   '<p class="admin-card-title">Streak Splash</p>'
-       +   '<p class="helper" style="margin-bottom:10px;">Static, non-persistent launch screen — shows first on every '
-       +     'refresh. The 8-day streak and weekday states are hardcoded display values, not stored or computed.</p>'
+       +   '<p class="helper" style="margin-bottom:10px;">Static, non-persistent screen, reached only from Tools — '
+       +     'every session opens on onboarding. The 8-day streak and weekday states are hardcoded display values, '
+       +     'not stored or computed.</p>'
        +   '<button class="button secondary small" type="button" onclick="go(\'home\')">Continue to Home →</button>'
        + '</div>';
 }

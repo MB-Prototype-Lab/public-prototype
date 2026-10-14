@@ -39,17 +39,17 @@
 // finished screen. See the checklist in architecture section 11.
 
 function adminSubtitle() {
-  if (state.screen === "streak")         return "Streak splash — static launch screen shown first on every refresh.";
+  if (state.screen === "streak")         return "Streak splash — static screen, reached only from Tools; every session opens on onboarding.";
   if (state.screen === "journalEntry")   return "Money Journal — 4 structured questions by priority, then free text (discarded).";
   if (state.screen === "journalConfirm") return "Confirmation — entries derived from structured answers only.";
   if (state.screen === "journalDone")    return "Post-submit — month-to-date updated, observations recomputed.";
-  if (state.screen === "home")           return "Home — tip banner, buddy stage, four daily tasks.";
+  if (state.screen === "home")           return "Home — tip banner, buddy stage, " + (state.dailyTasks || []).length + " daily tasks.";
   if (state.screen === "login")          return "Login scene — day/night by local time, then the daily-update prompt.";
   if (state.screen === "dailyUpdate")    return "Daily update — one audio file per segment; visuals carry the numbers (D30).";
   if (state.screen === "dailySummary")   return "Completion summary — observations stacked in plain language.";
   if (state.screen === "dailyShare")     return "Share — anonymization on by default; the preview is the literal payload.";
   if (state.screen === "onboarding")     return "Onboarding — " + ONB_STEPS.length +
-                                                " steps. Only ZIP, household and income override the persona (D09).";
+                                                " steps. Name, ZIP, household and income override the persona (D09).";
   if (state.screen === "learn")          return "Adjust XP config, lesson states, badge progress.";
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
   if (state.screen === "reward-preview") return "Lesson preview — read-only. Edit content in Learn admin.";

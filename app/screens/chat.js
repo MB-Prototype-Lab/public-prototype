@@ -8,9 +8,10 @@
 // this file only renders. See that file's header before changing behavior.
 //
 // NAVIGATION
-//   Entry: "Chat with Buddy" button on the Home stage
-//   Exit:  ← Back → home
-//          Reply links → Budget / Learn / Goals / Debt / Market / My Progress
+//   Entry: "Chat with <buddy>" button on the Home stage
+//   Exit:  Back (top right) → Home
+//          Reply links (chatFollowAction, js/chat-router.js) → a journal entry,
+//          the Budget tab, "Where it's going" (comparison), Goals or My Progress
 //          (links are always tapped by the user — chat never auto-navigates)
 //
 // STATES
@@ -22,9 +23,6 @@
 // PRODUCTION NOTES
 //   Replacing this with a real assistant means replacing chatRoute() — the
 //   rendering here (bubbles, chips, link buttons) stays usable as-is.
-//   MONEY JOURNAL DEPENDENCY: the "tracking actuals" reply is a placeholder;
-//   when Money Journal ships, its route in chat-router.js gets rewired and the
-//   chips below should gain a journal entry. Details in chat-router.js.
 
 // Always the first message in the thread. Deliberately not stored in state:
 // it can never be lost, and Reset only has to clear the real transcript.
@@ -33,13 +31,6 @@ const CHAT_GREETING = {
   text: "Hey — I'm Buddy. Ask me what you're trying to do and I'll take you to the " +
         "right spot. No question is too small here."
 };
-
-// Quick-tap suggestions. Each is worded to land on a DIFFERENT route in
-// BUDDY_RESPONSES, so the bubbles double as a demo of what the matcher knows.
-// Tapping one is identical to typing it — both go through chatRespond().
-// Note the phrasing avoids learning verbs ("how do", "explain") where an action
-// is wanted, since the learn route is checked first and would win. See the
-// ordering notes in chat-router.js.
 
 function renderChat() {
   const thread = [CHAT_GREETING].concat(state.chat.messages);

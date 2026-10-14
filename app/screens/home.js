@@ -7,11 +7,11 @@
 //   tip banner   one line, 90 character HARD limit, puppy icon alongside
 //   buddy stage  the puppy with an idle cycle → components/buddy.js
 //   chat button  below the stage
-//   daily tasks  four at a time, each routing somewhere real and paying kibble
+//   daily tasks  three, each routing somewhere real and paying kibble
 //   bottom nav   -> components/nav.js
 //
 // -- THE TASK CARDS ARE THE GUIDED PATH -----------------------------------------
-// Everything else in the app can be browsed. These four cards are what the
+// Everything else in the app can be browsed. These three cards are what the
 // prototype is actually testing: whether a person opens the thing they were
 // pointed at, and whether doing it visibly pays.
 //

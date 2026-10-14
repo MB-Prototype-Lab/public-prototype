@@ -124,11 +124,11 @@ function renderMPUpdate() {
 // because the stack decides, not the screen (architecture §7).
 function mpStartUpdate() {
   // Clear the task claim first. state.activeTaskId names the task whose flow you
-  // are currently inside, and a bookmark task that was opened and abandoned
-  // ("Set up your budget", then you wander off) leaves it set. journalSubmit
-  // completes whatever activeTaskId names — so without this, updating your
-  // spending from My Progress would tick off the budget task and pay out its
-  // bones. This entry point is not inside any task.
+  // are currently inside, and a task that was opened and abandoned ("Saving for
+  // an emergency", then you wander off) leaves it set. journalSubmit completes
+  // whatever activeTaskId names — so without this, updating your spending from
+  // My Progress would tick off that task and pay out its bones. This entry
+  // point is not inside any task.
   state.activeTaskId = null;
   journalStart({});
   go("journalEntry");

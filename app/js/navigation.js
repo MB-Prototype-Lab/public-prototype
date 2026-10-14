@@ -488,10 +488,11 @@ window.addEventListener('popstate', function(e) {
 // ── A TASK IS ONE OF TWO THINGS, AND THEY NAVIGATE DIFFERENTLY ───────────────
 //
 // 1. A BOOKMARK into another tab — "See what APR really costs you" opens the
-//    Learn tab's lesson; "Set up your budget" opens the Budget tab. The owner's
-//    framing: daily tasks are contextual bookmarks sending you to other spots in
-//    the application. Tapping one must be indistinguishable from tapping the
-//    same thing in that tab. So: navGoTabRoot — switch stacks and start clean.
+//    Learn tab's lesson, and the `budget` route (chat's "Open my budget") opens
+//    the Budget tab. The owner's framing: daily tasks are contextual bookmarks
+//    sending you to other spots in the application. Tapping one must be
+//    indistinguishable from tapping the same thing in that tab. So:
+//    navGoTabRoot — switch stacks and start clean.
 //
 // 2. A FLOW launched from Home — money_journal and subscription_confirm open a
 //    journal entry, which is not a tab and has nowhere else to belong. taskGo is
