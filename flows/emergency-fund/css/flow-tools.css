@@ -1,0 +1,5 @@
+/* Reviewer Tools use the full app's layout (css/layout.css) unchanged: same phone
+   position, fixed › at the phone's top edge, hidden at phone widths. Only the
+   hidden-attribute toggle needs help, because .admin and the tab set display. */
+#adminExpandTab[hidden], .admin[hidden] { display: none !important; }
+.admin-scroll { overflow-wrap: anywhere; }

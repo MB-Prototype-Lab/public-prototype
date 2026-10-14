@@ -122,7 +122,9 @@ Everything else falls back to the persona. A skipped field keeps the persona
 value — never block progress to collect data.
 
 **In-memory only** (D03). No localStorage, no backend. v2's refresh-returns-to-
-gate behavior carries forward unchanged.
+gate behavior carries forward as the default. Admin Tools' **Pin on refresh**
+(`js/refresh-pin.js`, one sessionStorage flag per browser tab) makes a refresh
+restart the app in place instead; **Exit Prototype** returns to the selector.
 
 ---
 

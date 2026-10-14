@@ -1,0 +1,69 @@
+{
+  "_note": "Narration for the onboarding intro video. Same shape as daily-scripts.json so scripts/gen-audio.sh can read both with one extractor. NOT a spec copy — the onboarding intro is a v3 addition, so there is no byte-parity requirement here (unlike daily-scripts.json). FIVE scripts, one per primary goal plus a default: segments s1, s2, s5 and s6 are word-for-word identical across all five (the shared spine), and only s3 and s4 change. They are written out in full rather than composed at load time because gen-audio.sh cuts one .wav per script/segment pair and the player addresses them by path — a composed script would have no folder of its own. Which one plays is chosen by onbVideoScriptId() from state.strategicGoal.areas[0].",
+  "method": {
+    "estimatedWpm": 165,
+    "_note": "Fallback pace when no .wav has been generated. Matches DU_WPM."
+  },
+  "scripts": [
+    {
+      "id": "onboarding_intro",
+      "_goal": null,
+      "segments": [
+        { "id": "s1", "text": "A quick tour before we start. About a minute." },
+        { "id": "s2", "text": "Most days I'll ask a few short questions about what you spent. That's your Money Journal." },
+        { "id": "s3", "text": "Each answer fills in a bit more of the picture — where your money actually goes, and which parts move around." },
+        { "id": "s4", "text": "Once there's enough of it, I'll show you what's steady, what's drifting, and what you might not have clocked." },
+        { "id": "s5", "text": "You'll also see how you compare to peers — households near yours in size, income and area. Those are national figures, a mathematical aggregate, not other people's accounts." },
+        { "id": "s6", "text": "That's the whole thing. Answer a little most days and the picture fills itself in. Let's get you set up." }
+      ]
+    },
+    {
+      "id": "onboarding_paycheck",
+      "_goal": "Stop living paycheck to paycheck",
+      "segments": [
+        { "id": "s1", "text": "A quick tour before we start. About a minute." },
+        { "id": "s2", "text": "Most days I'll ask a few short questions about what you spent. That's your Money Journal." },
+        { "id": "s3", "text": "You said the thing you want is to stop living paycheck to paycheck. That mostly comes down to knowing what's already spoken for before the month starts." },
+        { "id": "s4", "text": "So I'll keep what's fixed separate from what's actually yours to move, and show you how much of the month is committed on day one." },
+        { "id": "s5", "text": "You'll also see how you compare to peers — households near yours in size, income and area. Those are national figures, a mathematical aggregate, not other people's accounts." },
+        { "id": "s6", "text": "That's the whole thing. Answer a little most days and the picture fills itself in. Let's get you set up." }
+      ]
+    },
+    {
+      "id": "onboarding_savings",
+      "_goal": "Build up some savings",
+      "segments": [
+        { "id": "s1", "text": "A quick tour before we start. About a minute." },
+        { "id": "s2", "text": "Most days I'll ask a few short questions about what you spent. That's your Money Journal." },
+        { "id": "s3", "text": "You said the thing you want is to build up some savings. That's really a question of what survives the month, not what you meant to put aside." },
+        { "id": "s4", "text": "So I'll show you the gap between the plan and what actually went out, and how that gap moves from one week to the next." },
+        { "id": "s5", "text": "You'll also see how you compare to peers — households near yours in size, income and area. Those are national figures, a mathematical aggregate, not other people's accounts." },
+        { "id": "s6", "text": "That's the whole thing. Answer a little most days and the picture fills itself in. Let's get you set up." }
+      ]
+    },
+    {
+      "id": "onboarding_debt",
+      "_goal": "Get on top of what I owe",
+      "segments": [
+        { "id": "s1", "text": "A quick tour before we start. About a minute." },
+        { "id": "s2", "text": "Most days I'll ask a few short questions about what you spent. That's your Money Journal." },
+        { "id": "s3", "text": "You said the thing you want is to get on top of what you owe. Two numbers decide how long that takes — the rate you're charged, and whatever you pay above the minimum." },
+        { "id": "s4", "text": "So I'll keep both of those in front of you, and show what moving either one does to the finish line." },
+        { "id": "s5", "text": "You'll also see how you compare to peers — households near yours in size, income and area. Those are national figures, a mathematical aggregate, not other people's accounts." },
+        { "id": "s6", "text": "That's the whole thing. Answer a little most days and the picture fills itself in. Let's get you set up." }
+      ]
+    },
+    {
+      "id": "onboarding_understand",
+      "_goal": "Just understand where it goes",
+      "segments": [
+        { "id": "s1", "text": "A quick tour before we start. About a minute." },
+        { "id": "s2", "text": "Most days I'll ask a few short questions about what you spent. That's your Money Journal." },
+        { "id": "s3", "text": "You said the thing you want is to understand where it goes. That's the one I can answer quickest — it just needs a few days of answers to work from." },
+        { "id": "s4", "text": "So I'll sort what you tell me into categories and show you the shape of an ordinary month, in your own numbers." },
+        { "id": "s5", "text": "You'll also see how you compare to peers — households near yours in size, income and area. Those are national figures, a mathematical aggregate, not other people's accounts." },
+        { "id": "s6", "text": "That's the whole thing. Answer a little most days and the picture fills itself in. Let's get you set up." }
+      ]
+    }
+  ]
+}

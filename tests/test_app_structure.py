@@ -29,7 +29,8 @@ class AppStructureTests(unittest.TestCase):
             for source in (APP / directory).glob('*.js'):
                 self.assertIn(source.relative_to(APP).as_posix(), scripts)
         for before, after in (
-            ('release-config.js', 'js/config.js'),
+            ('release-config.js', 'js/refresh-pin.js'),
+            ('js/refresh-pin.js', 'js/config.js'),
             ('data/emergency-fund.js', 'js/esf.js'),
             ('data/buddy-esf.js', 'js/buddy-esf.js'),
             ('js/budget-baseline.js', 'js/esf.js'),

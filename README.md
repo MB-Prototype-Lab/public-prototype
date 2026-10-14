@@ -3,7 +3,9 @@
 This repository is the shared workspace for the MoneyBuddy prototype. An
 operator can work with an agent from Claude Desktop on Windows or from a
 terminal. The editable app is in `app/`; the repository root opens a selector
-for the local app and historical builds.
+with a **Prototype** tab (the full app and a link to historical builds) and a
+**Flows** tab (standalone Flows). The repository cutover
+is complete; historical snapshots, `demo` and PM branches remain preserved.
 
 ## 1. Confirm GitHub access
 
@@ -100,8 +102,13 @@ without asking to see the token.
 ## 3. Preview the app
 
 With a local checkout, open `index.html` in a browser, enter passcode `1337`,
-and choose the local app. No server or package installation is needed for this
-preview. A refresh returns to the selector. If you are using Claude Desktop,
+and choose **Local Prototype** on the **Prototype** tab or a Flow on the **Flows** tab.
+**Historical versions** opens the published builds in a new tab. No server or package installation
+is needed. Refresh returns to the selector, from Local Prototype or a Flow. To stay
+put while iterating, open **Tools** (the **›** beside the phone) and check **Pin on refresh**:
+refresh then restarts the same app or Flow fresh, for that browser tab only, until you
+uncheck it. **Exit Prototype** and **Exit Flow** return to the selector and leave the pin as
+it is; **Restart Flow** always restarts in place. If you are using Claude Desktop,
 ask the agent to show you the file in the Code tab's browser pane or open it
 from the checkout folder in File Explorer.
 
@@ -117,13 +124,14 @@ prints the selector URL and each option's URL.
 
 ## 4. Ask your agent to use the project skills
 
-The repository has five skills in `.claude/skills/`. Name the relevant skill in
+The repository has six skills in `.claude/skills/`. Name the relevant skill in
 your request; the agent reads its instructions and the linked project guides.
 
 | When you want to… | Ask for… | What the agent does |
 | --- | --- | --- |
 | Begin a task or resume unfinished work | [start-work](.claude/skills/start-work/SKILL.md) | Checks branches and uncommitted files, then starts or resumes a task branch without losing existing work. |
-| Compare local alternatives | [compare-local](.claude/skills/compare-local/SKILL.md) | Creates independent previews, keeps a chosen alternative, and cleans up only selected work. |
+| Compare local variants | [compare-local](.claude/skills/compare-local/SKILL.md) | Creates independent previews of the app or one Flow, keeps a chosen variant, and cleans up only selected work. |
+| Make or change a focused journey (a Flow) | [create-flow](.claude/skills/create-flow/SKILL.md) | Turns “only show…”, “skip onboarding…” or “start at…” into a contained Flow on the selector's Flows tab; the full app stays unchanged. |
 | Bring in changes from `main` | [sync](.claude/skills/sync/SKILL.md) | Fetches and merges current `main` into your task branch, then checks affected work. |
 | Get tested work into a pull request | [ship](.claude/skills/ship/SKILL.md) | Reviews changes, runs checks, prepares the PR, and records your testing. A merge needs separate authorization. |
 | Update the live selector or add a snapshot | [publish](.claude/skills/publish/SKILL.md) | Follows the release procedure after an explicit publication request. Publication needs separate authorization. |
@@ -136,17 +144,31 @@ handles routine code changes and automated checks. See
 update the live site. A GitHub login does not itself authorize a merge,
 repository settings change, or publication.
 
-## Compare alternatives locally
+## Compare variants locally
 
-Ask your agent: “Make two alternatives.” It prepares named choices under **Local
-alternatives** in your existing selector. Use **Open in new tab** and arrange the
-windows side by side. Readable URL folders such as `variant-A` and `variant-B`
-help you identify the option; later comparisons may add a suffix such as `variant-A-2`.
-Each alternative runs independently; refresh returns to the
-primary selector. No server, package installation, or Git commands are needed from
-you.
+Ask your agent: “Make two variants,” or “Make two variants of the Emergency fund
+Flow.” It prepares named choices under **Prototype variants** on the selector's
+**Prototype** tab, or under **Emergency fund variants** below the Flows list. The tab
+shows how many there are, such as **Flows (2)**. Each row opens that variant in the
+same tab; **Compare side by side** shows variants next to your current version.
+Readable URL folders such as `variant-A` and `variant-B` help you identify the
+option; later comparisons may add a suffix such as `variant-A-2`. Each variant runs
+independently; refresh returns to the primary selector. In **Compare side by side**,
+**Pin on refresh** beside **Visible panes** makes a refresh reopen the same panes from
+the start. No server, package installation, or Git commands are needed from you.
 
 Continue with “Change option A,” then “Keep B” when you choose. The agent verifies
-and merges B into your task branch locally. Alternatives remain available to the
+and merges B into your task branch locally. Variants remain available to the
 agent until you explicitly ask “Clean up this comparison.” The ordinary selector
 returns when the comparison closes. See [local comparisons](docs/local-variants.md).
+
+## Iterate on a contained Flow
+
+Ask your agent: “Create a Flow for this proposal,” “Make a version that only shows
+the emergency fund,” or “Change the Emergency Fund Flow.” The
+[create-flow](.claude/skills/create-flow/SKILL.md) skill handles committed source
+selection, package setup and checks; you review it from the selector's Flows tab or
+its standalone file link. Such requests never become switches in the full app. `app/` stays the approved
+product. Merging a Flow shares the proposal; adopting it means selectively integrating
+the chosen behavior into the full app, then verifying that app before the PR opens.
+Publication requires a separate explicit request. See [Working with Flows](docs/flows.md).

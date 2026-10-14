@@ -39,17 +39,24 @@ def check_tree(root):
     return failures
 
 
-if __name__ == '__main__':
-    # Only the app and gate are editable. Historical source may contain unused
-    # templates; publication verifies exact migration bytes, not new behavior.
+def check_checkout(checkout):
+    # Validate editable app/gate/Flow packages, never historical exports or worktrees.
     import tempfile
     import shutil
     with tempfile.TemporaryDirectory() as temp:
         root = Path(temp)
-        for name in ('app', 'gate'):
-            shutil.copytree(ROOT/name, root/name)
-        shutil.copyfile(ROOT/'index.html', root/'index.html')
-        errors = check_tree(root)
+        for name in ('app', 'gate', 'flows'):
+            source = checkout / name
+            if name == 'flows' and not source.exists():
+                continue
+            shutil.copytree(source, root / name, symlinks=True,
+                            ignore=shutil.ignore_patterns('.*'))
+        shutil.copyfile(checkout / 'index.html', root / 'index.html')
+        return check_tree(root)
+
+
+if __name__ == '__main__':
+    errors = check_checkout(ROOT)
     if errors:
         raise SystemExit('\n'.join(errors))
-    print('Local app and selector references resolve.')
+    print('Local app, Flow and selector references resolve.')

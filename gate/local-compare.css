@@ -1,5 +1,7 @@
 /* Loaded only inside the selector's stripped LOCAL SCRIPTS boundary. */
 #localCompare { margin-top: 16px; width: 100%; }
+/* Empty unless a Flow comparison moves its variants here; no stray panel gap. */
+#localFlowVariantsSlot:empty { display: none; }
 body.local-comparing { display: block; padding: 0; }
 .local-comparing > .gate-wrap { display: none; }
 .local-compare-workspace {
@@ -12,6 +14,8 @@ body.local-comparing { display: block; padding: 0; }
 }
 .local-compare-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; }
 .local-compare-toolbar h1 { font-size: 20px; margin: 0; }
+.local-compare-pin { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.local-compare-pin input { margin: 0; accent-color: var(--gate-accent); }
 .local-compare-workspace > p { margin: 0; max-width: 1100px; font-size: 14px; }
 .local-compare-workspace button, .local-compare-workspace select {
   padding: 8px;

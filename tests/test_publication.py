@@ -80,10 +80,12 @@ class PublicationTests(unittest.TestCase):
         self.row['state'] = 'archived'
         output = self.build(previous=original)
         page = output['index.html'].decode()
-        self.assertIn('<details>', page)
+        self.assertIn('<details class="gate-older"><summary>Older versions</summary>', page)
         self.assertIn('&lt;script&gt;', page)
         self.assertNotIn('<script>alert', page)
-        self.assertIn('Tracking off', page)
+        # Untracked builds carry no badge; only "Tracking on" is ever stated.
+        self.assertNotIn('Tracking off', page)
+        self.assertNotIn('gate-badge', page)
         self.row['state'] = 'hidden'
         output = self.build(previous=original)
         self.assertNotIn('versions/v1', output['index.html'].decode())
@@ -156,16 +158,24 @@ class PublicationTests(unittest.TestCase):
     def test_selector_order_and_tracking_independent(self):
         rows = self.catalog['snapshots']
         rows.extend([dict(self.row, id='second', source_tag='snapshot/second', source_dir='versions/second', public_path='versions/second/index.html', label='Second', order=3, tracking=True), dict(self.row, id='first', source_tag='snapshot/first', source_dir='versions/first', public_path='versions/first/index.html', label='First', order=1)])
+        rows.append(dict(self.row, id='old', source_tag='snapshot/old', source_dir='versions/old', public_path='versions/old/index.html', label='Old', order=2, tracking=True, state='archived'))
         page = pub.selector(self.catalog, self.assets['index.html'].decode(), b'', b'')['index.html'].decode()
         self.assertLess(page.index('One'), page.index('First'))
         self.assertLess(page.index('First'), page.index('Second'))
-        self.assertIn('Tracking on', page)
+        self.assertIn('Second<span class="gate-badge">Tracking on</span>', page)
+        # Tracking is stated wherever a build is listed, including Older versions.
+        older = page[page.index('<details class="gate-older">'):page.index('</details>')]
+        self.assertIn('Old<span class="gate-badge">Tracking on</span>', older)
+        self.assertNotIn('First<span class="gate-badge">', page)
 
     def test_published_selector_has_no_local_comparison(self):
         page = self.build()['index.html'].decode()
         for local_text in ('localPreview', 'localAlternatives', '.local-preview/',
                            'local-variants.js', 'local-compare.css', 'localCompare', 'Compare side by side', '.worktrees/', 'Current local app',
-                           'Live historical builds', 'LOCAL PREVIEW', 'LOCAL SCRIPTS'):
+                           'Live historical builds', 'LOCAL PREVIEW', 'LOCAL SCRIPTS', 'localFlows', 'Local Prototype',
+                           'Historical versions', 'flows/catalog.js', 'gate/flows.js', 'mb-prototype-lab.github.io',
+                           'CATALOG -->', 'localFlowVariantsSlot', 'localAlternativesTitle', 'Prototype variants',
+                           'local-tab-count', 'data-default-tab'):
             with self.subTest(local_text=local_text):
                 self.assertNotIn(local_text, page)
         self.assertIn('versions/v1/index.html', page)
@@ -177,8 +187,21 @@ class PublicationTests(unittest.TestCase):
         template = self.assets['index.html'].decode()
         for marker in ('<!-- LOCAL PREVIEW START -->', '<!-- LOCAL PREVIEW END -->',
                        '<!-- LOCAL SCRIPTS START -->', '<!-- LOCAL SCRIPTS END -->'):
-            with self.subTest(marker=marker), self.assertRaisesRegex(ValueError, 'boundary'):
-                pub.selector(self.catalog, template.replace(marker, ''), b'', b'')
+            for count in (-1, 1):
+                with self.subTest(marker=marker, count=count), self.assertRaisesRegex(ValueError, 'boundary'):
+                    pub.selector(self.catalog, template.replace(marker, '', count), b'', b'')
+        start, end = '<!-- LOCAL PREVIEW START -->', '<!-- LOCAL PREVIEW END -->'
+        swapped = template.replace(start, '@@').replace(end, start).replace('@@', end)
+        nested = template.replace(start, start + start, 1).replace(end, end + end, 1)
+        for name, bad in (('swapped', swapped), ('nested', nested),
+                          ('repeated scripts', template.replace('<!-- LOCAL SCRIPTS END -->', '<!-- LOCAL SCRIPTS END --><!-- LOCAL SCRIPTS START --><!-- LOCAL SCRIPTS END -->'))):
+            with self.subTest(name), self.assertRaisesRegex(ValueError, 'boundary'):
+                pub.selector(self.catalog, bad, b'', b'')
+        # A catalog marker hidden inside a stripped block must fail, not vanish.
+        for marker in ('<!-- CATALOG -->', '<!-- FLOW CATALOG -->'):
+            hidden = template.replace(marker, '').replace(end, marker + end, 1)
+            with self.subTest(hidden=marker), self.assertRaisesRegex(ValueError, 'marker'):
+                pub.selector(self.catalog, hidden, b'', b'')
 
     def test_missing_new_asset_fails(self):
         with self.assertRaisesRegex(ValueError, 'missing published asset'):

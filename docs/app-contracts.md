@@ -5,7 +5,7 @@ Read alongside app/docs/architecture.md. docs/workflow.md governs operations; pr
 ## Combined prototype behavior
 
 The single editable `app/` combines blue `b9e0332` with HoffDemo-Chat `ddee54e`
-(including HoffDemo/ESF `8c7a252`). `ESF_ONLY = false`: onboarding ends at Home,
+(including HoffDemo/ESF `8c7a252`). Full onboarding ends at Home,
 all tabs remain available, and emergency savings is reached from tasks and Goals.
 Onboarding combines ZIP/income refinement, household ages/kids, housing type,
 coverage and driving questions with the single Buddy picture and name/pronouns.
@@ -35,12 +35,11 @@ is added. Development tracking remains off; releases control tracking.
 ### Big Purchase Calculator
 
 Ported from blue `HoffDemo-BigPurchase` (`f84f142`, `b4abe14`); see
-docs/big-purchase-spec.md and docs/history/big-purchase-notes.md. `BP_ENTRY = false`:
-onboarding and Home are unchanged, and the calculator opens from the Goals tab's
-"Estimate a big purchase" card (`bpOpen()`) and the admin jump list. Blue's
-calculator-first entry is `BP_ENTRY = true` **with** `ESF_ONLY = true`; the hand-over
-sits inside `onbFinish()`'s ESF_ONLY branch, so `BP_ENTRY` alone only shortens
-onboarding. All docked onboarding behavior is gated on `BP_ENTRY`.
+docs/big-purchase-spec.md and docs/history/big-purchase-notes.md. The calculator
+opens from the Goals tab's "Estimate a big purchase" card (`bpOpen()`) and the
+full-app admin jump list. Full onboarding and all product tabs remain available.
+Calculator-first setup and contained presentation belong to the standalone Big
+Purchase Flow (see One product: no journey switches).
 
 The calculator writes `state.bp` (in-flight run, reset by `bpStart()`),
 `state.bigPurchase` (the saved plan) and `state.bpEvents` (session log). Commit
@@ -49,6 +48,77 @@ the budget. "Start mine first" opens the ESF with `state.bp.esfReturn`, so Back 
 the fund returns to the calculator rather than onboarding. The `bp`/`bpf` prefix
 belongs to the calculator; the Budget paywall uses `paywall*` names. Figures marked
 `_prototype` in data/big-purchase.json are estimates, not quotes.
+
+## One product: no journey switches
+
+`app/` is the full product as one cohesive journey: `app/` on main, with each
+setting at its recorded value. A focused, shortened or reordered journey for a
+study, demo or feature review is a Flow, made with the
+[create-flow](../.claude/skills/create-flow/SKILL.md) skill
+([Flows](flows.md#configure-the-journey)), never a switch in `app/`. The retired
+`ESF_ONLY` and `BP_ENTRY` forked the product into journeys that were never exercised
+together, nested inside each other, and left dormant branches behind. What matters
+is the structure, not the name.
+
+**A journey switch** is a value decided before or outside the tester's session (a
+constant, config entry, build step, script inclusion, URL or storage value, or an
+edited default) that makes the app present a different journey from the full
+product. It changes where the app starts or hands off; which steps, screens, tabs
+or controls exist or are reachable; or what Skip, Back, Continue or completion do.
+Or it exists to be flipped for a particular study, demo or feature focus. Editing a
+setting, a default or `ONB_STEPS` for a study is a switch even if reverted later or
+used only for a snapshot.
+
+Telltales:
+
+- `typeof X !== "undefined" && X` on a setting (not a data-presence guard), or a
+  guard on a name declared nowhere in `app/`, which something outside could inject.
+- One setting read across unrelated files; parallel data such as alternate step
+  lists; switches that only work in combination.
+- Hooks left for Flows: a function that always returns the same value, or a branch
+  on state that nothing in `app/` writes.
+- Behavior that depends on whether a script is listed in `app/index.html`.
+- Branches no tester can reach by using the app or Tools; comments such as “for this
+  build” or “for this study”.
+
+**Not journey switches:**
+
+- Session state set by what the tester does (answers, Skip, picks, saved plans),
+  and product rules applied the same way for everyone from data such as the profile.
+- Reviewer Tools actions such as the theme picker, profile switcher, jump list and
+  fixtures. Fixtures may fill answers but never change step lists, controls or where
+  the journey ends.
+- Release configuration (`MB_RELEASE` tracking and selector; see
+  [publishing](publishing.md)) and the tab's reviewer settings listed in CLAUDE.md,
+  such as Pin on refresh.
+- Participant URL parameters in app/docs/useberry.md. New `?screen=` links follow the
+  rule in `js/screen-url.js`: open a screen that stands on its own through the
+  product's own start function, inside the full journey, without hand-off or return
+  state. A study that needs a contained or shortened journey uses a Flow.
+- Recorded product settings, each kept at its recorded value; changing one is a
+  product decision, never a study: `BUDGET_PAYWALL = true` (plan.md §0 L27),
+  `PROFILE_PICKER = true` (L26), `LESSON_REUSE_FRAMING = false` (above). The
+  presentation and calculation settings `BUDDY_SINGLE_ART`, `ONB_FILM_ANY_LOOK` and
+  `BAND_PRORATE` do not change the journey. A new journey-affecting setting needs a
+  PM decision recorded in plan.md §0.
+- Dormant code that nothing turns on, such as unused onboarding steps. The ban
+  applies to whatever would turn it on.
+
+**Deprecated:** `SKIP_ONBOARDING` (spec D07) is a build-time entry switch. When true,
+every session starts at the returning-user login with a six-day streak instead of
+onboarding. It is kept, off, pending a decision on its replacement. Do not extend
+it, flip it for a study or copy its pattern; a shortened or returning-user start
+belongs in a Flow. Older comments suggesting a flip for a session are superseded.
+It is not the onboarding Skip button, which is session state.
+
+**Review questions** for any `app/` change, at intake and before a PR:
+
+1. Is a new or changed value decided outside the tester's session?
+2. Does it change the journey as described above?
+3. If unsure: can a tester reach every branch by using the app or Tools?
+
+A yes to the first two (or a no to the third) means a journey switch. Move the
+behavior into a Flow, or record an approved product decision first.
 
 ## Traps that fail silently
 
@@ -235,6 +305,13 @@ The three factors are asserted separately — see architecture §5.
   matcher; benchmarks are static; the journal is structured.
 - **No backend, no database, no localStorage** (D03). State is in-memory and
   resets on refresh. This is intentional.
+- **Refresh pin** (`js/refresh-pin.js`, loaded right after `release-config.js`). A
+  reload returns to the selector unless Admin Tools' **Pin on refresh** is checked;
+  pinned, the same page restarts fresh without `?screen=` or the `#v=` trail.
+  The pin is one sessionStorage flag per browser tab, shared with Flows and the
+  comparison toolbar; it is a reviewer preference, never participant data. An
+  embedded copy (a comparison pane) ignores it, never redirects to the selector,
+  and disables the pin and **Exit Prototype** with a note. Exit leaves the pin set.
 - **The app runs on `file://`** — `fetch()` and XHR are blocked and there is no
   dev server. Data loads via `<script>` tags (`data/*.js`), never a network call.
 
@@ -327,7 +404,11 @@ tracking is independent of the untracked development sweep.
 
 ## Don't
 
-Do not edit historical snapshots; ship fixes as new IDs. Current work belongs in app/.
+Do not edit historical snapshots; ship fixes as new IDs. Approved product changes
+belong in app/; contained proposals belong in flows/<id>/, with their own setup,
+policy, code and assets. See [Flows](flows.md). A Flow merge does not approve product
+changes. Selective app integration preserves full onboarding/tabs and existing BP/ESF
+save semantics, and requires PM verification of the integrated app before the PR.
 
 - Don't build sprite-sheet `background-position` cropping. **L22 allows
   owner-supplied buddy illustrations, but they are separate files chosen by

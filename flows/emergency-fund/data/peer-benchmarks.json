@@ -1,0 +1,132 @@
+{
+  "_note": "AI-generated at build time, stored static (D20). Structured as a MODEL — base values plus multiplicative adjustment rules — not a flat lookup of finished numbers. Never derived from real user data (D23).",
+
+  "coverage": {
+    "states": ["CA", "AR", "NY", "VA"],
+    "_note": "A12. Model structure supports all-US expansion by adding zipTiers entries only. No code changes required."
+  },
+
+  "method": {
+    "description": "National base by income band and household size, multiplied by a cost-of-living tier for the ZIP, then by lifestyle modifiers.",
+    "formula": "peerValue = base[category][incomeBand][householdSize] * colTier[zip][category] * lifestyleMod[category]",
+    "roundTo": 5
+  },
+
+  "incomeBands": [
+    { "id": "b1", "min": 0, "max": 35000 },
+    { "id": "b2", "min": 35001, "max": 60000 },
+    { "id": "b3", "min": 60001, "max": 90000 },
+    { "id": "b4", "min": 90001, "max": 140000 },
+    { "id": "b5", "min": 140001, "max": 999999999 }
+  ],
+
+  "base": {
+    "_note": "Monthly dollars. Household size 1 / 2 / 3 / 4+. Derived from federal consumer expenditure data at build time.",
+    "Housing":        { "b1": [890, 1120, 1310, 1480], "b2": [1180, 1490, 1720, 1950], "b3": [1520, 1910, 2210, 2490], "b4": [1980, 2470, 2850, 3210], "b5": [2610, 3260, 3760, 4230] },
+    "Groceries":      { "b1": [230, 380, 500, 640], "b2": [270, 440, 580, 740], "b3": [310, 500, 660, 840], "b4": [350, 570, 750, 950], "b5": [410, 660, 870, 1100] },
+    "Dining out":     { "b1": [90, 140, 170, 200], "b2": [130, 200, 240, 280], "b3": [180, 275, 330, 385], "b4": [250, 380, 460, 535], "b5": [360, 545, 660, 770] },
+    "Transport":      { "b1": [120, 190, 230, 270], "b2": [160, 250, 300, 350], "b3": [205, 320, 385, 450], "b4": [260, 405, 490, 570], "b5": [330, 515, 620, 725] },
+    "Utilities":      { "b1": [95, 130, 155, 180], "b2": [115, 158, 188, 218], "b3": [135, 185, 220, 255], "b4": [155, 212, 252, 292], "b5": [180, 246, 293, 340] },
+    "Subscriptions":  { "b1": [20, 28, 34, 38], "b2": [30, 42, 50, 57], "b3": [42, 58, 70, 79], "b4": [55, 76, 92, 104], "b5": [70, 97, 117, 132] },
+    "Health":         { "b1": [45, 78, 105, 132], "b2": [65, 112, 151, 190], "b3": [88, 152, 205, 258], "b4": [115, 199, 268, 337], "b5": [150, 259, 349, 439] },
+    "Personal care":  { "b1": [25, 44, 56, 68], "b2": [35, 61, 78, 95], "b3": [48, 84, 107, 130], "b4": [64, 112, 143, 174], "b5": [85, 149, 190, 231] },
+    "Entertainment":  { "b1": [35, 55, 72, 88], "b2": [52, 82, 107, 131], "b3": [74, 116, 152, 186], "b4": [102, 160, 209, 256], "b5": [145, 228, 298, 365] },
+    "Shopping":       { "b1": [60, 98, 128, 158], "b2": [88, 143, 187, 231], "b3": [124, 202, 264, 326], "b4": [172, 280, 366, 452], "b5": [245, 399, 522, 644] },
+    "Debt payments":  { "b1": [85, 120, 140, 158], "b2": [140, 198, 231, 260], "b3": [205, 290, 338, 381], "b4": [275, 389, 453, 511], "b5": [340, 481, 561, 632] },
+    "Other":          { "b1": [30, 45, 56, 66], "b2": [42, 63, 78, 92], "b3": [58, 87, 108, 127], "b4": [78, 117, 145, 171], "b5": [105, 158, 196, 231] }
+  },
+
+  "colTiers": {
+    "_note": "Cost-of-living multipliers by ZIP prefix. Housing swings hardest; groceries and dining moderate; subscriptions flat nationally.",
+    "tiers": {
+      "very_high": { "Housing": 1.85, "Groceries": 1.22, "Dining out": 1.34, "Transport": 1.08, "Utilities": 1.05, "Subscriptions": 1.0, "Health": 1.12, "Personal care": 1.28, "Entertainment": 1.30, "Shopping": 1.15, "Debt payments": 1.0, "Other": 1.10 },
+      "high":      { "Housing": 1.45, "Groceries": 1.12, "Dining out": 1.18, "Transport": 1.04, "Utilities": 1.02, "Subscriptions": 1.0, "Health": 1.06, "Personal care": 1.14, "Entertainment": 1.15, "Shopping": 1.08, "Debt payments": 1.0, "Other": 1.05 },
+      "moderate":  { "Housing": 1.0, "Groceries": 1.0, "Dining out": 1.0, "Transport": 1.0, "Utilities": 1.0, "Subscriptions": 1.0, "Health": 1.0, "Personal care": 1.0, "Entertainment": 1.0, "Shopping": 1.0, "Debt payments": 1.0, "Other": 1.0 },
+      "low":       { "Housing": 0.72, "Groceries": 0.93, "Dining out": 0.86, "Transport": 0.97, "Utilities": 0.98, "Subscriptions": 1.0, "Health": 0.95, "Personal care": 0.88, "Entertainment": 0.87, "Shopping": 0.94, "Debt payments": 1.0, "Other": 0.95 }
+    },
+    "zipPrefixes": {
+      "_note": "Three-digit ZIP prefix → tier. Unlisted prefixes fall back to 'moderate'.",
+      "900": "very_high", "901": "very_high", "902": "very_high", "903": "high", "904": "very_high",
+      "905": "high", "906": "high", "907": "high", "908": "high", "910": "high", "911": "high",
+      "912": "high", "913": "high", "914": "high", "915": "high", "916": "high", "917": "high",
+      "918": "high", "919": "very_high", "920": "very_high", "921": "very_high", "922": "moderate",
+      "923": "moderate", "924": "moderate", "925": "high", "926": "very_high", "927": "very_high",
+      "928": "very_high", "930": "high", "931": "high", "932": "moderate", "933": "moderate",
+      "934": "high", "935": "moderate", "936": "moderate", "937": "moderate", "939": "high",
+      "940": "very_high", "941": "very_high", "942": "high", "943": "very_high", "944": "very_high",
+      "945": "very_high", "946": "very_high", "947": "very_high", "948": "very_high", "949": "very_high",
+      "950": "very_high", "951": "very_high", "952": "high", "953": "moderate", "954": "high",
+      "955": "moderate", "956": "high", "957": "high", "958": "high", "959": "moderate",
+      "960": "moderate", "961": "moderate",
+
+      "716": "low", "717": "low", "718": "low", "719": "low", "720": "moderate", "721": "moderate",
+      "722": "moderate", "723": "low", "724": "low", "725": "low", "726": "low", "727": "moderate",
+      "728": "low", "729": "low",
+
+      "100": "very_high", "101": "very_high", "102": "very_high", "103": "very_high", "104": "very_high",
+      "105": "high", "106": "high", "107": "high", "108": "high", "109": "high", "110": "very_high",
+      "111": "very_high", "112": "very_high", "113": "very_high", "114": "very_high", "115": "high",
+      "116": "high", "117": "high", "118": "high", "119": "high", "120": "moderate", "121": "moderate",
+      "122": "moderate", "123": "moderate", "124": "moderate", "125": "moderate", "126": "moderate",
+      "127": "moderate", "128": "moderate", "129": "moderate", "130": "moderate", "131": "moderate",
+      "132": "moderate", "133": "low", "134": "low", "135": "low", "136": "moderate", "137": "moderate",
+      "138": "moderate", "139": "moderate", "140": "moderate", "141": "moderate", "142": "moderate",
+      "143": "moderate", "144": "moderate", "145": "moderate", "146": "moderate", "147": "low",
+      "148": "low", "149": "low",
+
+      "220": "high", "221": "very_high", "222": "very_high", "223": "very_high", "224": "moderate",
+      "225": "moderate", "226": "moderate", "227": "moderate", "228": "moderate", "229": "moderate",
+      "230": "moderate", "231": "moderate", "232": "moderate", "233": "moderate", "234": "moderate",
+      "235": "moderate", "236": "moderate", "237": "moderate", "238": "moderate", "239": "low",
+      "240": "low", "241": "low", "242": "low", "243": "low", "244": "moderate", "245": "low",
+      "246": "low"
+    }
+  },
+
+  "lifestyleModifiers": {
+    "_note": "Applied after cost-of-living. Set by the lifestyle wizard.",
+    "foodie": {
+      "low":      { "Dining out": 0.72, "Groceries": 0.92 },
+      "moderate": { "Dining out": 1.0, "Groceries": 1.0 },
+      "high":     { "Dining out": 1.38, "Groceries": 1.12 }
+    },
+    "cooksAtHome": {
+      "rarely":    { "Dining out": 1.30, "Groceries": 0.80 },
+      "sometimes": { "Dining out": 1.0, "Groceries": 1.0 },
+      "usually":   { "Dining out": 0.68, "Groceries": 1.18 }
+    },
+    "hobbySpend": {
+      "low":      { "Entertainment": 0.65, "Shopping": 0.85 },
+      "moderate": { "Entertainment": 1.0, "Shopping": 1.0 },
+      "high":     { "Entertainment": 1.55, "Shopping": 1.25 }
+    },
+    "paysRent": {
+      "true":   { "Housing": 1.0 },
+      "false":  { "Housing": 0.22 },
+      "shared": { "Housing": 0.6 }
+    },
+    "commute": {
+      "car":     { "Transport": 1.0 },
+      "transit": { "Transport": 0.62 },
+      "none":    { "Transport": 0.38 }
+    },
+    "travelFrequency": {
+      "rare":     { "Other": 0.85 },
+      "moderate": { "Other": 1.0 },
+      "frequent": { "Other": 1.45 }
+    }
+  },
+
+  "worked_example": {
+    "_note": "Verify the model against this on build. Persona: b3, household 2, ZIP 90066 (prefix 900 = very_high), foodie moderate, cooks sometimes.",
+    "category": "Dining out",
+    "base_b3_hh2": 275,
+    "colMultiplier": 1.34,
+    "lifestyleMultiplier": 1.0,
+    "result": 370,
+    "_check": "275 * 1.34 * 1.0 = 368.5, rounds to 370",
+    "userActual": 429,
+    "gapPercent": 16,
+    "_note_gap": "The seeded observation states 34% over. That figure compares against the user's own BUDGET of 320, not the peer value. Both framings appear in the UI and must be labelled distinctly — see 04-budget-benchmarks.md."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "flows": [
+    {
+      "id": "big-purchase",
+      "label": "Big purchase",
+      "description": "Plan a vehicle purchase and its emergency fund.",
+      "path": "flows/big-purchase/index.html"
+    },
+    {
+      "id": "emergency-fund",
+      "label": "Emergency fund",
+      "description": "Set up and save an emergency savings fund.",
+      "path": "flows/emergency-fund/index.html"
+    }
+  ]
+}

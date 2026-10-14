@@ -1,0 +1,126 @@
+/* ─── Simulated iOS keyboard ──────────────────────────────────────────────────
+   Lives in its own file because it is a component with its own root
+   (#keyboardRoot), outside the screen's render cycle — see components/keyboard.js.
+
+   Every colour is a theme token. The keyboard is chrome INSIDE the phone, so it
+   uses the screen palette (--card / --soft / --line / --text), not the
+   --chrome-* tokens, which belong to the admin panel around the frame. */
+
+#keyboardRoot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;                 /* above the nav bar, which it covers */
+  pointer-events: none;        /* empty root must not eat taps on the screen */
+}
+#keyboardRoot .kbd { pointer-events: auto; }
+
+/* Give the scroll area somewhere to put the focused field. Without this the
+   keyboard covers the bottom of the screen and you type into a hidden input. */
+.screen-scroll.kbd-open { padding-bottom: 250px; }
+
+.kbd {
+  background: var(--soft);
+  border-top: 1px solid var(--line);
+  padding: 0 3px 8px;
+  animation: kbdIn .18s cubic-bezier(.2, .7, .3, 1) both;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@keyframes kbdIn {
+  from { transform: translateY(100%); }
+  to   { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kbd { animation: none; }
+}
+
+/* Accessory bar — names the thing, and carries the only non-key control. */
+.kbd-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px 6px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 5px;
+}
+
+.kbd-hint {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: .01em;
+}
+
+.kbd-done {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  color: var(--accent);
+  padding: 4px 6px;
+}
+
+.kbd-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 5px;
+}
+
+.kbd-key {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 2px;
+  border: none;
+  border-radius: 5px;
+  background: var(--card);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 0 var(--line);
+}
+
+.kbd-key:active { background: var(--soft); }
+
+/* Function keys read as chrome rather than characters. */
+.kbd-key-fn {
+  background: var(--line);
+  font-size: 12px;
+  font-weight: 700;
+  flex: 0 0 auto;
+  min-width: 40px;
+  padding: 0 8px;
+}
+
+.kbd-key-fn.on {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.kbd-key-space  { flex: 4; font-size: 11px; color: var(--muted); }
+.kbd-key-return {
+  flex: 0 0 auto;
+  min-width: 62px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Numeric pad — three wide keys per row instead of ten narrow ones. */
+.kbd-pad { padding-bottom: 12px; }
+.kbd-pad .kbd-row { gap: 6px; padding: 0 30px; }
+.kbd-pad .kbd-key { min-height: 44px; font-size: 19px; font-weight: 600; }
+.kbd-pad .kbd-key-fn { flex: 1; min-width: 0; font-size: 16px; }
+
+.kbd-key:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

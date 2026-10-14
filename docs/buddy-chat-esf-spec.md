@@ -786,7 +786,8 @@ What that caught that a syntax check could not:
 > it. Half of the above are invisible to anything that only reads source.
 
 **A trap specific to this repo:** `index.html` bounces a browser refresh back to
-the version gate, so `location.reload()` loses the session. Navigate to the URL
+the version gate unless the tab is pinned in Admin Tools, and even a pinned refresh
+restarts fresh, so `location.reload()` loses the session. Navigate to the URL
 with a cache-buster instead.
 
 ---

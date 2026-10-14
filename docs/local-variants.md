@@ -1,34 +1,57 @@
 # Local comparisons
 
-PMs ask “Make two alternatives,” “Change option A,” “Keep B,” or “Clean up this
-comparison.” The agent handles Git and Python; the PM opens root `index.html`, enters
-1337, and chooses **Compare side by side** (or opens standalone alternatives). There is one active
-comparison per primary checkout. Closing restores the ordinary selector and retains
-all alternative branches and worktrees. Published builds never contain local choices.
+PMs ask “Make two variants” (or alternatives), “Change option A,” “Keep B,” or
+“Clean up this comparison.” The agent handles Git and Python; the PM opens root
+`index.html`, enters 1337, and opens a variant or chooses **Compare side by side**.
+PM-facing text calls the choices **variants**. There is one active comparison per
+primary checkout, and it targets either the full app or one Flow. Closing restores
+the ordinary selector and retains all variant branches and worktrees. Published
+builds never contain local choices.
+
+## Find variants on the selector
+
+Variants appear on the tab of what they change: **Prototype variants** below Local
+Prototype, or **<Flow> variants** (for example **Emergency fund variants**) below
+the Flows list. The tab shows how many there are, such as **Flows (2)**, and the
+selector opens on that tab until the PM picks one in this browser session; a
+remembered choice still wins. Each variant is a row with its name and description
+that opens in the same tab, like the Flow rows. Use the browser's own link menu for
+another tab. Exit Flow, Exit Prototype and an unpinned refresh from a variant return
+to this selector.
 
 ## Compare in one tab
 
-After unlocking the selector, choose **Compare side by side**. Two panes initially
-show the first two valid alternatives. **Visible panes** offers one through the
-number of choices, including **Current local app**, which is your current checkout
-and is not necessarily the original baseline.
+Choose **Compare side by side** below the variant rows. Two panes initially show the
+first two valid variants. **Visible panes** offers one through the number of
+choices, including **Local Prototype** (or **Local <Flow>** for a Flow comparison),
+which is your current checkout and is not necessarily the original baseline. A Flow
+comparison offers that baseline only while your checkout still lists the Flow; with
+a single variant and no baseline there is nothing to compare and the button is hidden.
 
 Each pane offers a variant dropdown, description, **Show tools**, **Restart preview**,
 and **Open in new tab**. Choosing an already visible variant swaps the two panes.
 Reducing the count hides the rightmost panes; increasing it restores their assignments.
 Switching A+B to A+C and back preserves B's progress. Phone previews are about 460px
-wide; Show tools widens one pane to 920px to expose the app's Admin Tools.
-If those tools are collapsed, use the app's expand arrow to open them. Scroll
+wide; Show tools widens one pane to 920px to expose the app's or Flow's Admin Tools.
+If those tools are collapsed, use the expand arrow to open them. Scroll
 horizontally to see panes that exceed the browser width; the preview region is also
 keyboard focusable. Each preview is the full browser viewport height, just like
 opening that app standalone. Controls stay above the previews in normal page flow;
 scroll the page vertically to reach the preview bottoms. Long descriptions and
 Show tools do not reduce preview height. Scrolling inside the app still works normally.
 
-Progress lasts until refresh or exit through **Back to versions**. Restart resets
-only that variant; opening a new tab starts a separate session. Hidden previews
-remain running, including audio: pause playback before switching away. Refresh
-returns to the ordinary selector. Previews have independent documents and app state;
+Progress lasts until refresh or exit through **Back to versions**, which returns to
+the tab holding the variants. Restart resets only that variant; opening a new tab
+starts a separate session. Hidden previews remain running, including audio: pause
+playback before switching away. Refresh returns to the ordinary selector unless
+**Pin on refresh**, beside **Visible panes**, is checked: then refresh reopens the
+workspace with the same pane count, variant in each pane and tools widths, and every
+pane starts fresh. Variants no longer in the comparison fall back to the defaults;
+a layout kept for a different target (the app versus a Flow) is not reopened. The
+pin is the same one as in Tools, shared by the whole browser tab; **Back to versions**
+closes the workspace and keeps it set.
+Inside a pane, Tools' own pin and Exit are disabled with a note, and reloading a
+single pane restarts that app in place. Previews have independent documents and app state;
 the workspace never reads their contents. If your browser cannot embed a local file,
 use the standalone links. File embedding still needs Windows/WSL and macOS browser
 verification, including checkout paths with spaces.
@@ -42,7 +65,8 @@ operations through the procedures below.
 When a PM asks for their browser URL, run `python3 scripts/local-variants.py url`
 from the primary checkout and paste the exact output URL into your response as a
 code block. This works before any comparison exists and writes no local metadata.
-Create, status, and refresh also print the selector and available alternative URLs.
+Create, status, and refresh also print the selector, what is being compared, and each
+available variant URL.
 
 In WSL, the tool uses `wslpath -w` to translate the path for Windows, including
 checkouts on mounted Windows drives. If translation is unavailable, it uses
@@ -66,10 +90,18 @@ unrelated files; ask only when ownership is ambiguous. Never stage everything.
 
 ```sh
 python3 scripts/local-variants.py create --option 'A: Simple' 'One clear next step' --option 'B: Detailed' 'More context before choosing' --file app/screens/example.js
+python3 scripts/local-variants.py create --flow emergency-fund --option 'A: Simple' 'One clear next step' --option 'B: Detailed' 'More context before choosing'
 python3 scripts/local-variants.py status
 python3 scripts/local-variants.py refresh
 ```
 
+Without `--flow` the comparison is of the full app. `--flow ID` compares that one
+Flow: its `flows/ID/flow.json` and `index.html` must be committed regular files (or
+selected with `--file`), and `flow.json` must name the same ID and a label. These
+are checked before any checkpoint commit, then again at the checkpoint. In a Flow
+comparison, implement each variant only inside `flows/ID/`, never `app/`, another
+Flow, the root `index.html` or `gate/`; the selector, exits and return paths depend
+on those staying as checkpointed. A new Flow needs its package committed first.
 Omit `--file` when task work is already committed. Repeat it for each reviewed task
 file (including deletions/new files); directories and pathspec patterns are not
 accepted. Checkpoint commits include the selected working contents. Unrelated staged,
@@ -85,13 +117,17 @@ Do not recursively search `.worktrees/`; use the registered path for targeted wo
 Run refresh after changes to the comparison; browser discovery is not automatic.
 
 The ignored `.local-preview/` directory contains session records, the current session
-ID, and atomically generated classic-script manifests. A variant's generated return
-metadata uses a relative path to send its root selector to the primary root on
-file://, including when a Windows browser opens the checkout through a WSL share. App and release
-configuration are unchanged. Missing worktrees are reported and omitted from links.
-Refresh the browser selector after an agent operation.
+ID, and atomically generated classic-script manifests. Session records store the
+target's kind, Flow ID and label (older records without one mean the app); the
+manifest adds the derived entry path, and each variant link is that path inside its
+worktree. A variant's generated return metadata uses a relative path to send its
+root selector to the primary root on file://, including when a Windows browser opens
+the checkout through a WSL share. A variant Flow's exits reach that worktree root
+first, so they return the same way. App, Flow and release configuration are
+unchanged. Missing worktrees, and variants missing the target's entry file, are
+reported and omitted from links. Refresh the browser selector after an agent operation.
 
-## Keep an alternative
+## Keep a variant
 
 Review the winner's diff and run its checks. Commit only identified task files (or
 pass repeated `--file` arguments below). Preserve unrelated dirty files; adoption
@@ -110,6 +146,16 @@ conflicts and commit the merge; ask the PM about competing behavior. Run checks 
 `--verified`, which confirms merge ancestry and closes the comparison. Failed checks
 leave the comparison open; fix and verify the merged result before closing. No remote
 operations or merges into main occur.
+
+For a Flow comparison, both steps refuse a variant whose changes since the
+checkpoint reach outside `flows/ID/`; only the generated `flows/catalog.json` and
+`flows/catalog.js` are also allowed. Renames are not followed, so a move out of
+`app/` still counts. The refusal lists the files: explain them to the PM in plain
+terms, then revert them in the variant or obtain a separate decision. Never work
+around it. After the merge run `python3 scripts/flows.py check`,
+`bash scripts/check-syntax.sh flows` and `node tests/flows-runtime.cjs` (plus the
+Flow's affected behavior checks) before `--verified`. Keeping a Flow variant updates
+that Flow only; it is not app integration (see [Flows](flows.md)).
 
 ## Close, cleanup, and recovery
 

@@ -30,39 +30,9 @@
 // (onbCommuteDetail, onbSetLifestyle, onbTransportMonthly, ONB_CAR_CLASSES and
 // the rest), and putting a step back is a one-word edit this way. Do not
 // "clean up" the branches below on the grounds that nothing reaches them.
-// Two step lists, chosen by the ESF_ONLY flag in js/config.js (which loads
-// first). The full list is the v3.1 onboarding plus the three questions the
-// emergency fund needs; the ESF list is only what the fund reads, in the order
-// the ESF spec asks it. Nothing is deleted either way — a step outside the
-// active list keeps its renderer and simply isn't walked.
-const ONB_STEPS_FULL = ["name", "goal", "zip", "household", "place", "income",
-                        "coverage", "miles", "buddy", "video"];
-const ONB_STEPS_ESF  = ["zip", "income", "household", "place", "coverage", "miles"];
-
-// ── v3.1c: the big purchase build asks THREE things (2026-09-29) ─────────────
-// ZIP, income, miles. Owner, 2026-09-29: "dont think the who lives with you,
-// what kind of place do you live in screens are needed" — reversing the day
-// before's five. Income stays because peers are an income band in a place.
-// Peers without a household answer read the model's single-person column,
-// so the finder's peer line no longer names a household size.
-//
-// History, superseded — owner, 2026-09-26: "remove these onboarding screens
-// from this build." The
-// household, home-type, coverage and income steps belong to the emergency fund;
-// they were being walked through on the way to a calculator that reads neither.
-// What is left is what this feature actually uses: the ZIP (state tax, fees,
-// insurance, fuel prices) and how far they drive (fuel and upkeep).
-//
-// Somebody who starts an emergency fund from here therefore arrives without the
-// answers the ESF would have collected. That is survivable — every ESF model
-// falls back (household → adults at a middling age, place → null, coverage →
-// null) — and it is the price of not making a car buyer answer questions about
-// their health insurance first.
-const ONB_STEPS_BP = ["zip", "income", "miles"];
-
-const ONB_STEPS = (typeof BP_ENTRY !== "undefined" && BP_ENTRY) ? ONB_STEPS_BP
-                : (typeof ESF_ONLY !== "undefined" && ESF_ONLY) ? ONB_STEPS_ESF
-                : ONB_STEPS_FULL;
+// Full-product setup. Contained setup sequences belong to standalone Flows.
+const ONB_STEPS = ["name", "goal", "zip", "household", "place", "income",
+                   "coverage", "miles", "buddy", "video"];
 
 // ── Who lives with you ───────────────────────────────────────────────────────
 // Adults are asked by AGE RANGE, not typed ages: the owner's rule for this flow
@@ -476,17 +446,6 @@ function onbSkip() {
   const o = state.onboarding;
   const key = ONB_STEPS[o.step];
   if (key === "video") onbVideoStop();
-  // ESF-only: Skip means skip the WHOLE setup, straight into the fund. There is
-  // no "just this screen" choice and no profile picker in between — both were
-  // screens the tester had to get through to reach the thing being tested.
-  if (typeof ESF_ONLY !== "undefined" && ESF_ONLY) {
-    if (typeof profileDefault === "function") {
-      const d = profileDefault();
-      if (d && !state.activeProfileId) profileApply(d.id);
-    }
-    onbFinish();
-    return;
-  }
   if (key === "name") { o.skipPrompt = true; render(); return; }
   o.lwIndex = 0;   // skip the entire lifestyle block in one go
   if (o.step < ONB_STEPS.length - 1) { onbSetStep(o, o.step + 1); render(); return; }
@@ -956,26 +915,6 @@ function onbFinish() {
   state.onboarding = null;
   observationsRecompute();
 
-  // ESF-only: onboarding hands straight to the fund. It sits on the Goals
-  // stack because that is where the goal it creates will live, so Back from the
-  // fund's first screen has somewhere sensible to go.
-  if (typeof ESF_ONLY !== "undefined" && ESF_ONLY && typeof esfStart === "function") {
-    state.nav.stacks.goals = ["goals"];
-    state.nav.activeStack = "goals";
-    // v3.1c: the calculator is the thing under test, so it opens first.
-    if (typeof BP_ENTRY !== "undefined" && BP_ENTRY && typeof bpOpen === "function") {
-      bpStart("vehicle");
-      // Kept so Back on the calculator's landing can return to the question
-      // the tester left onboarding from, answers intact.
-      state.bpOnbReturn = o;
-      state.bp.fromOnboarding = true;
-      go("bpLanding");
-      return;
-    }
-    esfStart();
-    return;
-  }
-
   state.nav.stacks.home = ["home"];
   state.nav.activeStack = "home";
   navCommit("home");
@@ -1204,23 +1143,8 @@ function onbColTeaser(typed) {
     </div>`;
 }
 
-/**
- * A single-choice tile question — the shape three of the new steps share.
- *
- * ── DOCKED, WHEN THE BIG-PURCHASE FLOW IS ASKING (owner, 2026-09-27) ────────
- * The calculator's own questions put their choices at the BOTTOM, in thumb
- * reach, and advance on the tap — no Continue, because the tester has already
- * said the thing Continue would confirm. These two onboarding steps are the
- * front door to that flow and now match it, rather than handing over a
- * different set of manners two screens in.
- *
- * Scoped to BP_ENTRY on purpose: the same renderer serves the emergency fund's
- * onboarding, where the steps sit in a longer run and keep their own pattern.
- */
-function onbDocked(key) {
-  return typeof BP_ENTRY !== "undefined" && BP_ENTRY &&
-         (key === "miles" || key === "place" || key === "coverage" || key === "income");
-}
+// Full-product setup keeps Continue controls; docked setup is Flow-owned.
+function onbDocked(key) { return false; }
 
 function onbTileStep(o, field, options, title, help, docked) {
   const tiles = `

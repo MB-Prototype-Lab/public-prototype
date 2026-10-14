@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent-operated local comparisons. No network operations or recursive discovery."""
+"""Agent-operated local comparisons of the full app or one Flow. No network operations or recursive discovery."""
 import argparse
 import json
 import os
@@ -42,14 +42,116 @@ def show_browser_urls(root, state=None, distro=None):
         print('Copy into your browser (Windows browser when using WSL):')
         print('Selector: ' + browser_url(root / 'index.html', distro))
         if state and state['status'] not in ('closed', 'creating'):
+            target = comparison_target(state)
+            print('Comparing: ' + target['label'])
             for variant in state['variants']:
                 if not variant.get('removed') and valid(root, variant):
-                    print(variant['label'] + ': ' + browser_url(location(root, variant) / 'app/index.html', distro))
+                    entry = location(root, variant) / target['path']
+                    if entry.is_file():
+                        print(variant['label'] + ': ' + browser_url(entry, distro))
     except RuntimeError as error:
         # URL discovery must not turn a successful Git operation into a failure.
         print('Browser URL unavailable: ' + str(error), file=sys.stderr)
         return False
     return True
+
+
+FLOW_ID = re.compile(r'[a-z0-9]+(?:-[a-z0-9]+)*')
+FLOW_ENTRY = ('flow.json', 'index.html')
+CATALOG = ('flows/catalog.json', 'flows/catalog.js')
+
+
+def comparison_target(state):
+    """What every variant opens: the full app (also for older sessions) or one Flow.
+
+    Sessions store only the kind, Flow ID and label; the path is always derived.
+    Validated where it is used, so close and archived cleanup always work."""
+    target = state.get('target', {'kind': 'app'})
+    if isinstance(target, dict) and target.get('kind') == 'app':
+        return {'kind': 'app', 'label': 'Prototype', 'path': 'app/index.html'}
+    if (isinstance(target, dict) and target.get('kind') == 'flow' and flow_id_valid(target.get('id')) and
+            isinstance(target.get('label'), str) and target['label'].strip()):
+        return {'kind': 'flow', 'id': target['id'], 'label': target['label'].strip(),
+                'path': 'flows/' + target['id'] + '/index.html'}
+    raise RuntimeError('Invalid comparison target; inspect the session record')
+
+
+def flow_id_valid(ident):
+    return isinstance(ident, str) and len(ident) <= 64 and bool(FLOW_ID.fullmatch(ident))
+
+
+def flow_files_at(root, commit, prefix, names):
+    """Require committed regular files, never directories or symlinks."""
+    found = set()
+    for record in git(root, 'ls-tree', '-z', commit, '--', *(prefix + name for name in names)).split('\0'):
+        if record:
+            meta, path = record.split('\t', 1)
+            mode, kind = meta.split(' ')[:2]
+            if kind == 'blob' and mode in ('100644', '100755'):
+                found.add(path)
+    missing = [prefix + name for name in names if prefix + name not in found]
+    if missing:
+        raise RuntimeError('Commit the Flow first or select these files with --file: ' + ', '.join(missing))
+
+
+def flow_identity(ident, text, prefix):
+    try:
+        metadata = json.loads(text)
+    except (TypeError, ValueError):
+        metadata = None
+    label = metadata.get('label') if isinstance(metadata, dict) else None
+    if not isinstance(metadata, dict) or metadata.get('id') != ident or not isinstance(label, str) or not label.strip():
+        raise RuntimeError(prefix + 'flow.json must name ID ' + ident + ' and a label')
+    return {'kind': 'flow', 'id': ident, 'label': label.strip()}
+
+
+def flow_preflight(root, ident, files):
+    """Check what the checkpoint will contain before committing, so a typo leaves no commit."""
+    if not flow_id_valid(ident):
+        raise RuntimeError('Flow ID must be lowercase kebab-case, at most 64 characters: ' + str(ident))
+    prefix = 'flows/' + ident + '/'
+    selected = set()
+    for name in files:
+        try:
+            selected.add((root / name).resolve().relative_to(root).as_posix())
+        except ValueError:
+            pass
+    text = None
+    for name in FLOW_ENTRY:
+        path = root / prefix / name
+        if prefix + name not in selected:
+            continue
+        if path.is_symlink() or not path.is_file():
+            raise RuntimeError('Flow entry must be a regular file: ' + prefix + name)
+        if name == 'flow.json':
+            text = path.read_text(encoding='utf-8')
+    committed = [name for name in FLOW_ENTRY if prefix + name not in selected]
+    if committed:
+        flow_files_at(root, 'HEAD', prefix, committed)
+    if text is None:
+        text = git(root, 'show', 'HEAD:' + prefix + 'flow.json')
+    flow_identity(ident, text, prefix)
+
+
+def flow_at(root, ident, commit):
+    """The Flow as recorded in the checkpoint every variant starts from."""
+    prefix = 'flows/' + ident + '/'
+    flow_files_at(root, commit, prefix, FLOW_ENTRY)
+    return flow_identity(ident, git(root, 'show', commit + ':' + prefix + 'flow.json'), prefix)
+
+
+def adopt_scope(root, state, variant):
+    """A Flow variant may change only its own Flow and the generated discovery catalog."""
+    target = comparison_target(state)
+    if target['kind'] != 'flow':
+        return
+    prefix = 'flows/' + target['id'] + '/'
+    # No rename detection: a move from app/ into the Flow must still show the app/ side.
+    changed = git(root, 'diff', '--name-only', '--no-renames', '-z', state['checkpoint'], variant['branch'])
+    outside = sorted(path for path in changed.split('\0') if path and not path.startswith(prefix) and path not in CATALOG)
+    if outside:
+        raise RuntimeError('Variant ' + variant['id'] + ' changed files outside ' + prefix +
+                           '; revert them in the variant or ask the PM before adopting: ' + ', '.join(outside))
 
 
 def git(root, *args):
@@ -129,6 +231,7 @@ def refresh(root, state):
     if state['status'] == 'closed':
         atomic(root / '.local-preview/variants.js', 'window.MB_LOCAL_VARIANTS = {"active": false, "variants": []};\n')
         return
+    target = comparison_target(state)
     variants = []
     for variant in state['variants']:
         if variant.get('removed'):
@@ -138,9 +241,12 @@ def refresh(root, state):
             continue
         path = location(root, variant)
         atomic(path / '.local-preview/return.js', 'window.MB_LOCAL_RETURN = ' + json.dumps({'href': '../../index.html'}) + ';\n')
+        if not (path / target['path']).is_file():
+            print('Missing ' + target['path'] + ' in ' + variant['id'], file=sys.stderr)
+            continue
         if state['status'] not in ('closed', 'creating'):
-            variants.append({key: variant[key] for key in ('id', 'label', 'description')} | {'href': '.worktrees/' + variant['id'] + '/app/index.html'})
-    manifest = {'active': state['status'] not in ('closed', 'creating'), 'variants': variants}
+            variants.append({key: variant[key] for key in ('id', 'label', 'description')} | {'href': '.worktrees/' + variant['id'] + '/' + target['path']})
+    manifest = {'active': state['status'] not in ('closed', 'creating'), 'target': target, 'variants': variants}
     atomic(root / '.local-preview/variants.js', 'window.MB_LOCAL_VARIANTS = ' + json.dumps(manifest, ensure_ascii=True) + ';\n')
 
 
@@ -188,13 +294,18 @@ def run(root, args):
             raise RuntimeError('Start from the current feature branch')
         if not args.option:
             raise RuntimeError('Supply at least one --option LABEL DESCRIPTION')
+        flow = getattr(args, 'flow', None)
+        if flow is not None:
+            flow_preflight(root, flow, args.file)
         ident = uuid.uuid4().hex[:12]
         if (directory / 'sessions' / (ident + '.json')).exists():
             raise RuntimeError('Session identity collision; retry creation')
         names = available_names(root, len(args.option))
         print(git(root, 'status', '--short'))
         checkpoint(root, args.file, 'Checkpoint local comparison task files')
-        state = {'id': ident, 'root': str(root), 'branch': branch, 'checkpoint': git(root, 'rev-parse', 'HEAD'), 'status': 'creating', 'variants': []}
+        commit = git(root, 'rev-parse', 'HEAD')
+        target = flow_at(root, flow, commit) if flow is not None else {'kind': 'app'}
+        state = {'id': ident, 'root': str(root), 'branch': branch, 'checkpoint': commit, 'target': target, 'status': 'creating', 'variants': []}
         for vid, (label, description) in zip(names, args.option):
             variant = {'id': vid, 'label': label, 'description': description, 'branch': 'variant/' + vid}
             path = location(root, variant)
@@ -248,6 +359,7 @@ def run(root, args):
             clean(root)
             checkpoint(path, args.file, 'Complete local alternative for adoption')
             clean(path)
+            adopt_scope(root, state, variant)
             if args.verified:
                 if state['status'] not in ('merging', 'verification'):
                     raise RuntimeError('Merge and verify before closing adoption')
@@ -285,6 +397,7 @@ def main():
     create = sub.add_parser('create')
     create.add_argument('--option', nargs=2, action='append', metavar=('LABEL', 'DESCRIPTION'))
     create.add_argument('--file', action='append', default=[])
+    create.add_argument('--flow', metavar='ID', help='Compare one Flow (flows/ID/) instead of the full app')
     for command in ('status', 'close'):
         sub.add_parser(command)
     refresh_parser = sub.add_parser('refresh')
