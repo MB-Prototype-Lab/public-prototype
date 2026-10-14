@@ -140,8 +140,10 @@ For example, say “Use `start-work` for this change” or “Use `ship` to prep
 PR.” You check the affected app flow and record your result in the PR; the agent
 handles routine code changes and automated checks. See
 [Working together](docs/workflow.md), [Verification](docs/testing.md), and
-[Publishing](docs/publishing.md) for the full procedures. Merging code does not
-update the live site. A GitHub login does not itself authorize a merge,
+[Publishing](docs/publishing.md) for the full procedures. To run every automated
+check, ask your agent to “run all the checks”: it runs `bash scripts/check-all.sh`,
+and each line says PASS, FAIL or BLOCKED. BLOCKED means this computer cannot run
+that check; it is not a pass. Merging code does not update the live site. A GitHub login does not itself authorize a merge,
 repository settings change, or publication.
 
 ## Compare variants locally

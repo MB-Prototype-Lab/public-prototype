@@ -67,7 +67,8 @@ replace the budget immediately and return to Goals, including on repeat saves.
 
 Explain decisions in product terms to the two PMs. Record scope and testing in PR
 text, not historical progress logs. Material changes after signoff require repeating
-affected checks. Do not claim unavailable runtime or browser checks passed.
+affected checks. Run every automated check with `bash scripts/check-all.sh`;
+BLOCKED is not a pass. Do not claim unavailable runtime or browser checks passed.
 
 Flow tasks declare `--scope flow` against the recorded full task base and leave app
 bytes unchanged. Product integration uses `--scope app-integration`; selectively port

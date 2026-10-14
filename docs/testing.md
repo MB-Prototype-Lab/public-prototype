@@ -1,6 +1,14 @@
 # Verification
 
-Run from the repository root:
+Run every automated check from the repository root with one command:
+
+```sh
+bash scripts/check-all.sh
+```
+
+Each check prints PASS, FAIL or BLOCKED. BLOCKED means this machine lacks what
+the check needs (usually Node); it is never a pass. The script exits 0 only when
+every check ran and passed. It runs, in CI order:
 
 ```sh
 bash scripts/check-syntax.sh
@@ -11,10 +19,11 @@ node tests/local-variants.cjs
 node tests/flows-selector.cjs
 node tests/gate-tabs.cjs
 node tests/flows-runtime.cjs
-bash scripts/check-syntax.sh flows
 python3 scripts/flows.py check
+find flows -type f -name "*.js" -print0 | xargs -0 -r -n 1 node --check
 python3 -m unittest discover -s tests -v
 python3 scripts/publish.py check
+python3 scripts/publish.py build --offline --output <temporary folder>
 ```
 
 Node or macOS JavaScriptCore is needed for JS checks; Python 3.11+ for publication
