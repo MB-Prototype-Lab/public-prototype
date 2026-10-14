@@ -5,7 +5,7 @@
 //
 //   1 name   2 improvement areas (multi-select)
 //   3 ZIP   4 household   5 income band
-//   6 buddy creation (five sub-steps)   7 intro video (how it works)
+//   6 meet your buddy   7 intro video (how it works)
 //
 // WHAT FINISHING WRITES (onbFinish): the name, ZIP, household and income
 // override the persona (D09), and the place, coverage, miles, goal areas and
@@ -217,25 +217,6 @@ const ONB_GOALS = [
 ];
 const ONB_GOALS_MAX = 3;
 
-// Character creator sub-steps (Mii/Nintendogs style — one element per screen,
-// each with a control suited to it). Buddy option lists + colour maps live in
-// components/buddy.js and are read at render time (that file loads AFTER this
-// one, so they must never be touched at top level here).
-// Step 1 is BODY TYPE, not breed. It used to be a vertical list of nine breed
-// NAMES -- a list of words for choosing a shape. The grid shows the shapes and
-// the search turns a breed into them, which is the direction a tester actually
-// thinks in: they know their dog is a husky-corgi, not which silhouette that is.
-// `breed` still exists on the buddy and in the admin dropdowns; it is simply no
-// longer what this step asks for.
-//
-// THEN THE CREATOR WENT AWAY. The owner cut the five sub-steps to two (meet the
-// buddy; name it and pick its pronouns), then folded those two into ONE screen:
-// art, greeting, name, pronouns. The body-type grid, the swatches, the pattern
-// list and the separate name screen are NOT deleted -- their branches still sit
-// in onbBuddyStep(), dormant, so putting
-// a string back here brings a screen back with nothing to rebuild.
-const ONB_BUDDY_STEPS = ["meet"];
-
 // The name a buddy gets when the tester leaves the box blank. It is shown as the
 // box's faded PLACEHOLDER while they are on the step -- a suggestion, cleared by
 // clicking -- and only becomes the name when they LEAVE the step forward
@@ -268,20 +249,9 @@ function onbSetStep(o, i) {
   if (ONB_STEPS[from] === "buddy" && o.step > from) onbBuddyNameDefault(o);
 }
 
-/**
- * The buddy sub-step worth its own page key, or "". Only the NAME screen: the
- * first sub-step shares the step's own key so existing links keep their meaning.
- * Read by scrollKey() (js/utils.js) and screenTitle() (js/screen-url.js).
- */
-function onbBuddySubKey(o) {
-  if (!o || ONB_STEPS[o.step] !== "buddy" || !(o.buddyIndex > 0)) return "";
-  return ONB_BUDDY_STEPS[o.buddyIndex] || "";
-}
-
 function onbStart() {
   state.onboarding = {
     step: 0,
-    buddyIndex: 0,         // sub-step within the character creator
     video: null,           // built by onbVideoInit() on first use
     skipPrompt: false,     // name-step "skip this / skip all" confirmation
     name: "",
@@ -298,9 +268,9 @@ function onbStart() {
     incomeExact: null,     // slider refinement inside the picked band
     lifestyle: Object.assign({}, PERSONA.lifestyle),   // persona is the fallback
     improveAreas: [],      // multi-select, max 3 (folds into strategicGoal)
-    // The creator opens on the ILLUSTRATION rather than the persona's golden
+    // The buddy step opens on the ILLUSTRATION rather than the persona's golden
     // retriever -- it is the one option with real art behind it, so it is what
-    // the creator should be showing off. PERSONA.buddy is untouched.
+    // the step should be showing off. PERSONA.buddy is untouched.
     buddy: Object.assign({}, PERSONA.buddy, {
       bodyType:   BUDDY_PROTOTYPE,
       breed:      BUDDY_PROTOTYPE,
@@ -316,7 +286,7 @@ function onbStart() {
   // carry over from the persona; the new pattern attribute gets a default so the
   // stage is never blank.
   state.onboarding.buddy.name = "";
-  // Required on the name screen and deliberately without a default.
+  // Required on the buddy step and deliberately without a default.
   state.onboarding.buddy.pronouns = "";
   state.onboarding.buddy.furPattern = state.onboarding.buddy.furPattern || "solid";
   // Mirror onto state.buddy, which is what the stage actually renders from
@@ -371,11 +341,6 @@ function onbPick(field, id) {
 function onbNext() {
   const o = state.onboarding;
   if (ONB_STEPS[o.step] === "video") onbVideoStop();   // silence narration on exit
-  // The buddy step is a multi-element creator — walk its sub-steps too.
-  if (ONB_STEPS[o.step] === "buddy" && o.buddyIndex < ONB_BUDDY_STEPS.length - 1) {
-    o.buddyIndex++;
-    render(); return;
-  }
   if (o.step < ONB_STEPS.length - 1) { onbSetStep(o, o.step + 1); render(); return; }
   onbFinish();
 }
@@ -383,7 +348,6 @@ function onbNext() {
 function onbBack() {
   const o = state.onboarding;
   if (ONB_STEPS[o.step] === "video") onbVideoStop();
-  if (ONB_STEPS[o.step] === "buddy" && o.buddyIndex > 0) { o.buddyIndex--; render(); return; }
   if (o.step > 0) { onbSetStep(o, o.step - 1); render(); return; }
   // On the FIRST step there is nowhere back to, and a chevron that does
   // nothing reads as a broken control — the tester presses it, the screen
@@ -752,7 +716,7 @@ function renderOnboarding() {
       </div>
       <div class="journal-body${bodyCls}">${onbStepBody(key, o)}</div>
       <div class="journal-foot">
-        ${o.step > 0 || o.buddyIndex > 0
+        ${o.step > 0
           ? `<button class="button secondary" type="button" onclick="onbBack()">Back</button>`
           : `<span></span>`}
         <button class="button" type="button" id="onbContinue" onclick="onbNext()"
@@ -1090,83 +1054,28 @@ function onbSetBuddy(key, value) {
     state.buddy[k] = v;          // so the stage above updates live
   };
   set(key, value);
-
-  // Picking the illustration on the FIRST step fills the rest in. The image is
-  // one fixed picture with its background baked in, so it cannot show a
-  // prototype breed with chocolate fur -- and leaving the later steps on real
-  // values would put the tester in a state the stage has to silently ignore.
-  // Filling them makes the remaining steps show what actually applies.
-  //
-  // Only forward, and only from breed: picking a real breed later must not
-  // drag the others with it.
-  if (key === "breed" && value === BUDDY_PROTOTYPE) {
-    ["furColor", "furPattern", "eyeColor", "noseColor", "size"]
-      .forEach(k => set(k, BUDDY_PROTOTYPE));
-  }
   render();
 }
 
-// ─── Character creator (one element per sub-step, Mii/Nintendogs style) ───────
-// Reads the shared option lists from components/buddy.js at render time.
-const ONB_BUDDY_COPY = {
-  meet:       ["Meet your buddy!",
-               "Buddy is here to help answer questions and join you on your financial journey! " +
-               "Let's give your buddy a name!"],
-  bodyType:   ["Now the fun part — let's give me a look.", "Scroll to pick your buddy's body type"],
-  breed:      ["Now the fun part — let's give me a look.", "Scroll and pick a breed."],
-  furColor:   ["What colour is my coat?",                  "Tap a colour."],
-  furPattern: ["Any markings?",                            "Scroll and pick a pattern."],
-  eyeColor:   ["And my eyes?",                             "Tap a colour."],
-  name:       ["What should you call me?",                 "Pick a name and my pronouns."]
-};
+// ─── Meet your buddy ─────────────────────────────────────────────────────────
+// The whole buddy step on one screen. The pronoun list lives in
+// components/buddy.js and is read at render time: that file loads AFTER this
+// one, so its constants must never be touched at top level here.
+const ONB_BUDDY_COPY = ["Meet your buddy!",
+                        "Buddy is here to help answer questions and join you on your financial journey! " +
+                        "Let's give your buddy a name!"];
 
+// The greeting heads it, then the portrait, the line asking for a name, and
+// the name and pronouns centred under that. Continue unlocks once a pronoun is
+// picked (onbAnswered).
 function onbBuddyStep(o) {
-  const sub = ONB_BUDDY_STEPS[o.buddyIndex];
   const b = o.buddy || {};
-  const copy = ONB_BUDDY_COPY[sub] || ["Design your buddy", ""];
-  // "(1/5)" meant something with five screens. With one it is noise.
-  const count = ONB_BUDDY_STEPS.length > 1
-    ? `Your buddy (${o.buddyIndex + 1}/${ONB_BUDDY_STEPS.length})` : "Your buddy";
-
-  // Meet: the whole buddy step on one screen. The greeting heads it -- in the
-  // slot the small "Your buddy" counter used to hold -- then the portrait, the
-  // line asking for a name, and the name and pronouns centred under that.
-  // Continue unlocks once a pronoun is picked (onbAnswered).
-  if (sub === "meet") {
-    return `
-    <div class="onb-buddy-step onb-buddy-step-meet">
-      <h1 class="title onb-title">${h(copy[0])}</h1>
-      ${renderBuddyStage({ square: true, cls: "onb-buddy-stage" })}
-      <p class="task-desc onb-buddy-sub" style="margin:0 0 14px;">${h(copy[1])}</p>
-      ${onbBuddyNameFields(b)}
-    </div>`;
-  }
-
-  let control;
-  if (sub === "bodyType") {
-    control = onbBodyTypeControl(o);
-  } else if (sub === "breed") {
-    control = onbBuddyScrollList("breed", BUDDY_BREEDS, b.breed);
-  } else if (sub === "furPattern") {
-    control = onbBuddyScrollList("furPattern", BUDDY_FUR_PATTERNS, b.furPattern);
-  } else if (sub === "furColor") {
-    control = onbBuddySwatches("furColor", BUDDY_FUR_COLORS, BUDDY_FUR_COLOR_CSS, b.furColor);
-  } else if (sub === "eyeColor") {
-    control = onbBuddySwatches("eyeColor", BUDDY_EYE_COLORS, BUDDY_EYE_COLOR_CSS, b.eyeColor);
-  } else {
-    control = onbBuddyNameFields(b);
-  }
-
-  // Wrapped in a flex column so the control below the stage takes the space the
-  // header and stage leave, rather than sitting at a fixed height with a gap
-  // under it. See .onb-buddy-step in css/components.css.
   return `
-    <div class="onb-buddy-step${sub === "bodyType" ? " onb-buddy-step-body" : ""}">
-      <p class="helper onb-buddy-count">${h(count)}</p>
-      <h1 class="title onb-title" style="margin:0 0 6px;">${h(copy[0])}</h1>
-      <p class="helper onb-buddy-sub" style="margin:0 0 12px;">${h(copy[1])}</p>
+    <div class="onb-buddy-step onb-buddy-step-meet">
+      <h1 class="title onb-title">${h(ONB_BUDDY_COPY[0])}</h1>
       ${renderBuddyStage({ square: true, cls: "onb-buddy-stage" })}
-      ${control}
+      <p class="task-desc onb-buddy-sub" style="margin:0 0 14px;">${h(ONB_BUDDY_COPY[1])}</p>
+      ${onbBuddyNameFields(b)}
     </div>`;
 }
 
@@ -1200,186 +1109,6 @@ function onbBuddyNameFields(b) {
         </span>
       </div>
     </div>`;
-}
-
-// ─── Body type: a 3x3 grid, and a breed search that filters it ───────────────
-// Nine rounded tiles, Mii-style. The label sits OUTSIDE the tile; inside is a
-// placeholder circle whose size is the only thing telling the eight unbuilt
-// types apart (BUDDY_BODY_TYPES in components/buddy.js). The prototype tile
-// carries the real illustration, because it is the one that exists.
-//
-// The grid shows two rows and half of the third, so it reads as scrollable
-// without a scrollbar having to say so.
-
-function onbBodyTypeControl(o) {
-  const q = (o && o.bodySearch) || "";
-  return `
-    <div class="body-search">
-      <input class="body-search-input" type="text" inputmode="search"
-             placeholder="Search a breed — try &quot;husky corgi mix&quot;"
-             value="${h(q)}"
-             oninput="onbBodySearch(this.value)"
-             onfocus="onbBodySearchOpen()"
-             onkeydown="onbBodySearchKey(event)"
-             aria-label="Search a dog breed to filter body types">
-      <button class="body-search-clear" type="button" aria-label="Clear search"
-              onclick="onbBodySearchClear()">&times;</button>
-    </div>
-    <p class="helper body-search-match" id="onbBodyMatch">${onbBodyMatchLine(o)}</p>
-    <div class="buddy-body-grid" id="onbBodyGrid">${onbBodyGrid(o)}</div>`;
-}
-
-/** The tiles themselves — patched on its own, so typing never rebuilds the input. */
-function onbBodyGrid(o) {
-  const b = (o && o.buddy) || {};
-  const visible = (typeof breedVisibleBodies === "function")
-    ? breedVisibleBodies((o && o.bodySearch) || "")
-    : BUDDY_BODY_TYPES.map(t => t.id);
-
-  return BUDDY_BODY_TYPES.filter(t => visible.indexOf(t.id) !== -1).map(t => {
-    const picked = b.bodyType === t.id;
-    // The prototype is the one with art. Everything else gets its circle.
-    const inner = t.id === BUDDY_PROTOTYPE
-      ? `<img class="body-tile-img" src="${BUDDY_PROTOTYPE_IMG}" alt=""
-              onerror="this.style.display='none'">`
-      : `<span class="body-tile-dot" style="width:${t.dot}px;height:${t.dot}px;"></span>`;
-    return `
-      <button class="body-tile ${picked ? "picked" : ""}" type="button"
-              aria-pressed="${picked}"
-              onclick="onbSetBuddy('bodyType','${h(t.id)}')">
-        <span class="body-tile-square">${inner}</span>
-        <span class="body-tile-label">${h(t.label)}</span>
-      </button>`;
-  }).join("");
-}
-
-/** What the search found, in words. Patched alongside the grid. */
-function onbBodyMatchLine(o) {
-  const q = (o && o.bodySearch) || "";
-  if (!q.trim() || typeof breedMatch !== "function") {
-    return "Nine shapes. Pick whichever looks most like your dog.";
-  }
-  const m = breedMatch(q);
-  if (m.generic) return "A bit of everything — all nine still showing.";
-  if (!m.breeds.length) return "No breed by that name. All nine still showing.";
-
-  const names = m.breeds.slice(0, 3).map(n => h(n)).join(" + ") +
-                (m.breeds.length > 3 ? " +" + (m.breeds.length - 3) + " more" : "");
-  const shapes = m.bodies.length === 1 ? "one shape" : m.bodies.length + " shapes";
-  // Saying WHY a third shape appeared: a cross throws builds neither parent has,
-  // and a tester who sees an unexplained extra tile reads it as a bug.
-  const because = m.crossAdded.length
-    ? ", including what the cross itself can throw"
-    : "";
-  return names + " — " + shapes + because + ".";
-}
-
-// ─── Search mode ─────────────────────────────────────────────────────────────
-// Focusing the field hands it the screen: the portrait, title and subtitle go
-// away, the search rises to the top and the grid takes everything left. What
-// rises above the keyboard is the thing being chosen from, not the dog.
-//
-// ⚠ IT IS A DOM CLASS, NOT STATE, and that is deliberate twice over.
-//
-// First, it cannot re-render. render() reassigns the screen's innerHTML, which
-// destroys the focused <input>, drops the caret and closes the keyboard — a
-// focus handler that re-rendered would shut the mode it had just opened.
-// Toggling a class touches no node.
-//
-// Second, nothing has to remember to clear it. Picking a tile goes through
-// onbSetBuddy() → render(), and the rebuilt markup simply has no class, so the
-// mode ends by construction rather than by someone maintaining a flag. The
-// FILTER is the thing that is state (o.bodySearch), and it survives both
-// transitions on purpose: a grid that silently refilled would be the app
-// undoing the tester's work behind their back.
-
-function onbBodyStepEl() {
-  return document.querySelector(".onb-buddy-step-body");
-}
-
-function onbBodySearchOpen() {
-  const el = onbBodyStepEl();
-  if (el && el.classList) el.classList.add("searching");
-}
-
-/** Leave search mode. The blur is what closes the simulated keyboard. */
-function onbBodySearchClose() {
-  const el = onbBodyStepEl();
-  if (el && el.classList) el.classList.remove("searching");
-  const inp = document.querySelector(".body-search-input");
-  if (inp && inp.blur) inp.blur();
-}
-
-/**
- * Enter means "done searching", not "submit".
- *
- * There is no form here and nothing to post — the grid has been filtering on
- * every keystroke already, so the only thing left for Enter to do is give the
- * screen back with the filter intact.
- */
-function onbBodySearchKey(e) {
-  if (!e) return;
-  if (e.key === "Enter" || e.keyCode === 13) {
-    if (e.preventDefault) e.preventDefault();
-    onbBodySearchClose();
-  }
-}
-
-/**
- * Filter as they type, WITHOUT re-rendering.
- *
- * render() reassigns the screen's innerHTML, which destroys the focused input
- * and takes the caret with it — the reason this app's inputs commit on
- * `onchange`. A search box cannot wait for blur, so it uses the same escape
- * hatch onbLiveInput does: patch the two fragments that changed and leave the
- * <input> itself alone (uiPatchHTML, js/utils.js).
- */
-function onbBodySearch(value) {
-  const o = state.onboarding;
-  if (!o) return;
-  o.bodySearch = value;
-  uiPatchHTML("onbBodyGrid", onbBodyGrid(o));
-  uiPatchHTML("onbBodyMatch", onbBodyMatchLine(o));
-}
-
-/** The × inside the field. Clears the filter and hands focus back. */
-function onbBodySearchClear() {
-  const o = state.onboarding;
-  if (!o) return;
-  o.bodySearch = "";
-  const el = document.querySelector(".body-search-input");
-  if (el) { el.value = ""; }
-  uiPatchHTML("onbBodyGrid", onbBodyGrid(o));
-  uiPatchHTML("onbBodyMatch", onbBodyMatchLine(o));
-  if (el && el.focus) el.focus();
-}
-
-// Vertical scrollable list — breed, fur pattern.
-function onbBuddyScrollList(key, options, current) {
-  return `
-    <div class="buddy-scroll-list">
-      ${options.map(opt => `
-        <button class="buddy-scroll-opt ${current === opt ? "picked" : ""}" type="button"
-                onclick="onbSetBuddy('${key}','${h(opt).replace(/'/g, "\\'")}')">
-          <span>${h(String(opt).replace(/_/g, " "))}</span>
-          ${current === opt ? `<span aria-hidden="true">✓</span>` : ""}
-        </button>`).join("")}
-    </div>`;
-}
-
-// Circular colour swatches — fur colour, eye colour. Fill comes from the shared
-// colour map; the current pick is named beneath (a circle alone isn't labelled).
-function onbBuddySwatches(key, options, cssMap, current) {
-  return `
-    <div class="buddy-swatch-row">
-      ${options.map(opt => `
-        <button class="buddy-swatch-circle ${current === opt ? "picked" : ""}" type="button"
-                aria-label="${h(opt)}"
-                onclick="onbSetBuddy('${key}','${h(opt).replace(/'/g, "\\'")}')">
-          <span class="buddy-swatch-fill" style="background:${cssMap[opt] || "var(--muted)"};"></span>
-        </button>`).join("")}
-    </div>
-    <p class="helper buddy-swatch-label">${current ? h(String(current)) : "&nbsp;"}</p>`;
 }
 
 // ─── Intro video ─────────────────────────────────────────────────────────────
@@ -2141,7 +1870,7 @@ function renderOnboardingAdmin() {
       ${!o ? `<p class="helper">Not running.</p>` : `
         <div class="input-group">
           <label>Step ${o.step + 1}/${ONB_STEPS.length} — ${h(ONB_STEPS[o.step])}</label>
-          <select onchange="state.onboarding.buddyIndex=0;onbSetStep(state.onboarding,parseInt(this.value,10));render()">
+          <select onchange="onbSetStep(state.onboarding,parseInt(this.value,10));render()">
             ${ONB_STEPS.map((s, i) => `<option value="${i}" ${o.step === i ? "selected" : ""}>${i + 1}. ${h(s)}</option>`).join("")}
           </select>
         </div>

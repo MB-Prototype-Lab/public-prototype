@@ -32,7 +32,6 @@ global_for() {
     help-me-out)       echo "HELP_ME_OUT" ;;
     emergency-fund)    echo "EMERGENCY_FUND" ;;
     test-profiles)     echo "TEST_PROFILES" ;;
-    dog-breeds)        echo "DOG_BREEDS" ;;
     card-apr)          echo "CARD_APR" ;;
     onboarding-script) echo "ONBOARDING_SCRIPT" ;;
     peer-benchmarks)   echo "PEER_BENCHMARKS" ;;

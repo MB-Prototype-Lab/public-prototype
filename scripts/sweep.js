@@ -1689,161 +1689,32 @@ if (typeof ubTrailRecord === "function") {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// v4 only — the buddy creator's body-type step and its breed search.
-if (typeof BUDDY_BODY_TYPES !== "undefined" && typeof breedMatch === "function") {
-section("7f. Body type and breed search");
+// v4 only — the buddy step is one screen: art, greeting, name, pronouns.
+if (typeof BUDDY_PRONOUNS !== "undefined" && typeof onbSetStep === "function") {
+section("7h. Meet your buddy — one screen");
+
+var _o7 = state.onboarding, _b7 = state.buddy, _s7 = state.screen;
+var buddyStep = ONB_STEPS.indexOf("buddy");
+
+/** Paint the onboarding screen for real and hand back its markup. */
+function paintOnb() {
+  state.screen = "onboarding";
+  return renderOnboarding();
+}
 
 var bodyIds = BUDDY_BODY_TYPES.map(function (t) { return t.id; });
 chk(BUDDY_BODY_TYPES.length === 9 &&
     Object.keys(bodyIds.reduce(function (a, i) { a[i] = 1; return a; }, {})).length === 9,
     "nine body types with distinct ids", bodyIds.join(", "));
 
-// The eight unbuilt types are told apart by circle size ALONE. Two the same is
-// two tiles a tester cannot choose between for any reason they can see.
-var dots = BUDDY_BODY_TYPES.map(function (t) { return t.dot; });
-chk(Object.keys(dots.reduce(function (a, d) { a[d] = 1; return a; }, {})).length === dots.length,
-    "every placeholder circle is a different size", dots.join(", "));
-
-// The creator is one screen now (meet). The grid below is DORMANT, not
-// gone -- its branch still renders, and these gates keep it working for the day
-// "bodyType" goes back into the list.
-chk(ONB_BUDDY_STEPS.join(",") === "meet",
+// Continue from the buddy step goes straight on to the next step.
+onbStart();
+onbSetStep(state.onboarding, buddyStep);
+state.onboarding.buddy.pronouns = "they";
+onbNext();
+chk(state.onboarding.step === buddyStep + 1,
     "the buddy step is one screen",
-    ONB_BUDDY_STEPS.join(", "));
-
-// ── ⚠ `breed` MUST NEVER HOLD A BODY-TYPE ID ─────────────────────────────
-// Not because the portrait would blank -- every stage draws the one
-// illustration whatever `breed` holds. The damage is quieter:
-// renderBuddyDescription() prints `breed` as the breed name, the admin
-// dropdown offers BUDDY_BREEDS which contains no body-type id, and onbSetBuddy's
-// cascade fires on `breed` and would fill in five attributes nobody picked.
-var _ob = state.onboarding, _b = state.buddy;
-if (typeof onbStart === "function") onbStart();
-onbSetBuddy("bodyType", "mastiff");
-var breedKept = state.buddy.bodyType === "mastiff" && state.buddy.breed === BUDDY_PROTOTYPE;
-// PAINT IT TOO. Checking only the setter missed a write added at render time --
-// the step drew itself and the portrait went with it, with every assertion
-// above still green.
-var _scr = state.screen, _step = state.onboarding.step;
-var stageAfterPaint = "", breedAfterPaint = "";
-try {
-  state.screen = "onboarding";
-  state.onboarding.step = ONB_STEPS.indexOf("buddy");
-  state.onboarding.buddyIndex = 0;
-  renderScreen();
-  stageAfterPaint = renderBuddyInner();
-  breedAfterPaint = state.buddy.breed;
-} catch (e) { stageAfterPaint = "threw: " + e.message; breedAfterPaint = "threw"; }
-state.screen = _scr; state.onboarding.step = _step;
-state.onboarding = _ob; state.buddy = _b;
-// `prototype` is legitimately BOTH a body type and a breed value, so the
-// forbidden set is the other eight.
-var bodyOnlyIds = bodyIds.filter(function (i) { return i !== BUDDY_PROTOTYPE; });
-chk(breedKept &&
-    bodyOnlyIds.indexOf(breedAfterPaint) === -1 &&
-    stageAfterPaint.indexOf("buddy-img") !== -1,
-    "a body-type pick never reaches `breed`, through a repaint",
-    "breed after painting the step: " + breedAfterPaint);
-
-// ── the data ──────────────────────────────────────────────────────────────
-var rows = breedRows();
-var noBody = rows.filter(function (r) { return breedBodies(r).length === 0; });
-chk(noBody.length === 0, rows.length + " breeds all resolve to a body type",
-    noBody.slice(0, 5).map(function (r) { return r.name; }).join(", "));
-
-var badBody = rows.filter(function (r) {
-  return breedBodies(r).some(function (b) { return bodyIds.indexOf(b) === -1; });
-});
-chk(badBody.length === 0, "every breed maps onto a real body type",
-    badBody.slice(0, 5).map(function (r) { return r.name + " -> " + breedBodies(r); }).join(", "));
-
-// Two breeds claiming one alias is a silent wrong answer: the tester types it,
-// gets a filter, and never learns it was the other dog's.
-var termSeen = {}, termDupe = [];
-rows.forEach(function (r) {
-  [r.name].concat(r.aliases || []).forEach(function (t) {
-    var k = breedNormalize(t);
-    if (termSeen[k] && termSeen[k] !== r.name) termDupe.push(k + ": " + termSeen[k] + " / " + r.name);
-    termSeen[k] = r.name;
-  });
-});
-chk(termDupe.length === 0,
-    Object.keys(termSeen).length + " search terms across " + rows.length + " breeds, none shared",
-    termDupe.slice(0, 4).join("\n          "));
-
-// The crosses table is written by hand in the JSON and is the one place a GROUP
-// name can be typed where a body-type id belongs. It happened once already.
-var crossBad = [];
-var crosses = (DOG_BREEDS && DOG_BREEDS.crosses) || {};
-Object.keys(crosses).forEach(function (k) {
-  k.split("+").concat(crosses[k]).forEach(function (x) {
-    if (bodyIds.indexOf(x) === -1) crossBad.push(k + " -> " + x);
-  });
-});
-chk(crossBad.length === 0, "the crosses table names only real body types",
-    crossBad.join(", "));
-
-// ── matching ──────────────────────────────────────────────────────────────
-var searchCases = [
-  ["yorkshire terrier",            ["toy"]],
-  ["half husky half corgi",        ["spitz", "low_set"]],
-  ["husky x corgi",                ["spitz", "low_set"]],
-  ["pitbull golden retriever mix", ["mastiff", "sporting"]],
-  ["labradoodle",                  ["sporting"]],
-  ["blue heeler",                  ["herding"]],
-  ["bernese mountain dog puppy",   ["mastiff"]]
-];
-var searchBad = [];
-searchCases.forEach(function (c) {
-  var got = breedMatch(c[0]).bodies.slice().sort().join(",");
-  var want = c[1].slice().sort().join(",");
-  if (got !== want) searchBad.push(c[0] + " -> [" + got + "] want [" + want + "]");
-});
-chk(searchBad.length === 0, "the worked breed queries resolve",
-    searchBad.join("\n          "));
-
-// COMPARING BODY TYPES ALONE CANNOT SEE OVER-MATCHING. "blue heeler" naming both
-// the Cattle Dog and the Blue Lacy looks identical in the filter -- they are
-// both herding -- while the match line under the search box lists a breed the
-// tester did not type. These assert the BREEDS, which is the half that shows.
-var exact = [
-  ["blue heeler", 1],                 // not also the Blue Lacy, on the word "blue"
-  ["german shepard", 1],              // not also the Boxer, on the word "german"
-  ["bernese mountain dog puppy", 1],  // not also the Mountain Cur, on "mountain"
-  ["half husky half corgi", 2],
-  ["pitbull golden retriever mix", 2]
-];
-var exactBad = [];
-exact.forEach(function (c) {
-  var names = breedMatch(c[0]).breeds;
-  if (names.length !== c[1]) exactBad.push(c[0] + " -> " + names.length + " (" + names.join(", ") + "), want " + c[1]);
-});
-chk(exactBad.length === 0, "a query names the breeds it says and no others",
-    exactBad.join("\n          "));
-
-// Nonsense must not match. A bare substring test let "asdfgh" hit the
-// Australian Shepherd, because the alias "asd" sits inside it -- with ~1,100
-// terms, three-letter aliases turn any typo into a confident wrong answer.
-var junkBad = ["asdfgh", "zzzzz", "qqqq", "12345"].filter(function (q) {
-  return breedMatch(q).breeds.length > 0;
-});
-chk(junkBad.length === 0, "nonsense matches nothing",
-    junkBad.map(function (q) { return q + " -> " + breedMatch(q).breeds.join(", "); }).join(", "));
-
-// D19 -- and the failure is worse than a blank screen here: a tester whose
-// breed is not listed would conclude the app has no shape for their dog.
-var emptyGrid = ["", "asdfgh", "mutt", "no idea"].filter(function (q) {
-  return breedVisibleBodies(q).length !== 9;
-});
-chk(emptyGrid.length === 0, "an empty, generic or unmatched search shows all nine",
-    emptyGrid.join(", "));
-
-// The prototype is the only tile with art behind it, so a filter must never
-// take it away -- a tester has to be able to pick the buddy that exists.
-var lostProto = ["yorkshire terrier", "great dane", "labradoodle"].filter(function (q) {
-  return breedVisibleBodies(q).indexOf(BUDDY_PROTOTYPE) === -1;
-});
-chk(lostProto.length === 0, "the prototype survives every filter", lostProto.join(", "));
+    "Continue from it landed on step " + (state.onboarding.step + 1));
 
 // ── the top bar, and the 52px it was sitting on ───────────────────────────
 // Onboarding has Back in its own footer and Skip in its own header, so the bare
@@ -1885,83 +1756,6 @@ if (typeof TOPBAR_HIDDEN_SCREENS !== "undefined") {
   }
 }
 
-// ── search mode ───────────────────────────────────────────────────────────
-if (typeof onbBodySearchOpen === "function") {
-  var _o3 = state.onboarding;
-  if (typeof onbStart === "function") onbStart();
-  var ctl2 = onbBodyTypeControl(state.onboarding);
-  chk(ctl2.indexOf('onfocus="onbBodySearchOpen()"') !== -1 &&
-      ctl2.indexOf('onkeydown="onbBodySearchKey(') !== -1,
-      "focusing the search opens search mode, and Enter closes it");
-
-  // ⚠ NEITHER TRANSITION MAY RE-RENDER. render() reassigns the screen's
-  // innerHTML: it would destroy the focused input, drop the caret and close the
-  // keyboard -- a focus handler that re-rendered would shut the mode it opened.
-  var renders = 0, _origRender = render;
-  try {
-    render = function () { renders++; };
-    onbBodySearchOpen();
-    onbBodySearchKey({ key: "Enter", preventDefault: function () {} });
-  } catch (e) {
-  } finally { render = _origRender; }
-  chk(renders === 0, "entering and leaving search mode never calls render()",
-      "called it " + renders + " time(s)");
-
-  // The filter is state and must survive the repaint a tile pick causes -- a
-  // grid that silently refilled would undo the tester's work behind their back.
-  state.onboarding.bodySearch = "husky corgi";
-  onbSetBuddy("bodyType", "spitz");
-  chk(state.onboarding && state.onboarding.bodySearch === "husky corgi",
-      "the filter survives picking a tile",
-      "bodySearch after: " + (state.onboarding && state.onboarding.bodySearch));
-  state.onboarding = _o3;
-}
-
-// ── the grid's row maths ──────────────────────────────────────────────────
-// "2.5 rows" was measured off the tile's WIDTH and forgot the label under it,
-// so it was really 2.3 and the third row's labels were sliced mid-word.
-if (typeof __COMPONENTS_CSS === "string") {
-  var gridRule = /\.buddy-body-grid\s*\{([\s\S]*?)\}/.exec(__COMPONENTS_CSS);
-  var body = gridRule ? gridRule[1] : "";
-  var rowDecl = /--tile-row:([^;]*);/.exec(body);
-  var rowVal = rowDecl ? rowDecl[1] : "";
-  chk(rowVal.indexOf("--tile-w") !== -1 && rowVal.indexOf("--tile-label") !== -1 &&
-      /max-height:\s*calc\(var\(--tile-row\)/.test(body),
-      "a grid row is measured as square + gap + label, not the square alone",
-      "so 2.5 rows means 2.5 rows");
-}
-
-// ── the search box must not re-render ─────────────────────────────────────
-// render() reassigns the screen's innerHTML and takes the caret with it. The
-// filter patches its two fragments instead (uiPatchHTML). An onchange here
-// would mean the grid only moved on blur.
-if (typeof onbBodyTypeControl === "function") {
-  var _o2 = state.onboarding;
-  if (typeof onbStart === "function") onbStart();
-  var ctl = onbBodyTypeControl(state.onboarding);
-  state.onboarding = _o2;
-  chk(ctl.indexOf('oninput="onbBodySearch') !== -1 && ctl.indexOf("onchange=") === -1,
-      "the search filters on input, never on a full re-render");
-  chk(ctl.indexOf('id="onbBodyGrid"') !== -1 && ctl.indexOf('id="onbBodyMatch"') !== -1,
-      "both patch targets carry their ids",
-      "uiPatchHTML looks them up by id -- rename one and typing silently stops filtering");
-}
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — the buddy step is one screen: art, greeting, name, pronouns.
-if (typeof BUDDY_PRONOUNS !== "undefined" && typeof onbSetStep === "function") {
-section("7h. Meet your buddy — one screen");
-
-var _o7 = state.onboarding, _b7 = state.buddy, _s7 = state.screen;
-var buddyStep = ONB_STEPS.indexOf("buddy");
-
-/** Paint the onboarding screen for real and hand back its markup. */
-function paintOnb() {
-  state.screen = "onboarding";
-  return renderOnboarding();
-}
-
 onbStart();
 onbSetStep(state.onboarding, buddyStep);
 var meetHtml = paintOnb();
@@ -1988,7 +1782,7 @@ chk(nameLbl !== -1 && proLbl !== -1 && nameLbl < nameAt && nameAt < proLbl && pr
 // Every step says Continue -- the buddy step included (owner's call).
 var notContinue = [];
 ONB_STEPS.forEach(function (k, i) {
-  var o = state.onboarding; o.step = i; o.buddyIndex = 0;
+  var o = state.onboarding; o.step = i;
   if (onbContinueLabel(k, o) !== "Continue") notContinue.push(k);
 });
 onbSetStep(state.onboarding, buddyStep);

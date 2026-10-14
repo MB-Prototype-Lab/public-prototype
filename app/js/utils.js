@@ -109,14 +109,7 @@ function scrollKey() {
     return s + ":" + state.estimator.stage + ":" + state.estimator.qIndex;
   }
   if (s === "journalEntry" && state.journalSession) return s + ":" + state.journalSession.qIndex;
-  if (s === "onboarding" && state.onboarding) {
-    // The buddy step is two screens to a tester -- meet, then name -- so the name
-    // screen gets its own key. The meet screen keeps the bare step, so an old
-    // ?screen=onboarding-5 link still means "the start of the buddy step".
-    const o = state.onboarding;
-    const sub = (typeof onbBuddySubKey === "function") ? onbBuddySubKey(o) : "";
-    return s + ":" + o.step + (sub ? ":" + sub : "");
-  }
+  if (s === "onboarding" && state.onboarding) return s + ":" + state.onboarding.step;
   return s;
 }
 

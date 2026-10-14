@@ -34,8 +34,8 @@ const BUDDY_POSES = [
 
 const BUDDY_IDLE_POSES = BUDDY_POSES.filter(p => p.idle).map(p => p.id);
 
-// ─── Customization options (single source — creator + admin both read these) ──
-// These drive the description and the picker controls, and they are the
+// ─── Customization options (single source — Tools reads these) ──────────────
+// These drive the description and the Tools dropdowns, and they are the
 // vocabulary any image filename has to agree with (L22).
 // Values may carry underscores/spaces; the stage renders them with _ → space.
 // -- "prototype": the one attribute value backed by a real illustration -------
@@ -53,44 +53,23 @@ const BUDDY_BREEDS = [
   "golden_retriever", "corgi", "beagle", "labrador",
   "poodle", "dachshund", "husky", "shiba_inu"
 ];
-// ─── Body type — the creator's first step ────────────────────────────────────
-// Nine tiles: the prototype, plus eight silhouettes that between them cover the
-// recognised breeds. `data/dog-breeds.json` maps every breed onto these ids.
+// ─── Body type ───────────────────────────────────────────────────────────────
+// Nine puppy builds: the prototype, plus eight groups with no art. Only Tools
+// sets one, and it never changes the picture.
 //
-// THE BUDDY IS ALWAYS A PUPPY, so each of these means the puppy build of that
-// group, not the adult. A Great Dane pup and a Chihuahua pup are still
-// different shapes; that difference is what the tiles are for.
-//
-// ── ONLY THE PROTOTYPE IS REAL ──────────────────────────────────────────────
-// There is one illustration (buddy-prototype.png). The other eight are
-// placeholders and picking one deliberately does nothing yet, so `dot` — the
-// diameter of the placeholder circle inside the tile — is the ONLY thing
-// telling them apart. The sizes are spread on purpose rather than decorative:
-// nine identical circles would be nine tiles with no reason to prefer any.
-//
-// ⚠ A body type must NEVER be written into `breed`. The portrait would survive
-// (every stage draws the one illustration whatever `breed` holds); the damage
-// is quieter than that:
-//
-//   · renderBuddyDescription() prints `b.breed` as the breed, so a tester who
-//     later picks a real coat would read "mastiff" where a breed name belongs
-//   · the admin dropdown for `breed` offers BUDDY_BREEDS, which does not
-//     contain a body-type id, so the control would show a value it cannot set
-//   · onbSetBuddy's cascade keys on `key === "breed"` and would fire on a
-//     body-type pick, filling in five attributes nobody chose
-//
-// It lives in its own field. scripts/sweep.js §7f asserts `breed` never holds
-// one, through a repaint.
+// ⚠ A body type must NEVER be written into `breed`: renderBuddyDescription()
+// prints `b.breed` as the breed, and the Tools dropdown for `breed` offers
+// BUDDY_BREEDS, which contains no body-type id. It lives in its own field.
 const BUDDY_BODY_TYPES = [
-  { id: BUDDY_PROTOTYPE, label: "Prototype",  dot: 62 },
-  { id: "toy",           label: "Toy",        dot: 32 },
-  { id: "low_set",       label: "Low-set",    dot: 42 },
-  { id: "terrier",       label: "Terrier",    dot: 46 },
-  { id: "sighthound",    label: "Sighthound", dot: 50 },
-  { id: "spitz",         label: "Spitz",      dot: 54 },
-  { id: "herding",       label: "Herding",    dot: 58 },
-  { id: "sporting",      label: "Sporting",   dot: 66 },
-  { id: "mastiff",       label: "Mastiff",    dot: 74 }
+  { id: BUDDY_PROTOTYPE, label: "Prototype" },
+  { id: "toy",           label: "Toy" },
+  { id: "low_set",       label: "Low-set" },
+  { id: "terrier",       label: "Terrier" },
+  { id: "sighthound",    label: "Sighthound" },
+  { id: "spitz",         label: "Spitz" },
+  { id: "herding",       label: "Herding" },
+  { id: "sporting",      label: "Sporting" },
+  { id: "mastiff",       label: "Mastiff" }
 ];
 
 /** The label for a body-type id, for copy and the admin readout. */
@@ -103,12 +82,10 @@ const BUDDY_FUR_PATTERNS = [BUDDY_PROTOTYPE, "solid", "patches", "spots", "brind
 const BUDDY_FUR_COLORS = [BUDDY_PROTOTYPE, "cream", "golden", "chocolate", "grey", "tan and white", "tricolor"];
 const BUDDY_EYE_COLORS = [BUDDY_PROTOTYPE, "brown", "amber", "blue", "green"];
 
-// Nose and size have no onboarding step -- they are admin-only dropdowns. They
-// carry the value anyway so the admin can reach every state the creator can.
 const BUDDY_NOSE_COLORS = [BUDDY_PROTOTYPE, "black", "brown", "pink"];
 const BUDDY_SIZES = [BUDDY_PROTOTYPE, "small", "medium", "large"];
 
-// Pronouns, asked on the creator's name screen. Stored as the id; the label is
+// Pronouns, asked on onboarding's buddy step. Stored as the id; the label is
 // what a tester reads. Ids stay one short word because they ride in the Useberry
 // value trail (js/value-trail.js, key "pro") -- a fixed list, never free text.
 // Nothing reads them yet: the buddy speaks in the first person everywhere.
@@ -117,25 +94,6 @@ const BUDDY_PRONOUNS = [
   { id: "she",  label: "She/Her" },
   { id: "they", label: "They/Them" }
 ];
-
-// value → CSS background for the circular swatches. Multi-tone coats use a
-// gradient so the swatch still reads as that coat.
-const BUDDY_FUR_COLOR_CSS = {
-  // Without an entry here the swatch renders as a blank circle -- these two
-  // pickers draw a colour, not a label. Deliberately NOT a coat colour: a
-  // checker reads as "a picture goes here" rather than implying a cream dog.
-  "prototype":     "repeating-conic-gradient(#CFC6B8 0 25%, #F2ECDF 0 50%) 50% / 10px 10px",
-  "cream":         "#EFE3C6",
-  "golden":        "#D9A441",
-  "chocolate":     "#5A3A22",
-  "grey":          "#9BA1A6",
-  "tan and white": "linear-gradient(90deg,#D9A441 50%,#F2ECDD 50%)",
-  "tricolor":      "linear-gradient(90deg,#3A2A20 33%,#D9A441 33% 66%,#F2ECDD 66%)"
-};
-const BUDDY_EYE_COLOR_CSS = {
-  "prototype": "repeating-conic-gradient(#CFC6B8 0 25%, #F2ECDF 0 50%) 50% / 10px 10px",
-  "brown": "#6B4423", "amber": "#D99B2B", "blue": "#4A90D9", "green": "#4A9D5B"
-};
 
 // A small movement every four to six seconds, never constant. Randomised
 // inside that window so the cadence never feels metronomic.
@@ -184,14 +142,14 @@ function v3PrefersReducedMotion() {
 
 /**
  * The stage. `opts.compact` shrinks it; `opts.square` makes it a 1:1 tile (used
- * by the character creator).
+ * by onboarding's buddy step).
  */
 function renderBuddyStage(opts) {
   const compact = !!(opts && opts.compact);
   const square  = !!(opts && opts.square);
   // `cls` lets one caller size the stage without touching the shared rules --
-  // the character creator needs a shorter one to fit its list and its footer on
-  // a single screen.
+  // onboarding's buddy step needs a shorter one to fit its fields and its footer
+  // on a single screen.
   const extra   = (opts && opts.cls) || "";
   return `
     <div class="buddy-stage ${compact ? "buddy-stage-compact" : ""} ${square ? "buddy-stage-square" : ""} ${h(extra)}">
@@ -212,7 +170,7 @@ function renderBuddyStage(opts) {
  * -- WHY THE NAME IS OVERLAID -------------------------------------------------
  * The stage exists to prove the customization plumbing works: you pick a thing
  * and the stage visibly reflects it. A fixed illustration cannot do that for
- * breed or coat -- but the final creator step is NAMING, and a bare picture
+ * breed or coat -- but onboarding's buddy step asks for a NAME, and a bare picture
  * would mean typing a name and watching nothing happen. The name rides on top
  * so that step still lands.
  */
@@ -299,7 +257,7 @@ function renderBuddyAdmin() {
       </p>
       <p class="helper" style="margin-bottom:10px;">
         <strong>Body type:</strong> ${h(buddyBodyLabel(b.bodyType || BUDDY_PROTOTYPE))}.
-        The creator no longer asks for it (its grid is dormant). It is deliberately INERT — eight of the
+        Onboarding does not ask for it. It is deliberately INERT — eight of the
         nine have no art, so picking one changes nothing on the stage. It is also
         kept out of <code>breed</code> on purpose: the description card a missing
         image falls back to would print it as the breed, and the breed dropdown

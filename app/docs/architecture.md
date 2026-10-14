@@ -1263,17 +1263,9 @@ kept apart so only the content changes.
 fixed picture with its background painted in, so it cannot vary by breed, coat,
 eyes or size. Rather than pretend otherwise, `prototype` is the **first value in
 every attribute list** (`BUDDY_BREEDS`, `BUDDY_FUR_COLORS`, `BUDDY_FUR_PATTERNS`,
-`BUDDY_EYE_COLORS`, plus the admin-only `BUDDY_NOSE_COLORS` / `BUDDY_SIZES`).
+`BUDDY_EYE_COLORS`, `BUDDY_NOSE_COLORS`, `BUDDY_SIZES`), all set from Tools.
 **Every stage draws the one illustration whatever the attributes hold**
 (`renderBuddyInner`); the description shows only when the image fails to load.
-
-- **Picking it on `breed` fills the rest in** (`onbSetBuddy`). Leaving the later
-  steps on real values would put the tester in a state the stage has to ignore —
-  "prototype breed, chocolate fur" describes nothing the picture can show.
-- **Both colour pickers need a swatch entry.** Fur and eyes render as circles,
-  not labels, so a value missing from `BUDDY_FUR_COLOR_CSS` /
-  `BUDDY_EYE_COLOR_CSS` draws a blank. `prototype` uses a neutral checker — not
-  a coat colour, which would imply a dog the picture may not be.
 
 **The asset was cropped before shipping.** The supplied file was a phone
 screenshot: 762×635 carrying a status bar, the dynamic island and rounded dark
@@ -1288,11 +1280,11 @@ stage's *padding box* — edge to edge, ignoring the 22px padding that exists to
 inset text — and escapes `.buddy-inner`'s 240px `max-width` without that rule
 knowing art exists. `object-fit: cover` because the background is meant to fill
 the card; letterboxing against the sage would read as a mistake. The stage is
-square on Home and in the creator while the image is 1.4:1, so cover crops the
+square on Home and in onboarding's buddy step while the image is 1.4:1, so cover crops the
 sides; the dog is centred and survives.
 
-**The name is overlaid** (`.buddy-img-name`). The creator's last step is naming,
-and a bare picture would mean typing a name and watching nothing change — which
+**The name is overlaid** (`.buddy-img-name`). Onboarding's buddy step asks for
+a name, and a bare picture would mean typing a name and watching nothing change — which
 is precisely the feedback the stage exists to give.
 
 **`buddyImgBroken` is a module-level latch, cleared by `bootV3`** via
@@ -1320,7 +1312,7 @@ placeholder frame that describes the buddy's attributes in text**.
 ```
 
 - **The attributes stay real**: breed, fur, eyes, nose and size live in
-  `state.buddy`, set from Tools (the creator asks only for a name and pronouns),
+  `state.buddy`, set from Tools (onboarding asks only for a name and pronouns),
   and the frame prints them. Nothing is faked. The persona's default is
   `PERSONA.buddy` (golden retriever, cream, brown eyes, black nose, medium). The
   name is intentionally blank — naming the buddy is required in onboarding, and

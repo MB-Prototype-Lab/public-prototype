@@ -125,7 +125,7 @@ HF_W="$(sed -n 's/^const HF_VIEW_W = \([0-9]*\);/\1/p' "$APP/components/hyperfra
 HF_H="$(sed -n 's/^const HF_VIEW_H = \([0-9]*\);/\1/p' "$APP/components/hyperframes.js")"
 printf '\nvar __HF_VIEW = { w: %s, h: %s };\n' "${HF_W:-0}" "${HF_H:-0}" >> "$OUT"
 
-# js/render.js as a string. §7f needs the journal-mode class lists, and those
+# js/render.js as a string. §7h needs the journal-mode class lists, and those
 # are toggle() arguments rather than a named constant -- there is nothing to
 # read at runtime because the DOM stub's classList does not record.
 printf '\nvar __RENDER_JS = ' >> "$OUT"

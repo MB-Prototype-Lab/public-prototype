@@ -93,8 +93,6 @@ function screenTitle() {
 
   if (s === "onboarding" && state.onboarding && typeof ONB_STEPS !== "undefined") {
     detail = "step " + ((state.onboarding.step || 0) + 1) + " of " + ONB_STEPS.length;
-    const sub = (typeof onbBuddySubKey === "function") ? onbBuddySubKey(state.onboarding) : "";
-    if (sub) detail += " · " + sub;
   } else if (s === "budgetBuild" && state.budgetBuild && typeof BB_STEPS !== "undefined") {
     detail = "step " + ((state.budgetBuild.step || 0) + 1) + " of " + BB_STEPS.length;
   } else if (s === "helpMeOut" && state.helpMeOut) {
@@ -197,12 +195,8 @@ const SCREEN_LINKS = {
   "journal-entry":   function () { if (typeof journalStart === "function") journalStart({}); return "journalEntry"; }
 };
 
-/**
- * Onboarding at a given step — the one screen whose steps are worth linking.
- * `sub` names a buddy sub-step ("name"); an unknown one lands on the step
- * itself, the same way an unknown slug quietly starts at the beginning.
- */
-function screenLinkOnboarding(step, sub) {
+/** Onboarding at a given step — the one screen whose steps are worth linking. */
+function screenLinkOnboarding(step) {
   if (typeof onbStart === "function") onbStart();
   const o = state.onboarding;
   if (o && typeof ONB_STEPS !== "undefined") {
@@ -210,10 +204,6 @@ function screenLinkOnboarding(step, sub) {
     // and the buddy step's name default is written on arrival.
     if (typeof onbSetStep === "function") onbSetStep(o, step);
     else o.step = Math.max(0, Math.min(ONB_STEPS.length - 1, Number(step) || 0));
-    if (sub && ONB_STEPS[o.step] === "buddy" && typeof ONB_BUDDY_STEPS !== "undefined") {
-      const i = ONB_BUDDY_STEPS.indexOf(sub);
-      if (i > 0) o.buddyIndex = i;
-    }
   }
   return "onboarding";
 }
@@ -246,11 +236,11 @@ function screenLinkApply() {
   const slug = screenSlug(screenLinkParam(SCREEN_URL_KEY) || "");
   if (!slug) return null;
 
-  // "onboarding-3" → the onboarding opener at step 3, and "onboarding-5-name"
-  // → the buddy step's name screen. Handled before the plain lookup so the
-  // stepped form does not need its own seven entries.
-  const stepped = slug.match(/^onboarding-(\d+)(?:-([a-z]+))?$/);
-  const opener = stepped ? function () { return screenLinkOnboarding(stepped[1], stepped[2]); }
+  // "onboarding-3" → the onboarding opener at step 3. A trailing word, as in
+  // an existing "onboarding-8-name" link, lands on the step itself. Handled
+  // before the plain lookup so the stepped form does not need its own entries.
+  const stepped = slug.match(/^onboarding-(\d+)(?:-[a-z]+)?$/);
+  const opener = stepped ? function () { return screenLinkOnboarding(stepped[1]); }
                          : SCREEN_LINKS[slug];
   if (typeof opener !== "function") return null;
 
