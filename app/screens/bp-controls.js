@@ -248,8 +248,6 @@ function bpCommit(opts) {
     payMode: leasing ? "lease" : s.pay.mode,
     financing: Object.assign({}, s.pay),
     savingsRate: s.savingsRate,
-    stack5: bpStack(card, 5),
-    // No 3-year stack: the secondary horizon was dropped (owner, 2026-09-26).
     toSave: afford.toSave,
     purchaseDate: date,
     goalId: goalId,

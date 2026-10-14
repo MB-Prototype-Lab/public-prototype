@@ -2,16 +2,16 @@
 // TAB: None | NAV BAR: Hidden — full focus on reaction
 //
 // PURPOSE
-// First screen of the post-input loop. After completing any major Budget input
-// (2 Minute Budget, monthly update), shows a context summary, then asks
+// First screen of the post-input loop. After the monthly update or a new goal,
+// shows a context summary, then asks
 // "How does this feel?" with a 4-notch slider before the user decides next steps.
 //
 // NAVIGATION
-//   Entry: Triggered after completing the 2 Minute Budget or monthly update
+//   Entry: Triggered after the monthly update or a goal commitment
 //   Exit:  Reaction selected → nextAction screen
 //
 // PRODUCTION NOTES
-//   state.postResultContext: "budget" | "monthlyUpdate" | "goal"
+//   state.postResultContext: "monthlyUpdate" | "goal"
 //   state.postResultReaction: "worried" | "ok" | "good" | "excited" (or null)
 //   state.flowOrigin: set before entering this screen; preserved through finish
 
@@ -19,7 +19,6 @@ function renderPostResult() {
   const context = state.postResultContext;
 
   const headlines = {
-    budget:       { title: "Budget updated",           sub: "Your spending plan has been saved." },
     monthlyUpdate:{ title: "Monthly check-in done",    sub: "Your account and debt balances are logged." },
     goal:         { title: "Goal saved",               sub: "Your new goal has been added to My Progress." }
   };
@@ -39,18 +38,6 @@ function renderPostResult() {
         <div style="font-weight:850;font-size:16px;margin-bottom:4px;">${h(headline.title)}</div>
         <p class="helper" style="margin:0;">${h(headline.sub)}</p>
       </div>
-
-      ${context === "budget" ? `
-      <div class="card" style="margin-bottom:12px;">
-        <div class="section-title" style="margin-bottom:8px;">Your budget at a glance</div>
-        ${CATEGORIES.slice(0,5).map(cat => `
-          <div class="row" style="margin-bottom:4px;">
-            <span class="helper">${h(catLabel(cat))}</span>
-            <span class="stat-val">${budgetFmt(catValue(state.plan, cat))}</span>
-          </div>
-        `).join("")}
-      </div>
-      ` : ""}
 
       <h1 class="title" style="font-size:18px;margin-bottom:8px;">How does this feel?</h1>
 

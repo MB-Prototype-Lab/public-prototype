@@ -11,7 +11,7 @@
 //          Secondary → state.flowOrigin (Home / Budget / My Progress)
 //
 // PRODUCTION NOTES
-//   Impact landing: budget/monthlyUpdate → My Progress (Budget Results at top).
+//   Impact landing: monthlyUpdate → My Progress (Budget Results at top).
 //   goal → My Progress (Goals section).
 //   state.flowOrigin and state.postResultContext cleared after use.
 
@@ -27,10 +27,6 @@ function renderFinish() {
     detail = `Goal added: "${lastGoal.title}"`;
   } else if (context === "goal") {
     detail = "Your goal has been saved to My Progress.";
-  } else if (context === "budget" && action === "accept") {
-    detail = "Budget accepted. Your results are updated.";
-  } else if (context === "budget") {
-    detail = "Budget saved. Review your results in My Progress.";
   } else if (context === "monthlyUpdate") {
     detail = "Monthly check-in complete. Results are in My Progress.";
   } else if (action === "review-later") {

@@ -61,17 +61,11 @@ function bpPct(apr) {
 function bpStart(category) {
   const d = bpData();
   const fin = d.financing || {};
-  const profile = state.profile || {};
   state.bp = {
     category: category || "vehicle",
     stage: "landing",
     esfDeferred: false,
     esfReturn: false,
-    // The ZIP row is asked ONLY if the answer is not already in state — and that
-    // is decided once, here. Deciding it at render time would make the row vanish
-    // the moment it was answered, taking the field out from under the finger.
-    // There is no mileage row: this feature never asks (spec section 6.1).
-    askZip: !profile.zip && profile.zip !== "",
     setup: {},
     pay: {
       mode: fin.defaultMode || "loan",
@@ -90,7 +84,7 @@ function bpStart(category) {
       saved: 0,
       monthsOut: ((d.plan || {}).defaultMonthsOut) || 12
     },
-    ui: { sheet: null, edit: null },
+    ui: { sheet: null },
     buddy: null
   };
   bpLog("bp_started", { category: state.bp.category });

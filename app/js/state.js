@@ -218,8 +218,8 @@ const state = {
   // ── Big purchase calculator (v3.1c) ───────────────────────────────────────
   // bp           the in-flight run: setup answers, financing, per-card overrides,
   //              the selected card, sheets, Buddy. Cleared by bpStart()
-  // bigPurchase  the SAVED plan bpCommit() writes: the chosen card, its stack at
-  //              3 and 5 years, the goal id
+  // bigPurchase  the SAVED plan bpCommit() writes: the chosen card, its rows,
+  //              financing and the goal id
   // bpEvents     session log (spec §12), in-memory under D03
   bp: null,
   bigPurchase: null,
@@ -929,18 +929,6 @@ const state = {
     ]
   },
 
-  // ── Lifestyle answers and derived sub-sliders ─────────────────────────────
-  // answers: per theme, keyed by questionIndex → answerIndex (0–3)
-  // lastUpdated: ISO date string or null
-  lifestyleAnswers: {
-    food:          { answers: {}, lastUpdated: null },
-    entertainment: { answers: {}, lastUpdated: null },
-    travel:        { answers: {}, lastUpdated: null },
-    shopping:      { answers: {}, lastUpdated: null },
-    other:         { answers: {}, lastUpdated: null }
-  },
-
-
   // ── Point-in-time balance snapshots (for monthly tracking) ────────────────
   accountBalances: [],  // [{id, account, amount, date}]
 
@@ -952,15 +940,11 @@ const state = {
   // ── Post-result loop context ──────────────────────────────────────────────
   // Describes what was just completed. Drives the context headline on post-result
   // screen and the impact-landing destination on the finish screen.
-  // "budget" | "monthlyUpdate" | "goal" | null
+  // "monthlyUpdate" | "goal" | null
   postResultContext:  null,
   postResultReaction: null,   // reaction selected on post-result screen
   nextAction:         null,   // action chosen on next-action screen
   monthlyUpdateGap:   null,   // detected gap from monthly update flow
-
-  // ── Lifestyle chain step tracking ────────────────────────────────────────
-  selectedLifestyleTheme: null,  // theme key active in lifestyle-chain screen
-  lifestyleChainStep:     0,     // 0-based index of current question in chain
 
   // ── Commitments from post-result loop ────────────────────────────────────
   commitments: [],  // [{id, text, createdAt, goalId}]
