@@ -141,3 +141,5 @@ jobs:
           path: ${{ runner.temp }}/browser
           if-no-files-found: ignore
           retention-days: 14
+          # PNG pictures are compressed already; zipping them again only costs time.
+          compression-level: 0

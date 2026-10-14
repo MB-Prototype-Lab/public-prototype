@@ -28,7 +28,7 @@ function writeReport(outDir, rows, summary, variants) {
   const facts = single
     ? [[rows.length, 'journey runs'], [rows.reduce((n, r) => n + r.items.length, 0), 'pictures'], [summary.broken, 'journeys that broke']]
     : [[summary.phoneChanged, 'phone pictures changed'], [summary.toolsChanged, 'Tools pictures changed']]
-      .concat(summary.gate ? [[summary.selectorChanged, 'selector pictures changed']] : [],
+      .concat(summary.gate || summary.selectorChanged ? [[summary.selectorChanged, 'selector pictures changed']] : [],
         [[summary.flaky, 'flaky (did not repeat)'], [summary.broken, 'journeys that broke']]);
   const tabs = byVariant.map((x, i) => {
     const n = x.rows.reduce((k, r) => k + (r.broken ? 1 : 0) + r.items.filter(it => countsAsChange(it.status)).length, 0);

@@ -508,21 +508,25 @@ async function main() {
       rows.push({ id: h.id, variant: h.variant, items, baseFailure: b.failure, headFailure: h.failure,
         pageErrors: h.pageErrors.filter(e => !b.pageErrors.includes(e)) });
     }
-    // A difference must reproduce: re-run both sides of each changed journey once.
-    for (const row of rows.filter(r => r.items.some(i => i.status === 'changed'))) {
-      const variant = variants.find(v => v.id === row.variant);
-      const journey = row.id === 'gate' ? GATE_JOURNEY : all.find(j => j.id === row.id);
-      const tmp = path.join(out, 'recheck');
-      const b2 = await runOne(browser, base, variant, journey, path.join(tmp, 'base'));
-      const h2 = await runOne(browser, head, variant, journey, path.join(tmp, 'head'));
-      const again = new Map(pairShots(b2.shots, h2.shots).map(p => [p.key, p]));
-      for (const item of row.items) {
-        const p = item.status === 'changed' && again.get(item.key);
-        if (!p || !p.b || !p.h) continue;
-        const r = await comparer.compare(fs.readFileSync(p.b.file), fs.readFileSync(p.h.file));
-        if (r.sameSize && r.diffPixels / r.totalPixels <= FAIL_RATIO) item.status = 'flaky';
+    // A difference must reproduce: re-run both sides of each changed journey
+    // once. Variants re-run side by side, as in the first run, and one journey
+    // at a time within a variant, which keeps memory bounded.
+    const recheck = rows.filter(r => r.items.some(i => i.status === 'changed'));
+    await Promise.all(variants.map(async variant => {
+      for (const row of recheck.filter(r => r.variant === variant.id)) {
+        const journey = row.id === 'gate' ? GATE_JOURNEY : all.find(j => j.id === row.id);
+        const tmp = path.join(out, 'recheck');
+        const b2 = await runOne(browser, base, variant, journey, path.join(tmp, 'base'));
+        const h2 = await runOne(browser, head, variant, journey, path.join(tmp, 'head'));
+        const again = new Map(pairShots(b2.shots, h2.shots).map(p => [p.key, p]));
+        for (const item of row.items) {
+          const p = item.status === 'changed' && again.get(item.key);
+          if (!p || !p.b || !p.h) continue;
+          const r = await comparer.compare(fs.readFileSync(p.b.file), fs.readFileSync(p.h.file));
+          if (r.sameSize && r.diffPixels / r.totalPixels <= FAIL_RATIO) item.status = 'flaky';
+        }
       }
-    }
+    }));
     await comparer.close();
 
     const body = process.env.PR_BODY || '';
@@ -555,7 +559,7 @@ async function main() {
     }
     console.log('Phone pictures changed: ' + summary.phoneChanged + ' · Tools pictures changed: ' + summary.toolsChanged + ' · flaky (did not reproduce): ' + summary.flaky +
       ' · journeys that broke: ' + summary.broken + (summary.brokenBeforeOnly ? ' (' + summary.brokenBeforeOnly + ' only before the change)' : ''));
-    if (gate) console.log('Selector pictures changed: ' + summary.selectorChanged);
+    if (gate || summary.selectorChanged) console.log('Selector pictures changed: ' + summary.selectorChanged);
     console.log('Report: ' + pathToFileURL(report).href);
     if (summary.brokenAfter) ok = false;
     if (args.report) {
