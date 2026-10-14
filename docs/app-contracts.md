@@ -18,6 +18,8 @@ say; the description card shows only when the image fails to load.
 Framing questions are asked on every lesson entry, even when the session
 already answered them. A theme with no onboarding film render of its own plays
 another look's render; a film rendered in no look falls back to the SVG engine.
+The budget band compares spend to date with whole-month budget and peer
+figures; it never scales them to the date.
 
 ### ESF budget exception (user approved)
 
@@ -100,9 +102,8 @@ Telltales:
   state. A study that needs a contained or shortened journey uses a Flow.
 - Recorded product settings, each kept at its recorded value; changing one is a
   product decision, never a study: `BUDGET_PAYWALL = true` (L27),
-  `PROFILE_PICKER = true` (L26). The calculation setting `BAND_PRORATE` does
-  not change the journey. A new journey-affecting setting needs a recorded PM
-  decision; see [decisions](decisions.md).
+  `PROFILE_PICKER = true` (L26). A new journey-affecting setting needs a
+  recorded PM decision; see [decisions](decisions.md).
 - Dormant code that nothing turns on, such as unused onboarding steps. The ban
   applies to whatever would turn it on.
 

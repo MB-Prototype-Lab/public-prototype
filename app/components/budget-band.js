@@ -25,8 +25,8 @@
 // ── THE SCALE IS FULL-MONTH, AND THAT IS A CHOICE ───────────────────────────
 // Budget, peers and spend are all monthly figures, and spend-to-date is
 // compared against them as-is. Early in the month that flatters the tester --
-// five days in, nobody is over. The owner's call, for now: pro-rating is built
-// (see bandScale) and switched off, so turning it on later is one constant.
+// five days in, nobody is over. The owner's call: the peer band and the budget
+// mark stay whole-month figures, never scaled to the date.
 
 // The owner's peer spread. Not researched dispersion -- a stated +/-10% around
 // the modelled peer figure, so the band means "about what peers like you
@@ -37,20 +37,6 @@ const BAND_PEER_SPREAD = 0.10;
 // The 10% of breathing room past the largest mark, so nothing sits welded to
 // the right edge.
 const BAND_HEADROOM = 1.1;
-
-// ── The pro-rate switch ──────────────────────────────────────────────────────
-// Off: every figure is a full month and spend-to-date is compared against it.
-// On:  the peer band and the budget mark scale to how far into the month we
-//      are, so all three are "so far this month".
-//
-// Spend is NEVER scaled either way -- it is already a to-date figure, and
-// scaling it would be counting the month twice.
-const BAND_PRORATE = false;
-
-function bandScale() {
-  if (!BAND_PRORATE) return 1;
-  return (typeof estimatorMonthFraction === "function") ? estimatorMonthFraction() : 1;
-}
 
 /**
  * Everything the track needs, as numbers. Pure -- no DOM, no state reads --
@@ -85,12 +71,11 @@ function bandScale() {
  */
 function budgetBandGeometry(o) {
   const opts  = o || {};
-  const scale = bandScale();
 
-  const budget = Math.max(0, Number(opts.budget) || 0) * scale;
-  const actual = Math.max(0, Number(opts.actual) || 0);          // never scaled
+  const budget = Math.max(0, Number(opts.budget) || 0);
+  const actual = Math.max(0, Number(opts.actual) || 0);
   const hasPeer = opts.peer != null && isFinite(Number(opts.peer)) && Number(opts.peer) > 0;
-  const peer   = hasPeer ? Math.max(0, Number(opts.peer)) * scale : null;
+  const peer   = hasPeer ? Math.max(0, Number(opts.peer)) : null;
   const peerLo = hasPeer ? peer * (1 - BAND_PEER_SPREAD) : null;
   const peerHi = hasPeer ? peer * (1 + BAND_PEER_SPREAD) : null;
 
