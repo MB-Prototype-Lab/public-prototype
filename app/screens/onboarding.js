@@ -622,8 +622,6 @@ function onbFinish() {
   }
 
   state.lifestyle = Object.assign({}, o.lifestyle);
-  state.lifestyleAnswered = {};
-  state.lifestyleDetail = {};
   state.buddy = Object.assign({}, o.buddy);
   // Name it here rather than leaving it blank for the screens to paper over.
   // An unnamed buddy is currently "Buddy" on Home and in Chat but "Your buddy"

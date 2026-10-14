@@ -30,12 +30,10 @@ const PERSONA =
   },
 
   "state": {
-    "healthState": "slightly_behind",
     "streakDaysIfOnboarded": 1,
     "buddyLevel": 3,
     "kibbleBalance": 240,
-    "diamondBalance": 12,
-    "journalEntriesCompleted": 6
+    "diamondBalance": 12
   },
 
   "buddy": {

@@ -243,7 +243,6 @@ function hmoApplyLifestyle(category, answers) {
   const learned = hmoLifestyleFrom(category, answers);
   Object.keys(learned).forEach(dim => {
     state.lifestyle[dim] = learned[dim];
-    if (state.lifestyleAnswered) state.lifestyleAnswered[dim] = true;
   });
 }
 

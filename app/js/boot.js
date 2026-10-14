@@ -29,10 +29,6 @@ function bootV3() {
   // size and income band (D09) — Phase 3 applies those on top of this.
   state.profile = v3Clone(PERSONA.identity);
   state.lifestyle = v3Clone(PERSONA.lifestyle);
-  // The persona's answers are a fallback, not the user's — nothing is
-  // "answered" until they say so (see state.lifestyleAnswered).
-  state.lifestyleAnswered = {};
-  state.lifestyleDetail = {};
   state.buddy = v3Clone(PERSONA.buddy);
   // The buddy illustration's broken-asset latch lives in components/buddy.js,
   // not in `state`, so a reset has to clear it explicitly or a missing file from

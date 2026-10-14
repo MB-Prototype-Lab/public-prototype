@@ -230,16 +230,6 @@ const state = {
   // The picker session — tier, then income level.
   profilePick: null,
 
-  // Which of the six lifestyle dimensions the USER actually answered (Help me
-  // out marks them), as opposed to inheriting from the persona. state.lifestyle
-  // is fully populated at boot (bootV3), so it cannot tell the two apart.
-  // Nothing reads it.
-  lifestyleAnswered: {},
-
-  // Stated amounts such as transportMonthly. Nothing in the app fills or
-  // reads it.
-  lifestyleDetail: {},
-
   // Admin panel collapse — persists across screens.
   //
   // Starts CLOSED. On a phone the panel is gone entirely (css/layout.css hides
