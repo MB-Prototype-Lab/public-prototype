@@ -118,8 +118,15 @@ Common requests: “only show X” is a narrow allowlist with product tabs hidde
 ## Edit and check
 
 Work only in the selected package and explicitly scoped tooling/docs. Each package
-owns all runtime code, data, styles and assets; copy required assets rather than
+owns its runtime code, data, styles and assets; copy required assets rather than
 importing from `app/`, another Flow or mutable shared directories.
+
+The shell around the phone is the exception ([parity rule](app-contracts.md#hard-rules)):
+`css/components.css`, `js/refresh-pin.js` and the `index.html` head and Tools header
+stay byte-identical to the full app's (the head and header as `scripts/flows.py`
+adapts them). A change to them in `app/` goes into every Flow in the same commit, and
+a Flow cannot change them alone. Put Flow-only styles in `css/flow-tools.css`; a Flow
+cannot add stylesheet links. `python3 -m unittest tests.test_flows` checks this.
 
 `flow.json` is authoritative for provenance and policy: stable ID, label/purpose,
 optional reference, original `source_app_commit`, `task_base`, entry/completion,
@@ -137,6 +144,7 @@ python3 scripts/flows.py check --id my-flow
 python3 scripts/flows.py check
 python3 scripts/flows.py scope --scope flow
 bash scripts/check-syntax.sh flows
+python3 -m unittest tests.test_flows
 node tests/flows-selector.cjs
 node tests/flows-runtime.cjs
 ```

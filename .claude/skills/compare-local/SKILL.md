@@ -49,9 +49,10 @@ clean, and adopt using a normal local merge. For a Flow comparison the tool refu
 a variant that changed anything outside `flows/<id>/` (other than the generated
 catalog); list those files for the PM in plain terms and ask, rather than working
 around it. Resolve mechanical conflicts; ask about competing product behavior while
-preserving the merge state. Run affected checks on the merged primary checkout
-(for a Flow: `flows.py check`, `check-syntax.sh flows`, `flows-runtime.cjs` and its
-behavior checks) before `adopt --verified` closes the comparison.
+preserving the merge state. Run affected checks on the merged primary checkout,
+always including `python3 -m unittest tests.test_flows` (for a Flow, also
+`flows.py check`, `check-syntax.sh flows`, `flows-runtime.cjs` and its behavior
+checks), before `adopt --verified` closes the comparison.
 
 Close retains all work. Cleanup requires concrete selected variant IDs and removes
 only clean worktrees, retaining branches. Dirty work requires a separate preservation

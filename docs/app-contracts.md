@@ -354,6 +354,12 @@ The three factors are asserted separately — see architecture §5.
   reached four ways: ordinary calls, `onclick` in screen template literals,
   `onclick` in `index.html`, and bare identifiers in dispatch tables. Only the
   first looks like a call. Use `sweep.sh` §7b — grep gets this wrong.
+- **Flow shell parity.** `app/css/components.css`, `app/js/refresh-pin.js` and the
+  `app/index.html` head and Tools header are mirrored in every Flow (`flows/<id>/`),
+  byte for byte (the head and header after `scripts/flows.py` adapts them for a Flow).
+  Change every copy in the same commit, or `python3 -m unittest tests.test_flows`
+  fails. A Flow cannot change them alone: its own styles go in `css/flow-tools.css`,
+  and it cannot add stylesheet links.
 
 **Copy** — applies to every surface
 - **No financial advice. Ever. Anywhere** (D26). Surface the number and the gap;

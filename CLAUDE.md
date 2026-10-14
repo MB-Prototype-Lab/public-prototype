@@ -32,6 +32,8 @@ Vanilla JS with global names and ordered script tags. One global `state`, then
 Escape interpolated text with `h()`. Inputs use `onchange`; live sliders use
 `debouncedRender()`. Keep slider maxima stable. `.item-card` is block; scope flex
 fixes to the specific instance. Use theme variables and check all four themes.
+Every Flow mirrors `app/css/components.css`, `app/js/refresh-pin.js` and the index.html
+head/Tools header: change all copies in one commit ([parity](docs/app-contracts.md#hard-rules)).
 No backend, localStorage, live LLM, or runtime API keys. Release-controlled Useberry
 on HTTP(S) is the narrow telemetry exception; development tracking is off. The only
 sessionStorage is the tab's reviewer settings (passcode unlock, selector tab, refresh

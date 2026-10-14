@@ -268,6 +268,9 @@ class FlowShellParityTest(unittest.TestCase):
     """Committed Flows keep the full app's page shell around the phone."""
 
     ROOT = Path(__file__).resolve().parents[1]
+    PARITY = ('Flow shell parity (docs/app-contracts.md, Hard rules): {} must equal {}, byte for byte. '
+              'Make the same change in app/ and in every Flow in one commit; put Flow-only styles '
+              'in css/flow-tools.css, never in a shared file or a new stylesheet link.')
 
     @staticmethod
     def shell(html):
@@ -290,9 +293,11 @@ class FlowShellParityTest(unittest.TestCase):
         for package in sorted((self.ROOT / 'flows').glob('*/flow.json')):
             directory = package.parent
             with self.subTest(flow=directory.name):
-                self.assertEqual(self.shell((directory / 'index.html').read_text()), expected)
+                self.assertEqual(self.shell((directory / 'index.html').read_text()), expected, self.PARITY.format(
+                    f'flows/{directory.name}/index.html head and Tools header', "app/index.html's as scripts/flows.py adapts them"))
                 for shared in ('js/refresh-pin.js', 'css/components.css'):
-                    self.assertEqual((directory / shared).read_bytes(), (self.ROOT / 'app' / shared).read_bytes(), shared)
+                    self.assertEqual((directory / shared).read_bytes(), (self.ROOT / 'app' / shared).read_bytes(),
+                                     self.PARITY.format(f'flows/{directory.name}/{shared}', f'app/{shared}'))
 
 
 if __name__ == '__main__':

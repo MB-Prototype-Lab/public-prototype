@@ -25,8 +25,9 @@ finds its base from main, and `task_base` in flow.json is provenance only. Creat
 committed full-app commit with `python3 scripts/flows.py create`, then follow
 “Configure the journey” in Flows, using `flows/emergency-fund` and
 `flows/big-purchase` as references. Work only in `flows/<id>/`, the generated
-catalog and Flow tests; app bytes stay unchanged. Run the Flow checks; a check whose
-engine is missing is blocked, never passed.
+catalog and Flow tests; app bytes stay unchanged. Run the Flow checks in Flows' “Edit
+and check”, including `python3 -m unittest tests.test_flows`; a check whose engine is
+missing is blocked, never passed.
 
 Hand off with the exact output of `python3 scripts/local-variants.py url` in a code
 block: the PM enters 1337, opens the Flows tab and chooses the new Flow. Say what to
