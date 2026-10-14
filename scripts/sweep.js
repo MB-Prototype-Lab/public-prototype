@@ -984,7 +984,7 @@ if (appeared.length) {
 }
 if (resolved.length) {
   ok(resolved.length + " baseline entr" + (resolved.length === 1 ? "y is" : "ies are") +
-     " now referenced", "prune from DEAD_BASELINE: " + resolved.join(", "));
+     " now referenced", "check before pruning from DEAD_BASELINE: " + resolved.join(", "));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

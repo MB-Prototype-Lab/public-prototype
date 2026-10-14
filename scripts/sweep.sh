@@ -165,13 +165,89 @@ printf ';\n' >> "$OUT"
 # ways — ordinary calls, onclick inside screen template literals, onclick in
 # index.html, and bare identifiers in dispatch tables. Only the first looks like
 # a call. Matching on `name(` misreads the other three as unused.
+#
+# Comments are stripped first: a function named only in a comment is still
+# dead. Strings, template literals and regex literals are kept whole, because
+# onclick handlers live in templates and `https://` is not a comment.
 printf '\nvar __UNREFERENCED = ' >> "$OUT"
 python3 - "$APP" <<'PY' >> "$OUT"
 import re, sys, glob, json, os
 app = sys.argv[1]
+
+# Keywords after which a `/` starts a regex literal, not a division.
+REGEX_AFTER = {'return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete',
+               'void', 'throw', 'case', 'do', 'else', 'yield', 'await'}
+WORD = re.compile(r'[\w$]+')
+
+def strip_comments(s):
+    out, i, n = [], 0, len(s)
+    stack = [0]   # per code level: open-brace count; None while in template text
+    last = ''     # the previous token, to tell a regex literal from a division
+    while i < n:
+        c = s[i]
+        if stack[-1] is None:                       # template literal text
+            if c == '\\':
+                out.append(s[i:i + 2]); i += 2
+            elif c == '`':
+                stack.pop(); out.append(c); i += 1; last = ')'
+            elif s.startswith('${', i):
+                stack.append(0); out.append('${'); i += 2; last = '('
+            else:
+                out.append(c); i += 1
+            continue
+        if s.startswith('//', i):
+            j = s.find('\n', i)
+            i = n if j < 0 else j
+            continue
+        if s.startswith('/*', i):
+            j = s.find('*/', i + 2)
+            j = n if j < 0 else j + 2
+            out.append('\n' * s.count('\n', i, j) or ' ')
+            i = j
+            continue
+        if c in '"\'':
+            j = i + 1
+            while j < n and s[j] != c and s[j] != '\n':
+                j += 2 if s[j] == '\\' else 1
+            out.append(s[i:j + 1]); i = j + 1; last = ')'
+            continue
+        if c == '`':
+            stack.append(None); out.append(c); i += 1
+            continue
+        if c == '/' and (last in REGEX_AFTER or not re.match(r'[\w$)\]}]', last[-1:] or '(')):
+            j, in_class = i + 1, False
+            while j < n and s[j] != '\n':
+                if s[j] == '\\':
+                    j += 2; continue
+                if s[j] == '[':
+                    in_class = True
+                elif s[j] == ']':
+                    in_class = False
+                elif s[j] == '/' and not in_class:
+                    break
+                j += 1
+            out.append(s[i:j + 1]); i = j + 1; last = ')'
+            continue
+        m = WORD.match(s, i)
+        if m:
+            out.append(m.group()); i = m.end(); last = m.group()
+            continue
+        if c == '{':
+            stack[-1] += 1
+        elif c == '}':
+            if stack[-1] == 0 and len(stack) > 1:   # closes a template's ${
+                stack.pop(); out.append(c); i += 1
+                continue
+            stack[-1] -= 1
+        if not c.isspace():
+            last = c
+        out.append(c); i += 1
+    return ''.join(out)
+
 files = sorted(glob.glob(app+'/js/*.js') + glob.glob(app+'/screens/*.js') + glob.glob(app+'/components/*.js'))
-src = {p: open(p, encoding='utf-8').read() for p in files}
-corpus = "\n".join(src.values()) + "\n" + open(app+'/index.html', encoding='utf-8').read()
+src = {p: strip_comments(open(p, encoding='utf-8').read()) for p in files}
+html = re.sub(r'<!--[\s\S]*?-->', '', open(app+'/index.html', encoding='utf-8').read())
+corpus = "\n".join(src.values()) + "\n" + html
 out = []
 for p, s in src.items():
     for m in re.finditer(r'^function\s+([A-Za-z_]\w*)', s, re.M):
