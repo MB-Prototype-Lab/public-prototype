@@ -148,6 +148,14 @@ setup, check-all marks the three browser checks BLOCKED with the fix; BLOCKED is
 not a pass. Still manual: audio and video playback, real phones, and file:// on
 Windows and macOS (CI runs Chromium on Linux).
 
+The pictures leave some looks out on purpose, so that two runs of the same
+version give the same pictures: hover looks (the pointer is moved off the page
+first), pressed looks (each picture waits until a tap is let go), the tap
+highlight (turned off), the text cursor, and video frames (each video is hidden
+under a plain mask). "0 pictures changed" therefore proves nothing about a
+change to `:hover`, `:active` or `-webkit-tap-highlight-color` rules, the caret,
+or how a video looks; check those by hand and say so in the PR.
+
 PM checklist: open root index.html on file://, enter 1337, open Local Prototype, exercise
 the changed flow, check narrow layout and all four themes, input focus and sliders,
 and audio when affected. Unpinned refresh from Local Prototype or a Flow must return to
