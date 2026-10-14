@@ -2381,10 +2381,13 @@ function onbTrial(accepted) {
 // the way it does for a new tester (onbFinish applies it only when none is
 // chosen). The profile goes back to the persona seed, as at boot; left alone,
 // a skipped place, coverage, miles or household would keep the last run's.
+// The trial answer goes back to unanswered, as at boot, so onbFinish gives the
+// next run the subscriber tier a new tester gets (it gates diamonds).
 function onbRestart() {
   state.activeProfileId = null;
   state.profilePick = null;
   state.profile = v3Clone(PERSONA.identity);
+  state.trialAccepted = null;
   onbStart();
   go("onboarding");
 }

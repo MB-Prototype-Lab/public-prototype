@@ -2702,13 +2702,14 @@ section("7o. Full app integration: onboarding, ESF and Buddy");
     chk(state.profile.zip === "37203" && state.profile.incomeAnnual === 75664 && state.monthlyIncome === 6305,
         "after a reset, a name-only setup lands on the default profile",
         state.profile.zip + " / " + state.profile.incomeAnnual + " / " + state.monthlyIncome);
-    // Restart after a full run, then skip every step: nothing from that run
-    // may survive, or the household reads 2 while the fund counts six people.
+    // Restart after a full run that declined the trial, then skip every step:
+    // nothing from that run may survive, or the household reads 2 while the
+    // fund counts six people and the next tester loses the subscriber tier.
     onbStart();
     onbSetAdults(3); onbSetAdultAge(0, "26-34"); onbSetAdultAge(1, "35-44"); onbSetAdultAge(2, "45-54");
     onbStepKids("under13", 1); onbStepKids("under13", 1); onbStepKids("teen", 1);
     onbPick("placeType", "aptSmall"); onbPick("coverage", "employer"); onbPick("miles", "30plus");
-    onbFinish();
+    onbTrial(false);
     profileApply("above_at");
     onbRestart();
     var restarted = state.activeProfileId === null && state.onboarding.zip === "" &&
@@ -2719,10 +2720,12 @@ section("7o. Full app integration: onboarding, ESF and Buddy");
     var rp = state.profile;
     chk(restarted && state.screen === "home" && rp.placeType == null && rp.coverage == null &&
         rp.milesRange == null && rp.milesPerDay == null && rp.adults == null && rp.kids == null &&
-        rp.householdSize === profileDefault().householdSize && rp.zip === profileDefault().zip,
-        "Restart onboarding forgets the chosen profile and the last run's household answers",
+        rp.householdSize === profileDefault().householdSize && rp.zip === profileDefault().zip &&
+        state.trialAccepted === true,
+        "Restart onboarding forgets the chosen profile and the last run's household and trial answers",
         "hh " + rp.householdSize + " · place " + rp.placeType + " · cover " + rp.coverage +
-        " · miles " + rp.milesRange + " · adults " + (rp.adults ? rp.adults.length : rp.adults));
+        " · miles " + rp.milesRange + " · adults " + (rp.adults ? rp.adults.length : rp.adults) +
+        " · trial " + state.trialAccepted);
   } catch (e) {
     bad("combined app flow runs without exceptions", e.stack || String(e));
   } finally {
