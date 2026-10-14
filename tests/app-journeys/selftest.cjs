@@ -1,8 +1,8 @@
 'use strict';
 // Unit checks for the harness's own pieces: the parser, the selector engine,
 // the control finder, the clock, the rename detector, the series comparison's
-// bases, the PR declaration parser, and that the harness pins en-US and UTC
-// whatever the machine's locale and time zone.
+// bases, the state removal list, the PR declaration parser, and that the
+// harness pins en-US and UTC whatever the machine's locale and time zone.
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -165,6 +165,29 @@ check('a series compares each commit with its merge base, so a later sync with m
 check('handler identifiers skip members, keys, locals and strings', () => {
   assert.deepEqual(snap.handlerIdents("state.a=true;render();go('x', {k: v})").sort(), ['go', 'render', 'state', 'v']);
   assert.deepEqual(snap.handlerIdents('const n = 1; (a, b) => a + n; event.preventDefault()'), []);
+});
+
+check('state digests leave out listed removed paths and nothing else', () => {
+  const aliases = [{ key: 'isV3', as: 'isNew' }, { removed: 'lifestyleWizard', why: 't' },
+    { removed: 'xpConfig.discountedRate', why: 't' }, { removed: 'goals.*.legacy', why: 't' }];
+  const digest = s => JSON.stringify(snap.stableJson(s, x => x, aliases));
+  const state = (extra = {}) => Object.assign({ isNew: true, xpConfig: { rate: 1, discount: 0 }, goals: [{ id: 1, legacyNote: 'a' }, { id: 2 }], legacy: 1 }, extra);
+  const withFields = state({ lifestyleWizard: null, xpConfig: { rate: 1, discount: 0, discountedRate: 0.5 },
+    goals: [{ id: 1, legacyNote: 'a', legacy: true }, { id: 2, legacy: false }] });
+  assert.equal(digest(withFields), digest(state()));
+  assert.equal(digest(Object.assign(withFields, { isNew: undefined, isV3: true })), digest(state()));
+  assert.deepEqual(Object.keys(snap.flatten(snap.stableJson(withFields, x => x, aliases))).filter(k => /discountedRate|wizard|goals\/\d+\/legacy$/i.test(k)), []);
+  // An unlisted difference, and siblings of listed paths, still show.
+  assert.notEqual(digest(state({ xpConfig: { rate: 2, discount: 0 } })), digest(state()));
+  assert.notEqual(digest(state({ xpConfig: { rate: 1, discount: 1 } })), digest(state()));
+  assert.notEqual(digest(state({ goals: [{ id: 1, legacyNote: 'b' }, { id: 2 }] })), digest(state()));
+  assert.notEqual(digest(state({ legacy: 2 })), digest(state()));
+  // The reviewed list itself is well formed.
+  for (const a of require('./state-aliases.cjs')) {
+    const ok = a.removed ? /^[^.\s]+(\.[^.\s]+)*$/.test(a.removed) && typeof a.why === 'string' && a.why.trim() !== ''
+      : typeof a.key === 'string' && typeof a.as === 'string';
+    assert.ok(ok, 'state-aliases.cjs entry ' + JSON.stringify(a));
+  }
 });
 
 check('PR declarations are read from the "Phone and Tools changes" section', () => {

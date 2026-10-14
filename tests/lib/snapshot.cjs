@@ -89,9 +89,19 @@ function visibleText(root) {
 
 // ── State ────────────────────────────────────────────────────────────────────
 
+// aliases (tests/app-journeys/state-aliases.cjs): {key, as} names a renamed key
+// the same on both sides wherever it appears; {removed: 'a.*.c'} leaves out the
+// value at that dot path from the root, `*` matching any key or index.
 function stableJson(value, rewrite, aliases = []) {
   const seen = new WeakSet();
-  const walk = (v, key) => {
+  const removed = aliases.filter(a => a.removed).map(a => a.removed.split('.'));
+  // The removal paths that still match below this child, and whether one ends at it.
+  const below = (paths, depth, key, name) => {
+    if (!paths.length) return { sub: paths, omit: false };
+    const sub = paths.filter(p => p[depth] === '*' || p[depth] === key || p[depth] === name);
+    return { sub, omit: sub.some(p => p.length === depth + 1) };
+  };
+  const walk = (v, key, paths, depth) => {
     if (v === undefined || typeof v === 'function') return undefined;
     if (typeof v === 'number') {
       if (/timer$/i.test(key || '') && v) return '<timer>';
@@ -103,16 +113,28 @@ function stableJson(value, rewrite, aliases = []) {
     if (seen.has(v)) return '<cycle>';
     seen.add(v);
     let out;
-    if (Array.isArray(v)) out = v.map((x, i) => { const w = walk(x, String(i)); return w === undefined ? null : w; });
-    else {
+    if (Array.isArray(v)) {
+      out = [];
+      for (let i = 0; i < v.length; i++) {
+        const { sub, omit } = below(paths, depth, String(i));
+        if (omit) continue;
+        const w = walk(v[i], String(i), sub, depth + 1);
+        out.push(w === undefined ? null : w);
+      }
+    } else {
       out = {};
       const keys = Object.keys(v).map(k => [k, aliasFor(k, aliases)]).sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));
-      for (const [k, name] of keys) { const w = walk(v[k], k); if (w !== undefined) out[name] = w; }
+      for (const [k, name] of keys) {
+        const { sub, omit } = below(paths, depth, k, name);
+        if (omit) continue;
+        const w = walk(v[k], k, sub, depth + 1);
+        if (w !== undefined) out[name] = w;
+      }
     }
     seen.delete(v);
     return out;
   };
-  return walk(value, '');
+  return walk(value, '', removed, 0);
 }
 
 function aliasFor(key, aliases) {
