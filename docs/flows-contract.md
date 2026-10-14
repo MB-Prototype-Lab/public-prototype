@@ -1,9 +1,5 @@
 # Flows implementation contracts
 
-Checkpoint: 2026-10-11. Approved plan: [flows-plan.md](flows-plan.md).
-Source app revision: `8f7b142cd3c065d1dc1b324d741ab9c9a5f8b440`. Full committed app inventory is
-[flows-baseline.json](flows-baseline.json). This source predates flag cleanup.
-
 ## Authoritative metadata and commands
 
 Each package owns `flow.json` (schema 1) and deterministic `flow-config.js`, which
@@ -75,4 +71,4 @@ gate/flows.js, local selector section in index.html, flows/catalog.*, and flow C
 entries. Flow worker owns flows/<id>/ plus tests/flows-runtime.cjs and relevant
 behavior tests. Publication worker exclusively owns scripts/publish.py and focused
 publication tests until integrated. Cleanup/docs work is serialized after packages
-exist. Lead owns this contract, baseline, handoff and integration review.
+exist. Lead owns this contract and integration review.
