@@ -121,6 +121,7 @@ flow_browser_tests() {
   return "$rc"
 }
 
+# Works on a clone, so it checks the last commit, not uncommitted edits.
 snapshot_rehearsal() {
   MB_SNAPSHOT_PORT="$(free_port)" bash tests/browser/snapshot-smoke.sh "$LOG_DIR/snapshot-smoke"
 }
@@ -142,7 +143,7 @@ run "Catalog policy"                   python "$PYTHON" scripts/publish.py check
 run "Publication rehearsal"            python publication_rehearsal
 run "Browser journeys (one tree)"      browser "$NODE" tests/browser/app-journeys-browser.cjs
 run "Flow browser tests (file + HTTP)" browser flow_browser_tests
-run "Flow snapshot rehearsal"          browser snapshot_rehearsal
+run "Flow snapshot rehearsal (last commit)" browser snapshot_rehearsal
 
 echo
 if [ "$FAILED" -gt 0 ]; then
