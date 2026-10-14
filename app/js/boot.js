@@ -162,14 +162,16 @@ function v3EntryScreen() {
 
 // L11 — obs_dining_over_peers ships typed `peer_gap` and headlined "than your
 // peers", but its numbers (429 vs 320) are the PLAN comparison: 320 is the
-// user's budget, not the benchmark. The real peer value is 370, a 16% gap.
+// user's budget, not the benchmark. The real peer value comes from the peer
+// model (benchPeerValue), so it follows the tester's own profile.
 // 04-budget-benchmarks says the seeded observation IS the plan comparison, and
 // peer-benchmarks.json flags the discrepancy itself in `_note_gap`.
 //
 // So the numbers are right and the headline is wrong. Reframed here at boot
 // rather than by editing data/*.json, which stays a byte-identical spec copy.
-// Phase 2 adds the separate peer card (429 vs 370) alongside it — both framings
-// must appear, labelled distinctly, and neither may stand in for the other.
+// Phase 2 adds the separate peer card (observationPeerCounterpart) alongside
+// it — both framings must appear, labelled distinctly, and neither may stand
+// in for the other.
 function v3ReframeDiningObservation() {
   const o = (state.observations || []).find(x => x.id === "obs_dining_over_peers");
   if (!o) return;
