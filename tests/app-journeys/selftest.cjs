@@ -1,8 +1,8 @@
 'use strict';
 // Unit checks for the harness's own pieces: the parser, the selector engine,
 // the control finder, the clock, the rename detector, the series comparison's
-// bases, the PR declaration parser, and that a different machine locale or time
-// zone changes nothing.
+// bases, the PR declaration parser, and that the harness pins en-US and UTC
+// whatever the machine's locale and time zone.
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -208,14 +208,22 @@ check('gate messages say what was read and name an unclosed comment', () => {
   assert.match(readAs('## Phone and Tools changes\r\nTools:\r\n', 'Tools'), /nothing \(an empty "Tools:" line\)/);
 });
 
-check('a different machine locale and time zone change nothing', () => {
-  const script = path.join(__dirname, '..', 'app-journeys.cjs');
-  const runWith = env => spawnSync(process.execPath, [script, '--only', 'onboarding-full,esf-have-one'],
-    { env: Object.assign({}, process.env, env, { MB_PINNED: '' }), encoding: 'utf8' }).stdout;
-  const a = runWith({ LC_ALL: 'en_US.UTF-8', TZ: 'UTC' });
-  const b = runWith({ LC_ALL: 'de_DE.UTF-8', TZ: 'America/Los_Angeles' });
-  assert.match(a, /^PASS /m);
-  assert.equal(a, b);
+check('the harness pins en-US and UTC whatever the machine locale and time zone', () => {
+  const probe = path.join(__dirname, 'locale-probe.cjs');
+  const runWith = env => spawnSync(process.execPath, [probe],
+    { env: Object.assign({}, process.env, { MB_PINNED: '' }, env), encoding: 'utf8' });
+  const us = runWith({ LC_ALL: 'en_US.UTF-8', LANG: 'en_US.UTF-8', TZ: 'UTC' });
+  const de = runWith({ LC_ALL: 'de_DE.UTF-8', LANG: 'de_DE.UTF-8', TZ: 'America/Los_Angeles' });
+  for (const r of [us, de]) assert.equal(r.status, 0, r.stderr);
+  const a = JSON.parse(us.stdout), b = JSON.parse(de.stdout);
+  assert.equal(a.locale, 'en-US');
+  assert.equal(a.timeZone, 'UTC');
+  assert.ok(a.steps > 0);
+  assert.deepEqual(b, a);
+  // Claiming to be pinned already under another locale must refuse to run.
+  const fake = runWith({ LC_ALL: 'de_DE.UTF-8', LANG: 'de_DE.UTF-8', TZ: 'America/Los_Angeles', MB_PINNED: '1' });
+  assert.notEqual(fake.status, 0);
+  assert.match(fake.stderr, /journey harness needs TZ=UTC/);
 });
 
 async function run() {
