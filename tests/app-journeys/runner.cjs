@@ -316,7 +316,7 @@ async function runJourney(journey, opts = {}) {
   const records = [], visits = [], errors = [], gate = [];
   const fired = new WeakSet();
   const typed = [];
-  const bootOpts = Object.assign({}, journey.boot || {});
+  const bootOpts = Object.assign({}, journey.boot || {}, variant && variant.clock !== undefined ? { clock: variant.clock } : {});
   const tab = { storage: memoryStorage(bootOpts.storage || {}) };
 
   const apps = [];

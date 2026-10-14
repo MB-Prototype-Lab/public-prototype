@@ -76,6 +76,12 @@ they also record each screen's address and the value trail Useberry reads; a wor
 the robot typed (a name, a note) showing up in the address fails the check. This
 robot does not judge layout or colour; the browser check below does.
 
+The clock is fixed at Wednesday 15 April 2026, 15:00 UTC (one journey visits at
+22:00). The emergency fund, Big purchase, goals and tabs journeys also run on
+31 May 2026, 15 February 2026 and 29 February 2028, at the same time of day, to
+catch month-end and leap-day dates; those runs are named like `bp-car@may31` and
+are part of this check only, not the browser check.
+
 Node or macOS JavaScriptCore is needed for JS checks; Python 3.11+ for publication
 checks; Playwright with Chromium for the browser checks. CI explicitly installs all
 of them. A missing engine is a blocked check, never a pass.

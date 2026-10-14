@@ -1,12 +1,13 @@
 'use strict';
 const { tap, type, choose, expect } = require('../dsl.cjs');
-const { skipToProfile } = require('../common.cjs');
+const { skipToProfile, CALENDAR_EDGES } = require('../common.cjs');
 
 module.exports = {
   id: 'esf-full',
   title: 'Emergency fund from its Home task: Buddy, every step, save, reopen and save again',
   matrix: 'profiles',
   browser: true,
+  clocks: CALENDAR_EDGES,
   steps: p => skipToProfile(p).concat([
     tap({ name: 'Open', near: 'Saving for an emergency' }),
     expect({ screen: 'esfBuild' }),

@@ -77,6 +77,11 @@ const SPECS = [
     edits: { 'components/keyboard.js': [['  try { return !window.matchMedia("(pointer: coarse)").matches; } catch (e) { return true; }', '  return true;']] },
   },
   {
+    id: 'bp-plan-date-overflow', expect: 'caught', journeys: ['bp-car'],
+    why: 'the Big purchase "save it by" month counted from today\'s day, so a year after 29 February reads as March',
+    edits: { 'screens/bp-commit.js': [['  d.setDate(1);\n', '']] },
+  },
+  {
     id: 'tools-label', expect: 'tools', journeys: ['tools-tour'],
     why: 'a Tools heading reworded (reported as a Tools change, not a phone change)',
     edits: { 'index.html': [['<p class="admin-title" style="margin:0;">Admin Tools</p>', '<p class="admin-title" style="margin:0;">Tools</p>']] },
@@ -159,7 +164,7 @@ async function run(h) {
     }
     const js = journeys.filter(j => spec.journeys.includes(j.id));
     let runs = h.expand(js);
-    if (!spec.profiles) runs = runs.filter(r => !r.variant || r.variant.id === 'at_at');
+    if (!spec.profiles) runs = runs.filter(r => !r.variant || r.variant.id === 'at_at' || r.variant.clock !== undefined);
     const { overrides, stale } = buildOverrides(spec, appDir);
     if (stale.length) {
       ok = false;

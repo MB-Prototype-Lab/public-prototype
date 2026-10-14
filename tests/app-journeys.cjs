@@ -70,6 +70,7 @@ function loadJourneys(only) {
   for (const j of journeys) {
     if (!j.id || ids.has(j.id)) throw new Error('journey ids must be unique: ' + j.id);
     ids.add(j.id);
+    for (const c of j.clocks || []) if (!CLOCKS[c]) throw new Error(j.id + ': no clock ' + c + '; clocks are ' + Object.keys(CLOCKS).join(', '));
   }
   if (!only) return journeys;
   const missing = only.filter(id => !ids.has(id));
@@ -84,11 +85,22 @@ for (const tier of ['above', 'at', 'below']) for (const level of ['under', 'at',
   PROFILES.push({ id: tier + '_' + level, params: { tier, level } });
 }
 
+// Other dates a journey can also run on (`clocks: ['may31', ...]`), in the VM
+// only and with the middle profile: the last day of a 31-day month, a short
+// month and a leap day, at the default clock's 15:00 UTC.
+const CLOCKS = {
+  may31: Date.UTC(2026, 4, 31, 15, 0, 0),
+  feb15: Date.UTC(2026, 1, 15, 15, 0, 0),
+  feb29: Date.UTC(2028, 1, 29, 15, 0, 0),
+};
+
 function expand(journeys) {
   const runs = [];
   for (const j of journeys) {
     if (j.matrix === 'profiles') for (const v of PROFILES) runs.push({ journey: j, variant: v });
     else runs.push({ journey: j, variant: null });
+    const params = j.matrix === 'profiles' ? PROFILES.find(v => v.id === 'at_at').params : j.defaults || {};
+    for (const c of j.clocks || []) runs.push({ journey: j, variant: { id: c, params, clock: CLOCKS[c] } });
   }
   return runs;
 }
@@ -499,4 +511,4 @@ if (require.main === module) {
   main().then(ok => process.exit(ok ? 0 : 1), err => { console.error(err && err.stack || err); process.exit(2); });
 }
 
-module.exports = { loadJourneys, expand, runAll, compare, formatComparison, coverage, renameMap, seriesCompare, PROFILES };
+module.exports = { loadJourneys, expand, runAll, compare, formatComparison, coverage, renameMap, seriesCompare, PROFILES, CLOCKS };

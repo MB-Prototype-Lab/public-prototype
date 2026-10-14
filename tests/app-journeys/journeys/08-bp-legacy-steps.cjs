@@ -1,12 +1,13 @@
 'use strict';
 const { tap, check, call } = require('../dsl.cjs');
-const { skipToProfile } = require('../common.cjs');
+const { skipToProfile, CALENDAR_EDGES } = require('../common.cjs');
 
 // The calculator's earlier four-step screens are still routed and reachable
 // from the Tools jump list; a tester can be sent to them for review.
 module.exports = {
   id: 'bp-legacy-steps',
   title: 'Big purchase step screens from Tools: setup, quiz, costs, ways to spend less, finance, commit',
+  clocks: CALENDAR_EDGES,
   steps: skipToProfile().concat([
     call('navAdminJump', 'bpSetup'),
     tap('Car'),

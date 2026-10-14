@@ -1,12 +1,13 @@
 'use strict';
 const { tap, type, expect } = require('../dsl.cjs');
-const { skipToProfile } = require('../common.cjs');
+const { skipToProfile, CALENDAR_EDGES } = require('../common.cjs');
 
 module.exports = {
   id: 'bp-car',
   title: 'Big purchase from Goals: a known car, new, every payment choice, then save a goal',
   matrix: 'profiles',
   browser: true,
+  clocks: CALENDAR_EDGES,
   steps: p => skipToProfile(p).concat([
     tap('Goals'),
     tap(/^Estimate a big purchase/),

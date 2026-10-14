@@ -1,11 +1,12 @@
 'use strict';
 const { tap, type, browserBack, expect } = require('../dsl.cjs');
-const { skipToProfile } = require('../common.cjs');
+const { skipToProfile, CALENDAR_EDGES } = require('../common.cjs');
 
 module.exports = {
   id: 'tabs-menu',
   title: 'Menu, Settings, Where my money goes, a category, the spend estimator, browser Back, Learn search, every tab',
   browser: true,
+  clocks: CALENDAR_EDGES,
   steps: skipToProfile().concat([
     tap('Menu'),
     tap('Settings'),
