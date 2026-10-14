@@ -90,14 +90,6 @@ function bpSetCostVariant(v) {
   render();
 }
 
-function bpSetPayMode(mode) {
-  const s = bpSession();
-  if (s.pay.mode === mode) return;
-  s.pay.mode = mode;
-  bpLog("bp_pay_mode", { mode: mode });
-  render();
-}
-
 function bpGoOptions() {
   bpLog("bp_costs_done", { financed: bpSession().pay.mode });
   go("bpOptions");

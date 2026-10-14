@@ -12,78 +12,6 @@
 
 // ── Handlers ─────────────────────────────────────────────────────────────────
 
-function bpFinance(field, value) {
-  const s = bpSession();
-  const from = s.pay[field];
-  s.pay[field] = value;
-  bpLog("bp_finance_changed", { field: field, from: from, to: value });
-  render();
-}
-
-function bpSetDownAmount(raw) {
-  const s = bpSession();
-  const n = Math.max(0, Math.round(Number(String(raw || "").replace(/[^0-9.]/g, "")) || 0));
-  bpLog("bp_finance_changed", { field: "downAmount", from: s.pay.downAmount, to: n });
-  s.pay.downAmount = n;
-  bpFieldCommitted();
-}
-
-function bpSetCredit(tier) {
-  const s = bpSession();
-  const from = s.pay.typedRate != null ? "typed" : s.pay.credit;
-  s.pay.credit = tier;
-  s.pay.typedRate = null;
-  s.ui.rateOpen = false;
-  bpLog("bp_credit_changed", { from: from, to: tier, typed: false });
-  render();
-}
-
-function bpSetTypedRate(raw) {
-  const s = bpSession();
-  const n = Number(String(raw || "").replace(/[^0-9.]/g, ""));
-  const from = s.pay.typedRate != null ? s.pay.typedRate : s.pay.credit;
-  s.pay.typedRate = isFinite(n) && String(raw || "").trim() !== "" ? Math.min(40, Math.max(0, n)) : null;
-  bpLog("bp_credit_changed", { from: from, to: s.pay.typedRate, typed: true });
-  bpFieldCommitted();
-}
-
-/**
- * The price, adjusted at the end. It applies to the card in hand — and if that
- * is an alternative, the alternatives are re-derived from the pick, so the
- * figure edited here is the pick's price either way.
- */
-function bpSetPrice(raw) {
-  const s = bpSession();
-  const n = Math.round(Number(String(raw || "").replace(/[^0-9.]/g, "")) || 0);
-  if (!n) { bpFieldCommitted(); return; }
-  const from = s.setup.price;
-  if (n !== from) {
-    s.setup.price = n;
-    s.cardRows = {};                 // per-car figures described a different car
-    bpLog("bp_summary_edit", { field: "price", from: from, to: n });
-  }
-  bpFieldCommitted();
-}
-
-/** Which financing choices are open in the sheet. */
-function bpOpenFin(field) {
-  const s = bpSession();
-  s.ui.fin = field;
-  s.ui.sheet = "fin";
-  render();
-}
-
-function bpFinChoose(field, value) {
-  const s = bpSession();
-  s.ui.sheet = null;
-  if (field === "down") { bpFinance("down", value); return; }
-  if (field === "term") { bpFinance("term", value); return; }
-  if (field === "credit") {
-    if (value === "other") { s.ui.rateOpen = true; render(); return; }
-    bpSetCredit(value);
-  }
-}
-
 function bpGoPlan() {
   const card = bpSelectedCard();
   bpLog("bp_plan_opened", { card: card.id, payMode: bpSession().pay.mode });
@@ -91,19 +19,6 @@ function bpGoPlan() {
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
-
-/**
- * One financing setting. The value sits in a pill with a caret so the row reads
- * as something you can change — as a plain right-aligned figure it read as a
- * statement of fact and nobody tapped it (owner, 2026-09-27).
- */
-function bpFinRow(field, label, value) {
-  return `
-    <button class="bp-setrow" type="button" onclick="bpOpenFin('${field}')">
-      <span class="bp-setrow-label">${h(label)}</span>
-      <span class="bp-setrow-pill">${h(value)} <span class="bp-drop-caret" aria-hidden="true">&#9662;</span></span>
-    </button>`;
-}
 
 /**
  * WHAT IT COSTS, kept apart from HOW YOU PAY (§ bpBreakdown).

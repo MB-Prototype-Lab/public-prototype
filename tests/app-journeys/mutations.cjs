@@ -79,7 +79,7 @@ const SPECS = [
   {
     id: 'bp-plan-date-overflow', expect: 'caught', journeys: ['bp-car'],
     why: 'the Big purchase "save it by" month counted from today\'s day, so a year after 29 February reads as March',
-    edits: { 'screens/bp-commit.js': [['  d.setDate(1);\n', '']] },
+    edits: { 'screens/bp-controls.js': [['  d.setDate(1);\n', '']] },
   },
   {
     id: 'tools-label', expect: 'tools', journeys: ['tools-tour'],

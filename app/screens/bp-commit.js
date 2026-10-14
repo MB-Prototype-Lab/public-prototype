@@ -6,38 +6,7 @@
 //
 // "You picked…" confirms the choice and never grades it. No "great choice".
 
-const BP_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function bpPlanDate(monthsOut) {
-  const d = new Date();
-  d.setDate(1);
-  d.setMonth(d.getMonth() + monthsOut);
-  return d;
-}
-
-function bpPlanDateISO(monthsOut) {
-  const d = bpPlanDate(monthsOut);
-  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-01";
-}
-
-function bpPlanDateLabel(monthsOut) {
-  const d = bpPlanDate(monthsOut);
-  return BP_MONTHS[d.getMonth()] + " " + d.getFullYear();
-}
-
-/** "the used Everyday SUV" */
-function bpCardNoun(card) {
-  const cat = bpCategory();
-  return "the " + (card.inputs.condition === "used" ? "used " : "new ") + cat.noun(card.inputs);
-}
-
 // ── Handlers ─────────────────────────────────────────────────────────────────
-
-function bpSetSaved(raw) {
-  const n = Math.max(0, Math.round(Number(String(raw || "").replace(/[^0-9.]/g, "")) || 0));
-  bpSession().plan.saved = n;
-  bpFieldCommitted();
-}
 
 function bpShiftMonths(delta) {
   const p = bpSession().plan;
@@ -73,94 +42,6 @@ function bpKeepInMind(card) {
     else items.push({ text: label + ": " + bpBandLabel(l.value) + " when you buy", size: l.value });
   });
   return items.sort((a, b) => b.size - a.size).slice(0, 3).map(i => i.text);
-}
-
-/**
- * Commit (§10). Saves the session, creates at most ONE goal, and stores the
- * reminder. A new commit replaces the old goal rather than adding a second —
- * two savings goals for the same car is a tester wondering which is theirs.
- */
-function bpCommit(opts) {
-  const s = bpSession();
-  const card = bpSelectedCard();
-  const leasing = typeof bpLeasing === "function" && bpLeasing(card);
-  const afford = leasing ? bpLeaseAfford(card) : bpSaveToAfford(card);
-  if (opts && opts.noGoal) afford.toSave = 0;     // "No, I don't need to save": plan only, no goal
-  const st = afford.stack;
-  const cat = bpCategory();
-  const date = bpPlanDateISO(s.plan.monthsOut);
-  const noun = bpCardNoun(card);
-  // The goal names the car itself when it came from the finder (owner, 2026-10-03):
-  // "Save for the BMW X3 (new)", not "a used Premium SUV".
-  const fsel = typeof bpfSelected === "function" ? bpfSelected() : null;
-  const goalLabel = fsel
-    ? "Save for the " + bpfName(fsel.model) + " (" + (fsel.cond === "used" ? "used" : "new") + ")"
-    : "Save for " + noun.replace(/^the /, "a ");
-
-  // Replace any previous big-purchase goal.
-  const prev = state.bigPurchase && state.bigPurchase.goalId;
-  state.tacticalGoals = (state.tacticalGoals || []).filter(g => !(g.type === "purchaseSaving" || g.id === prev));
-
-  let goalId = null;
-  if (afford.toSave > 0) {
-    const goal = {
-      id: generateId("g"),
-      type: "purchaseSaving",
-      category: s.category,
-      label: goalLabel,
-      target: afford.toSave,
-      current: 0,
-      period: null,                         // no period → a savings goal (js/goals.js)
-      targetDate: date,
-      startedAt: todayISO()
-    };
-    state.tacticalGoals.push(goal);
-    goalId = goal.id;
-  }
-
-  const rows = {};
-  bpRowsFor(card).forEach(r => {
-    rows[r.id] = {
-      value: bpRowValue(card, r.id),
-      touched: bpRowTouched(card, r.id) || !!s.touched["all:" + r.id],
-      scope: r.scope
-    };
-  });
-
-  state.bigPurchase = {
-    category: s.category,
-    setup: Object.assign({}, s.setup),
-    card: card.id,
-    cardInputs: Object.assign({}, card.inputs),
-    noun: noun,
-    describe: cat.describe(card.inputs),
-    rows: rows,
-    payMode: leasing ? "lease" : s.pay.mode,
-    financing: Object.assign({}, s.pay),
-    savingsRate: s.savingsRate,
-    stack5: bpStack(card, 5),
-    // No 3-year stack: the secondary horizon was dropped (owner, 2026-09-26).
-    toSave: afford.toSave,
-    purchaseDate: date,
-    goalId: goalId,
-    remindBudget: !!s.plan.remind,
-    budgetFigure: leasing ? bpLeaseFigures(card).payment : bpBudgetFigure(card),
-    taskDue: (!goalId && s.plan.remind) ? date : null,   // §8: no goal → a task on the purchase date
-    reminderClosed: false,
-    savedAt: todayISO()
-  };
-
-  bpLog(goalId ? "bp_goal_set" : "bp_plan_saved", {
-    target: afford.toSave, date: date, remindBudget: !!s.plan.remind, card: card.id, payMode: s.pay.mode
-  });
-
-  if (opts && opts.thenEsf && typeof esfStart === "function") {
-    state.nav.stacks.goals = ["goals"];
-    state.nav.activeStack = "goals";
-    esfStart();
-    return;
-  }
-  navGoTabRoot("goals");
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────

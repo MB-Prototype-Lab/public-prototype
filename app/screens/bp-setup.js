@@ -146,19 +146,6 @@ function bpSetupNext() {
 
 // ── Render ───────────────────────────────────────────────────────────────────
 
-/** A row of tiles. Shared by all three screens. */
-function bpTiles(opts, current, onPick, cls) {
-  return `
-    <div class="bp-tiles ${cls || ""}" role="group">
-      ${opts.map(o => `
-        <button class="bp-tile ${current === o.id ? "on" : ""}" type="button"
-                aria-pressed="${current === o.id}" onclick="${onPick(o.id)}">
-          <span class="bp-tile-label">${o.emoji ? `<i class="bp-emoji" aria-hidden="true">${o.emoji}</i>` : ""}${h(o.label)}</span>
-          ${o.sub ? `<span class="bp-tile-sub">${h(o.sub)}</span>` : ""}
-        </button>`).join("")}
-    </div>`;
-}
-
 // FOUR numbered steps: what you're buying, what it costs, paying for it, the
 // plan. "Ways to spend less" is deliberately NOT one of them — it is optional
 // and most testers will never open it, so numbering it produced the thing the
@@ -178,32 +165,6 @@ function renderBpStepHead(step, title, headline, titleClass) {
     </div>
     <h1 class="title esf-title ${titleClass || ""}">${h(title)}</h1>
     ${headline || ""}`;
-}
-
-/**
- * How one question's choices are laid out.
- *
- * NEVER a wrapping cluster. A centred flex-wrap gave "2 + 2 + 1" with three
- * different left edges and a last row floating under a gap — not a pattern
- * anybody would ship. Every layout here is a full-width grid with equal cells,
- * so the edges line up whatever the option count:
- *
- *   2 short       → two across        4 short → two by two
- *   3 short       → three across      anything else, or options carrying
- *                                     example text → one per line
- *
- * "Short" is measured, not guessed: a long label in a narrow cell wraps, and a
- * wrapped label is the same raggedness by another route.
- */
-const BP_DOCK_SHORT = 11;
-
-function bpDockLayout(opts, hasExamples) {
-  if (hasExamples) return "bp-tiles-list";   // label over its example brands
-  const short = opts.every(o => String(o.label).length <= BP_DOCK_SHORT);
-  if (opts.length === 2) return "bp-tiles-2";
-  if (short && opts.length === 3) return "bp-tiles-3";
-  if (short && opts.length === 4) return "bp-tiles-2";
-  return "bp-tiles-col";
 }
 
 /** The choices for one question, rendered into the dock. */
@@ -296,19 +257,6 @@ function renderBpSetupAdmin() {
               onclick="bpAdminFillSetup()">Fill: Everyday SUV · Gas · New · $35,000</button>
     </div>
     ${renderBpAdminCommon()}`;
-}
-
-/**
- * D19 — no screen renders empty. Screens 2 and 3 reached by the admin jump,
- * with nothing answered, open on the spec's own example car rather than on
- * "undefined · $0".
- */
-function bpEnsureSetup() {
-  const s = bpSession();
-  const cat = bpCategory();
-  const rows = (cat ? cat.setupInputs : []).filter(r => !r.showIf || r.showIf(s.setup));
-  if (rows.every(r => r.typed ? Number(s.setup[r.id]) > 0 : !!s.setup[r.id])) return;
-  s.setup = { type: "suv", tier: "everyday", fuel: "gas", condition: "new", price: 35000 };
 }
 
 function bpAdminFillSetup() {
