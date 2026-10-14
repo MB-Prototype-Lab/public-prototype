@@ -16,20 +16,9 @@ function warn(label, detail){ CHECKS++; WARN++; print("  warn  " + label + (deta
 function chk(cond, label, detail) { cond ? ok(label) : bad(label, detail); }
 function section(t) { print(""); print("── " + t + " " + Array(Math.max(2, 66 - t.length)).join("─")); }
 
-// Every routable screen. Kept here rather than derived, so a screen that loses
-// its route is a visible diff rather than silently dropping out of the sweep.
-// Injected by sweep.sh from the swept version's own js/render.js — every id the
-// router knows about. Hardcoding this list meant it was wrong for whichever
-// version it was not written for; v3 and v3.1 do not have the same screens.
-// The literal below is only a fallback for running sweep.js by hand.
-var SCREENS = (typeof ROUTED_SCREENS !== "undefined" && ROUTED_SCREENS.length)
-  ? ROUTED_SCREENS
-  : ["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home",
-     "journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard",
-     "budgetDone","budgetUpdateConfirm","comparison","myProgress","accountBalances","debtBalances",
-     "postResult","nextAction","commitment","finish","goals","learn","topic","reward-preview",
-     "lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation",
-     "marketplace","marketplaceDetail","reward","settings","chat","myDebts","debtAnalyzer"];
+// Every routable screen: sweep.sh injects every id js/render.js routes, so a new
+// screen is swept and a retired one drops out without an edit here.
+var SCREENS = ROUTED_SCREENS;
 
 /**
  * A canonical set of answers for one tree — first option everywhere, sliders at
@@ -114,6 +103,9 @@ function renderSafe(sc) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("1. Every screen renders, in all four themes");
+// An empty list would pass every per-screen check below without rendering one.
+chk(SCREENS.length > 0, SCREENS.length + " screens routed in js/render.js",
+    "sweep.sh found no `state.screen === \"...\"` in js/render.js");
 var renderFails = [];
 THEMES.forEach(function (t) {
   state.settings.colorMode = t.id;
@@ -447,20 +439,6 @@ var STATES = {
 };
 var MIN_CHARS = 40;
 
-// KNOWN, ACCEPTED thin renders — screen id to its EXACT text.
-//
-// Not a way to silence D19. The text has to match character for character, so
-// any other thin render still fails and this one starts failing again the
-// moment it changes. It downgrades to a warning so the exception stays visible
-// rather than disappearing.
-//
-// spendEstimator with no session: a real D19 violation, found when the sweep
-// started deriving its screen list from the router instead of a hardcoded array
-// that had omitted this screen entirely. FIXED IN v3.1. Left in v3 by owner
-// decision — v3 is the A/B control and stays frozen — so this only fires there.
-var D19_ACCEPTED = { spendEstimator: "Nothing to estimate." };
-
-var acceptedThin = [];
 Object.keys(STATES).forEach(function (name) {
   bootV3();                       // fresh seed
   STATES[name]();
@@ -470,18 +448,10 @@ Object.keys(STATES).forEach(function (name) {
     if (html && html.__error) { thin.push(sc + " THREW: " + html.__error); return; }
     var text = textOf(html).trim().replace(/\s+/g, " ");
     if (text.length >= MIN_CHARS) return;
-    if (D19_ACCEPTED[sc] === text) {
-      if (acceptedThin.indexOf(sc) === -1) acceptedThin.push(sc);
-      return;
-    }
     thin.push(sc + " (" + text.length + " chars)");
   });
   chk(thin.length === 0, "state: " + name, thin.slice(0, 5).join("\n          "));
 });
-if (acceptedThin.length) {
-  warn(acceptedThin.length + " known thin render(s), accepted",
-       acceptedThin.join(", ") + " — see D19_ACCEPTED in scripts/sweep.js");
-}
 bootV3();
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1150,7 +1120,9 @@ section("7c. The rendered films agree with the app's clock");
 // apart and NOTHING else reports it — no error, no failed load, just a film that
 // feels wrong. This is the only guard.
 if (!__FILM_MANIFEST) {
-  ok("no rendered films in this version — nothing to compare");
+  bad("the rendered films' manifest is present",
+      "assets/video/onboarding/manifest.json is missing, so nothing below can compare the films" +
+      "\n          → re-run tools/film/build-films.mjs --render");
 } else {
   var mf = __FILM_MANIFEST;
   chk(mf.wpm === (typeof DU_WPM !== "undefined" ? DU_WPM : 165),
@@ -1517,19 +1489,7 @@ chk(emptyTitle.length === 0,
     emptyTitle.join(", ") + "\n          Useberry sends the title beside the URL — it is what a " +
     "researcher reads in the report");
 
-// ── tracking is off unless somebody turned it on ───────────────────────────
-// A WARNING, NOT A FAILURE. It started as a failure -- the point was that
-// tracking must never land on by ACCIDENT -- but turning it on deliberately is
-// a thing the owner does, and a build that cannot go green while a study is
-// running is a check people learn to ignore. Loud every run, blocking never.
-if (typeof USEBERRY_TRACKING !== "undefined" && USEBERRY_TRACKING) {
-  warn("USEBERRY_TRACKING is ON \u2014 this build is being observed",
-       "a third-party script loads on http/https; the one sanctioned exception\n" +
-       "          to D02. Set it false in js/config.js AND gate/gate.js when the\n" +
-       "          round is over. No app logic may depend on it.");
-} else {
-  ok("USEBERRY_TRACKING is off");
-}
+// ── tracking is off in development ─────────────────────────────────────────
 // Whatever the flag says, the tracker must stay inert on file:// -- there is no
 // session behind it there and the fetch buys a console error and nothing else.
 chk(typeof useberryActive === "function" && useberryActive() === false,
@@ -1537,7 +1497,9 @@ chk(typeof useberryActive === "function" && useberryActive() === false,
 
 // Development defaults and published settings are tested independently.
 chk(window.MB_RELEASE.tracking === false && USEBERRY_TRACKING === false,
-    "development tracking is off");
+    "development tracking is off",
+    "app/release-config.js must keep tracking: false; a study's tracking is chosen when its " +
+    "snapshot is prepared (docs/publishing.md)");
 chk(window.MB_RELEASE.selector === "../index.html", "local refresh returns to root");
 }
 
@@ -2340,11 +2302,6 @@ function brokenHandlers(list) {
     try { new Function("event", src); return false; } catch (e) { return true; }
   });
 }
-// The control keeps the defect by the owner's choice (fixed in v4 + v3.1 only).
-var aposReport = /\/v3$/.test(typeof __APP_DIR === "string" ? __APP_DIR : "")
-  ? function (c, l, d) { c ? ok(l) : warn(l + " -- left unfixed in the v3 control", d); }
-  : chk;
-
 (function () {
   var so = state.onboarding, ss = state.screen;
   onbStart();
@@ -2359,7 +2316,7 @@ var aposReport = /\/v3$/.test(typeof __APP_DIR === "string" ? __APP_DIR : "")
     runHandler(cancel, {});
     picked = state.onboarding.improveAreas.indexOf("Cancel what I don't use") !== -1;
   }
-  aposReport(goalClicks.length === ONB_GOALS.length && bad.length === 0 && picked,
+  chk(goalClicks.length === ONB_GOALS.length && bad.length === 0 && picked,
       "every goal can be picked, \"Cancel what I don't use\" included",
       bad.length ? "does not compile: " + bad[0] : (cancel ? "clicked, not picked" : "button not found"));
   state.onboarding = so; state.screen = ss;
@@ -2380,7 +2337,7 @@ if (typeof kbdMarkup === "function" && typeof KBD_LAYERS === "object") {
   });
   kbdKey = kReal;
   state.kbd = JSON.parse(kSaved);
-  aposReport(kBad.length === 0 && kSent.indexOf("'") !== -1 && kSent.indexOf("\\") !== -1,
+  chk(kBad.length === 0 && kSent.indexOf("'") !== -1 && kSent.indexOf("\\") !== -1,
       "every simulated-keyboard key works, ' and \\ included",
       kBad.length ? "does not compile: " + kBad[0] : "sent: " + JSON.stringify(kSent));
 }
@@ -2547,7 +2504,7 @@ if (typeof NAV_NO_RESUME !== "undefined") {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cross-source regressions: run with the real ordered app scripts and DOM stub.
-section("7n. Full app integration: onboarding, ESF and Buddy");
+section("7o. Full app integration: onboarding, ESF and Buddy");
 (function () {
   var saved = JSON.parse(JSON.stringify(state));
   var oldConfirm = confirm;

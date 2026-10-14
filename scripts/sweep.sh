@@ -28,10 +28,11 @@ fi
 [ -x "$ENGINE" ] || { echo "error: no JS engine found — need node or macOS jsc" >&2; exit 2; }
 
 APP="app"
-# Explicit template — `mktemp -t <prefix>` is BSD-only; GNU mktemp needs the
-# XXXXXX and otherwise fails, leaving OUT as a bare ".js" written to the repo.
-OUT="$(mktemp "${TMPDIR:-/tmp}/mb-sweep.XXXXXX").js"
-trap 'rm -f "$OUT" "$OUT.log"' EXIT
+# Explicit template — `mktemp -t <prefix>` is BSD-only, and BSD wants the X's
+# last, so the bundle is the temp file's name plus .js. The trap removes both.
+TMP="$(mktemp "${TMPDIR:-/tmp}/mb-sweep.XXXXXX")" || exit 1
+OUT="$TMP.js"
+trap 'rm -f "$TMP" "$OUT" "$OUT.log"' EXIT
 
 # ── The screen inventory, read from the version being swept ─────────────────
 # SCREENS used to be a hardcoded list in sweep.js. With two versions whose
@@ -113,20 +114,9 @@ while read -r src; do
   n=$((n + 1))
 done < <(grep -o 'src="[^"]*\.js"' "$APP/index.html" | sed 's/src="//;s/"//')
 
-# ── the stylesheet, as a string ─────────────────────────────────────────────
-# The theme checks need to read variables.css, and jsc has no file access from
-# the concatenated bundle. Inject it as a JSON-escaped literal instead.
-# gate/gate.js as a string. The gate is OUTSIDE every version (it must never
-# load a version's scripts — two versions' globals in one document would
-# collide), so it keeps its own copy of which builds carry a usability tracker.
-# Injecting the source lets §7d assert that copy against the real flag instead
-# of trusting anyone to update both.
 # Assert the film tool's output root against the one editable app.
 FILM_DEFAULT="$(sed -n 's/^const APP = path.join(REPO, "\(.*\)");/\1/p' tools/film/build-films.mjs)"
 printf '\nvar __FILM_TOOL_VERSION = "%s";\nvar __DEFAULT_VERSION = "app";\n' "$FILM_DEFAULT" >> "$OUT"
-# Which folder is under test. §7j reports a defect deliberately left unfixed in
-# the v3 control as a warning there rather than a failure.
-printf '\nvar __APP_DIR = "%s";\n' "$APP" >> "$OUT"
 
 # The hyperframes viewBox, so §7c can check it against the CSS aspect-ratio and
 # the film canvas. Three declarations of the same 100:72 shape; if they drift the
@@ -147,9 +137,10 @@ python3 -c "import json,sys;print(json.dumps(open(sys.argv[1],encoding='utf-8').
 printf '\nvar __PAYWALL_JS = ' >> "$OUT"
 python3 -c "import json,sys,os;p=sys.argv[1];print(json.dumps(open(p,encoding='utf-8').read() if os.path.exists(p) else '')+';')" "$APP/screens/budget-paywall.js" >> "$OUT"
 
-printf '\nvar __GATE_JS = ' >> "$OUT"
-python3 -c "import json,sys;print(json.dumps(open('gate/gate.js',encoding='utf-8').read())+';')" >> "$OUT"
-
+# ── the stylesheets, as strings ─────────────────────────────────────────────
+# The theme and layout checks need to read variables.css and components.css,
+# and jsc has no file access from the concatenated bundle. Inject each as a
+# JSON-escaped literal instead.
 printf '\nvar __COMPONENTS_CSS = ' >> "$OUT"
 python3 -c "import json,sys;print(json.dumps(open(sys.argv[1],encoding='utf-8').read())+';')" "$APP/css/components.css" >> "$OUT"
 
@@ -297,7 +288,7 @@ printf ';\n' >> "$OUT"
 # durations, which the sweep compares against the app's own onbVideoSegMs — the
 # app narrates LIVE over a silent film, so those two numbers are computed twice
 # and nothing but this check notices when they stop agreeing. `null` when the
-# films have not been rendered (v3 never has any).
+# manifest is missing, which §7c reports as a failure.
 printf '\nvar __FILM_MANIFEST = ' >> "$OUT"
 MANIFEST="$APP/assets/video/onboarding/manifest.json"
 if [ -f "$MANIFEST" ]; then cat "$MANIFEST" >> "$OUT"; else printf 'null' >> "$OUT"; fi

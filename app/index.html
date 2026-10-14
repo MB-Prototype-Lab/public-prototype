@@ -268,8 +268,9 @@ window.onunhandledrejection = function(e) {
      tracker is reading the page. -->
 <script src="js/ub-names.js"></script>
 <script src="js/value-trail.js"></script>
-<!-- Usability tracking. Injects nothing unless USEBERRY_TRACKING is on in
-     js/config.js — the one sanctioned exception to D02, documented there. -->
+<!-- Usability tracking. Injects nothing unless the snapshot was prepared with
+     tracking on (publish.py prepare --tracking, frozen in release-config.js;
+     docs/useberry.md) — the one sanctioned exception to D02. -->
 <script src="js/useberry.js"></script>
 <script src="js/render.js"></script>
 <script src="js/navigation.js"></script>
