@@ -269,8 +269,9 @@ if (knownLow.length) {
 }
 var lowCleared = KNOWN_LOW.filter(function (k) { return lowSeen.indexOf(k) === -1; });
 if (lowCleared.length) {
-  ok(lowCleared.length + " known low pair" + (lowCleared.length === 1 ? " now clears" : "s now clear") + " 4.5:1",
-     "drop from KNOWN_LOW: " + lowCleared.map(function (k) { return k.slice(0, 3).join(" "); }).join(", "));
+  warn(lowCleared.length + " known low pair" + (lowCleared.length === 1 ? " now clears" : "s now clear") + " 4.5:1",
+       "drop from KNOWN_LOW in scripts/sweep.js: " +
+       lowCleared.map(function (k) { return k.slice(0, 3).join(" "); }).join(", "));
 }
 
 // ── The one NON-TEXT boundary that carries meaning ──────────────────────────
@@ -575,10 +576,11 @@ function adviceIn(text, sentence) {
 function advicePhrases(found) {
   return found.map(function (f) { return '"' + f.phrase + '"'; }).join(", ");
 }
+/** Lines that read as advice; `pages` counts pages instead, for page scans. */
 function adviceReport(hits, where, pages) {
-  var n = hits.length;
-  if (!n) { ok((pages ? "none of " : "no line in ") + where + " reads as advice"); return; }
-  warn((pages ? n + " of " : n + " line" + (n === 1 ? "" : "s") + " in ") + where +
+  var paged = typeof pages === "number", n = paged ? pages : hits.length;
+  if (!n) { ok((paged ? "none of " : "no line in ") + where + " reads as advice"); return; }
+  warn((paged ? n + " of " : n + " line" + (n === 1 ? "" : "s") + " in ") + where +
        (n === 1 ? " reads" : " read") + " as advice (D26; copy for the PMs to rewrite)",
        hits.join("\n          "));
 }
@@ -608,21 +610,43 @@ state.lessons.forEach(function (l) {
     if (f.length) lessonHits.push(l.id + " " + advicePhrases(f) + ": " + text);
   });
 });
-adviceReport(lessonHits, "the " + state.lessons.length + " older lessons' titles and descriptions");
+adviceReport(lessonHits, "the " + state.lessons.length + " lessons' titles and descriptions");
 
 // Every badge's page, not just the seeded Credit Cards one the walk above sees.
-var topicHits = [], badgeBefore = state.selectedBadge;
+// A lesson's title and description read the same on every page that lists the
+// lesson, so each is reported once with its pages; what is left of the page is
+// topic.js's own text, the same template on every page, so its hits group by
+// phrase.
+var topicHits = [], topicPages = 0, badgeBefore = state.selectedBadge;
+function topicHit(key, line, page) {
+  var same = topicHits.filter(function (t) { return t.key === key; })[0];
+  if (same) same.pages.push(page); else topicHits.push({ key: key, line: line, pages: [page] });
+}
 state.badges.forEach(function (b) {
   state.selectedBadge = b.name;
   var html = renderSafe("topic");
   if (html && html.__error) { bad(b.name + "'s topic page renders", html.__error); return; }
-  var f = adviceIn(textOf(html), false);
-  if (f.length) topicHits.push(b.name + " " + f.map(function (x) {
-    return '"' + x.phrase + '": ...' + x.around + "...";
-  }).join(" · "));
+  var rest = textOf(html), flagged = false;
+  state.lessons.forEach(function (l) {
+    if (l.badges.indexOf(b.name) === -1) return;
+    [l.title, l.description].forEach(function (s) {
+      if (rest.indexOf(s) === -1) return;
+      rest = rest.split(s).join(" ");
+      var f = adviceIn(s, false);
+      if (!f.length) return;
+      flagged = true;
+      topicHit(l.id + "\n" + s, l.id + " " + advicePhrases(f) + ": " + s, b.name);
+    });
+  });
+  adviceIn(rest.replace(/\s+/g, " "), false).forEach(function (f) {
+    flagged = true;
+    topicHit("page\n" + f.phrase, '"' + f.phrase + '" in the page itself: ...' + f.around + "...", b.name);
+  });
+  if (flagged) topicPages++;
 });
 state.selectedBadge = badgeBefore;
-adviceReport(topicHits, "the " + state.badges.length + " badges' topic pages", true);
+adviceReport(topicHits.map(function (t) { return t.line + "  (on " + t.pages.join(", ") + ")"; }),
+             "the " + state.badges.length + " badges' topic pages", topicPages);
 
 // The guardrail itself, both directions.
 var ADVICE_Q = ["should i invest","what should i do","is it a good idea to cancel hulu",
