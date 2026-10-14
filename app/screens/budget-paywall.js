@@ -4,16 +4,10 @@
 // v4 only, behind BUDGET_PAYWALL (js/config.js). The Budget tab stops being a
 // budget and becomes the thing standing in front of one.
 //
-// ── WHERE THE COPY CAME FROM ────────────────────────────────────────────────
-// Not invented. v3 asked this as onboarding's last step; v3.1 took "trial" out
-// of ONB_STEPS and left the renderer in place, so the terms, the five bullets
-// and the pill are the ones already designed — reworded from an optional trial
-// into a gate.
-//
-// ONE LINE OF THAT COPY COULD NOT COME WITH IT. The original closed on
+// ── ONE LINE THE COPY MUST NOT CARRY ────────────────────────────────────────
 // "Nothing is locked either way — this prototype has no paid features." It is
 // the sentence a tester actually reads, and on this screen it would state the
-// opposite of what the screen is doing.
+// opposite of what the screen is doing. Sweep §7g checks no screen says it.
 //
 // ── THE BUTTON DOES NOT UNLOCK ANYTHING ─────────────────────────────────────
 // Owner's call: strict, no route through. So the CTA is not a lie about to be

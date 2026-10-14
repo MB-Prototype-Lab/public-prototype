@@ -110,7 +110,7 @@ const SPECS = [
     why: 'an unused function added and a comment trimmed (nothing changes)',
     edits: {
       'js/theme.js': [['function themeCurrent() {\n', 'function themeUnusedProbe() {\n  return themeCurrent().id === "dark";\n}\n\nfunction themeCurrent() {\n']],
-      'screens/onboarding.js': [['// Step 5 is the lifestyle subset — advance within it before moving on.\n', '']],
+      'screens/onboarding.js': [['// "A" · "A and B" · "A, B and C" — a readable phrase for strategicGoal.label.\n', '']],
     },
   },
 ];

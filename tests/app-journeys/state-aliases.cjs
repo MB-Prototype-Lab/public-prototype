@@ -23,4 +23,7 @@ module.exports = [
   { removed: 'expenses.extras', why: 'copied from esf.extras, which nothing fills' },
   { removed: 'estimator.target', why: 'always "mtd": no caller asked for the budget mode' },
   { removed: 'lessonProfile.*.variantId', why: 'written when framing finished and never read' },
+  { removed: 'onboarding.lwIndex', why: 'the position inside the removed lifestyle step' },
+  { removed: 'onboarding.lifestyleAnswered', why: 'only the removed lifestyle step wrote it; onbFinish now resets state.lifestyleAnswered directly' },
+  { removed: 'onboarding.lifestyleDetail', why: 'only the removed commute sliders wrote it; onbFinish now resets state.lifestyleDetail directly' },
 ];

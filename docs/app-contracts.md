@@ -106,8 +106,6 @@ Telltales:
   recorded value; changing it is a product decision, never a study. A new
   journey-affecting setting needs a recorded PM decision; see
   [decisions](decisions.md).
-- Dormant code that nothing turns on, such as unused onboarding steps. The ban
-  applies to whatever would turn it on.
 
 **Review questions** for any `app/` change, at intake and before a PR:
 
@@ -283,13 +281,6 @@ All verified against the raw JSON on 2026-08-07.
   a function or a class in one puts that identifier in the markup and in any
   grep over it — which is how a deleted button appeared to still exist. Describe
   the thing, don't name it.
-- **Onboarding's option lists must test `lifestyleAnswered`, not the value.**
-  `state.onboarding.lifestyle` is seeded from the persona so the four dimensions
-  onboarding never asks still reach `state.lifestyle`. Comparing that seeded
-  value against an option renders it pre-picked — which is what put "Car" under
-  the tester's thumb before they touched anything. `paysRent` only looked fine
-  because its persona value is the boolean `true` and the option values are
-  strings, so it never matched. Use `onbLifestylePicked()`.
 
 Self-test for the benchmark model (`benchSelfTest`): Dining out, b3, household
 2, ZIP 90066, foodie moderate + cooks sometimes. Base **275** and lifestyle

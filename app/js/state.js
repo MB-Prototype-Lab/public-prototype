@@ -238,13 +238,11 @@ const state = {
   // opposed to inheriting from the persona. state.lifestyle is fully populated
   // at boot (bootV3), so it cannot tell the two apart — and the wizard needs
   // to, or every question opens pre-selected with a stranger's answer.
-  // Onboarding step 5 sets the two it asks (ONB_LIFESTYLE_DIMS).
   lifestyleAnswered: {},
 
-  // Figures the onboarding follow-up sliders collect: carMonthly, carAge,
-  // transitWeekly, walkMonthly, and the derived transportMonthly. A stated
-  // amount, not an answer key — the peer model never reads these, but the
-  // budget prefers transportMonthly over its own guess when it is present.
+  // Stated amounts such as transportMonthly. Not an answer key — the peer
+  // model never reads these, but the budget prefers transportMonthly over its
+  // own guess when it is present. Nothing in the app fills it.
   lifestyleDetail: {},
 
   // Admin panel collapse — persists across screens.

@@ -2312,26 +2312,10 @@ destinations.forEach(function (d) {
   try { html = renderScreen(); } catch (e) { return; }
   if (/no paid features|[Nn]othing is locked|no paywalls/.test(html)) promises.push(d[0]);
 });
-// THE TRIAL STEP IS DORMANT, NOT GONE. "trial" came out of ONB_STEPS in v3.1
-// and putting it back is a one-word edit, so renderScreen() never reaches it
-// and walking the screens cannot see its copy. Render the step directly, or the
-// sentence that contradicts the whole paywall sits there waiting to return.
-if (typeof onbStepBody === "function") {
-  var _ob4 = state.onboarding;
-  try {
-    if (typeof onbStart === "function") onbStart();
-    var trialHtml = onbStepBody("trial", state.onboarding);
-    if (/no paid features|[Nn]othing is locked/.test(trialHtml)) promises.push("onboarding/trial");
-  } catch (e) {}
-  state.onboarding = _ob4;
-}
-
 state.screen = _sc; state.planStatus = _ps; state.trialAccepted = _ta;
 chk(promises.length === 0,
     "no screen still tells a tester nothing is locked",
-    "contradicted on: " + promises.join(", ") +
-    "\n          the trial step is dormant, not deleted -- putting \"trial\" back " +
-    "into ONB_STEPS is a one-word edit");
+    "contradicted on: " + promises.join(", "));
 
 // The flag is the only switch, and the admin says which way it is set --
 // a walled build that looks identical to an open one in the panel is a tester
@@ -2749,14 +2733,14 @@ section("7o. Full app integration: onboarding, ESF and Buddy");
     chk(state.profile.zip === "37203" && state.profile.incomeAnnual === 75664 && state.monthlyIncome === 6305,
         "after a reset, a name-only setup lands on the default profile",
         state.profile.zip + " / " + state.profile.incomeAnnual + " / " + state.monthlyIncome);
-    // Restart after a full run that declined the trial, then skip every step:
+    // Restart after a full run with the trial declined, then skip every step:
     // nothing from that run may survive, or the household reads 2 while the
     // fund counts six people and the next tester loses the subscriber tier.
     onbStart();
     onbSetAdults(3); onbSetAdultAge(0, "26-34"); onbSetAdultAge(1, "35-44"); onbSetAdultAge(2, "45-54");
     onbStepKids("under13", 1); onbStepKids("under13", 1); onbStepKids("teen", 1);
     onbPick("placeType", "aptSmall"); onbPick("coverage", "employer"); onbPick("miles", "30plus");
-    onbTrial(false);
+    state.trialAccepted = false; onbFinish();
     profileApply("above_at");
     onbRestart();
     var restarted = state.activeProfileId === null && state.onboarding.zip === "" &&

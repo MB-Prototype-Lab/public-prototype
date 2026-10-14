@@ -21,17 +21,6 @@
 // onbPrimaryGoal() — which picks one of five intro-film scripts — is settled
 // five steps before the film plays, rather than one.
 //
-// ── v3.1: HOW TWO STEPS WERE REMOVED ─────────────────────────────────────────
-// By taking their keys OUT OF THIS ARRAY, and nothing else. The housing/commute
-// pair ("lifestyle") and the trial pitch ("trial") still have their renderers,
-// their handlers and their copy exactly where they were, a few hundred lines
-// down — unreachable, because no step is keyed to them.
-//
-// That is deliberate, and it is not laziness: this is a prototype under
-// iteration, deleting them would orphan a dozen helpers into DEAD_BASELINE
-// (onbCommuteDetail, onbSetLifestyle, onbTransportMonthly, ONB_CAR_CLASSES and
-// the rest), and putting a step back is a one-word edit this way. Do not
-// "clean up" the branches below on the grounds that nothing reaches them.
 // Full-product setup. Contained setup sequences belong to standalone Flows.
 const ONB_STEPS = ["name", "goal", "zip", "household", "place", "income",
                    "coverage", "miles", "buddy", "video"];
@@ -102,12 +91,6 @@ const ONB_MILES = [
   { id: "30plus", label: "More than 30 miles", miles: 40 }
 ];
 
-// Onboarding asks only the install-relevant lifestyle dimensions. The full six
-// live in the standalone lifestyle wizard (LW_QUESTIONS); the dims not asked
-// here keep their persona defaults (D09). Same dims and keys either way, so an
-// answer means the same thing in both places.
-const ONB_LIFESTYLE_DIMS = ["paysRent", "commute"];
-
 // Intro "video" narration — one caption per segment. Narration text is data
 // (data/onboarding-script.json) so the build-time TTS pipeline can read it; see
 // scripts/gen-audio.sh. The literals below are the fallback for a failed load.
@@ -168,9 +151,6 @@ function onbVideoSegments() {
 // Detached audio for the segment in flight. Module-level rather than on `state`
 // so the admin state inspector never tries to serialise a media element.
 let onbAudioEl = null;
-function onbLifestyleQuestions() {
-  return LW_QUESTIONS.filter(q => ONB_LIFESTYLE_DIMS.indexOf(q.dim) !== -1);
-}
 
 // Five bands, presented as ranges. `annual` is the seed the slider opens on,
 // and it is a representative figure inside the band so
@@ -252,7 +232,7 @@ const ONB_GOALS_MAX = 3;
 // buddy; name it and pick its pronouns), then folded those two into ONE screen:
 // art, greeting, name, pronouns. The body-type grid, the swatches, the pattern
 // list and the separate name screen are NOT deleted -- their branches still sit
-// in onbBuddyStep(), dormant the way "trial" is dormant in ONB_STEPS, so putting
+// in onbBuddyStep(), dormant, so putting
 // a string back here brings a screen back with nothing to rebuild.
 const ONB_BUDDY_STEPS = ["meet"];
 
@@ -301,7 +281,6 @@ function onbBuddySubKey(o) {
 function onbStart() {
   state.onboarding = {
     step: 0,
-    lwIndex: 0,
     buddyIndex: 0,         // sub-step within the character creator
     video: null,           // built by onbVideoInit() on first use
     skipPrompt: false,     // name-step "skip this / skip all" confirmation
@@ -318,14 +297,6 @@ function onbStart() {
     incomeBand: null,
     incomeExact: null,     // slider refinement inside the picked band
     lifestyle: Object.assign({}, PERSONA.lifestyle),   // persona is the fallback
-    // Figures the commute follow-up sliders collect (running cost, fare, car
-    // age). Separate from `lifestyle` because these are amounts, not answer
-    // keys — nothing in the peer model reads them.
-    lifestyleDetail: {},
-    // Which lifestyle dims the tester actually picked here. The persona fills
-    // state.lifestyle regardless, so this is the only way the budget wizard can
-    // tell "you already told me this" from "a stranger's default".
-    lifestyleAnswered: {},
     improveAreas: [],      // multi-select, max 3 (folds into strategicGoal)
     // The creator opens on the ILLUSTRATION rather than the persona's golden
     // retriever -- it is the one option with real art behind it, so it is what
@@ -400,10 +371,6 @@ function onbPick(field, id) {
 function onbNext() {
   const o = state.onboarding;
   if (ONB_STEPS[o.step] === "video") onbVideoStop();   // silence narration on exit
-  // Step 5 is the lifestyle subset — advance within it before moving on.
-  if (ONB_STEPS[o.step] === "lifestyle" && o.lwIndex < onbLifestyleQuestions().length - 1) {
-    o.lwIndex++; render(); return;
-  }
   // The buddy step is a multi-element creator — walk its sub-steps too.
   if (ONB_STEPS[o.step] === "buddy" && o.buddyIndex < ONB_BUDDY_STEPS.length - 1) {
     o.buddyIndex++;
@@ -416,7 +383,6 @@ function onbNext() {
 function onbBack() {
   const o = state.onboarding;
   if (ONB_STEPS[o.step] === "video") onbVideoStop();
-  if (ONB_STEPS[o.step] === "lifestyle" && o.lwIndex > 0) { o.lwIndex--; render(); return; }
   if (ONB_STEPS[o.step] === "buddy" && o.buddyIndex > 0) { o.buddyIndex--; render(); return; }
   if (o.step > 0) { onbSetStep(o, o.step - 1); render(); return; }
   // On the FIRST step there is nowhere back to, and a chevron that does
@@ -444,7 +410,6 @@ function onbSkip() {
   const key = ONB_STEPS[o.step];
   if (key === "video") onbVideoStop();
   if (key === "name") { o.skipPrompt = true; render(); return; }
-  o.lwIndex = 0;   // skip the entire lifestyle block in one go
   if (o.step < ONB_STEPS.length - 1) { onbSetStep(o, o.step + 1); render(); return; }
   onbFinish();
 }
@@ -626,157 +591,6 @@ function onbIncomeSlider(o) {
     </div>`;
 }
 
-// Step 5 picks. Records the dim as USER-answered as well as writing the value,
-// so the budget wizard can pre-select exactly the questions already answered
-// here and leave the other four blank.
-function onbSetLifestyle(dim, value) {
-  const o = state.onboarding;
-  o.lifestyle[dim] = value;
-  if (!o.lifestyleAnswered) o.lifestyleAnswered = {};
-  o.lifestyleAnswered[dim] = true;
-  render();
-}
-
-/**
- * Is this option selected — because the TESTER picked it, not because the
- * persona seeded it?
- *
- * o.lifestyle is seeded Object.assign({}, PERSONA.lifestyle) so the four
- * dimensions onboarding never asks still reach state.lifestyle. That seeding
- * also pre-selected "Car", because persona.json's commute is the string "car"
- * and it matches an option value exactly. paysRent never showed the same bug
- * only because its persona value is the boolean `true` while the option values
- * are strings — it never matched anything, so it looked fine by accident.
- *
- * lifestyleAnswered already tracks exactly this distinction for the budget
- * wizard; the display just wasn't reading it.
- */
-function onbLifestylePicked(o, dim, value) {
-  const answered = o.lifestyleAnswered || {};
-  return !!answered[dim] && o.lifestyle[dim] === value;
-}
-
-// ── The commute follow-up ────────────────────────────────────────────────────
-// A transport answer on its own is a category, not a cost. Each option opens
-// the slider that suits it — a car's running cost, a fare per week, or the odd
-// ride — so the figure the budget uses is theirs rather than a peer average.
-//
-// These describe what the number MEANS. They never suggest a different choice
-// (D26): "about what a mainstream sedan runs", never "a cheaper car would".
-
-const ONB_CAR_CLASSES = [
-  { upTo: 275,      label: "an older economy car, bought used" },
-  { upTo: 425,      label: "an economy car" },
-  { upTo: 600,      label: "a mainstream sedan or small SUV" },
-  { upTo: 850,      label: "a large or premium car" },
-  { upTo: Infinity, label: "a luxury car, or a big payment on any car" }
-];
-
-const ONB_COMMUTE_DETAIL = {
-  car:     { key: "carMonthly",    min: 150, max: 1200, step: 25, def: 400 },
-  transit: { key: "transitWeekly", min: 0,   max: 120,  step: 5,  def: 30  },
-  none:    { key: "walkMonthly",   min: 0,   max: 150,  step: 5,  def: 40  }
-};
-const ONB_CAR_AGE = { key: "carAge", min: 0, max: 20, step: 1, def: 6 };
-
-function onbCarClass(monthly) {
-  const hit = ONB_CAR_CLASSES.find(c => monthly <= c.upTo);
-  return hit ? hit.label : ONB_CAR_CLASSES[ONB_CAR_CLASSES.length - 1].label;
-}
-
-/** Stored figure for one detail slider, falling back to its default. */
-function onbDetail(o, spec) {
-  const d = o.lifestyleDetail || {};
-  return d[spec.key] != null ? Number(d[spec.key]) : spec.def;
-}
-
-function onbSetDetail(key, value, kind) {
-  const o = state.onboarding;
-  if (!o.lifestyleDetail) o.lifestyleDetail = {};
-  o.lifestyleDetail[key] = Number(value) || 0;
-  // Label-only patch — a render() would destroy the slider mid-drag.
-  uiPatchHTML("onbDetailLabel", onbDetailLabelText(o, kind));
-  if (kind === "car") uiPatchHTML("onbCarAgeLabel", onbCarAgeLabelText(o));
-}
-
-function onbDetailLabelText(o, kind) {
-  const spec = ONB_COMMUTE_DETAIL[kind];
-  if (!spec) return "";
-  const v = onbDetail(o, spec);
-  if (kind === "transit") {
-    const monthly = Math.round((v * 52) / 12);
-    return `${h(budgetFmt(v))} a week · about ${h(budgetFmt(monthly))} a month`;
-  }
-  return `${h(budgetFmt(v))} a month`;
-}
-
-function onbCarAgeLabelText(o) {
-  const yrs = onbDetail(o, ONB_CAR_AGE);
-  if (yrs === 0) return "Brand new";
-  // Same open-top treatment as income band b5, for the same reason: a slider
-  // maximum that reads as an exact value lies about everyone above it.
-  if (yrs >= ONB_CAR_AGE.max) return `${ONB_CAR_AGE.max}+ years old`;
-  return `${yrs} year${yrs === 1 ? "" : "s"} old`;
-}
-
-/** Monthly transport figure implied by the commute answers, or null. */
-function onbTransportMonthly(o) {
-  if (!o || !(o.lifestyleAnswered || {}).commute) return null;
-  const kind = o.lifestyle.commute;
-  const spec = ONB_COMMUTE_DETAIL[kind];
-  if (!spec) return null;
-  const v = onbDetail(o, spec);
-  return kind === "transit" ? Math.round((v * 52) / 12) : v;
-}
-
-function onbCommuteDetail(o, q) {
-  if (q.dim !== "commute") return "";
-  if (!(o.lifestyleAnswered || {}).commute) return "";
-  const kind = o.lifestyle.commute;
-  const spec = ONB_COMMUTE_DETAIL[kind];
-  if (!spec) return "";
-  const v = onbDetail(o, spec);
-
-  const caption =
-    kind === "car"     ? `At that level you're describing ${h(onbCarClass(v))} — fuel, insurance and repairs included.`
-  : kind === "transit" ? "Fares and passes, before anything you'd pay for the odd ride."
-  :                      "The occasional fare or ride, rather than something you pay every month.";
-
-  const heading =
-    kind === "car"     ? "What does running it cost you?"
-  : kind === "transit" ? "What do fares run you?"
-  :                      "What does getting around cost you?";
-
-  return `
-    <div class="card" style="margin-top:14px;">
-      <div class="row" style="align-items:baseline;margin-bottom:6px;">
-        <span class="budget-row-name">${h(heading)}</span>
-        <span class="budget-row-amt" id="onbDetailLabel">${onbDetailLabelText(o, kind)}</span>
-      </div>
-      <input class="journal-slider" type="range"
-             min="${spec.min}" max="${spec.max}" step="${spec.step}" value="${v}"
-             oninput="onbSetDetail('${spec.key}', this.value, '${kind}')"
-             aria-label="${h(heading)}">
-      <p class="helper" style="margin:8px 0 0;font-size:11px;">${caption}</p>
-    </div>
-    ${kind === "car" ? `
-      <div class="card" style="margin-top:10px;">
-        <div class="row" style="align-items:baseline;margin-bottom:6px;">
-          <span class="budget-row-name">How old is it?</span>
-          <span class="budget-row-amt" id="onbCarAgeLabel">${onbCarAgeLabelText(o)}</span>
-        </div>
-        <input class="journal-slider" type="range"
-               min="${ONB_CAR_AGE.min}" max="${ONB_CAR_AGE.max}" step="${ONB_CAR_AGE.step}"
-               value="${onbDetail(o, ONB_CAR_AGE)}"
-               oninput="onbSetDetail('${ONB_CAR_AGE.key}', this.value, 'car')"
-               aria-label="Age of your car">
-        <p class="helper" style="margin:8px 0 0;font-size:11px;">
-          Newer cars tend to carry more payment and less repair; older ones the
-          other way round.
-        </p>
-      </div>` : ""}`;
-}
-
 // "A" · "A and B" · "A, B and C" — a readable phrase for strategicGoal.label.
 function onbJoinAreas(areas) {
   if (areas.length <= 1) return areas[0] || "";
@@ -844,13 +658,8 @@ function onbFinish() {
   }
 
   state.lifestyle = Object.assign({}, o.lifestyle);
-  state.lifestyleAnswered = Object.assign({}, o.lifestyleAnswered || {});
-  state.lifestyleDetail = Object.assign({}, o.lifestyleDetail || {});
-  // The commute sliders are a stated figure, so they beat the peer model's
-  // guess for Transport. Only when the tester actually answered the question —
-  // otherwise the peer value stands.
-  const transport = onbTransportMonthly(o);
-  if (transport != null) state.lifestyleDetail.transportMonthly = transport;
+  state.lifestyleAnswered = {};
+  state.lifestyleDetail = {};
   state.buddy = Object.assign({}, o.buddy);
   // Name it here rather than leaving it blank for the screens to paper over.
   // An unnamed buddy is currently "Buddy" on Home and in Chat but "Your buddy"
@@ -872,12 +681,11 @@ function onbFinish() {
     setDuringOnboarding: true
   };
 
-  // The trial pitch is out of the flow (see ONB_STEPS), so nobody answers it —
-  // and state.trialAccepted gates diamonds (lrDiamondsForLesson) and the
+  // Onboarding has no trial step, so nobody answers it — and
+  // state.trialAccepted gates diamonds (lrDiamondsForLesson) and the
   // subscriber section of the reward screen. Left null those would be
   // unreachable. D31 said nothing is gated either way, so everyone gets the
-  // subscriber tier. Guarded rather than assigned, so onbTrial's answer still
-  // wins if that step is ever put back into ONB_STEPS.
+  // subscriber tier.
   if (state.trialAccepted == null) state.trialAccepted = true;
 
   // The budget is NOT built here. "empty" is what every reader takes as "no
@@ -896,7 +704,6 @@ function onbFinish() {
     // One of three fixed ids (BUDDY_PRONOUNS), never typed -- so it may ride
     // in the URL. Blank when the buddy step was skipped, and then not recorded.
     ubTrailRecord("pro", (state.buddy && state.buddy.pronouns) || "");
-    if (transport != null) ubTrailRecord("comm", transport);
     ubTrailCheckpoint("setup");
   }
 
@@ -915,8 +722,6 @@ function renderOnboarding() {
   const o = state.onboarding || onbStart();
   const key = ONB_STEPS[o.step];
   const total = ONB_STEPS.length;
-  // Trial has its own two buttons — no generic Skip / Continue there.
-  const showControls = key !== "trial";
 
   // EVERY step pins Back/Continue and scrolls its content between the header
   // and the footer. This used to be `o.step >= 5`, an index picked when the
@@ -943,19 +748,15 @@ function renderOnboarding() {
             ${ONB_STEPS.map((_, i) => `<span class="journal-pip ${i <= o.step ? "on" : ""}"></span>`).join("")}
           </div>
         </div>
-        ${showControls
-          ? `<button class="onb-skip" type="button" onclick="onbSkip()">Skip</button>`
-          : ""}
+        <button class="onb-skip" type="button" onclick="onbSkip()">Skip</button>
       </div>
       <div class="journal-body${bodyCls}">${onbStepBody(key, o)}</div>
       <div class="journal-foot">
-        ${o.step > 0 || o.lwIndex > 0 || o.buddyIndex > 0
+        ${o.step > 0 || o.buddyIndex > 0
           ? `<button class="button secondary" type="button" onclick="onbBack()">Back</button>`
           : `<span></span>`}
-        ${showControls
-          ? `<button class="button" type="button" id="onbContinue" onclick="onbNext()"
-                     ${onbAnswered(key, o) ? "" : "disabled"}>${h(onbContinueLabel(key, o))}</button>`
-          : ""}
+        <button class="button" type="button" id="onbContinue" onclick="onbNext()"
+                     ${onbAnswered(key, o) ? "" : "disabled"}>${h(onbContinueLabel(key, o))}</button>
       </div>
     </div>
     ${o.skipPrompt ? onbSkipPrompt() : ""}
@@ -1250,27 +1051,6 @@ function onbStepBody(key, o) {
       ${onbIncomeSlider(o)}
     </div>`;
 
-  // A subset of the standalone budget builder's questions — same dimensions and
-  // keys, so an answer means the same thing either way; onboarding just asks the
-  // install-relevant few (housing, commute, travel) and lets the rest keep their
-  // persona defaults.
-  if (key === "lifestyle") {
-    const lwq = onbLifestyleQuestions();
-    const q = lwq[o.lwIndex];
-    return `
-      <p class="helper" style="margin:0 0 4px;">A few quick ones about how you live (${o.lwIndex + 1}/${lwq.length})</p>
-      <h1 class="title onb-title" style="margin:0 0 6px;">${h(q.prompt)}</h1>
-      ${q.help ? `<p class="helper" style="margin:0 0 14px;">${h(q.help)}</p>` : ""}
-      <div class="journal-options">
-        ${q.options.map(opt => `
-          <button class="journal-opt ${onbLifestylePicked(o, q.dim, opt.value) ? "picked" : ""}" type="button"
-                  onclick="onbSetLifestyle('${q.dim}','${opt.value}')">
-            <span class="journal-opt-label">${h(opt.label)}</span>
-          </button>`).join("")}
-      </div>
-      ${onbCommuteDetail(o, q)}`;
-  }
-
   if (key === "goal") {
     const atMax = o.improveAreas.length >= ONB_GOALS_MAX;
     // Second step now, so it opens with the name they just typed. Deliberately
@@ -1301,33 +1081,7 @@ function onbStepBody(key, o) {
 
   if (key === "video") return onbVideoBody(o);
 
-  // Accept or decline, the experience afterward is identical HERE. D31 ("no
-  // paywalls anywhere") is overridden for the Budget tab only — see L27 in
-  // docs/decisions.md and js/config.js — so this step's own promise had to
-  // change with it; the old closing line said nothing was locked, which the
-  // Budget tab now contradicts.
-  return `
-    <div class="card">
-      <p class="pill" style="display:inline-block;font-size:9px;padding:3px 9px;margin-bottom:10px;">7 days free</p>
-      <h1 class="title onb-title" style="margin:0 0 6px;">Last thing — want to try Platinum with me?</h1>
-      <p class="task-desc" style="margin:0 0 12px;">
-        Seven days free, then $6.99 a month. Cancel any time.
-      </p>
-      <ul class="onb-trial-list">
-        <li>Daily updates on how you're doing</li>
-        <li>Video updates on reported spending</li>
-        <li>Peer comparisons for every category</li>
-        <li>Unlimited journal entries and history</li>
-        <li>All lessons and simulations</li>
-      </ul>
-      <button class="button full" style="margin-bottom:8px;" type="button"
-              onclick="onbTrial(true)">Start free trial</button>
-      <button class="button secondary full" type="button"
-              onclick="onbTrial(false)">Not right now</button>
-      <p class="helper" style="font-size:10px;margin:12px 0 0;">
-        Answer either way — this step changes nothing on its own.
-      </p>
-    </div>`;
+  return "";
 }
 
 function onbSetBuddy(key, value) {
@@ -2359,11 +2113,6 @@ function onbVideoScrubKey(e) {
   if (e.key === "ArrowLeft"  || e.key === "ArrowDown") { e.preventDefault(); onbVideoApplyElapsed(onbVideo().elapsed - step); }
 }
 
-function onbTrial(accepted) {
-  state.trialAccepted = accepted;
-  onbFinish();
-}
-
 // Tools "Restart onboarding": a blank run with the chosen profile and the last
 // run's household answers forgotten too, so a skip lands on the default profile
 // the way it does for a new tester (onbFinish applies it only when none is
@@ -2392,7 +2141,7 @@ function renderOnboardingAdmin() {
       ${!o ? `<p class="helper">Not running.</p>` : `
         <div class="input-group">
           <label>Step ${o.step + 1}/${ONB_STEPS.length} — ${h(ONB_STEPS[o.step])}</label>
-          <select onchange="state.onboarding.lwIndex=0;state.onboarding.buddyIndex=0;onbSetStep(state.onboarding,parseInt(this.value,10));render()">
+          <select onchange="state.onboarding.buddyIndex=0;onbSetStep(state.onboarding,parseInt(this.value,10));render()">
             ${ONB_STEPS.map((s, i) => `<option value="${i}" ${o.step === i ? "selected" : ""}>${i + 1}. ${h(s)}</option>`).join("")}
           </select>
         </div>
@@ -2409,18 +2158,6 @@ function renderOnboardingAdmin() {
               : ""}<br>
             place → ${h(o.placeType || "—")} · coverage → ${h(o.coverage || "—")} · miles → ${h(o.miles || "—")}<br>
             goal areas → ${h((o.improveAreas || []).join(", ") || "—")}
-          </div>
-        </div>
-        <div class="input-group">
-          <label>Commute detail — collected by the budget wizard now, not here</label>
-          <div class="helper" style="line-height:1.7;">
-            ${(o.lifestyleAnswered || {}).commute
-              ? `${h(o.lifestyle.commute)} → ${h(budgetFmt(onbTransportMonthly(o) || 0))} a month
-                 ${o.lifestyle.commute === "car"
-                   ? `<br>${h(onbCarClass(onbDetail(o, ONB_COMMUTE_DETAIL.car)))}
-                      · ${h(onbCarAgeLabelText(o))}`
-                   : ""}`
-              : "not asked during onboarding — the wizard collects it, and the peer value stands until it does"}
           </div>
         </div>
         <p class="helper" style="font-size:10px;">

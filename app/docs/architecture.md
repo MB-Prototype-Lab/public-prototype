@@ -508,7 +508,7 @@ and `lwTravelBlock` clamps its own two sliders.
 The cadence used to live only in `aria-label` — screen-reader only, never
 rendered — so at the moment a tester looked at "$85" beside "Other", nothing on
 screen said it was a month. `renderBudgetSliderRow` now spells it out on the
-figure, in words. The onboarding commute sliders use the same wording.
+figure, in words.
 
 The review's income line is **"Coming in each month"**, not "Take-home":
 onboarding stopped estimating tax (see §5, `monthlyIncome`), so a post-tax label
@@ -519,13 +519,8 @@ fully populated from the persona at boot, so it cannot tell "you told me this"
 from "a stranger's default" — and the wizard needs to, or every question opens
 pre-selected. The wizard pre-selects only dimensions marked here.
 
-**In v3.1 nothing marks them, and that is the current state.** Onboarding used
-to ask two (`ONB_LIFESTYLE_DIMS` — housing and commute) at its step 5; that step
-is no longer in `ONB_STEPS`, so `state.lifestyleAnswered` is empty when
-onboarding finishes and all six wizard questions open blank. `ONB_LIFESTYLE_DIMS`
-and its renderer are still in `screens/onboarding.js`, unreachable, so restoring
-the step is a one-word edit. **v3 still asks them** — it is the A/B control and
-its step order is unchanged.
+Onboarding asks none of the six, so `state.lifestyleAnswered` is empty when
+it finishes and all six wizard questions open blank.
 
 ### Deriving `incomeBand`
 
@@ -564,9 +559,9 @@ post-tax figure; only the state field changed. Not to be confused with
 
 ### Stated figures beat peer guesses
 
-`state.lifestyleDetail` holds amounts the tester typed — `carMonthly`, `carAge`,
-`transitWeekly`, `walkMonthly`, and the derived `transportMonthly`. The peer
-model never reads them; the **wizard** does, through `lwApplyStated()`
+`state.lifestyleDetail` holds amounts the tester stated, such as
+`transportMonthly`. Nothing in the app fills it now. The peer model never reads
+them; the **wizard** does, through `lwApplyStated()`
 (`screens/lifestyle-wizard.js`), which overwrites `preview.Transport` after the
 answers are folded in.
 
