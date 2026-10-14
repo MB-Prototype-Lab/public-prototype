@@ -85,7 +85,7 @@ body.only-changes .step.same, body.only-changes .journey.all-same { display: non
     <div class="fact"><b>${summary.flaky}</b><span>flaky (did not repeat)</span></div>
     <div class="fact"><b>${summary.broken}</b><span>journeys that broke</span></div>
   </div>
-  <p class="note">Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken whenever a new view appears. "Changed" means more than 0.05% of its pixels differ and the difference repeated on a second run. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.</p>
+  <p class="note">Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken whenever a new view appears. "Changed" means more than 0.05% of its pixels differ, by any amount, and the difference repeated on a second run. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.</p>
   <div class="tabs" role="tablist">${tabs}</div>
   <label class="only"><input type="checkbox" id="only"${focus ? ' checked' : ''}> Show only changes</label>
   ${panels}
