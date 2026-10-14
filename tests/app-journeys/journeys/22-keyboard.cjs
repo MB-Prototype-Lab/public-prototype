@@ -27,7 +27,7 @@ module.exports = {
     tap('House · 2–3 bedrooms'),
     tap('Continue'),
     tap('$90,000 – $140,000'),
-    type('Annual income, typed', '101500'),
+    type('Annual income, typed', '101500', { clear: true }),
     tap('Continue'),
   ],
 };
