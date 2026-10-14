@@ -102,9 +102,8 @@ function navGoHome() {
 //
 // navGoTab() commits navCurrent(), i.e. the TOP of that stack. That is right for
 // a tab tap (resume where you left off) and wrong for ending a flow, because the
-// screen you just finished is still on top. Enter the budget wizard from the
-// Budget tab and the aboutMe stack ends as
-// ["aboutMe","spendingProfile","lifestyleWizard","budgetCompare","budgetDone"] — so
+// screen you just finished is still on top. Finish the budget builder and the
+// aboutMe stack ends as ["aboutMe","budgetBuild","budgetDone"] — so
 // "See my budget" called navGoTab('aboutMe') and committed budgetDone, the
 // screen it was already on. The button did nothing.
 function navGoTabRoot(key) {
@@ -145,16 +144,13 @@ function navAdminJump(screen) {
 
 // Flow entry points that should return to Home when complete.
 // Set flowOrigin so the finish screen knows where to send the user back.
-const FLOW_ENTRY_SCREENS = ["lifestyleWizard", "accountBalances", "debtBalances"];
+const FLOW_ENTRY_SCREENS = ["accountBalances", "debtBalances"];
 
 // Entry point for a Home daily task. Switches to the home stack FIRST, so the
 // task's destination backs to Home rather than to whatever tab was last open.
 function taskGo(destination) {
   if (FLOW_ENTRY_SCREENS.includes(destination)) {
     state.flowOrigin = "home";
-    if (destination === "lifestyleWizard") {
-      state.postResultContext = "budget";
-    }
   }
   // Reset the home stack to its root before pushing, so the contract holds
   // literally: a screen reached from a Home task ALWAYS backs to Home. Tasks
@@ -415,7 +411,7 @@ function completeLesson() {
 //
 // Tab → screens mapping (activeTabFor() in utils.js):
 //   home        → home
-//   aboutMe     → aboutMe, lifestyleWizard, myDebts, debtAnalyzer,
+//   aboutMe     → aboutMe, myDebts, debtAnalyzer,
 //                 lifestyle, lifestyleChain, accountBalances, debtBalances, goals
 //   myProgress  → myProgress
 //   learn       → learn, topic, reward-preview, lesson, quiz, simulation

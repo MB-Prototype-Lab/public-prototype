@@ -138,7 +138,7 @@ All verified against the raw JSON on 2026-08-07.
   separately — stronger than the single assertion it replaced.
 - **Lifestyle is a product across six dimensions**, not one lookup.
 - **`paysRent` data keys are the strings `"true"` / `"false"` / `"shared"`**,
-  not booleans. The wizard's option values map onto them via `benchLifestyleKey`:
+  not booleans. Answer values map onto them via `benchLifestyleKey`:
   rent/mortgage → `"true"` (×1.0), family → `"false"` (×0.22, rent-free),
   other → `"shared"` (×0.6, the middle housing tier).
   **`commute`'s key for "mostly walk" is `none`.** A missed key silently
@@ -154,11 +154,6 @@ All verified against the raw JSON on 2026-08-07.
   still reading `monthlyIncomeNet`. It is `profile.incomeAnnual / 12` — what the
   tester said, no tax factor. Separate from `state.userProfile.monthlyIncome`,
   an unrelated v2 form field.
-- **`travelFrequency`'s middle option is a ×1.0 no-op**, and the dimension moves
-  only `Other`. Picking "Now and then" was mathematically identical to never
-  answering, which is why its figure looked broken. Travel is now an explicit
-  trips × cost ÷ 12 line inside Other and is exempt from the wizard's slider
-  bands, because its figure is composed rather than `base × multipliers`.
 - **Closing the simulated keyboard moves the layout by 250px**
   (`.screen-scroll.kbd-open`), so anything that closes it mid-gesture pulls the
   button out from under the finger and no `click` is ever dispatched. That is
@@ -262,13 +257,6 @@ All verified against the raw JSON on 2026-08-07.
   line, and the tick flashed the entire scene back to its first beat ten times
   a second. Only `paused` and `idle` get `play()`; setting `currentTime` is
   enough to un-finish one.
-- **The wizard composes answers from the BASELINE, never from the preview.**
-  `preview = implied x drift`, where implied is the neutral peer figure times
-  every applied modifier and drift is the tester's drag as a *ratio*. Scaling
-  the live preview instead — which is what it used to do — compounds through
-  rounding when someone toggles between options, and produced $10 groceries for
-  "Very into it". Re-answering the same question clears that dimension's drift;
-  answering a different one keeps it.
 - **Paying a card in full costs nothing.** `lrSimBalance` returns 1 month and $0
   interest when the payment covers the balance, because that is the grace period
   the APR lesson teaches in its own script. It used to charge a month first.

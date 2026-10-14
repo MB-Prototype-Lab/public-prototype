@@ -78,9 +78,6 @@ function adminSubtitle() {
   if (state.screen === "budgetBuild")     return APP_VERSION + " builder — " + bbStep().title.toLowerCase() +
                                                  " (step " + ((state.budgetBuild && state.budgetBuild.step || 0) + 1) +
                                                  " of " + BB_STEPS.length + "), Help me out per line.";
-  if (state.screen === "spendingProfile") return APP_VERSION + " step 1 — twelve sliders, opening on ZIP-adjusted national averages.";
-  if (state.screen === "budgetCompare")   return APP_VERSION + " step 3 — per category, their figure vs the model's vs the midpoint.";
-  if (state.screen === "lifestyleWizard") return "Lifestyle wizard — 6 questions feeding the peer model.";
   if (state.screen === "budgetDone")     return "Budget saved through the seam.";
   if (state.screen === "goals")          return "Goals — one strategic, several tactical. Pace is computed; the two types invert.";
   if (state.screen === "myProgress")     return "My Progress tab — output hub for profile, results, comparisons, goals.";
@@ -126,9 +123,6 @@ function renderScreen() {
   if (state.screen === "bpLanding")         return renderBpLanding();
   if (state.screen === "bpFinder")          return renderBpFinder();
   if (state.screen === "bpYourCar")         return renderBpYourCar();
-  if (state.screen === "spendingProfile")   return renderSpendingProfile();
-  if (state.screen === "budgetCompare")     return renderBudgetCompare();
-  if (state.screen === "lifestyleWizard")   return renderLifestyleWizard();
   if (state.screen === "budgetDone")        return renderBudgetDone();
   if (state.screen === "budgetUpdateConfirm") return renderBudgetUpdateConfirm();
   if (state.screen === "myProgress")        return renderMyProgress();
@@ -197,9 +191,6 @@ function renderAdmin() {
   if (state.screen === "bpLanding")       return renderBpLandingAdmin();
   if (state.screen === "bpFinder")        return renderBpFinderAdmin();
   if (state.screen === "bpYourCar")       return renderBpYourCarAdmin();
-  if (state.screen === "spendingProfile") return renderLifestyleWizardAdmin();
-  if (state.screen === "budgetCompare")   return renderBudgetCompareAdmin();
-  if (state.screen === "lifestyleWizard") return renderLifestyleWizardAdmin();
   if (state.screen === "myDebts")       return renderMyDebtsAdmin();
   if (state.screen === "debtAnalyzer")  return renderDebtAnalyzerAdmin();
   if (state.screen === "chat")          return renderChatAdmin();
@@ -258,7 +249,7 @@ function render() {
   // Any new full-bleed screen should join an existing list, not add a call.
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
   screenRoot.classList.toggle("journal-mode",     ["lessonFraming","lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen) || screenRoot.classList.contains("journal-mode"));
-  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","helpMeOut","esfBuild","esfPlan","bpLanding","bpFinder","bpYourCar","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","spendEstimator"].includes(state.screen));
+  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","helpMeOut","esfBuild","esfPlan","bpLanding","bpFinder","bpYourCar","profilePicker","budgetDone","spendEstimator"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("login-mode",       state.screen === "login");
   screenRoot.classList.toggle("du-mode",          state.screen === "dailyUpdate");

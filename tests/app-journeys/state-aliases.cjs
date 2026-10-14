@@ -26,5 +26,6 @@ module.exports = [
   { removed: 'onboarding.lwIndex', why: 'the position inside the removed lifestyle step' },
   { removed: 'onboarding.lifestyleAnswered', why: 'only the removed lifestyle step wrote it; onbFinish now resets state.lifestyleAnswered directly' },
   { removed: 'onboarding.lifestyleDetail', why: 'only the removed commute sliders wrote it; onbFinish now resets state.lifestyleDetail directly' },
+  { removed: 'lifestyleWizard', why: 'the removed lifestyle wizard\'s session; always null without its screens' },
   { removed: 'onboarding.buddyIndex', why: 'the position inside the removed buddy creator sub-steps; the buddy step is one screen' },
 ];

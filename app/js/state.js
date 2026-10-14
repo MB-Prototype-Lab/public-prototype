@@ -39,9 +39,6 @@ const destinations = [
   ["bpYourCar",      "Big purchase: Your car (pay and plan)"],
   ["helpMeOut",      "Budget: Help me out"],
   ["profilePicker",  "Starting profile"],
-  ["spendingProfile","Budget: Spending Profile"],
-  ["budgetCompare",  "Budget: Which is closer"],
-  ["lifestyleWizard","Lifestyle Wizard"],
   ["budgetDone",     "Budget: Saved"],
   ["myProgress",     "My Progress"],
   ["learn",          "Learn"],
@@ -193,7 +190,6 @@ const state = {
   planStatus: "complete",
   planBuiltWith: null,
   planBuiltDate: null,
-  lifestyleWizard: null,
   // v3.1 budget builder — three steps, per-line "Help me out". Holds the
   // figures until bbSubmit() puts them through the baseline seam (L6).
   budgetBuild: null,
@@ -234,15 +230,14 @@ const state = {
   // The picker session — tier, then income level.
   profilePick: null,
 
-  // Which of the six lifestyle dimensions the USER actually answered, as
-  // opposed to inheriting from the persona. state.lifestyle is fully populated
-  // at boot (bootV3), so it cannot tell the two apart — and the wizard needs
-  // to, or every question opens pre-selected with a stranger's answer.
+  // Which of the six lifestyle dimensions the USER actually answered (Help me
+  // out marks them), as opposed to inheriting from the persona. state.lifestyle
+  // is fully populated at boot (bootV3), so it cannot tell the two apart.
+  // Nothing reads it.
   lifestyleAnswered: {},
 
-  // Stated amounts such as transportMonthly. Not an answer key — the peer
-  // model never reads these, but the budget prefers transportMonthly over its
-  // own guess when it is present. Nothing in the app fills it.
+  // Stated amounts such as transportMonthly. Nothing in the app fills or
+  // reads it.
   lifestyleDetail: {},
 
   // Admin panel collapse — persists across screens.

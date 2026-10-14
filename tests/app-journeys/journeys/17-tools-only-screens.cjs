@@ -1,5 +1,5 @@
 'use strict';
-const { tap, type, slide, call } = require('../dsl.cjs');
+const { tap, type, call } = require('../dsl.cjs');
 const { skipToProfile } = require('../common.cjs');
 
 // Inherited screens with no route from the product's own navigation; Tools
@@ -8,7 +8,7 @@ const { skipToProfile } = require('../common.cjs');
 // no other journey reaches is added here, with a real tap where it has one.
 module.exports = {
   id: 'tools-only-screens',
-  title: 'Inherited screens reached from Tools: reactions, next action, goal, finish, debts, analyzer, market, profile questions, spending, streak',
+  title: 'Inherited screens reached from Tools: reactions, next action, goal, finish, debts, analyzer, market, Help me out, lesson reward, streak',
   steps: skipToProfile().concat([
     call('navAdminJump', 'postResult'),
     tap("That's how I feel →"),
@@ -31,18 +31,6 @@ module.exports = {
     call('navAdminJump', 'marketplace'),
     tap({ name: 'View Details', nth: 0 }),
     tap({ name: 'Back', nth: 0 }),
-    call('navAdminJump', 'lifestyleWizard'),
-    tap('Moderate'),
-    call('navAdminJump', 'spendingProfile'),
-    slide('Dining out monthly amount', 300),
-    tap('Fine-tune'),
-    tap('Very into it'),
-    tap('Continue'),
-    tap({ name: 'Back', nth: 1 }),
-    tap({ name: 'Back', nth: 1 }),
-    call('navAdminJump', 'budgetCompare'),
-    tap({ name: /^Between \$/, nth: 0 }),
-    tap('Save budget'),
     call('navAdminJump', 'helpMeOut'),
     tap('Back to Budget'),
     call('navAdminJump', 'lessonReward'),

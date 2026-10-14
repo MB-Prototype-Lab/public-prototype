@@ -101,8 +101,6 @@ function screenTitle() {
     detail = cat + (state.helpMeOut.stage === "confirm" ? ", confirm" : "");
   } else if (s === "journalEntry" && state.journalSession) {
     detail = "question " + ((state.journalSession.qIndex || 0) + 1);
-  } else if (s === "lifestyleWizard" && state.lifestyleWizard) {
-    detail = "step " + ((state.lifestyleWizard.step || 0) + 1);
   } else if (s === "spendEstimator" && state.estimator) {
     detail = state.estimator.stage;
   }

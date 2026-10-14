@@ -274,9 +274,9 @@ one; the old CA/AR/NY/VA prefix list is superseded.
 
 ### Two answer-key traps in `lifestyleModifiers`
 
-The wizard's answer labels do **not** all match the data keys:
+Answer labels do **not** all match the data keys:
 
-| Dimension | Data keys | Wizard asks | Trap |
+| Dimension | Data keys | Asked as | Trap |
 |---|---|---|---|
 | `paysRent` | `"true"` / `"false"` | "Do you pay rent or a mortgage? (yes/no)" | Keys are **strings**, not booleans. A boolean `true` misses the table |
 | `commute` | `car` / `transit` / **`none`** | "(car / transit / **mostly walk**)" | "mostly walk" → `none`. The label appears nowhere in the data |
@@ -403,124 +403,11 @@ Worth knowing: BEA's "Other services" lumps restaurants with healthcare and
 insurance, which vary far less by place, so 1.071 probably understates a Los
 Angeles restaurant bill. It is still the best sourced figure available.
 
-### The wizard: answers compose, drags ride on top
+### The income line says what the tester said
 
-**This replaces the running-preview model.** That version multiplied whatever
-was already on screen, which is stable in theory and drifted badly in practice:
-picking Moderate, dragging Groceries to the floor, then picking "Very into it"
-scaled the *dragged* figure rather than the option's own. Toggling between
-options with each result rounded to the nearest 5 walked the number somewhere
-neither answer implies — the reported case ended at **$10 a month of groceries
-for "Very into it"** while Dining out sat at its untouched starting value.
-
-Two separable parts now:
-
-| | |
-|---|---|
-| **Implied** | the neutral peer figure × every applied dimension's modifier (`lwImpliedNow`, `lwBaseWithout`). Recomputed from the baseline every time, so it never accumulates rounding and re-answering always lands on the same number |
-| **Drift** | the tester's adjustment, held as a **ratio** of what was implied when they dragged (`w.drift[category]`, set in `lwAdjust`) |
-
-`preview = implied × drift`. Consequences worth knowing:
-
-- **Answering a different question keeps the drag.** That is the original
-  design — "the questions after this one adjust from wherever you leave it" —
-  and it still holds, because the ratio applies to whatever the new answer
-  implies.
-- **Re-answering the same question clears it**, for the categories that
-  dimension moves. The drag was a refinement of an answer that no longer stands,
-  and carrying it forward is what compounded.
-- **Order no longer matters.** Answering foodie → cooks → hobby gives the same
-  twelve figures as the reverse. Asserted.
-- **Bands are measured from `implied`, not from `preview`**, so dragging cannot
-  recentre its own bounds.
-- `lwBaseWithout` and `lwImpliedNow` default `applied` to `{}` — a half-built
-  session (admin jump, or one handler driven in isolation) reaches them.
-
-### The wizard walks the product, it does not recompute it
-
-`benchAllPeerValues` is the right answer for a one-shot calculation. The
-lifestyle wizard is not one — the tester can drag a slider on Q1 and then answer
-Q2, and recomputing would silently throw the drag away.
-
-So the wizard holds a **running** preview and applies each answer as a ratio
-against whatever is already folded in:
-
-```
-new = current × mods[dim][newAnswer][cat] / mods[dim][answerAlreadyApplied][cat]
-```
-
-An unanswered dimension contributes 1.0, so the first answer is just the
-multiplier; re-answering via Back divides the old one out with no special case;
-and with no drags at all it lands on the same figures `benchAllPeerValues` would
-have produced, because it is the same six multipliers in the same order. The
-running state lives in `state.lifestyleWizard.{preview, applied}`
-(`screens/lifestyle-wizard.js`).
-
-### Sliders are bounded by the option that was picked
-
-`renderBudgetSliderRow` takes an optional `bounds`. Without it the track runs 0
-to `budgetSliderMax` — the review screen and the Budget tab, where every answer
-is in and the figure is the tester's. **With** it, on a question screen, the
-track is limited to ±25% of what that option projects for that category
-(`lwOptionBounds`). Picking "Not much" for food and then dragging groceries to a
-thousand left the description above the slider talking about somebody else.
-
-Three things that are easy to get wrong here:
-
-- **The band is measured from `w.anchors[dim]`, not the live preview.** Once an
-  option is applied, `lwProjected(dim, sameValue, cat)` just returns the current
-  figure — so a band built from it recentres on every drag and ratchets outwards
-  a quarter at a time until the bound means nothing. `lwApplyDimension` records
-  what each answer implied; that is the anchor.
-- **`lwBoundsForCategory` returns null off the question screen.** `w.step` still
-  points at the last question when the review opens, so without the
-  `state.screen` guard the review's twelve full-range sliders would silently
-  clamp to the last question's band.
-- **`travelFrequency` is exempt.** Its Other figure is composed, not
-  modifier-derived — see below.
-
-Bands **overlap** between neighbouring options and leave small gaps between
-distant ones. That is the deliberate trade against hard contiguous boundaries:
-more forgiving at the edges, where a tester is likeliest to be between two
-answers. The top option keeps an open ceiling — "A lot" of hobby spend has no
-option above it to be promoted to.
-
-### Travel is a named line inside Other
-
-`travelFrequency` multiplies exactly one category — `Other`, the catch-all — and
-its middle option is **×1.0, an exact no-op**. So "Now and then" produced Other's
-untouched peer base, identical to never answering, while the option's copy
-talked about trips. The number and the words described different things.
-
-There is no Travel category and there should not be one: `CATEGORIES` is the
-join key across four data files and `peer-benchmarks.json` has no Travel base to
-compare against. Instead the question asks **trips a year × a typical trip ÷ 12**
-and Other renders as that accrual plus a residual, summing to the category
-total. The frequency answer seeds trips-a-year (rare 1, moderate 3, frequent 8)
-and stops seeding once the tester moves it.
-
-Because that figure is composed rather than `base × multipliers`, the ±25% band
-above does not apply to it — `lwOptionBounds` returns null for this dimension
-and `lwTravelBlock` clamps its own two sliders.
-
-### Every figure names its period
-
-The cadence used to live only in `aria-label` — screen-reader only, never
-rendered — so at the moment a tester looked at "$85" beside "Other", nothing on
-screen said it was a month. `renderBudgetSliderRow` now spells it out on the
-figure, in words.
-
-The review's income line is **"Coming in each month"**, not "Take-home":
+The Budget tab's income line is **"Coming in each month"**, not "Take-home":
 onboarding stopped estimating tax (see §5, `monthlyIncome`), so a post-tax label
 would be a claim the app cannot back.
-
-**`state.lifestyleAnswered`** is the companion to this. `state.lifestyle` is
-fully populated from the persona at boot, so it cannot tell "you told me this"
-from "a stranger's default" — and the wizard needs to, or every question opens
-pre-selected. The wizard pre-selects only dimensions marked here.
-
-Onboarding asks none of the six, so `state.lifestyleAnswered` is empty when
-it finishes and all six wizard questions open blank.
 
 ### Deriving `incomeBand`
 
@@ -556,20 +443,6 @@ and never again, so every income band produced the same $4,390 budget. The JSON
 key keeps its old name because the seeded persona's 4,390 genuinely *was* a
 post-tax figure; only the state field changed. Not to be confused with
 `state.userProfile.monthlyIncome`, an unrelated v2 form field.
-
-### Stated figures beat peer guesses
-
-`state.lifestyleDetail` holds amounts the tester stated, such as
-`transportMonthly`. Nothing in the app fills it now. The peer model never reads
-them; the **wizard** does, through `lwApplyStated()`
-(`screens/lifestyle-wizard.js`), which overwrites `preview.Transport` after the
-answers are folded in.
-
-Order matters. Running it *before* the fold-in would let
-`lwApplyDimension('commute', …)` multiply a figure that already accounts for
-their commute. Running it after leaves `applied.commute` untouched, so a later
-commute change still scales from **their** number rather than snapping back to
-the peer one.
 
 ### Iterate `CATEGORIES`, never `Object.keys(data)`
 
@@ -790,8 +663,8 @@ reward.
 
 `navGoTabRoot` exists because `navGoTab` commits that stack's **top**, which is
 right for a tab tap and wrong for ending a flow — the screen you just finished
-is still on it. Open the budget wizard from the Budget tab and the stack ends as
-`["aboutMe","lifestyleWizard","lifestyleWizardReview","budgetDone"]`, so
+is still on it. Finish the budget builder and the stack ends as
+`["aboutMe","budgetBuild","budgetDone"]`, so
 "See my budget" called `navGoTab('aboutMe')` and re-committed `budgetDone`: the
 screen it was already on. It is the any-tab counterpart to `navGoHome()`, and
 the same distinction. **Every "Done" at the end of a flow wants one of those
@@ -1407,7 +1280,6 @@ warn at their measured ratio instead of failing, until the palette is decided.
 Deliberately deferred to per-phase docs, written just before each phase:
 
 - Journal question sequencing, estimate sliders, confirmation layout (Phase 1)
-- Lifestyle wizard screens and budget slider UI (Phase 2)
 - Buddy stage poses, idle cycle, hamburger overlay contents (Phase 3)
 - Daily update visual cue implementations, share sheet, anonymization (Phase 4)
 - Goal suggestion scoping, event-based update prompts (Phase 5)

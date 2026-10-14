@@ -1,11 +1,8 @@
 // ─── Budget builder — three steps, and a Help me out toggle per line ─────────
 // TAB: Budget (sub-screen) | NAV BAR: Hidden — full-bleed
 //
-// Replaces v3.1's single twelve-slider `spendingProfile` screen, and with it
-// the six lifestyle questions and the "Which is closer?" reconciliation that
-// followed. Those asked everyone the same six questions whether or not they
-// needed them; this asks nothing unless the tester says they cannot estimate a
-// line, and then asks only about that line.
+// It asks nothing unless the tester says they cannot estimate a line, and then
+// asks only about that line.
 //
 // ── ONE SCREEN, THREE STEPS ──────────────────────────────────────────────────
 // The step index lives on state.budgetBuild rather than in three screen ids.

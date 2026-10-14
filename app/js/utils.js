@@ -104,7 +104,6 @@ function scrollKey() {
   if (s === "helpMeOut" && state.helpMeOut) {
     return s + ":" + state.helpMeOut.category + ":" + state.helpMeOut.stage;
   }
-  if (s === "lifestyleWizard" && state.lifestyleWizard) return s + ":" + state.lifestyleWizard.step;
   if (s === "spendEstimator" && state.estimator) {
     return s + ":" + state.estimator.stage + ":" + state.estimator.qIndex;
   }
@@ -239,7 +238,7 @@ function activeTabFor(screen) {
   // Budget sub-screens
   if (screen === "goals")             return "goals";    // v3: Goals is its own tab (D34)
   if (["profilePicker"].includes(screen)) return "home";
-  if (["budgetBuild", "helpMeOut", "spendingProfile", "budgetCompare", "lifestyleWizard","budgetDone"].includes(screen)) return "aboutMe";
+  if (["budgetBuild", "helpMeOut", "budgetDone"].includes(screen)) return "aboutMe";
   // The emergency fund lives under Goals — it ends in one, even though it seeds
   // the budget on the way through.
   if (["esfBuild", "esfPlan"].includes(screen)) return "goals";

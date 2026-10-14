@@ -34,14 +34,8 @@ TMP="$(mktemp "${TMPDIR:-/tmp}/mb-sweep.XXXXXX")" || exit 1
 OUT="$TMP.js"
 trap 'rm -f "$TMP" "$OUT" "$OUT.log"' EXIT
 
-# ── The screen inventory, read from the version being swept ─────────────────
-# SCREENS used to be a hardcoded list in sweep.js. With two versions whose
-# screens differ that list is wrong for at least one of them — v3.1 retired
-# lifestyleWizardReview and added two, so the sweep asked v3.1 to render a
-# screen it does not have and reported nine failures that were not bugs.
-#
-# Every id render.js knows about, instead. That is the router, so it cannot go
-# stale: add a screen and the sweep finds it; retire one and it stops looking.
+# ── The screen inventory, read from the app being swept ─────────────────────
+# Every id render.js knows about. That is the router, so it cannot go stale: add a screen and the sweep finds it; retire one and it stops looking.
 # The "not in destinations[]" check keeps its teeth, because a screen routed but
 # never added to the jump list still shows up here.
 ROUTED=$(grep -ohE 'state\.screen === "[^"]+"' "$APP/js/render.js" \

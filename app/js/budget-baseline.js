@@ -17,11 +17,10 @@
  * Normalized baseline.
  *   source     builder id, shown as "Built with X"
  *   profile    { zip, householdSize, incomeAnnual }
- *   lifestyle  the six wizard dimensions, keyed for peer-benchmarks.json
+ *   lifestyle  the six lifestyle dimensions, keyed for peer-benchmarks.json
  *   monthly    { <category>: amount } across all 12
  */
 const BUDGET_BUILDER_LABELS = {
-  lifestyleWizard: "Lifestyle wizard",   // v3's builder; v3.1 keeps the id readable
   budgetBuild: "Budget builder",
   emergencyFund: "Emergency fund"        // seeds the budget; runs before it
 };
@@ -31,7 +30,7 @@ function applyBudgetBaseline(baseline) {
   if (!baseline || !baseline.monthly) return;
 
   if (baseline.profile) {
-    // D09 — onboarding/wizard inputs override the persona where they overlap.
+    // D09 — onboarding/builder inputs override the persona where they overlap.
     ["zip", "householdSize", "incomeAnnual"].forEach(k => {
       if (baseline.profile[k] != null && baseline.profile[k] !== "") {
         state.profile[k] = baseline.profile[k];

@@ -772,9 +772,6 @@ chk(!!(snap.legacy && "goals" in snap.legacy && "tasks" in snap.legacy),
 state.screen = "aboutMe";
 var SLIDERS = [
   ["budgetSetPlan",      function () { budgetSetPlan("Dining out", 250, true); }],
-  ["lwAdjust",           function () {
-      state.lifestyleWizard = { preview: { "Dining out": 200 } };
-      lwAdjust("Dining out", 240); }],
   ["journalAdjustEntry", function () {
       state.journalSession = { entries: [{ id: "e1", label: "x", category: "Dining out",
                                            amount: 20, baseAmount: 20 }] };
@@ -1144,11 +1141,6 @@ section("7b. Unreferenced functions — inventory, not a verdict");
 // recorded. Purging it is a separate task (docs/future-work.md). Anything NOT
 // on this list is new, and warns.
 var DEAD_BASELINE = [
-  // v3.1 inverted the budget flow, so these two lost their callers THERE.
-  // Both are still live in v3, which is why they are not deleted: the two
-  // versions are an A/B pair and the files stay readable side by side.
-  "lwBuildPreview",             // v3: lazily rebuilt the review preview
-  "lwSubmit",                   // v3: the single save path, now split in v3.1
   "budgetDelta",
   // Both orphaned deliberately when the Budget tab became the review surface:
   // the twelve slider rows moved to the per-category screen, and "Worth a look"
