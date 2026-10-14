@@ -96,7 +96,9 @@ setup, then a feature with detours) are the references;
    `window.MB_FLOW.setup_steps`. Have `onbFinish()` set `state.mbFlowSetupComplete`
    and call the feature's existing start function (Emergency fund: `esfStart()`; Big
    purchase: `bpStart("vehicle")`, then its landing). Have Skip apply the default
-   profile and finish setup.
+   profile and finish setup. Docked tap-to-advance setup now exists only in
+   `flows/big-purchase` (`onbDocked()` in its `screens/onboarding.js`); `app/` keeps
+   Continue on every step.
 4. **Unreachable surfaces.** In the package's copies, remove or replace product
    controls the Flow does not offer (topbar Home and Menu, unrelated Goals entries,
    queues) instead of leaving buttons that lead nowhere.
@@ -164,6 +166,7 @@ fallback remains. Verify selected images, audio, films and generated URLs at run
 1. Record PM's chosen behavior and reviewed Flow revision. Start an app-integration
    task from current main; preserve the Flow as the reference and retain provenance.
 2. Review the Flow/app diff and selectively implement the chosen changes in `app/`.
+   Port the chosen behavior, never a Flow's containment as a switch in `app/`.
    Do not bulk-copy or merge the whole Flow directory into the product. Keep full
    onboarding, product tabs and established BP/ESF budget/save behavior unless the
    PM explicitly approves changing them.

@@ -1,6 +1,6 @@
 # Historical Big Purchase notes
 
-Reference only; workflow and release instructions are superseded by docs/workflow.md. Historical paths resolve in blue `superdyu/mbprototype_v1` at `b4abe14`; the code now lives in `app/` with `BP_ENTRY = false`.
+Reference only; workflow and release instructions are superseded by docs/workflow.md. Historical paths resolve in blue `superdyu/mbprototype_v1` at `b4abe14`; the calculator now lives in `app/`, opened from Goals, and its calculator-first entry is the Big purchase Flow (`flows/big-purchase`).
 
 # Big Purchase Calculator: state of the build
 

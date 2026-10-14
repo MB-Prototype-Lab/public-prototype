@@ -139,8 +139,9 @@ day 1 ... day 6   = seeded history (SEED_STATE.journalHistory)
 today             = the tester's session; their entry covers yesterday
 ```
 
-- `SKIP_ONBOARDING = false` → onboarding runs → streak shows **1** (`streakDaysIfOnboarded`)
-- `SKIP_ONBOARDING = true`  → straight to home → streak shows **6** (`streakDays`)
+The full app starts with onboarding, so the streak shows **1**
+(`streakDaysIfOnboarded`). The six-day streak (`streakDays`) belongs to the
+returning-user login start behind the deprecated `SKIP_ONBOARDING`.
 
 Bills are **relative**: `dueInDays: 4` for the car insurance. Resolve against
 real today at render time so "due in four days" stays true whenever it's opened.
@@ -151,9 +152,12 @@ real today at render time so "due in four days" stays true whenever it's opened.
      through it from the start — retrofitting it is what made v2 need a grep
      gate against todayISO(). -->
 
-`SKIP_ONBOARDING` lives in `js/config.js`, loaded first. Flipping it must not
-require touching anything else (01-onboarding is explicit: "if you find yourself
-unwinding logic to make skip work, the wiring is wrong").
+`SKIP_ONBOARDING` (spec D07) lives in `js/config.js` and is **deprecated**: a
+build-time entry switch kept off pending a decision on its replacement
+([future work](../../docs/future-work.md)). Do not flip it for a study or demo; a
+shortened or returning-user start is a Flow
+([one product](../../docs/app-contracts.md#one-product-no-journey-switches)). It is
+not the onboarding Skip button, which is session state.
 
 ---
 

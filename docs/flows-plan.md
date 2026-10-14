@@ -22,7 +22,7 @@ run commands, or understand publication machinery. Agents handle those operation
 Containment is the default. Screens may be absent or inaccessible, and buttons
 may be hidden or disabled. Branches and additional tools are explicitly included.
 Big Purchase bundles its own required emergency-fund experience; it never enables
-another Flow or depends on combinations of BP_ENTRY and ESF_ONLY.
+another Flow or depends on a combination of journey switches.
 
 The repository cutover is complete. Update current operating instructions to
 reflect that fact; do not build another blue/green migration mechanism. Preserve
@@ -203,7 +203,7 @@ return with inputs intact, repeat saves, setup Back/Skip, and excluded-route tes
 ## Retire the two ghost flags in the full app
 
 First capture behavior and create both Flow baselines from the recorded source.
-Then remove BP_ENTRY/ESF_ONLY constants and their dormant branching from `/app`.
+Then remove the two retired entry constants and their dormant branching from `/app`.
 The full app retains its full onboarding, all product tabs, Goals entries for BP
 and ESF, and existing budget/save behavior. Flow-specific setup and presentation
 live in the respective Flow. Do not remove shared product behavior such as the

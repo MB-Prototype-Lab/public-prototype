@@ -50,13 +50,18 @@ restores the pre-merge state.
 
 ## Ship
 
-Review the entire diff to main for scope and unintended files. Sync, run the checks in
-docs/testing.md, and record manual operator results for changed flows.
+Review the entire diff to main for scope and unintended files. Review the `app/` diff
+for journey switches with the review questions in
+[one product](app-contracts.md#one-product-no-journey-switches); the PR text records
+"Journey switches in app/: none", or names each one and its approved decision.
+Sync, run the checks in docs/testing.md, and record manual operator results for
+changed flows.
 Applicable signoff means the operator checked the behavior affected by this PR;
 repeat after material changes.
 With authorized remote writes, push only the task branch. Never push main directly.
 Prepare PR text: problem, resulting behavior, validation actually run, limitations,
-and a short operator checklist. Do not add historical progress-log chores.
+and a short operator checklist ([template](../.github/pull_request_template.md)).
+Do not add historical progress-log chores.
 
 With GitHub CLI available: `gh pr create --base main --head <branch> --body-file <file>`;
 inspect `gh pr checks <number>` and PR mergeability/current base. Only after passing CI,

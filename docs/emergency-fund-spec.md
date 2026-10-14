@@ -1,7 +1,9 @@
 # Emergency Savings Fund (ESF) Tool — Feature Spec
 
 **Status:** Integrated in `app/` from HoffDemo-Chat `ddee54e`.
-**Integration:** The full app runs with `ESF_ONLY = false`. Current behavior and
+**Integration:** In the full app the fund opens from its Home task inside the full
+journey. The contained ESF-only journey (reduced setup, then the fund) is the
+[Emergency fund Flow](../flows/emergency-fund/docs/flow.md). Current behavior and
 user-approved exceptions are in [app contracts](app-contracts.md), including
 immediate budget replacement on every ESF save. The source prototype assumptions
 and limitations below are retained for PM acceptance; this is not a new task queue.
@@ -155,16 +157,16 @@ is the readout.
 ## 2. Onboarding — required inputs
 
 The ESF asks for no profile information of its own. Everything comes from
-onboarding, which runs in a reduced ESF-only form.
+onboarding: the full onboarding in the full app.
 
-`ESF_ONLY` in `js/config.js` is the master switch. When true it hides every
-non-ESF screen (hides, never deletes), suppresses the top-bar home icon, and
-makes onboarding's Skip skip the *entire* setup rather than one screen.
+The Emergency fund Flow (`flows/emergency-fund`) runs a reduced setup, then the
+fund. Only the ESF screens and a constrained Goals are reachable, there are no
+product tabs, and its Skip finishes the *entire* setup rather than one screen.
 
-**ESF onboarding is six steps**, in this order:
+**The Flow's setup is six steps**, in this order (`setup_steps` in its `flow.json`):
 
-```js
-const ONB_STEPS_ESF = ["zip", "income", "household", "place", "coverage", "miles"];
+```json
+["zip", "income", "household", "place", "coverage", "miles"]
 ```
 
 | # | Question | Format | Feeds |

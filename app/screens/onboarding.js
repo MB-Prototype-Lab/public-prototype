@@ -394,9 +394,6 @@ function onbStepKids(bucket, delta) {
 function onbPick(field, id) {
   const o = state.onboarding;
   o[field] = id;
-  // A docked question advances on the tap. Changing the answer means Back, one
-  // screen, which is the trade the owner asked for.
-  if (onbDocked(ONB_STEPS[o.step])) { onbNext(); return; }
   render();
 }
 
@@ -959,17 +956,11 @@ function renderOnboarding() {
           : ""}
       </div>
       <div class="journal-body${bodyCls}">${onbStepBody(key, o)}</div>
-      ${onbStepDock(key, o)}
       <div class="journal-foot">
         ${o.step > 0 || o.lwIndex > 0 || o.buddyIndex > 0
           ? `<button class="button secondary" type="button" onclick="onbBack()">Back</button>`
           : `<span></span>`}
-        ${/* NO CONTINUE on a docked step (owner, 2026-09-27): "user is seeing a
-              choice and just clicking. they can change if needed or go back."
-              The tap IS the answer and the answer IS the advance, so a second
-              button only asks them to confirm what they already did. Back is
-              still there, and so is Skip. */ ""}
-        ${showControls && !onbDocked(key)
+        ${showControls
           ? `<button class="button" type="button" id="onbContinue" onclick="onbNext()"
                      ${onbAnswered(key, o) ? "" : "disabled"}>${h(onbContinueLabel(key, o))}</button>`
           : ""}
@@ -1143,10 +1134,7 @@ function onbColTeaser(typed) {
     </div>`;
 }
 
-// Full-product setup keeps Continue controls; docked setup is Flow-owned.
-function onbDocked(key) { return false; }
-
-function onbTileStep(o, field, options, title, help, docked) {
+function onbTileStep(o, field, options, title, help) {
   const tiles = `
     <div class="journal-options">
       ${options.map(opt => `
@@ -1156,18 +1144,10 @@ function onbTileStep(o, field, options, title, help, docked) {
           <span class="journal-opt-label">${h(opt.label)}</span>
         </button>`).join("")}
     </div>`;
-  if (docked === "tiles") return tiles;
   return `
     <h1 class="title onb-title" style="margin:0 0 6px;">${h(title)}</h1>
     <p class="helper" style="margin:0 0 14px;">${h(help)}</p>
-    ${docked === "ask" ? "" : tiles}`;
-}
-
-/** The tile block for a docked step, pulled out of the body into the dock. */
-function onbStepDock(key, o) {
-  if (!onbDocked(key)) return "";
-  const tiles = onbStepBody(key, o, "tiles");
-  return `<div class="bp-dock onb-dock">${tiles}</div>`;
+    ${tiles}`;
 }
 
 /**
@@ -1223,10 +1203,7 @@ function onbHouseholdBody(o) {
     <div class="onb-kids">${kidRows}</div>`;
 }
 
-function onbStepBody(key, o, docked) {
-  // `docked` is "ask" (title and help only) or "tiles" (the choices alone) when
-  // the step is being split between the body and the bottom dock.
-  if (docked == null && onbDocked(key)) docked = "ask";
+function onbStepBody(key, o) {
   if (key === "name") return `
     <h1 class="title onb-title" style="margin:0 0 6px;">Hi, I'm Buddy — your money companion.</h1>
     <p class="helper" style="margin:0 0 14px;">
@@ -1266,36 +1243,16 @@ function onbStepBody(key, o, docked) {
 
   if (key === "place") return onbTileStep(o, "placeType", ONB_PLACE_TYPES,
     "What kind of place do you live in?",
-    "Home size changes what power and water cost. Condos and townhomes usually have a monthly fee too.", docked);
+    "Home size changes what power and water cost. Condos and townhomes usually have a monthly fee too.");
 
   if (key === "coverage") return onbTileStep(o, "coverage", ONB_COVERAGE,
     "Where does your health insurance come from?",
-    "If it comes through your job, it would stop if your job did. We'll plan for that.", docked);
+    "If it comes through your job, it would stop if your job did. We'll plan for that.");
 
   if (key === "miles") return onbTileStep(o, "miles", ONB_MILES,
     "How far do you drive on a normal day?",
-    "Driving more means more gas or charging, and more wear on the car.", docked);
+    "Driving more means more gas or charging, and more wear on the car.");
 
-  // DOCKED in the big purchase flow (owner, 2026-09-29: "put the responses for
-  // income at the bottom for the user to choose to ensure one handed use").
-  // The band is the answer and the tap advances, like miles. The slider that
-  // refines it is not offered there; the band's midpoint stands, which is what
-  // the slider itself falls back to ("Otherwise we'll use the middle").
-  if (key === "income" && docked === "tiles") return `
-    <div class="journal-options">
-      ${ONB_INCOME_BANDS.map(b => `
-        <button class="journal-opt ${o.incomeBand === b.id ? "picked" : ""}" type="button"
-                aria-pressed="${o.incomeBand === b.id}"
-                onclick="onbSetIncomeBand('${b.id}'); onbNext();">
-          <span class="journal-opt-label">${h(b.label)}</span>
-        </button>`).join("")}
-    </div>`;
-  if (key === "income" && docked === "ask") return `
-    <h1 class="title onb-title" style="margin:0 0 8px;">How much do you make each year?</h1>
-    <p class="helper" style="margin:0 0 12px;">
-      <span class="onb-line">Start with your income range.</span>
-      <span class="onb-line">Sharing your income range helps to fine tune finding people like you.</span>
-    </p>`;
   if (key === "income") return `
     <div class="onb-income-step">
       <h1 class="title onb-title" style="margin:0 0 8px;">How much do you make each year?</h1>

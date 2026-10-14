@@ -345,11 +345,12 @@ The three factors are asserted separately — see architecture §5.
   admin panel, page and bezel, which live outside `.screen` where theme classes
   are applied — the override is inert, and the frame is meant to hold still.
 - **Surgical edits.** Change only what you're fixing. Never collapse files.
-- **Do not delete unused code.** This is a prototype under iteration; something
-  dropped today is something rewritten next week. `sweep.sh` §7b inventories
-  unreferenced functions against a baseline and **warns only on new ones** —
-  a function that was referenced and now isn't was likely orphaned by accident.
-  Deliberately-unused code goes in `DEAD_BASELINE`, it does not get removed.
+- **Remove genuinely dead code when it is in scope and verified.** `app/` is the
+  source of truth and Git keeps history, so nothing is kept in case it comes back.
+  Never keep dormant branches for alternate journeys (see One product: no journey
+  switches). `sweep.sh` §7b still inventories unreferenced functions against
+  `DEAD_BASELINE` and **warns when a function newly loses its callers** — a
+  function that was referenced and now isn't was likely orphaned by accident.
 - **Never judge "is this used?" by grepping for `name(`.** Functions here are
   reached four ways: ordinary calls, `onclick` in screen template literals,
   `onclick` in `index.html`, and bare identifiers in dispatch tables. Only the

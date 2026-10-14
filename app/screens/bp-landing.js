@@ -88,22 +88,10 @@ function bpResumeAfterEsf() {
 }
 
 /**
- * Back from the landing. Arrived from onboarding → the question they left it
- * on, answers intact (owner's call: the demographics, not the Goals tab).
- * Arrived from the Goals card → the Goals card.
+ * Back from the landing returns to whatever opened it (the Goals card or the
+ * Tools jump list).
  */
 function bpLandingBack() {
-  const s = bpSession();
-  const o = state.bpOnbReturn;
-  if (s.fromOnboarding && o && typeof ONB_STEPS !== "undefined") {
-    o.step = Math.max(0, Math.min(ONB_STEPS.length - 1, o.step || 0));
-    state.onboarding = o;
-    state.bpOnbReturn = null;
-    state.nav.activeStack = "home";
-    state.nav.stacks.home = ["onboarding"];
-    navCommit("onboarding");
-    return;
-  }
   navBack();
 }
 

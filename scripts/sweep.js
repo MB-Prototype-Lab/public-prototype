@@ -903,19 +903,20 @@ chk(missingScripts.length === 0, "all 15 lesson variants have a script body", mi
 // ─────────────────────────────────────────────────────────────────────────────
 section("7b. Unreferenced functions — inventory, not a verdict");
 
-// POLICY: unused code is KEPT, not deleted. This is a prototype under active
-// iteration, and something dropped today is something rewritten next week. Git
-// history technically preserves a deletion, but retrieving it means knowing
-// which commit to dig into — friction that is not worth the tidiness.
+// POLICY: app/ is the source of truth and Git keeps history. Genuinely dead
+// code is removed when it is in scope and verified, and dormant branches for
+// alternate journeys are never kept (docs/app-contracts.md, "One product: no
+// journey switches").
 //
-// So this does not fail on dead code. What it watches for is MOVEMENT: a
+// This check does not fail on dead code. What it watches for is MOVEMENT: a
 // function that used to be referenced and now is not was probably orphaned by
 // accident — a handler left behind when its button moved, a cue dropped from a
-// dispatch table. That is a refactor bug, and it looks identical to deliberate
+// dispatch table. That is a refactor bug, and it looks identical to existing
 // dead code unless you know which ones were already here.
 //
-// Hence the baseline. Everything below was unreferenced as of the L21 change
-// and is kept on purpose. Anything NOT on this list is new, and warns.
+// Hence the baseline: everything below was already unreferenced when it was
+// recorded. Purging it is a separate task (docs/future-work.md). Anything NOT
+// on this list is new, and warns.
 var DEAD_BASELINE = [
   "benchSelfTest",              // documents the benchmark formula by example
   // The emergency fund's rent-or-own correction. The owner cut the card that
@@ -2398,6 +2399,8 @@ section("7n. Full app integration: onboarding, ESF and Buddy");
   try {
     chk(typeof ESF_ONLY === "undefined" && typeof BP_ENTRY === "undefined",
         "contained entry flags are absent from the full app");
+    chk(typeof onbDocked === "undefined" && typeof onbStepDock === "undefined",
+        "docked onboarding helpers are absent from the full app");
     chk(BUDGET_PAYWALL === true && BUDDY_SINGLE_ART === true &&
         LESSON_REUSE_FRAMING === false && USEBERRY_TRACKING === false,
         "combined development flags retain the full app and disable tracking");
@@ -2405,6 +2408,22 @@ section("7n. Full app integration: onboarding, ESF and Buddy");
     var o = state.onboarding;
     chk(ONB_STEPS.join(",") === "name,goal,zip,household,place,income,coverage,miles,buddy,video",
         "full onboarding contains both profile refinements and Buddy/film steps");
+    // Every choice step keeps Continue; a tile tap answers without advancing.
+    [["place", "placeType", ONB_PLACE_TYPES], ["coverage", "coverage", ONB_COVERAGE],
+     ["miles", "miles", ONB_MILES]].forEach(function (t) {
+      var at = ONB_STEPS.indexOf(t[0]);
+      onbSetStep(o, at);
+      onbPick(t[1], t[2][0].id);
+      chk(o.step === at && /id="onbContinue"/.test(renderOnboarding()),
+          "a tile pick stays on " + t[0] + " and Continue renders");
+    });
+    onbSetStep(o, ONB_STEPS.indexOf("income"));
+    onbSetIncomeBand(ONB_INCOME_BANDS[0].id);
+    var incomeHtml = renderOnboarding();
+    chk(o.step === ONB_STEPS.indexOf("income") && /id="onbContinue"/.test(incomeHtml) &&
+        /onbSetIncomeBand\('/.test(incomeHtml) && /type="range"/.test(incomeHtml),
+        "income keeps its range buttons, slider and Continue");
+    onbSetStep(o, 0);
     onbLiveInput("name", "Combined tester");
     onbLiveInput("zip", "37203");
     onbSetAdults(2); onbSetAdultAge(0, "26-34"); onbSetAdultAge(1, "35-44");
@@ -2432,6 +2451,17 @@ section("7n. Full app integration: onboarding, ESF and Buddy");
       navGoTabRoot(tab);
       chk(state.screen === tab && renderScreen().length > 100, "full app tab remains available: " + tab);
     });
+    navGoTabRoot("goals"); bpOpen(); bpLandingBack();
+    chk(state.screen === "goals", "Back from the Big purchase landing returns to Goals", state.screen);
+    navGoTabRoot("goals"); bpOpen(); bpEsfCheck("startFirst");
+    var bpFund = state.screen;
+    esfBack();
+    var bpBackTo = state.screen;
+    bpLandingBack();
+    chk(bpFund === "esfBuild" && bpBackTo === "bpLanding" && state.screen === "goals",
+        "Start the fund first, then Back, Back, returns through the landing to Goals",
+        bpFund + " → " + bpBackTo + " → " + state.screen);
+    state.bp = null; state.esf = null;
     chk(BUDGET_PAYWALL_MONTHLY === 14.99 && BUDGET_PAYWALL_ANNUAL === 124.99,
         "paywall retains the agreed monthly and annual prices");
     navRouteTask("budget");

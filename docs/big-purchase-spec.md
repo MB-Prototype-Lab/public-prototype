@@ -2,8 +2,9 @@
 
 **Status:** Spec, revision 5. Built in blue `versions/v3.1c/` (gate label
 *v3.1 (C)*, branch `HoffDemo-BigPurchase` at `b4abe14`) and ported into `app/`.
-In this app `BP_ENTRY = false`: onboarding is unchanged and the calculator opens
-from the Goals tab; see docs/app-contracts.md. Revision 4 was written
+In the full app onboarding is unchanged and the calculator opens from the Goals
+tab; see docs/app-contracts.md. Calculator-first entry is the
+[Big purchase Flow](../flows/big-purchase/docs/flow.md). Revision 4 was written
 against screenshots and restated some things the owner had already changed in
 code; this revision reconciles the two. Where they disagreed, §0.1 records which
 side won.

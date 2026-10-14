@@ -45,7 +45,7 @@ about.
 ```
 ?screen=home                Home
 ?screen=onboarding          Onboarding from the top
-?screen=onboarding-3        Onboarding at a given step (0–6)
+?screen=onboarding-3        Onboarding at a given step (0–9)
 ?screen=budget-build        The three-step budget builder
 ?screen=about-me            Budget tab
 ?screen=comparison          Where it's going
