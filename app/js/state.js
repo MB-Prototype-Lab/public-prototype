@@ -9,8 +9,10 @@
 //   tasks           — home screen daily task cards
 //   userProfile     — user-entered name, income, housing (cleared by resetUserData)
 //
-// resetUserData() clears all user-entered fields (budget, debts, profile) while
-// leaving seed/demo content (lessons, badges, tasks) intact.
+// resetUserData() (Tools "Reset User Data") gives the next tester a fresh start:
+// it clears what a tester entered — setup answers, the chosen profile, every
+// tab's history, the emergency fund, chat — and re-seeds through bootV3, which
+// reopens onboarding. The v2 seed content (lessons, badges) and the theme stay.
 //
 // destinations[] is the screen registry: each screen's id and the label it
 // shows in the Tools "Jump to screen" list (js/render.js) and the page title
@@ -1045,8 +1047,17 @@ function resetUserData() {
   // against questions the user no longer appears to have answered.
   state.journalProfile       = {};
   state.kbd                  = { open: false, layer: "abc", shift: false };
-  // Re-seed from the v3 data files so reset returns to the seeded start state
-  // rather than an empty one (D03: refresh does the same thing via the gate).
+  // Setup answers, the chosen profile and every tab's history. Left behind, the
+  // next tester resumes a half-finished onboarding, and a kept activeProfileId
+  // stops onbFinish applying the default profile, so a skip keeps the persona's
+  // ZIP and income instead (L26).
+  state.onboarding           = null;
+  state.activeProfileId      = null;
+  state.profilePick          = null;
+  Object.keys(state.nav.stacks).forEach(k => { state.nav.stacks[k] = [k]; });
+  // Re-seed from the v3 data files and reopen onboarding, the same start a
+  // fresh load gives (D03). Unlike a refresh, the theme and Tools stay as the
+  // reviewer left them.
   bootV3();
   render();
 }

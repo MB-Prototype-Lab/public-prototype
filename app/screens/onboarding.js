@@ -2376,6 +2376,16 @@ function onbTrial(accepted) {
   onbFinish();
 }
 
+// Tools "Restart onboarding": a blank run with the chosen profile forgotten too,
+// so a skip lands on the default profile the way it does for a new tester
+// (onbFinish applies it only when none is chosen).
+function onbRestart() {
+  state.activeProfileId = null;
+  state.profilePick = null;
+  onbStart();
+  go("onboarding");
+}
+
 function renderOnboardingAdmin() {
   const o = state.onboarding;
   return `
@@ -2427,7 +2437,7 @@ function renderOnboardingAdmin() {
           persona seeded it. Skipping never blocks.
         </p>
       `}
-      <button class="button secondary full" type="button" onclick="onbStart();go('onboarding')">Restart onboarding</button>
+      <button class="button secondary full" type="button" onclick="onbRestart()">Restart onboarding</button>
     </div>
   `;
 }

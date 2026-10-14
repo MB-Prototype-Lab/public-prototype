@@ -2652,6 +2652,30 @@ section("7o. Full app integration: onboarding, ESF and Buddy");
     chk(state.esf === null && state.esfGoal === null && state.expenses === null &&
         state.esfEvents.length === 0 && state.esfSelfReported === null,
         "reset clears all ESF state and chat disclosures for the next tester");
+    // A reset is a fresh start: a chosen profile, a half-finished setup and a
+    // deep tab must not carry over, or a skip keeps the persona's figures
+    // instead of landing on the default profile (L26).
+    profileApply("above_at");
+    navGoTabRoot("learn"); go("topic");
+    onbStart(); onbLiveInput("zip", "90210");
+    resetUserData();
+    var resetTabs = Object.keys(state.nav.stacks).filter(function (k) {
+      return k !== "home" && state.nav.stacks[k].join() !== k;
+    });
+    var afterReset = state.onboarding || onbStart();
+    chk(state.activeProfileId === null && state.profilePick === null &&
+        afterReset.zip === "" && resetTabs.length === 0 && state.screen === "onboarding",
+        "reset forgets the chosen profile, the setup answers and every tab's history",
+        "profile " + state.activeProfileId + " · zip '" + afterReset.zip + "' · deep tabs " + resetTabs.join(", "));
+    onbLiveInput("name", "Next tester");
+    onbFinish();
+    chk(state.profile.zip === "37203" && state.profile.incomeAnnual === 75664 && state.monthlyIncome === 6305,
+        "after a reset, a name-only setup lands on the default profile",
+        state.profile.zip + " / " + state.profile.incomeAnnual + " / " + state.monthlyIncome);
+    profileApply("above_at");
+    onbRestart();
+    chk(state.activeProfileId === null && state.onboarding.zip === "" && state.screen === "onboarding",
+        "Restart onboarding forgets the chosen profile too", "profile " + state.activeProfileId);
   } catch (e) {
     bad("combined app flow runs without exceptions", e.stack || String(e));
   } finally {
