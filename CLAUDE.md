@@ -69,7 +69,8 @@ text, not historical progress logs. Material changes after signoff require repea
 affected checks. Run every automated check with `bash scripts/check-all.sh`;
 BLOCKED is not a pass. Do not claim unavailable runtime or browser checks passed.
 
-Flow tasks declare `--scope flow` against the recorded full task base and leave app
-bytes unchanged. Product integration uses `--scope app-integration`; selectively port
-approved behavior and obtain PM full-app verification before opening the PR. Merging
-a Flow does not approve its proposal or publish it. See [Flows](docs/flows.md).
+Flow tasks run `python3 scripts/flows.py scope --scope flow` (it diffs app/ from the
+merge base with main) and leave app bytes unchanged. Product integration uses
+`--scope app-integration`; selectively port approved behavior and obtain PM full-app
+verification before opening the PR. Merging a Flow does not approve its proposal or
+publish it. See [Flows](docs/flows.md).

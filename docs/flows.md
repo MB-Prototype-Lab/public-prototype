@@ -45,7 +45,7 @@ it does not open or depend on the standalone Emergency Fund Flow.
 ## Create a committed baseline
 
 Use [start-work](../.claude/skills/start-work/SKILL.md) and the shared
-[workflow](workflow.md). Record the task base and intended Flow before editing.
+[workflow](workflow.md). Record the intended Flow before editing.
 Choose a full committed app revision, preserving unrelated dirty work. If intended
 app changes are uncommitted, selectively checkpoint them first; creation exports
 committed bytes only and never silently copies dirty or untracked app files.
@@ -125,6 +125,7 @@ importing from `app/`, another Flow or mutable shared directories.
 optional reference, original `source_app_commit`, `task_base`, entry/completion,
 allowed screens, ordered setup steps, profile behavior and proposed differences.
 Keep original source provenance when iterating; document later proposals separately.
+`task_base` is the HEAD the package was created on: provenance only, never a scope base.
 `flow-config.js` is generated policy and `flows/catalog.*` is local discovery,
 including newly created uncommitted packages. Neither is publication identity or
 product signoff. In a merge conflict, resolve `flow.json`, then run
@@ -134,17 +135,21 @@ product signoff. In a merge conflict, resolve `flow.json`, then run
 python3 scripts/flows.py catalog
 python3 scripts/flows.py check --id my-flow
 python3 scripts/flows.py check
-python3 scripts/flows.py scope --base FULL_TASK_BASE_SHA --scope flow
+python3 scripts/flows.py scope --scope flow
 bash scripts/check-syntax.sh flows
 node tests/flows-selector.cjs
 node tests/flows-runtime.cjs
 ```
 
-Regenerate after metadata changes; do not hand-edit wrappers. Scope checks compare
-committed, staged, unstaged and untracked app changes with the recorded full task
-base. Ordinary Flow tasks must leave app bytes unchanged. All packages receive
-metadata, entry, syntax and boundary checks; run affected behavior tests plus the
-complete commands in [testing](testing.md) before shipping.
+Regenerate after metadata changes; do not hand-edit wrappers. The scope check
+compares committed, staged, unstaged and untracked app changes with the merge base of
+`origin/main` (`main` without a remote) and HEAD, and prints that base, so app changes
+merged in from main pass; no base is recorded by hand. If the branch merged a
+different main, such as a local main ahead of `origin/main`, name it with
+`--against REF`; never revert main's work to pass. Ordinary Flow tasks must leave app
+bytes unchanged. All packages receive metadata, entry, syntax and boundary checks;
+run affected behavior tests plus the complete commands in [testing](testing.md)
+before shipping.
 
 Runtime policy must exist before setup/navigation seed. In `index.html`,
 `release-config.js` and `flow-config.js` load before `js/config.js`, with
@@ -179,7 +184,7 @@ fallback remains. Verify selected images, audio, films and generated URLs at run
 3. Run affected full-app and Flow regression checks. Declare the scope explicitly:
 
    ```sh
-   python3 scripts/flows.py scope --base FULL_TASK_BASE_SHA --scope app-integration
+   python3 scripts/flows.py scope --scope app-integration
    ```
 
    This scope permits app changes; it is not product signoff or a substitute for

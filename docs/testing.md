@@ -247,7 +247,7 @@ estimates; record acceptance or remaining concerns in the integration PR.
 
 Run the commands above for the complete integrated change; for ordinary Flow edits
 also run `python3 scripts/flows.py check --id ID` and
-`python3 scripts/flows.py scope --base FULL_TASK_BASE_SHA --scope flow`. Explicit
+`python3 scripts/flows.py scope --scope flow`. Explicit
 product integration uses `--scope app-integration` and needs full-app PM verification
 before opening its PR. See [the operating guide](flows.md).
 

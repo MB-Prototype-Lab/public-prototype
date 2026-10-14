@@ -20,7 +20,8 @@ offering defaults from the existing Flows: its name and one-line purpose, where 
 starts, which features and screens it includes, where it ends, and which setup
 questions it asks (or none, with the default profile).
 
-Use start-work for a Flow-scoped task and record the full task base. Create from a
+Use start-work for a Flow-scoped task; `python3 scripts/flows.py scope --scope flow`
+finds its base from main, and `task_base` in flow.json is provenance only. Create from a
 committed full-app commit with `python3 scripts/flows.py create`, then follow
 “Configure the journey” in Flows, using `flows/emergency-fund` and
 `flows/big-purchase` as references. Work only in `flows/<id>/`, the generated

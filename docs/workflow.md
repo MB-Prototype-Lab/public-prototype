@@ -32,11 +32,12 @@ feature branch checkpoint, not a new main-based task.
 ## Task scope
 
 `app/` is the approved product; `flows/<id>/` holds contained proposals. For a Flow
-task, record its base and ID, follow [Flows](flows.md), and run
-`python3 scripts/flows.py scope --base FULL_TASK_BASE_SHA --scope flow`. Creation
-and editing must leave app bytes unchanged. A chosen proposal enters the product
-through an explicit app-integration task and selective changes, using
-`--scope app-integration`. PM verifies the integrated full app before the PR opens.
+task, record its ID, follow [Flows](flows.md), and run
+`python3 scripts/flows.py scope --scope flow`; it compares app/ with the branch's
+merge base with main, so no base is recorded. Creation and editing must leave app
+bytes unchanged. A chosen proposal enters the product through an explicit
+app-integration task and selective changes, using `--scope app-integration`. PM
+verifies the integrated full app before the PR opens.
 Merging a Flow makes it available without approving or integrating the proposal.
 
 ## Sync

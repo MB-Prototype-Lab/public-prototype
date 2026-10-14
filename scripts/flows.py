@@ -363,17 +363,37 @@ def create(root, ident, source, label, purpose):
         shutil.rmtree(temporary)
 
 
-def scope(root, base, selected_scope):
-    if not SHA.fullmatch(base):
-        raise ValueError('scope base must be a full commit SHA')
-    git(root, 'cat-file', '-e', base + '^{commit}')
+def is_commit(root, ref):
+    return subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '--quiet', ref + '^{commit}'], capture_output=True).returncode == 0
+
+
+def scope(root, selected_scope, against=None):
+    """Compare app/ with the merge base of main and HEAD; return (ref, base).
+
+    The merge base moves with each sync of main, so app changes merged in from main
+    never count as this task's own edits.
+    """
+    if against is None:
+        against = next((ref for ref in ('origin/main', 'main') if is_commit(root, ref)), None)
+        if against is None:
+            raise ValueError('no origin/main or main to compare with; name the main this branch merged with --against REF')
+    elif not is_commit(root, against):
+        raise ValueError(f'--against {against!r} is not a commit')
+    try:
+        base = git(root, 'merge-base', against, 'HEAD').decode().strip()
+    except ValueError:
+        raise ValueError(f'{against} and HEAD share no history; name the main this branch merged with --against REF') from None
     changed = set(git(root, 'diff', '--name-only', base, '--', 'app').decode().splitlines())
     # A worktree restored to baseline can hide a different staged version. Check
     # the index separately because that version is what the next commit records.
     changed.update(git(root, 'diff', '--cached', '--name-only', base, '--', 'app').decode().splitlines())
     changed.update(git(root, 'ls-files', '--others', '--exclude-standard', 'app').decode().splitlines())
     if changed and selected_scope == 'flow':
-        raise ValueError('Flow scope changes app/: ' + ', '.join(sorted(changed)) + '; restore accidental edits or explicitly use app-integration scope for approved integration')
+        raise ValueError(f'Flow scope changes app/ since {base[:12]} (merge base of {against} and HEAD): '
+                         + ', '.join(sorted(changed)) + '. If main made these changes, merge it into this branch '
+                         'or pass --against the ref you merged; never revert main\'s work. Undo only this task\'s '
+                         'own app edits, and use --scope app-integration only for an approved integration.')
+    return against, base
 
 
 def main():
@@ -386,7 +406,7 @@ def main():
     verify = subs.add_parser('check')
     verify.add_argument('--id')
     guard = subs.add_parser('scope')
-    guard.add_argument('--base', required=True)
+    guard.add_argument('--against', metavar='REF', help='the main this branch merged (default: origin/main if present, else main)')
     guard.add_argument('--scope', choices=['flow', 'app-integration'], required=True)
     args = parser.parse_args()
     root = Path(git(Path.cwd(), 'rev-parse', '--show-toplevel').decode().strip())
@@ -397,7 +417,8 @@ def main():
     elif args.command == 'check':
         check(root, args.id)
     else:
-        scope(root, args.base, args.scope)
+        ref, base = scope(root, args.scope, args.against)
+        print(f'Flows scope: compared app/ with {base[:12]}, the merge base of {ref} and HEAD')
     print('Flows ' + args.command + ': OK')
 
 

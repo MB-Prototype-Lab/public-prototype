@@ -14,6 +14,7 @@ A request to narrow, shorten, reorder or start the prototype elsewhere (“only 
 emergency fund”, “skip onboarding”) is a Flow: use [create-flow](../create-flow/SKILL.md)
 before writing code, never a switch in `app/`.
 For creating/editing a named Flow or integrating a proposal, read [Flows](../../../docs/flows.md).
-Record the full task base and intended package. Flow scope leaves app bytes unchanged;
+Record the intended package; no base needs recording, since `flows.py scope` diffs
+app/ from the merge base with main. Flow scope leaves app bytes unchanged;
 app-integration scope selectively ports approved behavior and needs PM verification
 of the integrated full app before the PR opens. Routine Flow work needs no subagents.

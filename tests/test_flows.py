@@ -128,14 +128,48 @@ class FlowsTest(unittest.TestCase):
                 self.assertFalse((self.root / 'flows/stale').exists())
 
     def test_scope_covers_staged_unstaged_untracked_and_integration(self):
-        flows.scope(self.root, self.base, 'flow')
+        self.assertEqual(flows.scope(self.root, 'flow'), ('main', self.base))
         self.write('app/new.js', 'new')
-        with self.assertRaisesRegex(ValueError, 'app/new.js'):
-            flows.scope(self.root, self.base, 'flow')
-        flows.scope(self.root, self.base, 'app-integration')
+        with self.assertRaisesRegex(ValueError, 'Flow scope changes app/ .*: app/new.js'):
+            flows.scope(self.root, 'flow')
+        flows.scope(self.root, 'app-integration')
         self.git('add', 'app/new.js')
-        with self.assertRaises(ValueError):
-            flows.scope(self.root, self.base, 'flow')
+        with self.assertRaisesRegex(ValueError, 'Flow scope changes app/ .*: app/new.js'):
+            flows.scope(self.root, 'flow')
+
+    def test_scope_passes_main_merged_in_and_rejects_own_app_edits(self):
+        self.git('switch', '-q', '-c', 'work/flow-task')
+        self.write('notes.txt', 'Flow task work')
+        self.git('add', 'notes.txt')
+        self.git('commit', '-m', 'task work')
+        self.git('switch', '-q', 'main')
+        self.write('app/js/config.js', '// main moved on')
+        self.git('commit', '-am', 'main app change')
+        main = self.git('rev-parse', 'HEAD').strip()
+        self.git('switch', '-q', 'work/flow-task')
+        self.git('merge', '-q', '--no-edit', 'main')
+        # Diffing from the task's starting commit would blame main's change on the task.
+        self.assertEqual(self.git('diff', '--name-only', self.base, '--', 'app'), 'app/js/config.js\n')
+        self.assertEqual(flows.scope(self.root, 'flow'), ('main', main))
+        # Main moving on again does not count against the task before its next sync.
+        self.git('switch', '-q', 'main')
+        self.write('app/css/keyboard.css', '/* main moved on again */')
+        self.git('add', 'app/css/keyboard.css')
+        self.git('commit', '-m', 'later main app change')
+        self.git('switch', '-q', 'work/flow-task')
+        self.assertEqual(flows.scope(self.root, 'flow'), ('main', main))
+        # The default prefers origin/main; one older than the merged main needs --against.
+        self.git('update-ref', 'refs/remotes/origin/main', self.base)
+        with self.assertRaisesRegex(ValueError, r'merge base of origin/main and HEAD\): app/js/config\.js\. .*--against .*never revert main'):
+            flows.scope(self.root, 'flow')
+        self.assertEqual(flows.scope(self.root, 'flow', 'main'), ('main', main))
+        with self.assertRaisesRegex(ValueError, "--against 'missing' is not a commit"):
+            flows.scope(self.root, 'flow', 'missing')
+        self.write('app/js/navigation.js', 'bootV3(); // task edit')
+        self.git('commit', '-am', 'own app edit')
+        with self.assertRaisesRegex(ValueError, r'merge base of main and HEAD\): app/js/navigation\.js\. '):
+            flows.scope(self.root, 'flow', 'main')
+        flows.scope(self.root, 'app-integration', 'main')
 
     def test_stale_metadata_symlink_and_invalid_policy(self):
         self.create()
@@ -159,9 +193,9 @@ class FlowsTest(unittest.TestCase):
         self.write('app/js/config.js', '// staged product change')
         self.git('add', 'app/js/config.js')
         self.write('app/js/config.js', '')
-        with self.assertRaisesRegex(ValueError, 'app/js/config.js'):
-            flows.scope(self.root, self.base, 'flow')
-        flows.scope(self.root, self.base, 'app-integration')
+        with self.assertRaisesRegex(ValueError, 'Flow scope changes app/ .*: app/js/config.js'):
+            flows.scope(self.root, 'flow')
+        flows.scope(self.root, 'app-integration')
 
     def test_dependencies_negative_and_dynamic_prefixes(self):
         valid = {'index.html': b'<script src="js/main.js"></script>', 'js/main.js': b'const asset = `assets/img/${name}.png`;', 'assets/img/example.png': b'image'}
