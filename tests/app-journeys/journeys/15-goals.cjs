@@ -1,11 +1,10 @@
 'use strict';
 const { tap, type, expect } = require('../dsl.cjs');
-const { skipToProfile, CALENDAR_EDGES } = require('../common.cjs');
+const { skipToProfile } = require('../common.cjs');
 
 module.exports = {
   id: 'goals',
   title: 'Goals: add a suggested goal, create one in your own words, remove one',
-  clocks: CALENDAR_EDGES,
   steps: skipToProfile().concat([
     tap('Goals'),
     tap('Keep entertainment under $75 a month'),

@@ -59,8 +59,8 @@ function onboardFully() {
   ];
 }
 
-// The extra dates (tests/app-journeys.cjs CLOCKS) for journeys that show or
-// store a date: month ends, February and a leap day.
+// The extra dates (tests/app-journeys.cjs CLOCKS) for journeys whose screens
+// depend on the date: month ends, February and a leap day.
 const CALENDAR_EDGES = ['may31', 'feb15', 'feb29'];
 
 module.exports = { TIER, LEVEL, CALENDAR_EDGES, skipToProfile, onboardFully };

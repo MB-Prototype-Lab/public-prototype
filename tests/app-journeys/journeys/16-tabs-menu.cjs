@@ -4,7 +4,7 @@ const { skipToProfile, CALENDAR_EDGES } = require('../common.cjs');
 
 module.exports = {
   id: 'tabs-menu',
-  title: 'Menu, Settings, Where my money goes, a category, the spend estimator, browser Back, Learn search, every tab',
+  title: 'Menu, Settings, Where my money goes, a category, the spend estimator, browser Back, Learn search, every tab, then an estimate of this month\'s dining out (it depends on the date)',
   browser: true,
   clocks: CALENDAR_EDGES,
   steps: skipToProfile().concat([
@@ -30,5 +30,18 @@ module.exports = {
     type('Search topics or lessons…', 'credit'),
     tap('Home'),
     expect({ screen: 'home' }),
+    tap('Menu'),
+    tap('Where my money goes'),
+    tap('Look into Dining out ›'),
+    tap("Update what you've spent ›"),
+    tap('A couple times a week — chain or donut shop'),
+    tap('Next'),
+    tap('Once or twice a week — quick spots'),
+    tap('Next'),
+    tap('About once a week'),
+    tap('See the estimate'),
+    tap(/^Yes — replace /),
+    tap('Use this'),
+    expect({ screen: 'budgetCategory' }),
   ]),
 };

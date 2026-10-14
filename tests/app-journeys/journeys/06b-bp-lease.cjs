@@ -1,11 +1,12 @@
 'use strict';
 const { tap, type, expect } = require('../dsl.cjs');
-const { skipToProfile } = require('../common.cjs');
+const { skipToProfile, CALENDAR_EDGES } = require('../common.cjs');
 
 module.exports = {
   id: 'bp-lease',
   title: 'Big purchase lease: edit the calculator, choose Lease and its options, put the estimates back, then Your car\'s lease rows, Save it by and a lease goal',
   browser: true,
+  clocks: CALENDAR_EDGES,
   steps: skipToProfile().concat([
     tap('Goals'),
     tap(/^Estimate a big purchase/),
@@ -34,7 +35,7 @@ module.exports = {
     tap(/^Miles a year/),
     tap('10,000 miles'),
     tap(/^Save it by/),
-    tap('Oct 2027'),
+    tap({ name: /^[A-Z][a-z]{2} \d{4}$/, role: 'option', nth: 17 }),   // 18 months out: Oct 2027 on the usual clock
     tap(/^Set goal: save /),
     expect({ screen: 'goals' }),
   ]),
