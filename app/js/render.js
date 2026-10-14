@@ -39,7 +39,7 @@
 // finished screen. See the checklist in architecture section 11.
 
 function adminSubtitle() {
-  if (state.screen === "streak")         return "Streak splash — static screen, reached only from Tools; every session opens on onboarding.";
+  if (state.screen === "streak")         return "Streak splash — static screen, reached only from Tools; a session opens on onboarding or a study link's screen.";
   if (state.screen === "journalEntry")   return "Money Journal — 4 structured questions by priority, then free text (discarded).";
   if (state.screen === "journalConfirm") return "Confirmation — entries derived from structured answers only.";
   if (state.screen === "journalDone")    return "Post-submit — month-to-date updated, observations recomputed.";

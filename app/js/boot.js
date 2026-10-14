@@ -142,8 +142,9 @@ function bootV3() {
   state.screen = entry;
 }
 
-// Every session starts at onboarding (D06). A Flow's generated starter
-// replaces this to enter elsewhere (scripts/flows.py).
+// A session starts at onboarding (D06) unless a study link names another screen
+// (?screen=, applied after this by js/screen-url.js). A Flow's generated
+// starter replaces this to enter elsewhere (scripts/flows.py).
 function v3EntryScreen() {
   return "onboarding";
 }

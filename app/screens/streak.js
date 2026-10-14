@@ -2,7 +2,8 @@
 // TAB: none | NAV BAR: hidden (omitted from NAV_VISIBLE_SCREENS)
 //
 // Reached only from the Tools jump list: state.screen seeds to "streak" in
-// js/state.js, but bootV3 opens onboarding before anything renders. A
+// js/state.js, but bootV3 opens onboarding, or a study link (?screen=,
+// js/screen-url.js) opens its own screen, before anything renders. A
 // full-bleed branded sunburst that hosts the reusable streak counter
 // component, an encouraging line, and the "Let's go!" CTA into Home.
 // Static + non-persistent: nothing here is stored or computed. Independent of
@@ -37,8 +38,8 @@ function renderStreakAdmin() {
   return '<div class="admin-card">'
        +   '<p class="admin-card-title">Streak Splash</p>'
        +   '<p class="helper" style="margin-bottom:10px;">Static, non-persistent screen, reached only from Tools — '
-       +     'every session opens on onboarding. The 8-day streak and weekday states are hardcoded display values, '
-       +     'not stored or computed.</p>'
+       +     'a session opens on onboarding, or on the screen a study link (?screen=) names. The 8-day streak and '
+       +     'weekday states are hardcoded display values, not stored or computed.</p>'
        +   '<button class="button secondary small" type="button" onclick="go(\'home\')">Continue to Home →</button>'
        + '</div>';
 }
