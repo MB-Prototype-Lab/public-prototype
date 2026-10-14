@@ -11,6 +11,10 @@
 //   --compare REF   instead of --base: check REF out into a temporary worktree
 //   --allow-declared  do not fail on changes the PR body declares (CI)
 //
+// Every journey must reach its last step on both sides. One that stops early
+// after the change, or on both sides, fails the run; one that stopped only
+// before the change counts as a phone change, like a changed picture.
+//
 // Needs Playwright: (cd tests/browser && npm ci && npx playwright install chromium).
 
 const { ensurePinnedEnv, PRELUDE_SRC, hashSeed } = require('../lib/determinism.cjs');
@@ -58,10 +62,13 @@ async function restorePhone(page, before) {
   await page.evaluate(b => { const ph = document.querySelector('main.phone'); if (!ph) return; if (b === null) ph.removeAttribute('style'); else ph.setAttribute('style', b); }, before).catch(() => {});
 }
 
+// A mistyped option must not shrink the run to nothing and still pass.
+class UsageError extends Error {}
+
 function parseArgs(argv) {
   const a = {};
   for (let i = 0; i < argv.length; i++) {
-    const v = argv[i], next = () => argv[++i];
+    const v = argv[i], next = () => { if (i + 1 >= argv.length) throw new UsageError(v + ' needs a value'); return argv[++i]; };
     if (v === '--base') a.base = next();
     else if (v === '--head') a.head = next();
     else if (v === '--out') a.out = next();
@@ -69,7 +76,7 @@ function parseArgs(argv) {
     else if (v === '--only') a.only = next().split(',');
     else if (v === '--variants') a.variants = next().split(',');
     else if (v === '--allow-declared') a.allowDeclared = true;
-    else throw new Error('unknown argument ' + v);
+    else throw new UsageError('unknown argument ' + v);
   }
   return a;
 }
@@ -80,15 +87,50 @@ const REVIVE = `function (q) { return JSON.parse(JSON.stringify(q), function (k,
 
 class StepError extends Error {}
 
-async function newPage(browser, tree, variant, seedId) {
+// Playwright's page clock swaps `performance` for a stand-in with no navigation
+// entries, which would hide a reload from the app's refresh pin. Keep the real
+// object aside before the clock installs, then hand its navigation timing back.
+const KEEP_PERFORMANCE = 'window.__mbRealPerformance = window.performance;';
+const RESTORE_NAVIGATION = `(function () {
+  var real = window.__mbRealPerformance, page = window.performance;
+  delete window.__mbRealPerformance;
+  if (!real || page === real) return;
+  var byType = page.getEntriesByType;
+  page.getEntriesByType = function (t) { return t === 'navigation' ? real.getEntriesByType(t) : byType.apply(this, arguments); };
+  Object.defineProperty(page, 'navigation', { configurable: true, get: function () { return real.navigation; } });
+})();`;
+
+// The page renders with reduced motion, so CSS animations land on their last
+// frame at once and every picture is the same. The app's own script asks
+// matchMedia instead and gets the journey's preference, as in the VM
+// (tests/lib/app-vm.cjs), so it takes the same path in both layers (the
+// "Budget Saved!" beat, the buddy's idle poses).
+function scriptMotion(reduce) {
+  return `(function (reduce) {
+  var mm = window.matchMedia;
+  window.matchMedia = function (q) {
+    if (!/prefers-reduced-motion\\s*:\\s*reduce/.test(String(q))) return mm.call(window, q);
+    var noop = function () {};
+    return { matches: reduce, media: String(q), onchange: null, addEventListener: noop, removeEventListener: noop, addListener: noop, removeListener: noop };
+  };
+})(${!!reduce});`;
+}
+
+async function newPage(browser, tree, variant, seedId, boot = {}) {
   const ctx = await browser.newContext({ viewport: variant.viewport, deviceScaleFactor: 1, locale: 'en-US',
     timezoneId: 'UTC', reducedMotion: 'reduce', colorScheme: 'light' });
   await ctx.addInitScript({ content: controls.SOURCE });
   await ctx.addInitScript({ content: 'window.__mbReviveQuery = ' + REVIVE + ';' });
   await ctx.addInitScript({ content: 'window.__mbSeed = ' + hashSeed(seedId) + ';\n' + PRELUDE_SRC });
   await ctx.addInitScript({ content: shimSource(mediaDurations(path.join(tree, 'app'))) });
+  await ctx.addInitScript({ content: scriptMotion(boot.reducedMotion) });
+  await ctx.addInitScript({ content: KEEP_PERFORMANCE });
   const page = await ctx.newPage();
-  await page.clock.install({ time: DEFAULT_CLOCK });
+  // Paused on the start time, the page's clock moves only when a step runs it,
+  // as in the VM. Installing a minute early lets the pause jump forward to it.
+  await page.clock.install({ time: DEFAULT_CLOCK - 60000 });
+  await page.clock.pauseAt(DEFAULT_CLOCK);
+  await ctx.addInitScript({ content: RESTORE_NAVIGATION });
   const errors = [];
   page.on('pageerror', e => errors.push(String(e && e.message || e)));
   page.on('dialog', d => d.accept().catch(() => {}));
@@ -119,14 +161,22 @@ async function find(page, query) {
   return Object.assign(res, { handle: await page.evaluateHandle(() => window.__mbTarget) });
 }
 
-async function click(handle) {
-  await handle.click({ timeout: 5000 });
+// A real click lands on whatever is on top. When that is another control (an
+// open sheet, say), a person could not tap this one either: the journey's fault.
+async function click(f) {
+  try {
+    await f.handle.click({ timeout: 5000 });
+  } catch (err) {
+    const covered = /([^\n]*intercepts pointer events)/.exec(String(err && err.message).replace(/\x1b\[[0-9;]*m/g, ''));
+    if (covered) throw new StepError('cannot tap ' + f.desc + ': ' + covered[1].replace(/^\s*-\s*/, ''));
+    throw err;
+  }
 }
 
 async function typeText(page, query, text, commit) {
   const f = await find(page, query);
   if (f.disabled) throw new StepError('field is disabled: ' + f.desc);
-  await click(f.handle);
+  await click(f);
   const keyHandle = label => page.evaluateHandle(l => {
     const root = document.getElementById('keyboardRoot');
     return root ? Array.from(root.querySelectorAll('button')).find(b => b.getAttribute('aria-label') === l) || null : null;
@@ -165,7 +215,7 @@ async function runSteps(page, journey, variant, steps, id, shoot) {
         const f = await find(page, step.query);
         label += ' ' + f.desc;
         if (f.disabled && !step.expectDisabled) throw new StepError('control is disabled: ' + f.desc);
-        if (!f.disabled) await click(f.handle);
+        if (!f.disabled) await click(f);
         break;
       }
       case 'type': label += ' ' + JSON.stringify(step.text); await typeText(page, step.query, step.text, step.commit); break;
@@ -188,7 +238,7 @@ async function runSteps(page, journey, variant, steps, id, shoot) {
       }
       case 'check': {
         const f = await find(page, step.query);
-        if ((await f.handle.evaluate(el => !!el.checked)) !== step.on) await click(f.handle);
+        if ((await f.handle.evaluate(el => !!el.checked)) !== step.on) await click(f);
         break;
       }
       case 'call':
@@ -240,6 +290,7 @@ async function runGate(page, tree, shoot) {
   await waitApp(page);
   await settle(page, hashSeed('gate:6'));
   await shoot('005 pinned refresh restarts the app', 'restarted');
+  await page.click('#adminExpandTab');      // the restart closed Tools
   await page.getByRole('button', { name: 'Exit Prototype', exact: true }).click();
   await page.waitForSelector('#selectorScreen', { state: 'visible' });
   await shoot('006 Exit Prototype', 'exited');
@@ -249,7 +300,7 @@ async function runOne(browser, tree, variant, journey, outDir) {
   const variantParams = journey.matrix === 'profiles' ? { id: 'at_at', params: { tier: 'at', level: 'at' } } : null;
   const id = journey.id + (variantParams ? '@' + variantParams.id : '');
   const steps = typeof journey.steps === 'function' ? journey.steps(variantParams.params) : journey.steps;
-  const { ctx, page, errors } = await newPage(browser, tree, variant, id + ':boot');
+  const { ctx, page, errors } = await newPage(browser, tree, variant, id + ':boot', journey.boot);
   const shots = [];
   const dir = path.join(outDir, variant.id, journey.id);
   fs.mkdirSync(dir, { recursive: true });
@@ -268,7 +319,8 @@ async function runOne(browser, tree, variant, journey, outDir) {
       await page.goto(pathToFileURL(path.join(tree, 'app', 'index.html')).href);
       await waitApp(page);
       await page.evaluate(t => themeSet(t), variant.theme);
-      if (variant.tools) await page.evaluate(() => { state.adminCollapsed = false; render(); });
+      // Phone journeys are shown with Tools open; the Tools tour opens it itself.
+      if (variant.tools && journey.browser) await page.click('#adminExpandTab');
       await settle(page, hashSeed(id + ':0'));
       await runSteps(page, journey, variant, steps, id, shoot);
     }
@@ -295,22 +347,31 @@ async function main() {
   const out = path.resolve(args.out || path.join(REPO, '.journeys', 'browser'));
   const head = path.resolve(args.head || REPO);
   let base = args.base ? path.resolve(args.base) : null;
+  if (!base && !args.compare) throw new UsageError('give --base DIR or --compare REF');
+
+  const every = journeysApi.loadJourneys();
+  const unknownJourneys = (args.only || []).filter(id => !every.some(j => j.id === id));
+  if (unknownJourneys.length) throw new UsageError('no journey ' + unknownJourneys.join(', '));
+  const unknownVariants = (args.variants || []).filter(id => !VARIANTS.some(v => v.id === id));
+  if (unknownVariants.length) throw new UsageError('no variant ' + unknownVariants.join(', ') + '; variants are ' + VARIANTS.map(v => v.id).join(', '));
+  const all = args.only ? every.filter(j => args.only.includes(j.id)) : every;
+  const subset = all.filter(j => j.browser);
+  const tour = all.filter(j => j.id === 'tools-tour');
+  const variants = VARIANTS.filter(v => !args.variants || args.variants.includes(v.id));
+  const plan = variants.map(v => ({ variant: v, journeys: v.tools ? subset.concat(tour, args.only ? [] : [GATE_JOURNEY]) : subset }));
+  const idle = (args.only || []).filter(id => !plan.some(p => p.journeys.some(j => j.id === id)));
+  if (idle.length) throw new UsageError(idle.join(', ') + ' would not run: the phone variants run ' + every.filter(j => j.browser).map(j => j.id).join(', ') + '; tools-desktop also runs tools-tour');
+  if (!plan.some(p => p.journeys.length)) throw new UsageError('nothing to run');
+
   let cleanup = null;
-  if (!base && args.compare) {
+  if (!base) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mb-browser-base-'));
     base = path.join(dir, 'base');
     git(['worktree', 'add', '--detach', '--quiet', base, args.compare]);
     cleanup = () => { try { git(['worktree', 'remove', '--force', base]); } catch (e) {} fs.rmSync(dir, { recursive: true, force: true }); };
   }
-  if (!base) throw new Error('give --base DIR or --compare REF');
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(out, { recursive: true });
-
-  const all = journeysApi.loadJourneys(args.only);
-  const subset = all.filter(j => j.browser);
-  const tour = all.filter(j => j.id === 'tools-tour');
-  const variants = VARIANTS.filter(v => !args.variants || args.variants.includes(v.id));
-  const plan = variants.map(v => ({ variant: v, journeys: v.tools ? subset.concat(tour, args.only ? [] : [GATE_JOURNEY]) : subset }));
 
   const browser = await chromium.launch({ headless: true, args: JSON.parse(process.env.MB_CHROMIUM_ARGS || '[]'),
     ...(process.env.MB_CHROMIUM_EXECUTABLE ? { executablePath: process.env.MB_CHROMIUM_EXECUTABLE } : {}) });
@@ -364,26 +425,33 @@ async function main() {
     const body = process.env.PR_BODY || '';
     const phoneDeclared = args.allowDeclared && !/^none\.?$/i.test(journeysApi.declared(body, 'Participant') || 'none');
     const toolsDeclared = args.allowDeclared && !/^none\.?$/i.test(journeysApi.declared(body, 'Tools') || 'none');
-    const summary = { base: describeTree(base), head: describeTree(head), seconds: Math.round((Date.now() - t0) / 1000), phoneChanged: 0, toolsChanged: 0, flaky: 0, failures: 0 };
+    const summary = { base: describeTree(base), head: describeTree(head), seconds: Math.round((Date.now() - t0) / 1000), phoneChanged: 0, toolsChanged: 0, flaky: 0, broken: 0, brokenAfter: 0, brokenBeforeOnly: 0 };
     for (const row of rows) {
       const changed = row.items.filter(i => i.status === 'changed' || i.status === 'missing').length;
       if (row.variant === 'tools-desktop') summary.toolsChanged += changed; else summary.phoneChanged += changed;
       summary.flaky += row.items.filter(i => i.status === 'flaky').length;
-      if (row.baseFailure !== row.headFailure || row.pageErrors.length) summary.failures++;
+      // A journey that stops early after the change, or on both sides (its
+      // coverage is lost), or raises new page errors, fails the run. One that
+      // stopped only before the change now goes further: a phone change.
+      row.broken = !!(row.baseFailure || row.headFailure || row.pageErrors.length);
+      if (!row.broken) continue;
+      summary.broken++;
+      if (row.headFailure || row.pageErrors.length) summary.brokenAfter++; else summary.brokenBeforeOnly++;
     }
     const report = writeReport(out, rows, summary, VARIANTS);
     console.log('Browser journeys: ' + rows.length + ' runs per side, ' + rows.reduce((n, r) => n + r.items.length, 0) + ' screenshots compared in ' + summary.seconds + 's');
     for (const row of rows) {
       const bad = row.items.filter(i => i.status !== 'same');
-      if (!bad.length && !row.headFailure && !row.baseFailure && !row.pageErrors.length) continue;
-      console.log('  ' + row.variant + ' / ' + row.id + ': ' + bad.map(i => i.status + ' @ ' + i.label).join('; ') +
-        (row.baseFailure || row.headFailure ? ' [before: ' + (row.baseFailure || 'ok') + ' | after: ' + (row.headFailure || 'ok') + ']' : '') +
+      if (!bad.length && !row.broken) continue;
+      console.log('  ' + row.variant + ' / ' + row.id + ':' + (row.broken ? ' BROKEN' : '') + (bad.length ? ' ' + bad.map(i => i.status + ' @ ' + i.label).join('; ') : '') +
+        (row.baseFailure || row.headFailure ? ' [before: ' + (row.baseFailure || 'finished') + ' | after: ' + (row.headFailure || 'finished') + ']' : '') +
         (row.pageErrors.length ? ' [new page errors: ' + row.pageErrors.join(' | ') + ']' : ''));
     }
-    console.log('Phone pictures changed: ' + summary.phoneChanged + ' · Tools pictures changed: ' + summary.toolsChanged + ' · flaky (did not reproduce): ' + summary.flaky + ' · journeys that broke: ' + summary.failures);
+    console.log('Phone pictures changed: ' + summary.phoneChanged + ' · Tools pictures changed: ' + summary.toolsChanged + ' · flaky (did not reproduce): ' + summary.flaky +
+      ' · journeys that broke: ' + summary.broken + (summary.brokenBeforeOnly ? ' (' + summary.brokenBeforeOnly + ' only before the change)' : ''));
     console.log('Report: ' + pathToFileURL(report).href);
-    if (summary.failures) ok = false;
-    if (summary.phoneChanged && !phoneDeclared) ok = false;
+    if (summary.brokenAfter) ok = false;
+    if ((summary.phoneChanged || summary.brokenBeforeOnly) && !phoneDeclared) ok = false;
     if (summary.toolsChanged && !toolsDeclared) ok = false;
   } finally {
     await browser.close();
@@ -398,4 +466,7 @@ function describeTree(dir) {
   catch (e) { return dir; }
 }
 
-main().then(ok => process.exit(ok ? 0 : 1), err => { console.error(err && err.stack || err); process.exit(2); });
+main().then(ok => process.exit(ok ? 0 : 1), err => {
+  console.error(err instanceof UsageError ? 'app-journeys-browser: ' + err.message : err && err.stack || err);
+  process.exit(2);
+});

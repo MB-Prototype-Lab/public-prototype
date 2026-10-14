@@ -15,11 +15,12 @@ const STATUS_TEXT = { same: 'Same', changed: 'Changed', flaky: 'Flaky', missing:
 function writeReport(outDir, rows, summary, variants) {
   const byVariant = variants.map(v => ({ v, rows: rows.filter(r => r.variant === v.id) })).filter(x => x.rows.length);
   const changedTotal = summary.phoneChanged + summary.toolsChanged;
-  const headline = summary.failures ? 'Some journeys broke'
+  const focus = changedTotal || summary.broken;
+  const headline = summary.broken ? 'Some journeys broke'
     : changedTotal ? changedTotal + ' picture' + (changedTotal === 1 ? '' : 's') + ' changed'
     : 'No visible change';
   const tabs = byVariant.map((x, i) => {
-    const n = x.rows.reduce((k, r) => k + r.items.filter(it => it.status === 'changed' || it.status === 'missing').length, 0);
+    const n = x.rows.reduce((k, r) => k + (r.broken ? 1 : 0) + r.items.filter(it => it.status === 'changed' || it.status === 'missing').length, 0);
     return `<button class="tab" role="tab" aria-selected="${i === 0}" data-tab="${esc(x.v.id)}">${esc(VARIANT_LABELS[x.v.id] || x.v.id)}${n ? ` <span class="count">${n}</span>` : ''}</button>`;
   }).join('');
   const panels = byVariant.map((x, i) => `
@@ -74,7 +75,7 @@ body.only-changes .step.same, body.only-changes .journey.all-same { display: non
 @media (max-width: 640px) { .pics { grid-template-columns: 1fr; } }
 </style>
 </head>
-<body class="${changedTotal ? 'only-changes' : ''}">
+<body class="${focus ? 'only-changes' : ''}">
 <main>
   <h1>${esc(headline)}</h1>
   <p class="sub">Before: ${esc(summary.base)}<br>After: ${esc(summary.head)}</p>
@@ -82,11 +83,11 @@ body.only-changes .step.same, body.only-changes .journey.all-same { display: non
     <div class="fact"><b>${summary.phoneChanged}</b><span>phone pictures changed</span></div>
     <div class="fact"><b>${summary.toolsChanged}</b><span>Tools pictures changed</span></div>
     <div class="fact"><b>${summary.flaky}</b><span>flaky (did not repeat)</span></div>
-    <div class="fact"><b>${summary.failures}</b><span>journeys that broke</span></div>
+    <div class="fact"><b>${summary.broken}</b><span>journeys that broke</span></div>
   </div>
-  <p class="note">Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken whenever a new view appears. "Changed" means more than 0.05% of its pixels differ and the difference repeated on a second run.</p>
+  <p class="note">Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken whenever a new view appears. "Changed" means more than 0.05% of its pixels differ and the difference repeated on a second run. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.</p>
   <div class="tabs" role="tablist">${tabs}</div>
-  <label class="only"><input type="checkbox" id="only"${changedTotal ? ' checked' : ''}> Show only changes</label>
+  <label class="only"><input type="checkbox" id="only"${focus ? ' checked' : ''}> Show only changes</label>
   ${panels}
 </main>
 <script>
@@ -109,14 +110,13 @@ body.only-changes .step.same, body.only-changes .journey.all-same { display: non
 }
 
 function journeyBlock(r) {
-  const broke = r.baseFailure !== r.headFailure || r.pageErrors.length;
   const counts = {};
   for (const it of r.items) counts[it.status] = (counts[it.status] || 0) + 1;
-  const allSame = !broke && r.items.every(it => it.status === 'same');
-  const badges = (broke ? '<span class="badge broke">Broke</span>' : '') +
+  const allSame = !r.broken && r.items.every(it => it.status === 'same');
+  const badges = (r.broken ? '<span class="badge broke">Broke</span>' : '') +
     Object.entries(counts).map(([k, n]) => `<span class="badge ${k}">${n} ${esc(STATUS_TEXT[k] || k)}</span>`).join(' ');
   const failure = r.baseFailure || r.headFailure
-    ? `<p class="note step">Before: ${esc(r.baseFailure || 'finished')} · After: ${esc(r.headFailure || 'finished')}</p>` : '';
+    ? `<p class="note step">Before: ${esc(r.baseFailure || 'finished')} · After: ${esc(r.headFailure || 'finished')}${r.headFailure ? '' : ' · It now goes further than before: a phone change.'}</p>` : '';
   const errors = r.pageErrors.length ? `<p class="note step">New page errors: ${esc(r.pageErrors.join(' | '))}</p>` : '';
   return `
   <details class="journey${allSame ? ' all-same' : ''}"${allSame ? '' : ' open'}>
