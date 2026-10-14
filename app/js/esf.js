@@ -758,17 +758,10 @@ function esfOpeningValues() {
     // scaled here and divided back out by esfRowMonthly. One conversion, one
     // place.
     if (r.source === "propertyTax")  { out[r.id] = esfRound(esfPropertyTaxEstimate() * 12); return; }
-    if (r.source === "unemployedInsurance") { out[r.id] = esfReplacementPremium(); return; }
     if (car[r.id] != null)           { out[r.id] = car[r.id]; return; }
     if (r.bill) {
-      const monthly = esfBillEstimate(esfBills().find(b => b.id === r.bill));
-      out[r.id] = r.cadence === "annual" ? esfRound(monthly * 12) : monthly;
-      return;
-    }
-    if (r.bill) {
-      // A local figure from data/emergency-fund.json — home insurance and HOA
-      // carry the ZIP's housing multiplier, property tax is a ratio of what
-      // housing actually costs there. Annual rows are stored annual.
+      // A local figure from data/emergency-fund.json, carrying the ZIP's
+      // multiplier for the bill's category. Annual rows are stored annual.
       const monthly = esfBillEstimate(esfBills().find(b => b.id === r.bill));
       out[r.id] = r.cadence === "annual" ? esfRound(monthly * 12) : monthly;
       return;
@@ -779,50 +772,21 @@ function esfOpeningValues() {
   return out;
 }
 
-// ─── Screen 4 — bills that do not arrive monthly ─────────────────────────────
-// Every row is OPT-IN and adds nothing until tapped. The tool assumes the
-// tester already counted the cost inside what they typed earlier, which is the
-// safe direction: a double-count silently inflates the target by thousands and
-// nothing on screen would ever explain it, whereas an omission is what the
-// buffer exists to absorb.
+// ─── Bills priced from data ──────────────────────────────────────────────────
+// A row that names a `bill` opens on that bill's figure from
+// data/emergency-fund.json. Home insurance is the only one.
 
 function esfBills() {
   return ((esfData().irregularBills || {}).bills) || [];
 }
 
 /**
- * The estimate for one bill, before any override the tester typed.
- *
- * `ratioOfHousing` tracks whatever they actually entered for rent or mortgage,
- * because property tax is the most place-variable bill on the list and a flat
- * national figure would be wrong everywhere. `monthly` figures named a category
- * get that category's cost-of-living multiplier — through benchColMultipliers,
- * never around it.
+ * The estimate for one bill. A bill that names a category (`col`) gets that
+ * category's cost-of-living multiplier — through benchColMultipliers, never
+ * around it.
  */
 function esfBillEstimate(bill) {
   if (!bill) return 0;
-  if (bill.basis === "ratioOfHousing") {
-    // Reads state.esf DIRECTLY, never esfSession(). This runs from
-    // esfOpeningValues(), which runs from esfStart() — and esfSession() starts a
-    // session when it finds none, so going through it here recurses until the
-    // stack gives out. Anything called while the session is being built has to
-    // tolerate there not being one yet.
-    //
-    // Rent and mortgage are summed because somebody can carry both, and it
-    // falls back to the peer housing figure while they are still blank: the
-    // fields open empty by design, and "about $0 a month" on a row the tester
-    // is being asked about reads as broken (D19).
-    const s = state.esf;
-    let housing = 0;
-    if (s && s.rows) {
-      housing = (Number(s.rows.rent) || 0) + (Number(s.rows.mortgage) || 0);
-    }
-    if (!housing) {
-      try { housing = Number(benchPeerValue("Housing", benchOptsForUser())) || 0; }
-      catch (e) { housing = 0; }
-    }
-    return esfRound(housing * (Number(bill.value) || 0));
-  }
   const base = Number(bill.value) || 0;
   if (!bill.col) return esfRound(base);
   try {
@@ -846,17 +810,11 @@ function esfStart() {
     opening: opening,                 // frozen — what the tool guessed
     rows: Object.assign({}, opening),  // live — what the tester settled on
     touched: {},                      // row id → true once they changed it
-    declined: {},                     // row id → true for "I don't have one"
-    added: {},                        // bill id → true once added
-    billAmounts: {},                  // bill id → a typed override
-    extras: [],                       // screen 4's blank box: {id, label, amount}
+    added: {},                        // opt-in row id → true once added
     buffer: ESF_CONFIG.bufferDefault,
     coverageMonths: null,             // null → derived from household size
     startingBalance: 0,
-    insuranceOverride: null,
-    targetDate: esfDefaultTargetDate(),
-    owns: esfOwnsHome(),
-    hasCar: benchLifestyleKey("commute", (state.lifestyle || {}).commute) !== "none"
+    targetDate: esfDefaultTargetDate()
   };
   go("esfBuild");
 }
@@ -955,10 +913,9 @@ function esfDefaultTargetDate() {
   return d.toISOString().slice(0, 10);
 }
 
-/** A row's live figure. A declined row is zero, not blank. */
+/** A row's live figure. A blank row is zero. */
 function esfRowValue(rowId) {
   const s = esfSession();
-  if (s.declined[rowId]) return 0;
   const v = s.rows[rowId];
   return v == null ? 0 : (Number(v) || 0);
 }
@@ -966,7 +923,7 @@ function esfRowValue(rowId) {
 /** Untouched estimates are what the "this will sharpen" line counts. */
 function esfRowsRemaining() {
   const s = esfSession();
-  return ESF_ROWS.filter(r => !s.touched[r.id] && !s.declined[r.id]).length;
+  return ESF_ROWS.filter(r => !s.touched[r.id]).length;
 }
 
 // ─── The arithmetic ──────────────────────────────────────────────────────────
@@ -1132,20 +1089,9 @@ function esfRowMonthly(rowId, ignoreOptIn) {
   return row && row.cadence === "annual" ? value / 12 : value;
 }
 
-/**
- * Everything the tester stated that they would still be paying, before the
- * crisis adjustment or the buffer.
- *
- * `survival: false` rows are asked but not counted. Dining out is the only one
- * so far: it is captured because the emergency fund seeds the budget and the
- * budget wants all twelve categories, but an emergency fund sized to keep
- * somebody ordering takeaway is not what the owner asked for — it is one of the
- * six dispensable categories by their own ruling.
- */
+/** Everything the tester stated that they would still be paying, before the buffer. */
 function esfStatedMonthly() {
-  return esfRound(ESF_ROWS
-    .filter(r => r.survival !== false)
-    .reduce((sum, r) => sum + esfRowMonthly(r.id), 0));
+  return esfRound(ESF_ROWS.reduce((sum, r) => sum + esfRowMonthly(r.id), 0));
 }
 
 /**
@@ -1257,10 +1203,10 @@ function esfExpensesByCategory() {
 /**
  * ESF → a budget baseline, for submitBudgetBaseline().
  *
- * The emergency fund runs BEFORE the budget, so it seeds it: the six survival
- * categories carry what the tester actually stated, and the six dispensable
- * ones open on the peer figure — exactly what the budget builder would have
- * opened them on anyway, so nothing arrives blank (D19).
+ * The emergency fund runs BEFORE the budget, so it seeds it: every category a
+ * row asks about carries what the tester actually stated, and the rest open on
+ * the peer figure — exactly what the budget builder would have opened them on
+ * anyway, so nothing arrives blank (D19).
  *
  * The buffer and the health adjustment are deliberately NOT carried. Both are
  * emergency-fund concepts: a budget line called "buffer" means nothing, and a
@@ -1274,10 +1220,7 @@ function esfToBaseline() {
 
   // A category the tester was ASKED about carries their figure; everything else
   // opens on the peer value. Keyed on whether a row covers it rather than on
-  // ESF_CATEGORIES, because the two have come apart: Dining out is asked (so
-  // the budget gets a real number) but is not a survival category (so it stays
-  // out of the emergency target). Testing membership of ESF_CATEGORIES here
-  // would throw the tester's own dining figure away and substitute a peer one.
+  // ESF_CATEGORIES, so the catch-all row's Other figure is carried too.
   const asked = {};
   ESF_ROWS.forEach(r => { asked[r.category] = true; });
 
@@ -1319,8 +1262,6 @@ function esfCommit() {
     byCategory: esfExpensesByCategory(),
     rows: Object.assign({}, s.rows),
     touched: Object.assign({}, s.touched),
-    declined: Object.assign({}, s.declined),
-    extras: (s.extras || []).slice(),
     bills: Object.assign({}, s.added),
     builtAt: todayISO()
   };

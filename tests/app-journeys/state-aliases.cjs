@@ -13,4 +13,12 @@
 module.exports = [
   { removed: 'xpConfig.discountedRate', why: 'the Learn Tools knob wrote it and nothing read it' },
   { removed: 'helpMeOut.target', why: 'always "budget" once the emergency fund hook was deleted' },
+  { removed: 'esf.billAmounts', why: 'emergency fund bill overrides: nothing wrote them, and their one reader was deleted' },
+  { removed: 'esf.extras', why: 'the emergency fund extra-expense box no screen offers' },
+  { removed: 'esf.insuranceOverride', why: 'an emergency fund field nothing wrote or read' },
+  { removed: 'esf.declined', why: 'the emergency fund "I don\'t have one" flag nothing sets' },
+  { removed: 'esf.owns', why: 'its readers, the irregular-bill gate and the rent-or-own toggle, were deleted' },
+  { removed: 'esf.hasCar', why: 'its reader, the irregular-bill gate, was deleted' },
+  { removed: 'expenses.declined', why: 'copied from esf.declined, which nothing sets' },
+  { removed: 'expenses.extras', why: 'copied from esf.extras, which nothing fills' },
 ];

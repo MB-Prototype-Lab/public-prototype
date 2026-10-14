@@ -8,40 +8,14 @@ const EMERGENCY_FUND =
   "_note": "Emergency fund tool. The ESF spec (docs/emergency-fund-spec.md) ships no data file, so these figures were sourced for it. Every figure carries the source it came from; the arithmetic that consumes them lives in js/esf.js.",
 
   "irregularBills": {
-    "_note": "Screen 4 — bills that do not arrive monthly. Each row is opt-in: the tool ASSUMES the tester already counted the cost inside what they typed earlier, and [Add it] is the correction. So a row left untouched adds nothing, which is the safe direction for a double-count and the wrong direction for an omission. `showIf` gates which rows appear at all; `basis` says how the estimate is built.",
+    "_note": "Bills priced from a figure here rather than a model. Only home insurance is read: the Home Insurance row (js/esf.js, ESF_ROWS) opens on `value`, scaled by the ZIP's cost-of-living multiplier for `col`.",
 
     "bills": [
-      { "id": "propertyTax", "label": "Property tax", "showIf": "owns",
-        "basis": "ratioOfHousing", "value": 0.14, "category": "Housing",
-        "_source": "Census ACS 2023: median real estate taxes paid $3,057/yr against median monthly owner cost with a mortgage of $1,828 — about 14% of the monthly housing figure. Expressed as a ratio so it tracks the ZIP's own housing cost rather than a national flat rate; property tax is the most place-variable bill on this list." },
-
       { "id": "homeInsurance", "label": "Home insurance", "showIf": "owns",
         "basis": "monthly", "value": 110, "col": "Housing", "category": "Housing",
         "qualifier": "Often bundled into a mortgage payment too.",
-        "_source": "NAIC Homeowners Insurance Report: US average annual premium about $1,320, so roughly $110 a month." },
-
-      { "id": "hoa", "label": "HOA or condo fee", "showIf": "owns",
-        "basis": "monthly", "value": 250, "col": "Housing", "category": "Housing",
-        "_source": "Census ACS median monthly HOA fee for units that carry one. The spec's mock shows $0 here; a real median is better, because the row is opt-in — somebody with no HOA simply never taps it, whereas $0 makes the row look broken." },
-
-      { "id": "carInsurance", "label": "Car insurance", "showIf": "hasCar",
-        "basis": "monthly", "value": 145, "col": "Transport", "category": "Transport",
-        "overlaps": "transportRunning",
-        "_source": "AAA Your Driving Costs 2025 full-coverage average, the same table the Transport help-me-out tree prices insurance from.",
-        "_overlapNote": "FLAGGED FOR THE OWNER. The Screen 3 'Gas, insurance, upkeep' estimate ALREADY contains car insurance — it is the largest single part of it. Adding this row on top double-counts about $145 a month, roughly $900 on a six-month target. It is safe only because the row is opt-in and defaults to off. Deleting this entry is the clean fix if the owner agrees." },
-
-      { "id": "plates", "label": "Plates and tags", "showIf": "hasCar",
-        "basis": "monthly", "value": 15, "category": "Transport",
-        "_source": "Average US annual vehicle registration and title cost of roughly $180. Varies more by state than almost anything else here — several states charge a flat $30 a year, several charge a percentage of vehicle value." },
-
-      { "id": "school", "label": "School costs", "showIf": "always",
-        "basis": "monthly", "value": 60, "category": "Other",
-        "_source": "NRF Back-to-School survey: about $720 a year per household on school supplies, fees and clothing. Shown to everyone rather than gated on dependents, because onboarding does not collect dependents and a household of one simply never taps it." }
-    ],
-
-    "_omitted": {
-      "yearlySubscriptions": "The spec's Screen 4 lists a 'Yearly subscriptions' row at about $25 a month. Deliberately NOT built: Subscriptions is one of the six categories the owner excluded from the emergency fund as dispensable, so a row that adds it back contradicts that ruling. Restoring it is one entry in the bills array."
-    }
+        "_source": "NAIC Homeowners Insurance Report: US average annual premium about $1,320, so roughly $110 a month." }
+    ]
   },
 
   "utilitiesSplit": {
@@ -168,7 +142,6 @@ const EMERGENCY_FUND =
     "_storeNames": "Brand names are in the option labels on purpose. 'Mid-tier grocery' does not land at a 5th-grade reading level; 'Kroger' does.",
 
     "groceries": {
-      "opening": "Groceries means food you cook and eat at home. Not restaurants or takeout.",
       "questions": [
         { "id": "frequency", "ask": "How often do you shop for food?",
           "options": [
@@ -197,7 +170,6 @@ const EMERGENCY_FUND =
     },
 
     "power": {
-      "opening": "This is your water, gas and electricity together.",
       "questions": [
         { "id": "athome", "ask": "When is someone usually home?",
           "options": [
@@ -223,7 +195,6 @@ const EMERGENCY_FUND =
     },
 
     "connect": {
-      "opening": "This is your phone bill and your internet bill together.",
       "questions": [
         { "id": "lines", "ask": "How many phone lines are on your bill?",
           "options": [
@@ -251,7 +222,6 @@ const EMERGENCY_FUND =
     },
 
     "carCosts": {
-      "opening": "This is fuel, insurance and upkeep. Not your car payment.",
       "questions": [
         { "id": "miles", "ask": "How far do you drive on a normal day?",
           "options": [
@@ -280,7 +250,6 @@ const EMERGENCY_FUND =
     },
 
     "medical": {
-      "opening": "This is insurance, copays, prescriptions, dental and vision.",
       "_note": "NOT about how often you see a doctor — that does not move a premium, and asking it would imply it does. The two levers here are the plan you would buy and whether anyone needs care all year. Neither is already in the model: the estimate prices a mid-level plan on the ages in the household, so household size and age must NOT appear here or they are counted twice.",
       "questions": [
         { "id": "plan", "ask": "What kind of plan would you buy?",
@@ -297,14 +266,6 @@ const EMERGENCY_FUND =
           ] }
       ]
     }
-  },
-
-  "crisis": {
-    "_note": "What changes if the paycheck stops. The owner's ruling: ONLY health cover moves. Housing, debt, transport, food and utilities are all carried at their stated figures, and the tool states the adjustment rather than offering a choice about it — an emergency fund that assumes you keep your employer's insurance is not covering the emergency.",
-    "replacementPremiumFrom": "helpMeOut:Health.marketplacePremium",
-    "_premiumNote": "Read from data/help-me-out.json rather than restated here, so the marketplace premium has exactly one definition. Copying it would leave two figures free to drift.",
-    "maxCovered": 2,
-    "_maxCoveredNote": "Premium is charged per adult, capped at two, matching the medical help-me-out model's own treatment of the same figure."
   }
 }
 ;

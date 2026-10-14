@@ -123,7 +123,6 @@ function esfSetRow(rowId, raw) {
   const n = Number(String(raw == null ? "" : raw).replace(/[^0-9.]/g, ""));
   s.rows[rowId] = isFinite(n) ? Math.max(0, Math.round(n)) : 0;
   s.touched[rowId] = true;
-  delete s.declined[rowId];
   render();
 }
 
@@ -146,8 +145,8 @@ function esfNext() {
 function esfBack() {
   const s = esfSession();
   if (s.step > 0) { s.step--; render(); return; }
-  // A calculator detour returns to its caller; other entries use their own stack.
-  if (state.bp && state.bp.esfReturn) { navBack(); return; }
+  // Off the intro, Back pops the stack: a Big purchase detour returns to the
+  // calculator, and every other entry to the screen that opened the tool.
   navBack();
 }
 
