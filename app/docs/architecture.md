@@ -14,8 +14,8 @@ expensive to change once code exists. Per-screen layout, copy, and interaction
 detail live in per-phase docs written just before that phase is built.
 
 Read alongside:
-- `plan.md` §0 — the twenty-two locked decisions (L1–L22). Authoritative.
-- `v3 Files/spec/docs/DECISIONS.md` — D01–D40. Beats every other spec doc.
+- [`docs/decisions.md`](../../docs/decisions.md) — the product decisions in force
+  (L## and D## IDs). Authoritative.
 - `v3 Files/spec/docs/ASSUMPTIONS.md` — A1–A13. A1 is overridden by L1.
 
 ---
@@ -147,12 +147,12 @@ Bills are **relative**: `dueInDays: 4` for the car insurance. Resolve against
 real today at render time so "due in four days" stays true whenever it's opened.
 
 <!-- v2's goals module had a simulated clock (clockOffsetDays) driving
-     goalsTodayISO(). That module is not carried to v3 (L3). If admin time
+     goalsTodayISO(). That module is not carried to v3. If admin time
      travel is wanted later, add ONE offset helper here and route all date math
      through it from the start — retrofitting it is what made v2 need a grep
      gate against todayISO(). -->
 
-`SKIP_ONBOARDING` (spec D07) lives in `js/config.js` and is **deprecated**: a
+`SKIP_ONBOARDING` lives in `js/config.js` and is **deprecated**: a
 build-time entry switch kept off pending a decision on its replacement
 ([future work](../../docs/future-work.md)). Do not flip it for a study or demo; a
 shortened or returning-user start is a Flow
@@ -993,7 +993,7 @@ it removes cross-browser variance in whether boundary events fire at all.
 - Visual cues reference **segment ids, never timestamps**.
 - A segment with no timing estimates from word count at **165 wpm**.
 
-Same generator serves the 15 lesson script bodies (L8).
+Same generator serves the 15 lesson script bodies.
 
 ### The sync contract: whatever is speaking is the clock
 
@@ -1200,7 +1200,7 @@ Plus, new in v3: a **full-bleed mode class** if the screen hides the nav (§8).
     question costs one retry; a missed one means the prototype gave financial
     advice.
   - **Copy written later is bound by this too** — especially the 15 lesson
-    script bodies (L8), which are the largest block of unwritten prose left.
+    script bodies, which are the largest block of unwritten prose left.
     The forbidden shapes are imperatives: "you should", "we recommend",
     "cancel your", "switch to", "you must", "the best option is".
 - **Frame flags as questions, not instructions.** "Haven't heard about Hulu in a
@@ -1274,7 +1274,7 @@ implemented in data. Don't add variants to "cover" them.
 
 ---
 
-## 13. Buddy representation (L15, revised by L22)
+## 13. Buddy representation (L22)
 
 **L22 (2026-08-22): owner-supplied static illustrations are allowed**, selected
 by buddy state. Two things are unchanged and one is new:
@@ -1282,7 +1282,7 @@ by buddy state. Two things are unchanged and one is new:
 - **Unchanged — nothing is generated here.** D10's prohibition is on *Claude*
   generating art. The images come from the owner, which is what D10 asked for.
 - **Unchanged — no sprite sheets.** These are separate files chosen by state,
-  not one sheet addressed by `background-position`. D39's cropping machinery
+  not one sheet addressed by `background-position`. The cropping machinery
   stays unbuilt.
 - **New — the image is preferred, the description is the fallback.** No image
   set covers every breed × coat × pattern × eyes × nose × size × pose, and D19
@@ -1364,7 +1364,7 @@ end-to-end. A tester picks a breed, and the stage visibly reflects it — the
 choice registers and is legible, which is what onboarding step 7 is there to
 test. A flat colour swatch would test nothing.
 
-- **Character creation stays real, with all five attributes** (L18): breed,
+- **Character creation stays real, with all five attributes**: breed,
   fur, eyes, nose, size — as 01-onboarding step 7 originally specified.
   Selections write to `state.buddy` and the description re-renders. Nothing is
   faked. The persona's default is `PERSONA.buddy` (golden retriever, cream,
@@ -1380,9 +1380,9 @@ test. A flat colour swatch would test nothing.
   described scenes (day/night per local time), and the kibble bowl as a labelled
   frame.
 
-<!-- D39/D40 are void in practice. Flat cream backgrounds, CSS
-     background-position cropping, six fixed sheets, and the dropped eye/nose
-     colours were all consequences of raster art being unable to recolour.
+<!-- Flat cream backgrounds, CSS background-position cropping, six fixed
+     sheets, and the dropped eye/nose colours were all consequences of raster
+     art being unable to recolour.
      With a text placeholder there is no sheet to crop and no recolour cost, so
      none of those constraints bind. Do not build the background-position
      machinery for art that will never exist. -->

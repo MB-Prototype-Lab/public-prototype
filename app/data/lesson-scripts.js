@@ -1,4 +1,4 @@
-// ─── Lesson script bodies (L8) ────────────────────────────────────────────────
+// ─── Lesson script bodies ─────────────────────────────────────────────────────
 // AUTHORED IN PHASE 5c — this is NOT spec data.
 //
 // lessons.json declares 15 scriptVariants across three lessons but carries no

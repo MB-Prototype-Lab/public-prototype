@@ -2030,7 +2030,8 @@ chk(kibAt !== -1 && openAt !== -1 && kibAt < openAt,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// v4 only — the Budget tab is a paywall (plan.md §0 L27, overriding D31).
+// v4 only — the Budget tab is a paywall (docs/decisions.md L27, overriding
+// D31).
 if (typeof BUDGET_PAYWALL !== "undefined") {
 section("7g. The Budget tab is walled");
 

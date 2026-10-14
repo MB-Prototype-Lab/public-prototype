@@ -1,7 +1,7 @@
 // ─── Onboarding (01-onboarding, D06) ─────────────────────────────────────────
 // TAB: None | NAV BAR: Hidden — full-bleed flow
 //
-// Seven steps. A single config constant bypasses the whole thing (D07) — see
+// Seven steps. A single config constant bypasses the whole thing — see
 // js/config.js. Flipping it must not require unwinding anything here.
 //
 //   1 name   2 improvement areas (multi-select)
@@ -1321,11 +1321,11 @@ function onbStepBody(key, o) {
 
   if (key === "video") return onbVideoBody(o);
 
-  // D32 — the trial popup still appears. Accept or decline, the experience
-  // afterward is identical HERE. D31 ("no paywalls anywhere") is overridden
-  // for the Budget tab only — see plan.md §0 L27 and js/config.js — so this
-  // step's own promise had to change with it; the old closing line said
-  // nothing was locked, which the Budget tab now contradicts.
+  // Accept or decline, the experience afterward is identical HERE. D31 ("no
+  // paywalls anywhere") is overridden for the Budget tab only — see L27 in
+  // docs/decisions.md and js/config.js — so this step's own promise had to
+  // change with it; the old closing line said nothing was locked, which the
+  // Budget tab now contradicts.
   return `
     <div class="card">
       <p class="pill" style="display:inline-block;font-size:9px;padding:3px 9px;margin-bottom:10px;">7 days free</p>

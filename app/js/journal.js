@@ -1,6 +1,6 @@
 // ─── Money Journal engine (D11–D15) ──────────────────────────────────────────
-// The deepest build (D05) and the thing user testing is actually about: do
-// people engage with the input point? Everything downstream — the budget
+// The deepest build and the thing user testing is actually about: do people
+// engage with the input point? Everything downstream — the budget
 // comparison, the daily update, My Progress — consumes what this produces.
 //
 // Structured questions carry the parsing load (D11). There is no NLP here and

@@ -1,7 +1,7 @@
 // ─── Theme selection (L21) ───────────────────────────────────────────────────
 // Four themes, picked from the Admin Tools panel. Two reproduce v2's palette,
-// two are the D36 repaint; each pair has a light and a dark. Dark is the
-// default — see plan.md L21 for why that overrides D36's cream-first intent.
+// two are the D36 repaint; each pair has a light and a dark. Natural Light is
+// the default (L21).
 //
 // This list is the SINGLE SOURCE OF TRUTH. Before it existed, the two-way
 // assumption was hardcoded in four places (state's default, render's class

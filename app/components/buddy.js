@@ -1,4 +1,4 @@
-// --- Buddy (L15, revised by L22) ---------------------------------------------
+// --- Buddy (L22) -------------------------------------------------------------
 // Nothing here is generated. L22 allows OWNER-SUPPLIED static illustrations,
 // selected by buddy state; D10's prohibition is on Claude generating art and it
 // still holds.
@@ -17,14 +17,13 @@
 // same plumbing is what makes the art swap cheap now.
 //
 // -- STILL NO SHEETS ----------------------------------------------------------
-// D39/D40 are void in practice. Flat cream sheets, CSS background-position
-// cropping, six fixed sheets and the dropped eye/nose colours were all
-// consequences of raster art being unable to recolour. The owner's art is
-// SEPARATE FILES chosen by state, not one sheet addressed by offset, so there
-// is still nothing to crop — DO NOT build the cropping machinery. See the
-// "Don't" list in versions/v3/CLAUDE.md.
+// Flat cream sheets, CSS background-position cropping, six fixed sheets and
+// the dropped eye/nose colours were all consequences of raster art being
+// unable to recolour. The owner's art is SEPARATE FILES chosen by state, not
+// one sheet addressed by offset, so there is still nothing to crop — DO NOT
+// build the cropping machinery. See the "Don't" list in versions/v3/CLAUDE.md.
 //
-// The pickers are also NOT reduced to match whatever the art covers (L18): the
+// The pickers are also NOT reduced to match whatever the art covers: the
 // image varies along whichever stats the owner's plan names, and the
 // description carries the attributes it does not.
 
@@ -321,11 +320,10 @@ function renderBuddyAdmin() {
   ];
   return `
     <div class="admin-card">
-      <p class="admin-card-title">Buddy (L15 → L22)</p>
+      <p class="admin-card-title">Buddy (L22)</p>
       <p class="helper" style="margin-bottom:10px;">
-        All attributes are live — D40 dropped eyes/nose only because raster
-        sheets cannot recolour, and there are no sheets. The creator now asks
-        only for a name and pronouns; every appearance attribute lives here.
+        All attributes are live. The creator now asks only for a name and
+        pronouns; every appearance attribute lives here.
         <strong>While <code>BUDDY_SINGLE_ART</code> is on (js/config.js) these
         dropdowns are inert</strong> — every stage draws the one illustration.
       </p>

@@ -48,7 +48,7 @@ with create-flow; see [one product](docs/app-contracts.md#one-product-no-journey
 | Starting, syncing, shipping, browser PR handoff | [docs/workflow.md](docs/workflow.md) |
 | Preparing a snapshot, selector change, or deployment | [docs/publishing.md](docs/publishing.md) |
 | Changing app behavior | [docs/app-contracts.md](docs/app-contracts.md), [architecture](app/docs/architecture.md) |
-| Resolving product requirements | [plan.md](plan.md) §0 L1–L22, then `v3 Files/spec/docs/DECISIONS.md` |
+| Resolving product requirements or a cited L##/D## ID | [docs/decisions.md](docs/decisions.md) |
 | Testing | [docs/testing.md](docs/testing.md) |
 | Tracking and participant URLs | [app/docs/useberry.md](app/docs/useberry.md) |
 | Looking up historical decisions | `docs/history/`, `app/PROGRESS.md` (reference, not a task queue) |

@@ -1,4 +1,4 @@
-// ─── Goals engine (05-goals, L3) ─────────────────────────────────────────────
+// ─── Goals engine (05-goals) ─────────────────────────────────────────────────
 // Rebuilt to the v3 model. v2's Goals V2 module — frozen baselines, derived
 // sprints, a seeded cohort, medals — is not carried over; it stays in
 // versions/v2/ and remains testable from the gate.

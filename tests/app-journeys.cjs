@@ -72,8 +72,8 @@ function loadJourneys(only) {
   return journeys.filter(j => only.includes(j.id));
 }
 
-// The nine skip-setup profiles (plan L26): three places by cost of living,
-// three incomes relative to that place.
+// The nine skip-setup profiles (docs/decisions.md L26): three places by cost
+// of living, three incomes relative to that place.
 const PROFILES = [];
 for (const tier of ['above', 'at', 'below']) for (const level of ['under', 'at', 'over']) {
   PROFILES.push({ id: tier + '_' + level, params: { tier, level } });

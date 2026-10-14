@@ -128,7 +128,7 @@ function renderBudgetPaywallAdmin() {
       <p class="helper" style="margin-bottom:10px;">
         <code>BUDGET_PAYWALL</code> is <strong>${on ? "on" : "off"}</strong>
         (js/config.js). It overrides spec decision D31 (&ldquo;no ads and no
-        paywalls&rdquo;); the override is recorded as L27 in plan.md §0.
+        paywalls&rdquo;); the override is recorded as L27 in docs/decisions.md.
       </p>
       <div class="input-group">
         <label>Strict — there is no way through</label>

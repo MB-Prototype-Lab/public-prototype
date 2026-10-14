@@ -1674,7 +1674,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .cmp-compact:last-of-type { border-bottom: 0; }
 .cmp-compact-name { font-size: 12px; font-weight: 700; flex: 1; }
 
-/* ─── Phase 2.5 repaint (D36 / L19) ───────────────────────────────────────────
+/* ─── Phase 2.5 repaint (D36) ─────────────────────────────────────────────────
    Shape, depth and motion from 09-design-system, applied as overrides so the
    v2 rules above stay readable rather than being rewritten line by line.
 
@@ -1790,7 +1790,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 .admin .button.secondary:not(:disabled):hover { background: rgba(49, 94, 251, .06); }
 
-/* ─── Buddy stage (L15) ───────────────────────────────────────────────────────
+/* ─── Buddy stage ─────────────────────────────────────────────────────────────
    A described placeholder, not art. Fully round per 09-design-system, sage
    ground because the buddy stage is a positive surface. */
 .buddy-stage {

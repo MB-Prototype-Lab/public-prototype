@@ -1,6 +1,6 @@
 # Current app contracts
 
-Read alongside app/docs/architecture.md. docs/workflow.md governs operations; progress logs are historical. Tracking is now frozen by release configuration; see docs/publishing.md.
+Read alongside app/docs/architecture.md. docs/workflow.md governs operations; progress logs are historical. Tracking is now frozen by release configuration; see docs/publishing.md. Decision IDs cited here (L##, D##) are in [decisions](decisions.md).
 
 ## Combined prototype behavior
 
@@ -96,15 +96,15 @@ Telltales:
   product's own start function, inside the full journey, without hand-off or return
   state. A study that needs a contained or shortened journey uses a Flow.
 - Recorded product settings, each kept at its recorded value; changing one is a
-  product decision, never a study: `BUDGET_PAYWALL = true` (plan.md §0 L27),
+  product decision, never a study: `BUDGET_PAYWALL = true` (L27),
   `PROFILE_PICKER = true` (L26), `LESSON_REUSE_FRAMING = false` (above). The
   presentation and calculation settings `BUDDY_SINGLE_ART`, `ONB_FILM_ANY_LOOK` and
   `BAND_PRORATE` do not change the journey. A new journey-affecting setting needs a
-  PM decision recorded in plan.md §0.
+  recorded PM decision; see [decisions](decisions.md).
 - Dormant code that nothing turns on, such as unused onboarding steps. The ban
   applies to whatever would turn it on.
 
-**Deprecated:** `SKIP_ONBOARDING` (spec D07) is a build-time entry switch. When true,
+**Deprecated:** `SKIP_ONBOARDING` is a build-time entry switch. When true,
 every session starts at the returning-user login with a six-day streak instead of
 onboarding. It is kept, off, pending a decision on its replacement. Do not extend
 it, flip it for a study or copy its pattern; a shortened or returning-user start
@@ -118,7 +118,8 @@ It is not the onboarding Skip button, which is session state.
 3. If unsure: can a tester reach every branch by using the app or Tools?
 
 A yes to the first two (or a no to the third) means a journey switch. Move the
-behavior into a Flow, or record an approved product decision first.
+behavior into a Flow, or record an approved product decision in
+[decisions](decisions.md) first.
 
 ## Traps that fail silently
 
@@ -413,7 +414,7 @@ save semantics, and requires PM verification of the integrated app before the PR
 
 - Don't build sprite-sheet `background-position` cropping. **L22 allows
   owner-supplied buddy illustrations, but they are separate files chosen by
-  buddy state — not sheets addressed by offset.** D39's cropping machinery stays
+  buddy state — not sheets addressed by offset.** The cropping machinery stays
   unbuilt.
 - Don't delete the descriptive buddy frame now that art exists. It is the
   **fallback** (L22): no image set covers every breed x coat x pattern x eyes x

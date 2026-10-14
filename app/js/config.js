@@ -1,8 +1,8 @@
 // ─── Build configuration ──────────────────────────────────────────────────────
 // Loads FIRST, before any data or app file. Nothing here depends on anything.
 
-// DEPRECATED — D06/D07, a build-time entry switch kept off pending a decision on
-// its replacement (docs/future-work.md). Do not extend it or flip it for a study:
+// DEPRECATED — a build-time entry switch kept off pending a decision on its
+// replacement (docs/future-work.md). Do not extend it or flip it for a study:
 // a shortened or returning-user start is a Flow (docs/app-contracts.md, "One
 // product: no journey switches"). It is not the onboarding Skip button.
 //
@@ -12,8 +12,8 @@
 // Default is false per the spec.
 const SKIP_ONBOARDING = false;
 
-// RECORDED PRODUCT SETTING (plan.md §0 L26) — the "Skip all setup" profile
-// picker. Changing it is a product decision, never a study.
+// RECORDED PRODUCT SETTING (docs/decisions.md L26) — the "Skip all setup"
+// profile picker. Changing it is a product decision, never a study.
 //
 // Skipping used to be silent: every write in onbFinish() is guarded, so a
 // skipped field fell through to the persona and the tester spent the session as
@@ -52,13 +52,15 @@ const USEBERRY_TRACKING = window.MB_RELEASE.tracking === true;
 // false -> the real budget comes back, unchanged
 //
 // ⚠ THIS OVERRIDES A SPEC DECISION. D31 is "No ads and no paywalls appear",
-// and six places in v4 cited it. plan.md §0 L27 records the override; without
-// that record the next reader finds D31, calls this a bug, and removes it.
+// and six places in v4 cited it. docs/decisions.md L27 records the override;
+// without that record the next reader finds D31, calls this a bug, and removes
+// it.
 //
-// A FLAG RATHER THAN A DELETION. It is a recorded product setting (plan.md §0
-// L27), and turning it off must bring the real tab back without unwinding
-// anything. The ten functions in screens/budget-v3.js are that tab; deleting
-// its call site would orphan them into sweep.sh §7b's newly-unreferenced warning.
+// A FLAG RATHER THAN A DELETION. It is a recorded product setting
+// (docs/decisions.md L27), and turning it off must bring the real tab back
+// without unwinding anything. The ten functions in screens/budget-v3.js are
+// that tab; deleting its call site would orphan them into sweep.sh §7b's
+// newly-unreferenced warning.
 //
 // ⚠ IT GUARDS THE TAB, NOT THE BUDGET. Owner's call, and deliberately narrow:
 // the daily task, the Home task, budget-update-confirm's Rebuild and two deep

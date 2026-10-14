@@ -8,7 +8,8 @@
 // applies — the screen shows the seeded plan rather than a blank.
 
 function renderBudgetV3() {
-  // The tab is a paywall now (js/config.js, plan.md §0 L27 overriding D31).
+  // The tab is a paywall now (js/config.js, docs/decisions.md L27 overriding
+  // D31).
   // A branch rather than a deletion: everything below stays referenced and
   // flipping the flag restores the budget with nothing to unwind.
   if (typeof BUDGET_PAYWALL !== "undefined" && BUDGET_PAYWALL) return renderBudgetPaywall();

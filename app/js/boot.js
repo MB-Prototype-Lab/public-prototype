@@ -53,7 +53,7 @@ function bootV3() {
   state.trialAccepted = null;
   state.buddyLevel = PERSONA.state.buddyLevel;
 
-  // D06/D07 — the only thing SKIP_ONBOARDING changes at boot.
+  // D06 — the only thing SKIP_ONBOARDING changes at boot.
   state.streak = SKIP_ONBOARDING
     ? PERSONA.state.streakDays              // 6 — straight to home
     : PERSONA.state.streakDaysIfOnboarded;  // 1 — after onboarding
@@ -129,7 +129,7 @@ function bootV3() {
   // path — inputMode: bubbles_primary).
   state.chat = { messages: [], bubbles: (BUDDY_RESPONSES.openingBubbles || []).slice() };
 
-  // ── Entry point (D06/D07) ──────────────────────────────────────────────────
+  // ── Entry point (D06) ──────────────────────────────────────────────────────
   // The whole seam is this one branch plus the streak above. Flipping
   // SKIP_ONBOARDING must not require unwinding anything else.
   // The home stack's ROOT is always "home" — it is where every task and every
