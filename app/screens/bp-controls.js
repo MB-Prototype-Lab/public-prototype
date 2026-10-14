@@ -187,8 +187,7 @@ function bpSetSaved(raw) {
 }
 
 /**
- * Commit (§10). Saves the session, creates at most ONE goal, and stores the
- * reminder. A new commit replaces the old goal rather than adding a second —
+ * Commit (§10). Saves the session and creates at most ONE goal. A new commit replaces the old goal rather than adding a second —
  * two savings goals for the same car is a tester wondering which is theirs.
  */
 function bpCommit(opts) {
@@ -254,15 +253,11 @@ function bpCommit(opts) {
     toSave: afford.toSave,
     purchaseDate: date,
     goalId: goalId,
-    remindBudget: !!s.plan.remind,
-    budgetFigure: leasing ? bpLeaseFigures(card).payment : bpBudgetFigure(card),
-    taskDue: (!goalId && s.plan.remind) ? date : null,   // §8: no goal → a task on the purchase date
-    reminderClosed: false,
     savedAt: todayISO()
   };
 
   bpLog(goalId ? "bp_goal_set" : "bp_plan_saved", {
-    target: afford.toSave, date: date, remindBudget: !!s.plan.remind, card: card.id, payMode: s.pay.mode
+    target: afford.toSave, date: date, card: card.id, payMode: s.pay.mode
   });
 
   navGoTabRoot("goals");

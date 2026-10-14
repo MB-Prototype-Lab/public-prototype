@@ -38,7 +38,7 @@ const BIG_PURCHASE =
     "defaultTerm": 60
   },
 
-  "plan": { "defaultMonthsOut": 12, "roundTo": 100, "notYetDays": 14 },
+  "plan": { "defaultMonthsOut": 12, "roundTo": 100 },
 
   "vehicle": {
     "types": [

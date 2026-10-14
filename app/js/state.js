@@ -219,7 +219,7 @@ const state = {
   // bp           the in-flight run: setup answers, financing, per-card overrides,
   //              the selected card, sheets, Buddy. Cleared by bpStart()
   // bigPurchase  the SAVED plan bpCommit() writes: the chosen card, its stack at
-  //              3 and 5 years, the goal id, the reminder and its figure
+  //              3 and 5 years, the goal id
   // bpEvents     session log (spec §12), in-memory under D03
   bp: null,
   bigPurchase: null,

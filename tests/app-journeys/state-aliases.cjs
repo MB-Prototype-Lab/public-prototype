@@ -35,4 +35,10 @@ module.exports = [
   { removed: 'lifestyleAnswered', why: 'which lifestyle answers Help me out marked as the tester\'s own; nothing read it' },
   { removed: 'lifestyleDetail', why: 'stated lifestyle amounts nothing filled or read' },
   { removed: 'postResultTheme', why: 'the lifestyle theme for a post-result context nothing sets' },
+  { removed: 'bp.plan.remind', why: 'the Big purchase budget reminder box, which nothing ticked; the reminder is deleted' },
+  { removed: 'bigPurchase.remindBudget', why: 'always false: the deleted Big purchase reminder\'s switch' },
+  { removed: 'bigPurchase.budgetFigure', why: 'the monthly figure only the deleted Big purchase reminder offered' },
+  { removed: 'bigPurchase.taskDue', why: 'the deleted Big purchase reminder\'s due date; always null' },
+  { removed: 'bigPurchase.reminderClosed', why: 'whether the deleted Big purchase reminder was dismissed' },
+  { removed: 'bpEvents.*.detail.remindBudget', why: 'the deleted Big purchase reminder\'s switch, copied into the commit log entry' },
 ];

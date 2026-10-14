@@ -4,8 +4,8 @@
 // NOT its own screen. It is a highlighted box at the bottom of the landing,
 // answered in place, so picking what to buy is never held up behind it.
 //
-// Also home to the Goals-tab surfaces the tool leaves behind: the entry card,
-// "Back to your car" after an ESF detour, and the two budget reminders (§8).
+// Also home to the Goals-tab surfaces the tool leaves behind: the entry card
+// and "Back to your car" after an ESF detour.
 
 // ── Entry ────────────────────────────────────────────────────────────────────
 
@@ -279,21 +279,6 @@ function renderBpGoalsCards() {
       </div>`);
   }
 
-  const prompt = bpReminderDue();
-  if (prompt) out.push(renderBpReminder(prompt));
-
-  const bp = state.bigPurchase;
-  if (bp && bp.budgetIntent && !bp.budgetIntentSeen) {
-    out.push(`
-      <div class="card bp-goal-card">
-        <p class="task-title" style="margin:0 0 4px;">Noted</p>
-        <p class="helper" style="margin:0 0 10px;">${h(bpMoney(bp.budgetIntent.monthly))} a month for
-          ${h(bp.noun)}. This prototype doesn't change your budget yet.</p>
-        <button class="button secondary full" type="button"
-                onclick="state.bigPurchase.budgetIntentSeen=true;render()">OK</button>
-      </div>`);
-  }
-
   out.push(`
     <button class="card bp-entry" type="button" onclick="bpOpen()">
       <span>
@@ -306,73 +291,6 @@ function renderBpGoalsCards() {
   return out.join("");
 }
 
-/**
- * Which reminder, if any, is due (§8).
- *   Goal set + box ticked   → when the goal is reached
- *   No goal  + box ticked   → when the purchase date arrives, as a task
- */
-function bpReminderDue() {
-  const bp = state.bigPurchase;
-  if (!bp || !bp.remindBudget || bp.reminderClosed) return null;
-  if (bp.goalId) {
-    const g = (state.tacticalGoals || []).find(x => x.id === bp.goalId);
-    if (g && goalCurrent(g) >= (Number(g.target) || 0)) return { source: "goal" };
-    return null;
-  }
-  if (bp.taskDue && todayISO() >= bp.taskDue) return { source: "task" };
-  return null;
-}
-
-function renderBpReminder(p) {
-  const bp = state.bigPurchase;
-  if (p.source === "goal") {
-    return `
-      <div class="card bp-goal-card">
-        <p class="task-title" style="margin:0 0 4px;">You reached your ${bp.payMode === "loan" ? "down payment" : "savings"} goal</p>
-        <p class="helper" style="margin:0 0 10px;">Want to add ${h(bpMoney(bp.budgetFigure))} a month to your
-          budget for this car?</p>
-        <div class="bp-row2">
-          <button class="button full" type="button" onclick="bpBudgetAnswer('goal','added')">Add it</button>
-          <button class="button secondary full" type="button" onclick="bpBudgetAnswer('goal','declined')">Not now</button>
-        </div>
-      </div>`;
-  }
-  return `
-    <div class="card bp-goal-card">
-      <p class="task-title" style="margin:0 0 10px;">Did you buy ${h(bp.noun)}?</p>
-      <div class="bp-stack">
-        <button class="button full" type="button" onclick="bpBudgetAnswer('task','added')">
-          Yes — add ${h(bpMoney(bp.budgetFigure))} a month to my budget</button>
-        <button class="button secondary full" type="button" onclick="bpBudgetAnswer('task','notYet')">
-          Not yet — ask me in 2 weeks</button>
-        <button class="button secondary full" type="button" onclick="bpBudgetAnswer('task','declined')">
-          I decided not to</button>
-      </div>
-    </div>`;
-}
-
-/**
- * The answer to either reminder. Nothing enters the budget without the tap,
- * and for the prototype "Add it" records INTENT and confirms — budget
- * write-through is out of scope (§8).
- */
-function bpBudgetAnswer(source, answer) {
-  const bp = state.bigPurchase;
-  if (!bp) return;
-  bpLog("bp_budget_prompt", { source: source, answer: answer });
-  if (answer === "added") {
-    bp.budgetIntent = { monthly: bp.budgetFigure, at: todayISO() };
-    bp.reminderClosed = true;
-  } else if (answer === "notYet") {
-    const d = new Date();
-    d.setDate(d.getDate() + (((bpData().plan || {}).notYetDays) || 14));
-    bp.taskDue = d.toISOString().slice(0, 10);
-  } else {
-    bp.reminderClosed = true;
-  }
-  render();
-}
-
 // ── Admin, shared by every bp screen ─────────────────────────────────────────
 
 function renderBpAdminCommon() {
@@ -383,11 +301,7 @@ function renderBpAdminCommon() {
       <div class="admin-card">
         <p class="admin-card-title">Saved plan</p>
         <p class="helper">${h(bp.noun)} · ${h(bp.payMode)} · to save ${h(bpMoney(bp.toSave))}
-          by ${h(bp.purchaseDate)} · remind ${bp.remindBudget ? "yes" : "no"}</p>
-        <button class="button secondary" style="width:100%;font-size:11px;margin-top:4px;" type="button"
-                onclick="bpAdminReachGoal()">Mark the goal reached</button>
-        <button class="button secondary" style="width:100%;font-size:11px;margin-top:4px;" type="button"
-                onclick="bpAdminDueToday()">Make the purchase date today</button>
+          by ${h(bp.purchaseDate)}</p>
       </div>` : ""}
     <div class="admin-card">
       <p class="admin-card-title">Big purchase log (${(state.bpEvents || []).length})</p>
@@ -395,21 +309,4 @@ function renderBpAdminCommon() {
         ? events.map(e => `<p class="helper">${h(e.at)} · <code>${h(e.event)}</code> ${h(JSON.stringify(e.detail))}</p>`).join("")
         : `<p class="helper">Nothing logged yet. In-memory only — it resets on refresh (D03).</p>`}
     </div>`;
-}
-
-function bpAdminReachGoal() {
-  const bp = state.bigPurchase;
-  if (!bp) return;
-  const g = (state.tacticalGoals || []).find(x => x.id === bp.goalId);
-  if (g) g.current = g.target;
-  bp.reminderClosed = false;
-  navGoTabRoot("goals");
-}
-
-function bpAdminDueToday() {
-  const bp = state.bigPurchase;
-  if (!bp) return;
-  bp.taskDue = todayISO();
-  bp.reminderClosed = false;
-  navGoTabRoot("goals");
 }

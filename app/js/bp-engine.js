@@ -88,8 +88,7 @@ function bpStart(category) {
     selected: "pick",
     plan: {
       saved: 0,
-      monthsOut: ((d.plan || {}).defaultMonthsOut) || 12,
-      remind: false
+      monthsOut: ((d.plan || {}).defaultMonthsOut) || 12
     },
     ui: { sheet: null, edit: null },
     buddy: null
@@ -475,16 +474,6 @@ function bpSaveToAfford(card) {
     toSave: toSave, months: months,
     monthly: toSave ? Math.ceil(toSave / months) : 0
   };
-}
-
-/**
- * The figure the budget reminder offers — cash leaving the account each month.
- * The PAYMENT for a loan, the running costs for a cash buyer (§8). Depreciation
- * never leaves the account, so it is never in this number.
- */
-function bpBudgetFigure(card) {
-  const st = bpStack(card);
-  return bpRound(st.mode === "loan" ? st.payment : st.monthly, 5);
 }
 
 // ── Log (§12) ────────────────────────────────────────────────────────────────
