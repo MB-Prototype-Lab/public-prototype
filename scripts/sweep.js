@@ -1180,8 +1180,8 @@ if (!__FILM_MANIFEST) {
       drift.slice(0, 4).join("\n          ") +
       (drift.length ? "\n          → re-run tools/film/build-films.mjs --render" : ""));
 
-  // Every look x script the app can ASK for must have been rendered, or that
-  // combination silently drops to the SVG fallback and reads as "broken video".
+  // Every look x script the app can ASK for, so the outstanding renders are
+  // known. A missing one plays another look's render until it is rendered.
   // The FULL set the app can ask for, from the script data — not from what has
   // already been rendered. Deriving it from the manifest made the coverage check
   // vacuous: it could only ever compare the renders against themselves.
