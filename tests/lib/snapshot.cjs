@@ -206,4 +206,4 @@ function lineDiff(a, b, context = 3, limit = 80) {
   return out.length > limit ? out.slice(0, limit).concat(['  … ' + (out.length - limit) + ' more diff lines']) : out;
 }
 
-module.exports = { idRewriter, normalizeTree, visibleText, stableJson, flatten, sha, stateDelta, handlerIdents, lineDiff, normCss, normStyle };
+module.exports = { idRewriter, normalizeTree, visibleText, stableJson, flatten, sha, stateDelta, handlerIdents, KEYWORDS, lineDiff, normCss, normStyle };

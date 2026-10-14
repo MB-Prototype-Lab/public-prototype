@@ -61,6 +61,11 @@ const SPECS = [
     edits: { 'index.html': [['<p class="admin-title" style="margin:0;">Admin Tools</p>', '<p class="admin-title" style="margin:0;">Tools</p>']] },
   },
   {
+    id: 'login-value-to-checked', expect: 'wiring', journeys: ['tools-tour'],
+    why: 'the Tools "Prompt answered" select reading .checked, which a select does not have',
+    edits: { 'screens/login.js': [["state.dailyPromptAnswered=(this.value==='true')", "state.dailyPromptAnswered=(this.checked==='true')"]] },
+  },
+  {
     id: 'consistent-rename', expect: 'rename', journeys: ['picker-tour'],
     why: 'a handler renamed everywhere (reported as a rename only)',
     edits: { 'screens/budget-paywall.js': [[/budgetPaywallTap/, 'paywallPlanTap']] },
@@ -95,7 +100,7 @@ function outcome(cmp, results) {
   const gate = results.flatMap(r => r.errors.concat(r.gate));
   if (cmp.participant.length || gate.length) return 'caught';
   if (cmp.tools.length) return 'tools';
-  if (cmp.wiring.length) return 'wiring';
+  if (cmp.wiring.length || cmp.useberry.size) return 'wiring';
   if (cmp.renames.size) return 'rename';
   return 'none';
 }

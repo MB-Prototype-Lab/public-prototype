@@ -82,10 +82,38 @@ check('virtual clock fires timers in due order and only when advanced', () => {
 });
 
 check('rename detection accepts consistent renames only', () => {
-  const { renameMap } = require('../app-journeys.cjs');
+  const { renameMap, compare } = require('../app-journeys.cjs');
   assert.ok(renameMap('button onclick=fooA(1)\nbutton onclick=fooA(2)', 'button onclick=fooB(1)\nbutton onclick=fooB(2)'));
   assert.equal(renameMap('button onclick=fooA(1)\nbutton onclick=barA(2)', 'button onclick=fooB(1)\nbutton onclick=fooB(2)'), null);
   assert.equal(renameMap('button onclick=fooA(1)', 'button onclick=fooA(2)'), null);
+  // Journeys as {id: [wiring per step]}, compared the way --against does.
+  const runs = journeys => Object.entries(journeys).map(([id, steps]) =>
+    ({ id, errors: [], gate: [], records: steps.map((wiring, i) => ({ label: String(i), participant: '', tools: '', wiring })) }));
+  const judge = (base, head) => {
+    const c = compare(runs(base), runs(head));
+    return { renames: Object.fromEntries(c.renames), useberry: Object.fromEntries(c.useberry), wiring: c.wiring.map(d => d.id + '@' + d.where) };
+  };
+  const nothing = { renames: {}, useberry: {} };
+  // A consistent rename, its click-tracking names included, across journeys.
+  assert.deepEqual(judge(
+    { a: ['button onclick=fooA(1)\nbutton data-ub=home/fooA:1', 'x onclick=go()'], b: ['button onclick=fooA(2)'] },
+    { a: ['button onclick=fooB(1)\nbutton data-ub=home/fooB:1', 'x onclick=go()'], b: ['button onclick=fooB(2)'] }),
+    { renames: { 'fooA→fooB': 3 }, useberry: {}, wiring: [] });
+  // Two handlers swapped: each new name was already in use.
+  assert.deepEqual(judge({ a: ['button onclick=fooA()\nbutton onclick=fooB()'] }, { a: ['button onclick=fooB()\nbutton onclick=fooA()'] }),
+    Object.assign({ wiring: ['a@0'] }, nothing));
+  // A flipped literal and a property read instead of another.
+  assert.deepEqual(judge({ a: ['button onclick=setOn(true)'] }, { a: ['button onclick=setOn(false)'] }), Object.assign({ wiring: ['a@0'] }, nothing));
+  assert.deepEqual(judge({ a: ["select onchange=state.x=(this.value==='true')"] }, { a: ["select onchange=state.x=(this.checked==='true')"] }),
+    Object.assign({ wiring: ['a@0'] }, nothing));
+  // One name renamed two ways, or kept in a step that did not change.
+  assert.deepEqual(judge({ a: ['button onclick=fooA()'], b: ['button onclick=fooA()'] }, { a: ['button onclick=fooB()'], b: ['button onclick=fooC()'] }),
+    Object.assign({ wiring: ['a@0', 'b@0'] }, nothing));
+  assert.deepEqual(judge({ a: ['button onclick=fooA()', 'i onclick=fooA()'] }, { a: ['button onclick=fooB()', 'i onclick=fooA()'] }),
+    Object.assign({ wiring: ['a@0'] }, nothing));
+  // A click-tracking name that changed with no handler rename behind it.
+  assert.deepEqual(judge({ a: ['button onclick=fooA()\nbutton data-ub=home/fooA'] }, { a: ['button onclick=fooA()\nbutton data-ub=home/fooZ'] }),
+    { renames: {}, useberry: { 'home/fooA→home/fooZ': 1 }, wiring: [] });
 });
 
 check('a series compares each commit with its merge base, so a later sync with main is not blamed on it', async () => {

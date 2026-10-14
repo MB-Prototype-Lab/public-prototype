@@ -139,52 +139,128 @@ function printGateSummary(results, cov, nondeterministic) {
 // ── Comparison ───────────────────────────────────────────────────────────────
 
 const TOKEN = /[A-Za-z_$][\w$]*|\d+(?:\.\d+)?|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\S/g;
+const NAME = /^[A-Za-z_$][\w$]*$/;
+// A wiring line names the element, then one handler or its click-tracking name.
+const WIRING_LINE = /^(\S+ (?:on[\w-]*|data-ub)=)(.*)$/;
 
-// Is b the same wiring as a with identifiers consistently renamed?
-function renameMap(aText, bText) {
+function splitWiringLine(line) {
+  const m = line.match(WIRING_LINE);
+  // A line that does not match continues a handler written over several lines.
+  if (!m) return { head: '', ub: false, value: line, toks: line.match(TOKEN) || [] };
+  return { head: m[1], ub: m[1].endsWith(' data-ub='), value: m[2], toks: m[2].match(TOKEN) || [] };
+}
+
+// Not a property: neither after "." nor an object literal key.
+const namePosition = (toks, k) => toks[k - 1] !== '.' && !(toks[k + 1] === ':' && (toks[k - 1] === '{' || toks[k - 1] === ','));
+const renameable = (toks, k) => NAME.test(toks[k]) && !snap.KEYWORDS.has(toks[k]) && namePosition(toks, k);
+
+// The token substitutions that turn one step's wiring into the other's:
+// handler pairs, and each changed click-tracking name with its pairs (null when
+// the name changed length). Null when the change is not a substitution.
+function stepSubstitutions(aText, bText) {
   const a = aText.split('\n'), b = bText.split('\n');
   if (a.length !== b.length) return null;
-  const fwd = new Map(), back = new Map(), counts = new Map();
+  const handler = [], ub = [];
   for (let i = 0; i < a.length; i++) {
     if (a[i] === b[i]) continue;
-    const ta = a[i].match(TOKEN) || [], tb = b[i].match(TOKEN) || [];
-    if (ta.length !== tb.length) return null;
-    for (let k = 0; k < ta.length; k++) {
-      if (ta[k] === tb[k]) continue;
-      if (!/^[A-Za-z_$]/.test(ta[k]) || !/^[A-Za-z_$]/.test(tb[k])) return null;
-      if ((fwd.has(ta[k]) && fwd.get(ta[k]) !== tb[k]) || (back.has(tb[k]) && back.get(tb[k]) !== ta[k])) return null;
-      fwd.set(ta[k], tb[k]); back.set(tb[k], ta[k]);
-      const key = ta[k] + '→' + tb[k];
-      counts.set(key, (counts.get(key) || 0) + 1);
+    const wa = splitWiringLine(a[i]), wb = splitWiringLine(b[i]);
+    if (wa.head !== wb.head) return null;                    // another element or attribute
+    const sameShape = wa.toks.length === wb.toks.length;
+    if (!sameShape && !wa.ub) return null;
+    const pairs = [];
+    if (sameShape) for (let k = 0; k < wa.toks.length; k++) {
+      if (wa.toks[k] !== wb.toks[k]) pairs.push({ key: wa.toks[k] + '→' + wb.toks[k], from: wa.toks[k], to: wb.toks[k], ok: renameable(wa.toks, k) && renameable(wb.toks, k) });
+    }
+    if (wa.ub) ub.push({ key: wa.value + '→' + wb.value, pairs: sameShape ? pairs : null });
+    else handler.push(...pairs);
+  }
+  return { handler, ub };
+}
+
+// Is name used as a name (not a property) by any handler in these texts?
+function usesName(texts, name) {
+  for (const t of texts) {
+    if (!t.includes(name)) continue;
+    for (const line of t.split('\n')) {
+      if (!line.includes(name)) continue;
+      const w = splitWiringLine(line);
+      if (!w.ub && w.toks.some((tok, k) => tok === name && namePosition(w.toks, k))) return true;
     }
   }
-  return counts;
+  return false;
+}
+
+// Decides over the whole comparison which wiring changes are renames. A
+// substitution is a rename only when every instance of it renames a name (no
+// keyword, literal or property), it maps one name to one name everywhere, the
+// new name was not used before and the old one is used nowhere after (else it
+// is a swap or a merge). A click-tracking name change counts as part of a rename
+// only when an accepted handler rename explains it; any other is reported as a
+// Useberry click name change.
+function judgeWiring(steps, baseTexts, headTexts) {
+  const out = { wiring: [], renames: new Map(), useberry: new Map() };
+  const found = steps.map(s => (s.paired ? stepSubstitutions(s.bt, s.ht) : null));
+  const handlerPairs = found.flatMap(f => (f ? f.handler : []));
+  const fwd = new Map(), back = new Map(), bad = new Set();
+  const link = (m, k, v) => { if (!m.has(k)) m.set(k, new Set()); m.get(k).add(v); };
+  for (const p of handlerPairs) { link(fwd, p.from, p.to); link(back, p.to, p.from); if (!p.ok) bad.add(p.key); }
+  const base = [...new Set(baseTexts)], head = [...new Set(headTexts)];
+  const accepted = new Set();
+  for (const p of handlerPairs) {
+    if (accepted.has(p.key) || bad.has(p.key)) continue;
+    if (fwd.get(p.from).size !== 1 || back.get(p.to).size !== 1 || usesName(base, p.to) || usesName(head, p.from)) bad.add(p.key);
+    else accepted.add(p.key);
+  }
+  const bump = (m, k) => m.set(k, (m.get(k) || 0) + 1);
+  const explained = pairs => !!pairs && pairs.every(p => accepted.has(p.key));
+  steps.forEach((s, i) => {
+    const f = found[i];
+    const renamed = !!f && explained(f.handler);
+    if (!renamed) out.wiring.push({ id: s.id, where: s.where, diff: snap.lineDiff(s.bt.split('\n'), s.ht.split('\n')) });
+    if (!f) return;
+    for (const u of f.ub) if (!explained(u.pairs)) bump(out.useberry, u.key);
+    if (renamed) for (const p of f.handler.concat(f.ub.filter(u => explained(u.pairs)).flatMap(u => u.pairs))) bump(out.renames, p.key);
+  });
+  return out;
+}
+
+// Is b the same wiring as a with names consistently renamed? The renames, or null.
+function renameMap(aText, bText) {
+  const r = judgeWiring([{ id: '-', where: '-', bt: aText, ht: bText, paired: true }], [aText], [bText]);
+  return r.wiring.length || r.useberry.size ? null : r.renames;
 }
 
 function compare(baseResults, headResults) {
-  const out = { participant: [], tools: [], wiring: [], renames: new Map() };
+  const out = { participant: [], tools: [], wiring: [], renames: new Map(), useberry: new Map() };
   const byId = new Map(baseResults.map(r => [r.id, r]));
+  const wiringSteps = [], baseWiring = [], headWiring = [];
   for (const h of headResults) {
     const b = byId.get(h.id);
     if (!b) { out.participant.push({ id: h.id, where: 'journey is new', diff: [] }); continue; }
     const be = b.errors.join('\n'), he = h.errors.join('\n');
     if (be !== he) out.participant.push({ id: h.id, where: 'journey errors differ', diff: snap.lineDiff(be.split('\n'), he.split('\n')) });
+    for (const r of b.records) baseWiring.push(r.wiring);
+    for (const r of h.records) headWiring.push(r.wiring);
     const n = Math.max(b.records.length, h.records.length);
     for (const ch of ['participant', 'tools', 'wiring']) {
       for (let i = 0; i < n; i++) {
         const br = b.records[i], hr = h.records[i];
         const bt = br ? br[ch] : '(no step)', ht = hr ? hr[ch] : '(no step)';
         if (bt === ht) continue;
-        if (ch === 'wiring') {
-          const m = br && hr ? renameMap(bt, ht) : null;
-          if (m) { for (const [k, c] of m) out.renames.set(k, (out.renames.get(k) || 0) + c); continue; }
-        }
-        out[ch].push({ id: h.id, where: (hr || br).label, diff: snap.lineDiff(bt.split('\n'), ht.split('\n')) });
+        const where = (hr || br).label;
+        if (ch === 'wiring') { wiringSteps.push({ id: h.id, where, bt, ht, paired: !!(br && hr) }); continue; }
+        out[ch].push({ id: h.id, where, diff: snap.lineDiff(bt.split('\n'), ht.split('\n')) });
         if (ch === 'participant') break;          // later steps follow from the first change
       }
     }
   }
-  return out;
+  return Object.assign(out, judgeWiring(wiringSteps, baseWiring, headWiring));
+}
+
+// "a→b (3), c→d (1)", the first `limit` entries.
+function counted(map, limit = Infinity) {
+  const all = [...map].map(([k, c]) => k + ' (' + c + ')');
+  return all.slice(0, limit).join(', ') + (all.length > limit ? ', … ' + (all.length - limit) + ' more' : '');
 }
 
 function formatComparison(cmp, baseName, headName) {
@@ -202,7 +278,8 @@ function formatComparison(cmp, baseName, headName) {
   lines.push('Comparing ' + headName + ' with ' + baseName);
   section('Participant (phone)', cmp.participant);
   section('Tools', cmp.tools);
-  if (cmp.renames.size) lines.push('Wiring renames: ' + [...cmp.renames].map(([k, c]) => k + ' (' + c + ')').join(', '));
+  if (cmp.renames.size) lines.push('Wiring renames: ' + counted(cmp.renames));
+  if (cmp.useberry.size) lines.push('Useberry click names changed: ' + counted(cmp.useberry, 30));
   section('Wiring (other)', cmp.wiring);
   return lines.join('\n');
 }
@@ -301,6 +378,7 @@ async function seriesMode(args, journeys) {
         participant: vsBase.participant.length,
         tools: vsParent.tools.length,
         renames: [...vsParent.renames].map(([k, n]) => k + ' (' + n + ')'),
+        useberry: [...vsParent.useberry].map(([k, n]) => k + ' (' + n + ')'),
         wiring: vsParent.wiring.length,
         gate: gate.length,
       };
@@ -309,15 +387,16 @@ async function seriesMode(args, journeys) {
       console.log((row.participant || row.gate ? 'FAIL ' : 'ok   ') + subject);
       if (row.participant) {
         console.log('       Phone differs from its ' + baseName);
-        console.log(formatComparison({ participant: vsBase.participant, tools: [], wiring: [], renames: new Map() }, baseName, c).split('\n').slice(1, 25).map(l => '       ' + l).join('\n'));
+        console.log(formatComparison({ participant: vsBase.participant, tools: [], wiring: [], renames: new Map(), useberry: new Map() }, baseName, c).split('\n').slice(1, 25).map(l => '       ' + l).join('\n'));
       }
       if (row.tools) console.log('       Tools changed in ' + row.tools + ' steps (vs first parent ' + row.parent + ')');
       if (row.renames.length) console.log('       Wiring renames: ' + row.renames.join(', '));
+      if (row.useberry.length) console.log('       Useberry click names changed: ' + row.useberry.join(', '));
       if (row.wiring) console.log('       Wiring changed in ' + row.wiring + ' steps (vs first parent ' + row.parent + ')');
       if (row.gate) console.log('       ' + gate.slice(0, 5).join('\n       '));
     });
   });
-  const text = rows.map(r => [r.participant ? 'PHONE CHANGED' : 'phone same', r.tools ? 'tools changed' : '', r.renames.length ? 'renames ' + r.renames.join(', ') : '', r.wiring ? 'wiring changed' : '', r.gate ? 'GATE' : '', '·', r.commit].filter(Boolean).join(' ')).join('\n');
+  const text = rows.map(r => [r.participant ? 'PHONE CHANGED' : 'phone same', r.tools ? 'tools changed' : '', r.renames.length ? 'renames ' + r.renames.join(', ') : '', r.useberry.length ? 'click names changed' : '', r.wiring ? 'wiring changed' : '', r.gate ? 'GATE' : '', '·', r.commit].filter(Boolean).join(' ')).join('\n');
   if (args.out) {
     fs.mkdirSync(args.out, { recursive: true });
     fs.writeFileSync(path.join(args.out, 'series.txt'), text + '\n');
@@ -333,7 +412,7 @@ async function justifyMode(args, journeys) {
   const body = process.env.PR_BODY || '';
   const problems = [];
   const notes = [];
-  const channels = [['Participant', cmp.participant.length], ['Tools', cmp.tools.length], ['Wiring', cmp.wiring.length + cmp.renames.size]];
+  const channels = [['Participant', cmp.participant.length], ['Tools', cmp.tools.length], ['Wiring', cmp.wiring.length + cmp.renames.size + cmp.useberry.size]];
   // The browser check compares pictures, so it sees phone and Tools changes this
   // check cannot (a colour, a 1px shift). A declared change there is not an error
   // here; wiring has no picture, so only this check can confirm it.
