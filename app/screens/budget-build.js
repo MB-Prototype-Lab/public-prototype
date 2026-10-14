@@ -189,13 +189,8 @@ function bbBack() {
 }
 
 /**
- * Hand one line to the estimator, in BUDGET mode.
- *
- * The estimator already asks about habits rather than dollars across all
- * twelve categories, which is the same job — the only difference is where the
- * answer lands. So it takes a target rather than being duplicated
- * (screens/spend-estimator.js); "mtd" writes what you have spent, "budget"
- * writes what you are planning.
+ * Hand one line to Help me out, its own question engine (L25): it asks how the
+ * tester lives and calls bbApplyHelp with the figure.
  */
 function bbRunHelp(category) {
   if (!isCategory(category)) return;

@@ -11,7 +11,9 @@
 // not their totals. Each option carries a full-rate monthly estimate; we scale
 // by how far into the month we are (except bills already incurred, `fullMonth`)
 // to triangulate month-to-date, and write it into the "What you told me" layer
-// (state.mtd). Same day-clock cooldown as the journal, so nothing is re-asked.
+// (state.mtd). An answered question sits out the rest of the day on the
+// journal's day clock, unless every question for the category is sitting out
+// (see estimatorStart).
 
 function estimatorConfig() {
   return (typeof ESTIMATOR_QUESTIONS !== "undefined" && ESTIMATOR_QUESTIONS.config) || {};
@@ -120,40 +122,26 @@ function estimatorKnownSubscriptions() {
   };
 }
 
-// ─── Two destinations, one set of questions ──────────────────────────────────
-// "How often do you get coffee" answers the same thing whether the figure is
-// going to be what you SPENT or what you are PLANNING to spend. So the flow
-// takes a target rather than being duplicated:
-//
-//   "mtd"     the default — writes state.mtd, the "what you told me" layer
-//   "budget"  writes back into the budget builder's line (bbApplyHelp)
-//
-// Two behaviours differ, and both deliberately:
-//   · the day-clock cooldown does not apply in budget mode. It exists so the
-//     journal does not re-ask about today; letting it latch here would mean
-//     setting a budget silently blocks the tester from estimating that
-//     category's actuals for the rest of the session.
-//   · cancelling in budget mode hands the line back — it turns the "Help me
-//     out" toggle off. Otherwise Continue re-opens the same questions they
-//     just backed out of, forever.
-function estimatorStart(category, opts) {
+// ─── Starting ────────────────────────────────────────────────────────────────
+// A category with no questions in the bank has nothing to ask, so it does not
+// open (all twelve have questions today).
+function estimatorStart(category) {
   if (!isCategory(category)) return;
-  const target = (opts && opts.target) || "mtd";
   const all = estimatorQuestionsFor(category);
-  let qs = target === "budget" ? all.slice() : all.filter(q => !estimatorOnCooldown(q.id));
+  if (!all.length) return;
+  let qs = all.filter(q => !estimatorOnCooldown(q.id));
   // The day clock is seeded and never advances within a session (journalDayIndex
   // is SEED_STATE.journalHistory.length + 1; D03 wipes on refresh), so the
   // config's cooldownDays:1 latches PERMANENTLY the moment a question is
   // answered — `(day - day) < 1` is always true. Without this fallback the
-  // category's primary CTA leads to a dead-end "I'll ask again tomorrow" screen
-  // for the rest of the session, and a mis-tapped answer can never be corrected
+  // category's primary CTA would have nothing to ask for the rest of the
+  // session, and a mis-tapped answer could never be corrected
   // (the estimator is the only way to touch actuals — nothing takes a dollar
   // figure). Partial cooldowns still apply; only a fully-latched set reopens.
   if (!qs.length) qs = all;
   const known = estimatorKnown(category);
   state.estimator = { category: category, questions: qs, qIndex: 0, answers: {},
                       adjusted: null, confirmed: false,
-                      target: target,
                       // "known" → show what we hold first; "ask" → the questions.
                       stage: known ? "known" : "ask",
                       known: known, usedKnown: false };
@@ -282,16 +270,6 @@ function estimatorSubmit() {
   if (!answeredSomething && e.adjusted == null) { estimatorDiscard(); return; }
   const est = estimatorFinalValue();   // the user's correction, if they made one
 
-  if (e.target === "budget") {
-    // A budget line, not a spend figure. Nothing is committed to state.plan
-    // here either — the builder holds it until its own save goes through the
-    // baseline seam (L6).
-    if (typeof bbApplyHelp === "function") bbApplyHelp(e.category, est);
-    state.estimator = null;
-    navBack();   // back to the builder step that sent us
-    return;
-  }
-
   // Writes the "What you told me" layer for this category (L17). Spend-limit
   // goals track state.mtd live, so any goal on this category moves as a result.
   if (isCategory(e.category)) state.mtd[e.category] = est;
@@ -303,14 +281,6 @@ function estimatorSubmit() {
 }
 
 function estimatorDiscard() {
-  const e = state.estimator;
-  // Backing out of a budget line hands it back to the tester rather than
-  // leaving it flagged for questions they have just declined — otherwise
-  // Continue walks them straight back into the same flow.
-  if (e && e.target === "budget" && typeof bbToggleHelp === "function") {
-    const b = state.budgetBuild;
-    if (b && b.help && b.help[e.category]) bbToggleHelp(e.category);
-  }
   state.estimator = null;
   navBack();
 }
@@ -344,22 +314,6 @@ function renderSpendEstimator() {
   const cat = e.category;
   const qs = e.questions;
 
-  // Everything for this category was already asked today (cooldown).
-  if (!qs.length) {
-    return `
-      <div class="journal-shell">
-        <div class="journal-head">
-          <h1 class="title" style="font-size:20px;margin:0 0 6px;">All caught up on ${h(catLabel(cat))}</h1>
-          <p class="helper" style="margin:0;">You already told me about this today — I'll ask again tomorrow.</p>
-        </div>
-        <div class="journal-body"></div>
-        <div class="journal-foot">
-          <span></span>
-          <button class="button" type="button" onclick="estimatorDiscard()">Back</button>
-        </div>
-      </div>`;
-  }
-
   // Known step — what the app already holds, before it asks anything.
   if (e.stage === "known" && e.known) {
     return renderEstimatorKnown(e);
@@ -376,13 +330,13 @@ function renderSpendEstimator() {
       <div class="journal-shell">
         <div class="journal-head">
           <h1 class="title" style="font-size:20px;margin:0;">
-            ${e.target === "budget" ? "Here's what I'd budget" : "Here's my estimate"}
+            Here's my estimate
           </h1>
         </div>
         <div class="journal-body">
           <div class="card">
             <p class="helper" style="margin:0 0 2px;">
-              ${h(catLabel(cat))} ${e.target === "budget" ? "a month" : "so far this month"}
+              ${h(catLabel(cat))} so far this month
             </p>
             <p class="journal-total">${budgetFmt(est)}</p>
             ${e.usedKnown ? `
@@ -390,7 +344,7 @@ function renderSpendEstimator() {
                 From your ${h(e.known.items.length)} subscription${e.known.items.length === 1 ? "" : "s"} —
                 not an estimate.
               </p>` : ""}
-            ${replacing && e.target !== "budget" ? `
+            ${replacing ? `
               <p class="helper" style="margin:8px 0 0;">
                 This replaces what you'd told me before — ${budgetFmt(current)}
                 ${est < current ? "down" : "up"} to ${budgetFmt(est)}.
@@ -411,11 +365,9 @@ function renderSpendEstimator() {
           <label class="est-confirm">
             <input type="checkbox" ${e.confirmed ? "checked" : ""}
                    onchange="estimatorToggleConfirm()">
-            <span>${e.target === "budget"
-              ? `Yes — budget ${budgetFmt(est)} a month for ${h(catLabel(cat))}`
-              : (replacing
-                  ? `Yes — replace ${budgetFmt(current)} with ${budgetFmt(est)}`
-                  : `Yes — record ${budgetFmt(est)} for ${h(catLabel(cat))}`)}</span>
+            <span>${replacing
+              ? `Yes — replace ${budgetFmt(current)} with ${budgetFmt(est)}`
+              : `Yes — record ${budgetFmt(est)} for ${h(catLabel(cat))}`}</span>
           </label>
         </div>
         <div class="journal-foot">
@@ -526,7 +478,6 @@ function renderSpendEstimatorAdmin() {
              on ${Math.min(e.qIndex + 1, e.questions.length)}.<br>
              Month elapsed: ${Math.round(estimatorMonthFraction() * 100)}% ·
              running estimate ${budgetFmt(estimatorCompute())}<br>
-             target <strong>${h(e.target || "mtd")}</strong> ·
              stage <strong>${h(e.stage)}</strong> ·
              already known ${e.known ? budgetFmt(e.known.amount) + " (" + h(e.known.basis) + ")" : "—"}
              ${e.usedKnown ? " · <strong>used</strong>" : ""}
