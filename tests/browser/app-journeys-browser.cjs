@@ -372,7 +372,11 @@ async function runOne(browser, tree, variant, journey, outDir) {
       if (!dir) { shots.push({ label, step, part }); continue; }
       const file = path.join(dir, step + '-' + part + '.png');
       const before = part === 'phone' ? await growPhone(page) : null;
-      await target.screenshot({ path: file, animations: 'disabled', caret: 'hide', mask: [page.locator('video')] });
+      // A video's frames arrive on real time: mask the video, and hide it under
+      // the mask, so the mask's anti-aliased edge never blends with a frame
+      // that has arrived in some runs and not in others.
+      await target.screenshot({ path: file, animations: 'disabled', caret: 'hide', mask: [page.locator('video')],
+        style: 'video { visibility: hidden !important; }' });
       if (part === 'phone') await restorePhone(page, before);
       shots.push({ label, step, part, file });
     }
