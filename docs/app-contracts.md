@@ -51,8 +51,9 @@ belongs to the calculator; the Budget paywall uses `paywall*` names. Figures mar
 
 ## One product: no journey switches
 
-`app/` is the full product as one cohesive journey. A focused, shortened or
-reordered journey for a study, demo or feature review is a Flow, made with the
+`app/` is the full product as one cohesive journey: `app/` on main, with each
+setting at its recorded value. A focused, shortened or reordered journey for a
+study, demo or feature review is a Flow, made with the
 [create-flow](../.claude/skills/create-flow/SKILL.md) skill
 ([Flows](flows.md#configure-the-journey)), never a switch in `app/`. The retired
 `ESF_ONLY` and `BP_ENTRY` forked the product into journeys that were never exercised
@@ -60,33 +61,55 @@ together, nested inside each other, and left dormant branches behind. What matte
 is the structure, not the name.
 
 **A journey switch** is a value decided before or outside the tester's session (a
-constant, config entry, build step, URL or storage value, or an edited default) that
-makes the app present a different journey from the full product. It changes where
-the app starts or hands off; which steps, screens, tabs or controls exist or are
-reachable; or what Skip, Back, Continue or completion do. Or it exists to be flipped
-for a particular study, demo or feature focus. Telltales: `typeof X !== "undefined"
-&& X` guards; one name read across unrelated files; parallel data such as alternate
-step lists; switches that only work in combination; branches no tester can reach by
-using the app or Tools; comments such as “for this build” or “for this study”.
+constant, config entry, build step, script inclusion, URL or storage value, or an
+edited default) that makes the app present a different journey from the full
+product. It changes where the app starts or hands off; which steps, screens, tabs
+or controls exist or are reachable; or what Skip, Back, Continue or completion do.
+Or it exists to be flipped for a particular study, demo or feature focus. Editing a
+setting, a default or `ONB_STEPS` for a study is a switch even if reverted later or
+used only for a snapshot.
+
+Telltales:
+
+- `typeof X !== "undefined" && X` on a setting (not a data-presence guard), or a
+  guard on a name declared nowhere in `app/`, which something outside could inject.
+- One setting read across unrelated files; parallel data such as alternate step
+  lists; switches that only work in combination.
+- Hooks left for Flows: a function that always returns the same value, or a branch
+  on state that nothing in `app/` writes.
+- Behavior that depends on whether a script is listed in `app/index.html`.
+- Branches no tester can reach by using the app or Tools; comments such as “for this
+  build” or “for this study”.
 
 **Not journey switches:**
 
-- Session state set by what the tester does (answers, Skip, picks, saved plans):
-  every branch is reachable by using the app.
+- Session state set by what the tester does (answers, Skip, picks, saved plans),
+  and product rules applied the same way for everyone from data such as the profile.
 - Reviewer Tools actions such as the theme picker, profile switcher, jump list and
-  fixtures: explicit choices made during the session, visible to the reviewer.
-- The existing participant URL parameters (`?screen=` deep links, profiles; see
-  app/docs/useberry.md), which place a tester inside the same full journey.
-- Decided product settings in `js/config.js`, such as `BUDGET_PAYWALL` (plan.md §0
-  L27): one value for every session, backed by a recorded owner decision. A new one
-  needs a PM decision recorded in plan.md §0. A value that has to be flipped to run a
-  particular study is never a product setting.
+  fixtures. Fixtures may fill answers but never change step lists, controls or where
+  the journey ends.
+- Release configuration (`MB_RELEASE` tracking and selector; see
+  [publishing](publishing.md)) and the tab's reviewer settings listed in CLAUDE.md,
+  such as Pin on refresh.
+- Participant URL parameters in app/docs/useberry.md. New `?screen=` links follow the
+  rule in `js/screen-url.js`: open a screen that stands on its own through the
+  product's own start function, inside the full journey, without hand-off or return
+  state. A study that needs a contained or shortened journey uses a Flow.
+- Recorded product settings, each kept at its recorded value; changing one is a
+  product decision, never a study: `BUDGET_PAYWALL = true` (plan.md §0 L27),
+  `PROFILE_PICKER = true` (L26), `LESSON_REUSE_FRAMING = false` (above). The
+  presentation and calculation settings `BUDDY_SINGLE_ART`, `ONB_FILM_ANY_LOOK` and
+  `BAND_PRORATE` do not change the journey. A new journey-affecting setting needs a
+  PM decision recorded in plan.md §0.
+- Dormant code that nothing turns on, such as unused onboarding steps. The ban
+  applies to whatever would turn it on.
 
 **Deprecated:** `SKIP_ONBOARDING` (spec D07) is a build-time entry switch. When true,
 every session starts at the returning-user login with a six-day streak instead of
 onboarding. It is kept, off, pending a decision on its replacement. Do not extend
 it, flip it for a study or copy its pattern; a shortened or returning-user start
-belongs in a Flow. It is not the onboarding Skip button, which is session state.
+belongs in a Flow. Older comments suggesting a flip for a session are superseded.
+It is not the onboarding Skip button, which is session state.
 
 **Review questions** for any `app/` change, at intake and before a PR:
 
