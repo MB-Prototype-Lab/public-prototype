@@ -400,7 +400,7 @@ function renderBudgetBuildAdmin() {
         </div>
       </div>
       <div class="input-group">
-        <label>Opening figures (ZIP-adjusted, no lifestyle)</label>
+        <label>Opening figures (peer model: ZIP, income, household and lifestyle)</label>
         <div class="helper">${budgetFmt(catTotal(b.opening))} across ${CATEGORIES.length}</div>
       </div>
       <div class="input-group">

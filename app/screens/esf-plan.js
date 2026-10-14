@@ -176,7 +176,8 @@ function renderEsfPlanAdmin() {
       <p class="admin-card-title">Plan</p>
       <p class="helper">
         Survival ${esfMoney(esfSurvivalMonthly())} a month
-        (medical ${esfMoney(esfRowMonthly("medical"))} is priced on losing work cover)
+        (medical ${esfMoney(esfRowMonthly("medical"))}${esfHasEmployerCoverage()
+          ? " is priced on losing work cover" : ""})
         × ${(1 + (s.buffer || 0)).toFixed(2)} = ${esfMoney(esfBufferedMonthly())}
       </p>
       <p class="helper">
@@ -184,8 +185,9 @@ function renderEsfPlanAdmin() {
         over ${esfMonthsToTarget()} months → ${esfMoney(esfMonthlyContribution())} a month
       </p>
       <p class="helper">
-        Setting the goal also seeds the budget through the baseline seam — the six
-        survival categories carry these figures, the other six open on peer values.
+        Setting the goal also replaces the budget — the ${h(esfAskedCategoryCount())}
+        categories these rows ask about carry these figures, the other
+        ${h(CATEGORIES.length - esfAskedCategoryCount())} open on peer values.
       </p>
     </div>
   `;

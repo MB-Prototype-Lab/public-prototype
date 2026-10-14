@@ -531,7 +531,9 @@ function renderSpendEstimatorAdmin() {
              already known ${e.known ? budgetFmt(e.known.amount) + " (" + h(e.known.basis) + ")" : "—"}
              ${e.usedKnown ? " · <strong>used</strong>" : ""}
            </p>`
-        : `<p class="helper">Not running. Reached from a category detail's "Update actuals".</p>`}
+        : `<p class="helper">Not running. Opened from one category's &ldquo;Update what you've spent&rdquo;
+             or &ldquo;Help me estimate what you've spent&rdquo;, or a goal card's &ldquo;First, estimate
+             your … spend&rdquo;.</p>`}
     </div>
   `;
 }

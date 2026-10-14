@@ -313,9 +313,10 @@ function renderComparisonAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">Three Layers</p>
       <p class="helper" style="margin-bottom:10px;">
-        Flagged when |gap| ≥ ${CMP_PCT_THRESHOLD}% AND the difference is ≥
-        ${budgetFmt(CMP_ABS_THRESHOLD)} — percentage alone flags trivial
-        categories, dollars alone flags Housing for being Housing.
+        Flagged when what you&rsquo;ve told me is ≥ ${CMP_PCT_THRESHOLD}% AND ≥
+        ${budgetFmt(CMP_ABS_THRESHOLD)} over peers; under peers is never flagged.
+        Percentage alone flags trivial categories, dollars alone flags Housing
+        for being Housing.
       </p>
       <div class="helper" style="line-height:1.9;">
         ${rows.map(r => `

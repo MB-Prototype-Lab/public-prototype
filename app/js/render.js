@@ -68,7 +68,8 @@ function adminSubtitle() {
                                                  ". Habits in, a monthly figure out; never pro-rated.";
   if (state.screen === "esfBuild")        return "Emergency fund — capture step " +
                                                  ((state.esf && state.esf.step || 0) + 1) +
-                                                 " of " + ESF_STEPS.length + ". Six survival categories, typed figures only.";
+                                                 " of " + ESF_TOTAL_STEPS + ", asking across " +
+                                                 esfAskedCategoryCount() + " budget categories.";
   if (state.screen === "esfPlan")         return "Emergency fund — the number and the plan. One figure, not two: " +
                                                  "health cover is stated, never chosen.";
   if (state.screen === "bpLanding")       return "Big purchase — landing and the emergency fund check. Not numbered steps.";

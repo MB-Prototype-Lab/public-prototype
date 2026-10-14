@@ -127,8 +127,8 @@ function renderBudgetPaywallAdmin() {
       <p class="admin-card-title">Budget — paywalled</p>
       <p class="helper" style="margin-bottom:10px;">
         <code>BUDGET_PAYWALL</code> is <strong>${on ? "on" : "off"}</strong>
-        (js/config.js). It overrides spec decision D31 (&ldquo;no ads and no
-        paywalls&rdquo;); the override is recorded as L27 in docs/decisions.md.
+        (js/config.js). It is L27 in docs/decisions.md, the one exception to
+        D31 (&ldquo;no ads and no paywalls&rdquo;).
       </p>
       <div class="input-group">
         <label>Strict — there is no way through</label>
@@ -146,12 +146,13 @@ function renderBudgetPaywallAdmin() {
         <label>It guards the TAB, not the budget</label>
         <div class="helper" style="line-height:1.7;">
           These still reach budget screens without rendering this one:<br>
-          · the &ldquo;Set up your budget&rdquo; daily task → <code>bbStart()</code><br>
-          · the Home task, destination <code>budgetBuild</code><br>
-          · budget-update-confirm → Rebuild<br>
+          · chat&rsquo;s &ldquo;Show me the comparison&rdquo; and &ldquo;Show me&rdquo; → comparison<br>
+          · the ☰ menu&rsquo;s &ldquo;Where my money goes&rdquo; → comparison<br>
+          · comparison&rsquo;s category rows → one category<br>
+          · budget-update-confirm → &ldquo;Rebuild it&rdquo; → <code>bbStart()</code><br>
           · <code>?screen=budget-build</code> and <code>?screen=comparison</code><br>
           · the Tools &ldquo;Jump to screen&rdquo; list<br>
-          Deliberate, and listed in CLAUDE.md.
+          Deliberate: L27 guards the tab, not the budget.
         </div>
       </div>
     </div>

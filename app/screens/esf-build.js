@@ -43,6 +43,13 @@ const ESF_STEPS = [
 // where the flow ends. It lives in its own file but counts in the progress.
 const ESF_TOTAL_STEPS = ESF_STEPS.length + 1;
 
+// How many budget categories the rows ask about. Saving carries the tester's
+// figures for these into the budget; the rest open on peer values
+// (esfToBaseline). Counted for the Tools text rather than written into it.
+function esfAskedCategoryCount() {
+  return new Set(ESF_ROWS.map(r => r.category)).size;
+}
+
 // ── Buddy, per step ──────────────────────────────────────────────────────────
 // Owner-supplied art (L22), one scene per step, matched to what that step asks
 // about: the house and cars where rent and a car payment are collected, the
@@ -577,10 +584,10 @@ function renderEsfBuildAdmin() {
 
   return `
     <div class="admin-card">
-      <p class="admin-card-title">Emergency fund — step ${s.step + 1} of ${ESF_STEPS.length}</p>
+      <p class="admin-card-title">Emergency fund — step ${s.step + 1} of ${h(ESF_TOTAL_STEPS)}</p>
       <p class="helper">
-        Stated ${esfMoney(esfStatedMonthly())} (medical ${esfMoney(esfRowMonthly("medical"))},
-        priced as if work cover had stopped) · buffer
+        Stated ${esfMoney(esfStatedMonthly())} (medical ${esfMoney(esfRowMonthly("medical"))}${esfHasEmployerCoverage()
+          ? ", priced as if work cover had stopped" : ""}) · buffer
         ${Math.round((s.buffer || 0) * 100)}% → ${esfMoney(esfBufferedMonthly())} a month
       </p>
       <p class="helper">
@@ -588,8 +595,9 @@ function renderEsfBuildAdmin() {
         ${esfRowsRemaining()} of ${ESF_ROWS.length} rows still an estimate
       </p>
       <p class="helper">
-        Assuming they ${s.owns ? "own" : "rent"} and ${s.hasCar ? "have" : "have no"} car —
-        both are one-tap corrections on step 1, neither is collected by onboarding.
+        Treated as ${esfOwnsHome() ? "owning" : "renting"} (esfOwnsHome), so property
+        tax and home insurance ${esfOwnsHome() ? "are" : "are not"} offered on step 4.
+        No screen asks it directly.
       </p>
     </div>
 

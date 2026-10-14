@@ -354,7 +354,7 @@ function renderDailyUpdateAdmin() {
           ${duSegments().map((seg, i) => {
             const t = duTiming(s.id, seg);
             const src = (typeof DAILY_TIMINGS !== "undefined" && DAILY_TIMINGS[s.id] && DAILY_TIMINGS[s.id][seg.id])
-              ? "measured" : (s.timings && s.timings[seg.id] ? "spec" : "165wpm");
+              ? "measured" : (s.timings && s.timings[seg.id] ? "static" : "165wpm");
             return `${i === state.du.index ? "<strong>" : ""}${h(seg.id)} · ${h(seg.cue)} · ${t.duration}ms <em>(${src})</em>${i === state.du.index ? "</strong>" : ""}`;
           }).join("<br>")}
         </div>
