@@ -74,6 +74,8 @@ run "Selector tabs"                    node   "$NODE" tests/gate-tabs.cjs
 run "Flows runtime"                    node   "$NODE" tests/flows-runtime.cjs
 run "Flows check"                      python "$PYTHON" scripts/flows.py check
 run "Flow script syntax"               node   flow_script_syntax
+run "Journey harness self-checks"      node   "$NODE" tests/app-journeys.cjs --selftest
+run "Journeys (every flow, twice)"     node   "$NODE" tests/app-journeys.cjs
 run "Python tests"                     python "$PYTHON" -m unittest discover -s tests
 run "Catalog policy"                   python "$PYTHON" scripts/publish.py check
 run "Publication rehearsal"            python publication_rehearsal

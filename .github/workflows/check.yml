@@ -2,6 +2,8 @@ name: Checks
 on:
   pull_request:
     branches: [main]
+    # `edited`: the journey check reads the PR description, so editing it re-runs.
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
 permissions:
@@ -12,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -29,6 +33,29 @@ jobs:
       - run: python3 scripts/flows.py check
       - name: Flow script syntax
         run: find flows -type f -name "*.js" -print0 | xargs -0 -r -n 1 node --check
+      - run: node tests/app-journeys.cjs --selftest
+      - run: node tests/app-journeys.cjs
+      - name: Journeys compared with the PR base, commit by commit
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          node tests/app-journeys.cjs --justify --base "$BASE" --out "$RUNNER_TEMP/journeys"
+          node tests/app-journeys.cjs --series "$BASE..$HEAD_SHA" --report --out "$RUNNER_TEMP/journeys"
+      - name: Journeys compared with the previous main
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: node tests/app-journeys.cjs --against "$BEFORE" --report --out "$RUNNER_TEMP/journeys"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: journey-comparison
+          path: ${{ runner.temp }}/journeys
+          if-no-files-found: ignore
+          retention-days: 14
   publication:
     name: Publication checks
     runs-on: ubuntu-latest

@@ -21,10 +21,40 @@ node tests/gate-tabs.cjs
 node tests/flows-runtime.cjs
 python3 scripts/flows.py check
 find flows -type f -name "*.js" -print0 | xargs -0 -r -n 1 node --check
+node tests/app-journeys.cjs --selftest
+node tests/app-journeys.cjs
 python3 -m unittest discover -s tests -v
 python3 scripts/publish.py check
 python3 scripts/publish.py build --offline --output <temporary folder>
 ```
+
+## Journey checks: is the app's flow unchanged?
+
+A robot taps through the app the way a tester would: onboarding (in full and
+skipped into each of the nine profiles), the emergency fund, the big purchase,
+the budget builder, lessons, the journal, the daily update, chat, goals, every
+tab, every Tools screen, start links and refresh. After every tap it records
+exactly what the phone shows. Every pull request replays those journeys on its
+base branch and on the PR, and compares them step by step:
+
+- **Phone** (what a tester sees and does) must be identical, unless the PR says
+  what changed and why under "Phone and Tools changes".
+- **Tools** (the panel beside the phone) and **wiring** (the code behind each
+  control, so a renamed function) are reported separately and must also be
+  declared when they change.
+
+```sh
+node tests/app-journeys.cjs                  # every journey, twice; all 58 screens reached
+node tests/app-journeys.cjs --against main   # compare this checkout with main
+node tests/app-journeys.cjs --series main..HEAD   # the same, commit by commit
+node tests/app-journeys.cjs --trace esf-full@at_at   # watch one journey step by step
+node tests/app-journeys.cjs --mutations      # prove it catches breakage (run after harness changes)
+```
+
+Journeys live in `tests/app-journeys/journeys/`, written as taps on visible
+labels. A journey that can no longer find a label fails loudly with the controls
+it can see. The robot cannot hear audio, watch video, judge layout or colour, or
+use a real phone; those stay in the PM checklist below.
 
 Node or macOS JavaScriptCore is needed for JS checks; Python 3.11+ for publication
 checks. CI explicitly installs Node and Python. A missing engine is a blocked check,

@@ -14,6 +14,17 @@
 
 Journey switches in app/: none <!-- or name each one and its approved decision -->
 
+## Phone and Tools changes
+
+<!-- CI replays every journey on the base branch and on this PR and compares
+     them step by step. "Phone" is what a tester sees and does; "Tools" is the
+     panel beside the phone; "Wiring" is the code behind each control (a rename
+     shows up here). Write "none", or say what changed and why. -->
+
+Phone: none
+Tools: none
+Wiring: none
+
 ## Limitations
 
 <!-- Checks not run, platforms not tried, known gaps. -->

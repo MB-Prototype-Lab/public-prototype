@@ -62,6 +62,8 @@ repeat after material changes.
 With authorized remote writes, push only the task branch. Never push main directly.
 Prepare PR text: problem, resulting behavior, validation actually run, limitations,
 and a short operator checklist ([template](../.github/pull_request_template.md)).
+Its "Phone and Tools changes" lines must match what `node tests/app-journeys.cjs
+--against main` reports; CI checks them.
 Do not add historical progress-log chores.
 
 With GitHub CLI available: `gh pr create --base main --head <branch> --body-file <file>`;
