@@ -11,7 +11,7 @@ const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g,
 const VARIANT_LABELS = {
   naturalLight: 'Natural Light', light: 'Light', dark: 'Dark', naturalDark: 'Natural Dark', 'tools-desktop': 'Desktop with Tools',
 };
-const PART_TEXT = { phone: 'Phone', tools: 'Tools', selector: 'Selector' };
+const PART_TEXT = { page: 'Page', phone: 'Phone', tools: 'Tools', selector: 'Selector' };
 const STATUS_TEXT = { same: 'Same', changed: 'Changed', flaky: 'Flaky', onlyBefore: 'Only before', onlyAfter: 'Only after' };
 // A picture only one side took (the journey stopped early, or Tools was closed, on the other) counts as changed.
 const countsAsChange = status => status === 'changed' || status === 'onlyBefore' || status === 'onlyAfter';
@@ -95,7 +95,7 @@ body.only-changes .step.same, body.only-changes .journey.all-same { display: non
   </div>
   <p class="note">${single
     ? 'Each journey ran in Chromium, tapping the same buttons in the same order, with the clock fixed. A picture is taken at the start and after every step. "Broke" means a journey stopped before its last step, or the page raised an error.'
-    : 'Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken at the start and after every step, and each step\'s pictures are compared. At desktop width the phone and the Tools panel are pictured apart, and a phone picture counts as a phone change there too; the passcode and selector pages count as the selector. "Changed" means more than 0.05% of its pixels differ, by any amount, and the difference repeated on a second run. "Only before" or "Only after" means only one version has that picture (it stopped early, or Tools was closed, on the other); it counts as changed. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.'}</p>
+    : 'Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken at the start and after every step, and each step\'s pictures are compared. At desktop width the phone and the Tools panel are pictured apart, and a phone picture counts as a phone change there too; with Tools closed the whole page is pictured as well and counts as the phone. The passcode and selector pages count as the selector. "Changed" means more than 0.05% of its pixels differ, by any amount, and the difference repeated on a second run. "Only before" or "Only after" means only one version has that picture (it stopped early, or Tools was closed, on the other); it counts as changed. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.'}</p>
   <div class="tabs" role="tablist">${tabs}</div>
   <label class="only"><input type="checkbox" id="only"${focus ? ' checked' : ''}> ${single ? 'Show only journeys that broke' : 'Show only changes'}</label>
   ${panels}

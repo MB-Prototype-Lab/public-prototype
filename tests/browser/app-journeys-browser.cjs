@@ -53,17 +53,21 @@ const SETTLE_MS = 450;
 const FAIL_RATIO = 0.0005;          // more than 0.05% of pixels
 // What each variant pictures in the app, one picture per part: the phone, and
 // at desktop width the Tools panel beside it. A phone picture counts as a phone
-// change whichever variant took it. Outside the app (the passcode and selector
-// pages) the page is pictured as one 'selector' part.
+// change whichever variant took it. With Tools closed at desktop width the page
+// a participant sees is pictured too, as 'page', and counts as the phone (an
+// element's own picture looks the same wherever the element sits); the › tab
+// that opens Tools is then the Tools part. Outside the app (the passcode and
+// selector pages) the page is pictured as one 'selector' part.
 const VARIANTS = [
   { id: 'naturalLight', theme: 'naturalLight', viewport: PHONE, parts: { phone: 'main.phone' } },
   { id: 'light', theme: 'light', viewport: PHONE, parts: { phone: 'main.phone' } },
   { id: 'dark', theme: 'dark', viewport: PHONE, parts: { phone: 'main.phone' } },
   { id: 'naturalDark', theme: 'naturalDark', viewport: PHONE, parts: { phone: 'main.phone' } },
-  { id: 'tools-desktop', theme: 'naturalLight', viewport: DESKTOP, parts: { phone: 'main.phone', tools: 'aside.admin' }, tools: true },
+  { id: 'tools-desktop', theme: 'naturalLight', viewport: DESKTOP, parts: { phone: 'main.phone', tools: 'aside.admin' },
+    toolsClosedParts: { page: '.page', phone: 'main.phone', tools: '#adminExpandTab' }, tools: true },
 ];
 const OUTSIDE_APP = { selector: 'body' };
-const PART_ORDER = ['selector', 'phone', 'tools'];
+const PART_ORDER = ['selector', 'page', 'phone', 'tools'];
 // Grow the phone frame by however far the screen scrolls, so one picture holds
 // the whole view; restored right after the picture.
 async function growPhone(page) {
@@ -364,10 +368,12 @@ async function runOne(browser, tree, variant, journey, outDir) {
     // element it hovers only on a later frame: park it in the page margin first,
     // so no picture shows a hover look on some runs and not others.
     await page.mouse.move(0, 0);
-    const parts = page.url().includes('/app/') ? variant.parts : OUTSIDE_APP;
+    const inApp = page.url().includes('/app/');
+    const toolsClosed = inApp && variant.toolsClosedParts && !(await page.locator('aside.admin').isVisible());
+    const parts = !inApp ? OUTSIDE_APP : toolsClosed ? variant.toolsClosedParts : variant.parts;
     for (const [part, selector] of Object.entries(parts)) {
       const target = page.locator(selector).first();
-      // Tools may be closed (before the Tools tour opens it, after a restart): no picture.
+      // A Tools part that is not on screen has no picture.
       if (part === 'tools' && !(await target.isVisible())) continue;
       if (!dir) { shots.push({ label, step, part }); continue; }
       const file = path.join(dir, step + '-' + part + '.png');
@@ -375,7 +381,10 @@ async function runOne(browser, tree, variant, journey, outDir) {
       // A video's frames arrive on real time: mask the video, and hide it under
       // the mask, so the mask's anti-aliased edge never blends with a frame
       // that has arrived in some runs and not in others.
-      await target.screenshot({ path: file, animations: 'disabled', caret: 'hide', mask: [page.locator('video')],
+      const mask = [page.locator('video')];
+      // The › tab floats over the page; it is pictured as Tools.
+      if (part === 'page') mask.push(page.locator('#adminExpandTab'));
+      await target.screenshot({ path: file, animations: 'disabled', caret: 'hide', mask,
         style: 'video { visibility: hidden !important; }' });
       if (part === 'phone') await restorePhone(page, before);
       shots.push({ label, step, part, file });
@@ -522,7 +531,7 @@ async function main() {
     const gate = plan.some(p => p.journeys.includes(GATE_JOURNEY));
     const summary = { base: describeTree(base), head: describeTree(head), seconds: Math.round((Date.now() - t0) / 1000), gate,
       phoneChanged: 0, toolsChanged: 0, selectorChanged: 0, flaky: 0, broken: 0, brokenAfter: 0, brokenBeforeOnly: 0 };
-    const COUNTER = { phone: 'phoneChanged', tools: 'toolsChanged', selector: 'selectorChanged' };
+    const COUNTER = { page: 'phoneChanged', phone: 'phoneChanged', tools: 'toolsChanged', selector: 'selectorChanged' };
     for (const row of rows) {
       for (const it of row.items) if (countsAsChange(it.status)) summary[COUNTER[it.part]]++;
       summary.flaky += row.items.filter(i => i.status === 'flaky').length;

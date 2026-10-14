@@ -104,7 +104,8 @@ declares it under "Phone and Tools changes", as for the journey checks. A change
 only the pictures show (a colour, a one-pixel shift) is declared the same way; the
 journey checks then print a note instead of failing. At desktop width the phone
 and the Tools panel beside it are pictured apart: a changed phone there is a
-phone change, declared under Phone. The passcode and selector pages have their
+phone change, declared under Phone. With Tools closed the whole desktop page is
+pictured too, so a phone that moves on the page is a phone change. The passcode and selector pages have their
 own count and are declared under Tools. Screens only Tools can reach (L14) are
 pictured once, in Natural Light at desktop width, during the Tools tour. After a
 merge, main is compared with the previous main in report mode (`--report`):
