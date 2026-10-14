@@ -60,10 +60,6 @@ function bpMoney(n) {
  * and adds things up; that has to work. Kept because it costs nothing and the
  * argument for it is not wrong, only outweighed.
  */
-function bpMoney100(n) {
-  return bpMoney(Math.round((Number(n) || 0) / 100) * 100);
-}
-
 function bpPct(apr) {
   const n = Number(apr) || 0;
   return (Math.round(n * 100) / 100) + "%";

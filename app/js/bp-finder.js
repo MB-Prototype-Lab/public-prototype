@@ -195,15 +195,6 @@ function bpfPeer() {
            household: Math.max(1, parseInt(p.householdSize, 10) || 1) };
 }
 
-/**
- * "Peers in Nashville with a similar income". No household size (2026-09-29):
- * onboarding no longer asks it, so the figure reads the profile's default and
- * naming that default would claim something the tester never told us.
- */
-function bpfPeerWho() {
-  return "Peers in " + bpVCity() + " with a similar income";
-}
-
 function bpfPct(n) {
   const inc = bpfIncomeMonthly();
   return inc > 0 ? Math.round((Number(n) || 0) / inc * 100) : null;
@@ -248,26 +239,6 @@ function bpfPeerTier(type, use) {
     if (g < gap) { gap = g; best = t; }
   });
   return best;
-}
-
-/**
- * The car peers' payment buys: the dearest one in the catalog, new or used, at
- * or under the peer price. Same use first — it has to be the same kind of car
- * or it answers a different question — then anything of the same type, then
- * the cheapest used car of that type as a floor so the row is never empty.
- */
-function bpfPeerCar(type, use) {
-  const price = bpfPeerPrice(type);
-  const pool = [];
-  bpfModels().filter(m => m.type === type).forEach(m => {
-    pool.push({ model: m, cond: "new", price: m.price });
-    pool.push({ model: m, cond: "used", price: bpfUsedPrice(m) });
-  });
-  const pick = list => list.filter(x => x.price <= price)
-                           .sort((a, b) => b.price - a.price)[0] || null;
-  return pick(pool.filter(x => x.model.use === use)) ||
-         pick(pool) ||
-         pool.sort((a, b) => a.price - b.price)[0] || null;
 }
 
 // ── The quiz ─────────────────────────────────────────────────────────────────

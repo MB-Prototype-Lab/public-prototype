@@ -24,12 +24,6 @@ function bpfOpen() {
   go("bpFinder");
 }
 
-function bpfView(view) {
-  const f = bpfSession();
-  f.view = view;
-  render();
-}
-
 function bpfStartPath(path) {
   const f = bpfSession();
   f.path = path;
@@ -260,18 +254,6 @@ function renderBpfFoot(cont) {
     </div>`;
 }
 
-/** What peers spend, as plain facts. Used on the first view. */
-function renderBpfPeerFact() {
-  const p = bpfPeer();
-  if (!p.payment) return "";
-  return `
-    <div class="bpf-peerfact">
-      <p class="bpf-peerfact-who">${h(bpfPeerWho())} spend about</p>
-      <div class="bpf-peerfact-row"><span>Car payment</span><strong>${h(bpMoney(p.payment))} <i>a month</i></strong></div>
-      <div class="bpf-peerfact-row"><span>With insurance, fuel and upkeep</span><strong>${h(bpMoney(p.total))} <i>a month</i></strong></div>
-    </div>`;
-}
-
 function renderBpfDock(ask, tiles, closable) {
   return `
     <div class="bp-dock bpf-dock">
@@ -282,12 +264,6 @@ function renderBpfDock(ask, tiles, closable) {
           <span aria-hidden="true">&times;</span> Close
         </button>` : ""}
     </div>`;
-}
-
-/** A hue for a make, so every maker keeps one colour wherever it shows. */
-function bpfMakeHue(make) {
-  const i = bpfMakes().indexOf(make);
-  return Math.round(((i < 0 ? 0 : i) * 137.5 + 24) % 360);
 }
 
 /**
@@ -408,86 +384,6 @@ function renderBpfStart() {
             ${cond("new", "New", m.price)}
             ${cond("used", "Used, ~3 yrs", bpfUsedPrice(m))}
           </div>` : ""}
-        <button class="button full ${ready ? "" : "bp-off"}" type="button" aria-disabled="${!ready}"
-                onclick="bpfKnowGo()">${ready ? "See the real cost to own"
-                                     : m ? "Pick new or used" : "Pick a make and model"}</button>
-      </div>
-      ${renderBpfFoot(false)}
-    </div>`;
-}
-
-/** The make-and-model list, grouped by price tier with each tier's range. */
-function renderBpfModelList(type, current) {
-  return `
-    <div class="bpf-modellist">
-      ${bpfTiers().map(t => {
-        const ms = bpfModels().filter(m => m.type === type && m.tier === t)
-                              .sort((a, b) => a.price - b.price);
-        if (!ms.length) return "";
-        const r = { lo: ms[0].price, hi: ms[ms.length - 1].price };
-        return `
-          <p class="bpf-tierhead">${h(bpVTierLabel(t))} <span>${h(bpfRangeLabel(r))}</span></p>
-          ${ms.map(m => `
-            <button class="bpf-modelopt ${current === m.id ? "on" : ""}" type="button"
-                    onclick="bpfKnowPick('model','${h(m.id)}')">
-              <span>${h(bpfName(m))}</span>
-              <span class="bpf-modelopt-price">${h(bpMoney(m.price))}</span>
-            </button>`).join("")}`;
-      }).join("")}
-    </div>`;
-}
-
-function renderBpfKnow() {
-  const f = bpfSession();
-  const k = f.know;
-  const m = k.model ? bpfModel(k.model) : null;
-  const ready = !!(m && k.cond);
-  // NOT NATIVE <select>s any more (owner, 2026-10-01: "the make drop-down
-  // choice wasn't one handed friendly. it dropped up"). A native list at the
-  // bottom of the screen opens UPWARD, away from the thumb. Each field now
-  // looks like a car-site dropdown but opens a list that rises from the
-  // bottom of the frame (bpfOpenList), which is how the car sites' own phone
-  // apps do it.
-  const field = (label, value, placeholder, list, enabled) => `
-    <div class="bpf-know-field">
-      <span>${h(label)}</span>
-      <button class="bpf-select ${value ? "" : "bpf-select-empty"}" type="button" ${enabled ? "" : "disabled"}
-              aria-haspopup="listbox" onclick="bpfOpenList('${list}')">
-        <span>${h(value || placeholder)}</span>
-        <span class="bp-drop-caret" aria-hidden="true">&#9662;</span>
-      </button>
-    </div>`;
-  // The prices are as big and bold as the car's name (owner): they are the
-  // reason for the choice, not a footnote to it.
-  const cond = (id, label, price) => `
-    <button class="bpf-cond ${k.cond === id ? "on" : ""}" type="button" aria-pressed="${k.cond === id}"
-            onclick="bpfKnowPick('cond','${id}')">
-      <span class="bpf-cond-label">${h(label)}</span>
-      <span class="bpf-cond-price">${h(bpMoney(price))}</span>
-    </button>`;
-  return `
-    <div class="journal-shell onb-pinned bpf-shell">
-      <div class="journal-head">${renderBpfHead("Which car do you have in mind?")}</div>
-      <div class="journal-body">
-        <p class="bp-lead">Choose the make and model. We'll price it new and used, and show what it
-           costs to own.</p>
-        ${m ? `
-          <div class="bpf-know-pick">
-            <p class="bpf-know-name">${h(bpfName(m))}</p>
-            <p class="bpf-know-why">${h(bpfTypeLabel(m.type))} · ${h(bpfKnown(m))}</p>
-          </div>` : ""}
-      </div>
-      <div class="bp-dock bpf-dock bpf-know">
-        ${field("Make", k.make, "Select a make", "make", true)}
-        ${field("Model", m ? m.model : null, k.make ? "Select a model" : "Select a make first", "model", !!k.make)}
-        ${m ? `
-          <div class="bpf-conds">
-            ${cond("new", "New", m.price)}
-            ${cond("used", "Used, about 3 years", bpfUsedPrice(m))}
-          </div>` : ""}
-        ${/* The CTA names the next screen (owner: "see what it costs" with the
-              price right above it read as already done). The next screen is
-              the monthly, year-one and five-year cost to OWN, beside peers. */ ""}
         <button class="button full ${ready ? "" : "bp-off"}" type="button" aria-disabled="${!ready}"
                 onclick="bpfKnowGo()">${ready ? "See the real cost to own"
                                      : m ? "Pick new or used" : "Pick a make and model"}</button>
@@ -624,60 +520,6 @@ function renderBpfCarBox(m, rank, alt) {
       </div>
       <p class="bpf-car-why">${h(bpfKnown(m))}</p>
       <div class="bpf-car-prices">${chip("new")}${chip("used")}</div>
-    </div>`;
-}
-
-/**
- * Why this car, in facts the tester gave us. Never "best for you" (owner,
- * 2026-09-28: "it's always here are choices based on info the user
- * submitted").
- */
-function bpfWhyLine(m) {
-  const f = bpfSession();
-  if (f.path !== "quiz") return bpfKnown(m) + ".";
-  const use = bpfUse(m.type, m.use);
-  return bpfKnown(m) + ". " + (use ? use.blurb + ", " : "") + "in the " +
-         bpVTierLabel(m.tier).toLowerCase() + " range you picked.";
-}
-
-function renderBpfLines(fig, loan) {
-  const rows = [
-    { label: "Sticker price", value: fig.sticker },
-    loan ? { label: "Down payment", note: "(" + Math.round(fig.down / Math.max(1, fig.sticker) * 100) + "%)", value: fig.down }
-         : { label: "Paid at purchase", note: "(with tax and fees)", value: fig.b.yearOne.atPurchase },
-    { label: "Total monthly cost", note: loan ? "(car payment + running it)" : "(running it)", value: fig.monthly, hero: true },
-    { label: "Year 1 cost", note: "(all-in)", value: fig.year1 },
-    { label: "Cost over 5 years", note: "(all-in)", value: fig.five }
-  ];
-  return `
-    <div class="bpf-lines">
-      ${rows.map(r => `
-        <div class="bpf-line ${r.hero ? "bpf-line-hero" : ""}">
-          <span class="bpf-line-label">${h(r.label)}${r.note ? ` <em>${h(r.note)}</em>` : ""}</span>
-          <span class="bpf-line-fig">${h(bpMoney(r.value))}</span>
-        </div>`).join("")}
-    </div>`;
-}
-
-function renderBpfPeerBox(fig, loan) {
-  const p = bpfPeer();
-  const my = { pay: loan ? fig.payment : 0, total: fig.monthly };
-  const pctMe = bpfPct(my.total), pctPeer = bpfPct(p.total);
-  const gap = my.total - p.total;
-  return `
-    <div class="bpf-peer">
-      <p class="bpf-box-head">Compared with peers</p>
-      <p class="bpf-box-note">${h(bpfPeerWho())}</p>
-      <div class="bpf-grid">
-        <span></span><span class="bpf-grid-h">This car</span><span class="bpf-grid-h">Peers</span>
-        <span>Car payment</span><strong>${h(bpMoney(my.pay))}</strong><strong>${h(bpMoney(p.payment))}</strong>
-        <span>Total monthly</span><strong>${h(bpMoney(my.total))}</strong><strong>${h(bpMoney(p.total))}</strong>
-        ${pctMe != null ? `
-          <span>Share of your income</span><strong>${pctMe}%</strong><strong>${pctPeer}%</strong>` : ""}
-      </div>
-      <p class="bpf-gap">${gap === 0
-        ? "The same total monthly as peers."
-        : h(bpMoney(Math.abs(gap))) + " a month " + (gap > 0 ? "more" : "less") + " than peers, all-in."}</p>
     </div>`;
 }
 
