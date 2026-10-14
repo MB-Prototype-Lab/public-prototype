@@ -255,14 +255,15 @@ function writeFilmIndex(manifest) {
 // serves two themes) and the scripts rendered in it.
 //
 // The app runs on file:// where it cannot stat a path (L13), so this is how
-// onbFilmSrc() knows whether to ask for an .mp4 at all. A theme or script
-// missing here simply falls back to the live SVG engine.
+// onbFilmSrc() knows whether to ask for an .mp4 at all. A theme missing here
+// plays another look's render; a script rendered in no look falls back to the
+// live SVG engine.
 const ONBOARDING_FILMS = ${JSON.stringify(index, null, 2)};
 
 // The ground each LOOK is rendered on, so the app can paint the film's stage to
 // match instead of framing it in accent green. Keyed by look, not by theme: a
 // theme with no render of its own borrows another look's film (see
-// ONB_FILM_ANY_LOOK in screens/onboarding.js), and the stage has to follow the
+// onbFilmAnyLook in screens/onboarding.js), and the stage has to follow the
 // film that is actually playing.
 //
 // ⚠ ONLY when a film is playing. The SVG fallback draws in --on-dark and paints

@@ -1159,28 +1159,29 @@ if (!__FILM_MANIFEST) {
   try {
     scripts = ONBOARDING_SCRIPT.scripts.map(function (x) { return x.id; });
   } catch (e) {}
-  // A look with NO films is simply not rendered yet, and its themes fall back to
-  // the live SVG engine — that is a normal state while a look is being iterated
-  // on. A look with SOME films is the actual defect: the app lists those themes
-  // and then finds nothing for the scripts that are missing.
-  var started = (mf.looks || []).filter(function (l) {
-    return Object.keys(mf.films).some(function (id) { return mf.films[id].look === l; });
-  });
-  // Coverage is a WARNING, not a failure. A film that has not been rendered
-  // cannot break anything: data/onboarding-films.js is generated from what
-  // actually exists, so the app only ever asks for a file that is there and
-  // everything else falls back to the live SVG engine by design. What this is
-  // for is telling you what is still outstanding.
+  // A look with no render of its own is a normal state while it is being
+  // iterated on: its themes play another look's render (onbFilmAnyLook). A
+  // missing film cannot break anything either: data/onboarding-films.js is
+  // generated from what actually exists, so the app only ever asks for a file
+  // that is there. Only a script rendered in NO look falls back to the live SVG
+  // engine, and with no film at all every theme does.
   var want = (mf.looks || []).length * scripts.length;
   var absent = [];
   (mf.looks || []).forEach(function (l) {
     scripts.forEach(function (s) { if (!mf.films[l + "__" + s]) absent.push(l + "__" + s); });
   });
-  if (absent.length) {
-    warn((want - absent.length) + " of " + want + " films rendered — the rest use the SVG fallback",
-         absent.slice(0, 6).join(", ") +
-         (absent.length > 6 ? " …+" + (absent.length - 6) : "") +
-         "\n          cd tools && node film/build-films.mjs --render");
+  var svgOnly = scripts.filter(function (s) {
+    return !(mf.looks || []).some(function (l) { return mf.films[l + "__" + s]; });
+  });
+  var have = want - absent.length;
+  var renderHint = "\n          cd tools && node film/build-films.mjs --render";
+  if (!have) {
+    bad("at least one film is rendered", "every theme falls back to the SVG engine" + renderHint);
+  } else if (svgOnly.length) {
+    warn(have + " of " + want + " films rendered — " + svgOnly.length +
+         " script(s) rendered in no look use the SVG fallback", svgOnly.join(", ") + renderHint);
+  } else if (absent.length) {
+    ok(have + " of " + want + " films rendered — the other themes play a rendered look");
   } else {
     ok("all " + want + " films rendered");
   }
@@ -1324,17 +1325,16 @@ if (!__FILM_MANIFEST) {
         "and every log line would still say \"rendered\"");
   }
 
-  // ── ONB_FILM_ANY_LOOK: one render serves every theme ──────────────────────
-  // v4 only. While a look is unrendered its themes used to drop to the SVG
-  // engine, so the same onboarding step showed two different pieces of work
-  // depending on a colour setting. The fallback plays whatever WAS rendered.
+  // ── one render serves every theme ─────────────────────────────────────────
+  // A theme whose look is unrendered plays whatever WAS rendered
+  // (onbFilmAnyLook), so the same onboarding step does not show two different
+  // pieces of work depending on a colour setting.
   //
   // Two things to hold, and the second is the one that rots quietly: a theme
   // with its own render must still get its OWN look. If the fallback ever wins
   // over an exact match, rendering the dark film would change nothing a dark
   // tester sees and nothing here would say so.
-  if (typeof ONB_FILM_ANY_LOOK !== "undefined" && ONB_FILM_ANY_LOOK &&
-      typeof THEMES !== "undefined" && Object.keys(mf.films).length) {
+  if (typeof THEMES !== "undefined" && Object.keys(mf.films).length) {
     // Restore unconditionally. Reading it into a local and putting it back only
     // "if it was set" leaves colorMode pinned to the last theme walked when the
     // app had none, which quietly re-themes every check that runs after this.

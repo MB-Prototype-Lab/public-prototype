@@ -1789,7 +1789,6 @@ function onbFilmEntry() {
   const own = ONBOARDING_FILMS[onbFilmTheme()];
   if (onbFilmEntryHas(own, script)) return own;
 
-  if (!ONB_FILM_ANY_LOOK) return null;
   return onbFilmAnyLook(script);
 }
 
@@ -1799,23 +1798,21 @@ function onbFilmEntryHas(entry, script) {
   return entry.scripts.indexOf(script) !== -1;
 }
 
-// ONE RENDER SERVES EVERY THEME — TEMPORARY, and meant to be undone.
+// ONE RENDER SERVES EVERY THEME until the other looks are rendered.
 //
-// The film has two looks and only `light` is rendered, so the two dark themes
-// had nothing of their own and dropped to the SVG engine: the same onboarding
-// step showing two different pieces of work depending on a colour setting the
-// tester picked for unrelated reasons. Owner's call is to play the render that
-// exists on all four themes until the rest are rendered.
+// The film has two looks and only `light` is rendered. Without this the two
+// dark themes would drop to the SVG engine: the same onboarding step showing
+// two different pieces of work depending on a colour setting the tester picked
+// for unrelated reasons. Owner's call is to play the render that exists on all
+// four themes.
 //
 // It is a FALLBACK, not a remapping — a theme with its own render still gets
-// it (onbFilmEntry checks that first). So this needs no unwinding: render the
-// dark look and the dark themes stop falling through on their own. Setting it
-// false restores strict per-theme matching.
+// it (onbFilmEntry checks that first). Render the dark look and the dark themes
+// stop falling through on their own.
 //
 // Known trade, accepted: the picture does not repaint per theme by design (a
 // broadcast palette only reads as broadcast if it commits), so on a dark theme
 // this is a light-palette film in a dark frame.
-const ONB_FILM_ANY_LOOK = true;
 
 /**
  * Any rendered look carrying this script, or null.
@@ -1857,7 +1854,7 @@ function onbFilmSrc() {
  * being broken rather than as a colour choice.
  *
  * Keyed on the LOOK that is playing, not the tester's theme. A dark theme with
- * no dark render borrows the light film (ONB_FILM_ANY_LOOK), and the stage has
+ * no dark render borrows the light film (onbFilmAnyLook), and the stage has
  * to follow the film rather than the theme or it reintroduces the mismatch.
  */
 function onbFilmGroundStyle() {
