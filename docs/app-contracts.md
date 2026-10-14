@@ -212,8 +212,8 @@ All verified against the raw JSON on 2026-08-07.
   "a regular ongoing cost" became **$20** of healthcare, and picking the most
   expensive option still *lowered* the category, because the peer default it
   replaced was eight times larger than anything the sum could return. Nothing
-  in `js/help-me-out.js` reads a clock, and `sweep.js` §7 stubs
-  `estimatorMonthFraction` and asserts no tree's figure moves.
+  in `js/help-me-out.js` reads a clock, and `sweep.js` §7 pins the clock to
+  the 4th and then the 28th of a month and asserts no tree's figure moves.
 - **Never reach past `benchColMultipliers()` to price a place.** The Utilities
   model looked up `state.utilitiesRatio` itself to price local electricity —
   but `benchColLocalModifier` already returns exactly that ratio for Utilities,

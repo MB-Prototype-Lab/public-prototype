@@ -795,18 +795,44 @@ if (typeof BB_STEPS !== "undefined") {
     });
     chk(noSource.length === 0, "every tree cites where its figures came from", noSource.join(", "));
 
+    // Each tree's figure on its first-option answers, for the magnitude check below.
+    var baseline = {};
+    CATEGORIES.forEach(function (c) { baseline[c] = hmoCompute(c, hmoBaselineAnswers(c)); });
+
     // A BUDGET IS A MONTH. The engine this replaced multiplied every figure by
     // how far into the month we were, so on the 4th of a 30-day month "light
     // local driving" came out at $10 of transport and picking the priciest
-    // option still LOWERED the category. Nothing in the model may read a clock.
-    var realFrac = estimatorMonthFraction;
-    var baseline = {}, drifted = {};
-    CATEGORIES.forEach(function (c) { baseline[c] = hmoCompute(c, hmoBaselineAnswers(c)); });
-    estimatorMonthFraction = function () { return 0.05; };
-    CATEGORIES.forEach(function (c) { drifted[c] = hmoCompute(c, hmoBaselineAnswers(c)); });
-    estimatorMonthFraction = realFrac;
-    var dated = CATEGORIES.filter(function (c) { return baseline[c] !== drifted[c]; });
-    chk(dated.length === 0, "no tree's figure depends on the date", dated.join(", "));
+    // option still LOWERED the category. Nothing in the model may read a clock,
+    // so every tree runs on the same answers with the clock pinned to the 4th
+    // and then the 28th. The cheapest and the priciest answers, because a
+    // question behind a closed gate never runs.
+    var clockAnswers = CATEGORIES.map(function (c) { return [hmoBaselineAnswers(c), hmoMaxAnswers(c)]; });
+    function figuresOnDay(day) {
+      var RealDate = Date, at = new RealDate(2026, 3, day, 12).getTime();
+      // A Date subclass whose "now" is `at`; Date() without `new` reads it too.
+      function PinnedDate() {
+        if (!new.target) return new RealDate(at).toString();
+        return Reflect.construct(RealDate, arguments.length ? Array.prototype.slice.call(arguments) : [at],
+                                 new.target);
+      }
+      PinnedDate.prototype = Object.create(RealDate.prototype, { constructor: { value: PinnedDate } });
+      Object.setPrototypeOf(PinnedDate, RealDate);
+      PinnedDate.now = function () { return at; };
+      Date = PinnedDate;
+      try {
+        return CATEGORIES.map(function (c, i) {
+          return clockAnswers[i].map(function (a) {
+            try { return hmoCompute(c, a); } catch (e) { return "threw " + e.message; }
+          }).join(" / ");
+        });
+      } finally { Date = RealDate; }
+    }
+    var on4th = figuresOnDay(4), on28th = figuresOnDay(28);
+    var dated = [];
+    CATEGORIES.forEach(function (c, i) {
+      if (on4th[i] !== on28th[i]) dated.push(c + ": " + on4th[i] + " on the 4th, " + on28th[i] + " on the 28th");
+    });
+    chk(dated.length === 0, "no tree's figure depends on the date", dated.join("\n          "));
 
     // A mistyped rate key returns undefined, becomes 0, and every option then
     // produces the same number — a question that looks like it works and does
