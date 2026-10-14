@@ -87,10 +87,12 @@ check('rename detection accepts consistent renames only', () => {
   assert.equal(renameMap('button onclick=fooA(1)\nbutton onclick=barA(2)', 'button onclick=fooB(1)\nbutton onclick=fooB(2)'), null);
   assert.equal(renameMap('button onclick=fooA(1)', 'button onclick=fooA(2)'), null);
   // Journeys as {id: [wiring per step]}, compared the way --against does.
-  const runs = journeys => Object.entries(journeys).map(([id, steps]) =>
-    ({ id, errors: [], gate: [], records: steps.map((wiring, i) => ({ label: String(i), participant: '', tools: '', wiring })) }));
-  const judge = (base, head) => {
-    const c = compare(runs(base), runs(head));
+  // `defined` lists the global names that side's app defines, when it matters.
+  const runs = (journeys, defined) => Object.entries(journeys).map(([id, steps]) =>
+    ({ id, errors: [], gate: [], defines: defined && (name => defined.includes(name)),
+      records: steps.map((wiring, i) => ({ label: String(i), participant: '', tools: '', wiring })) }));
+  const judge = (base, head, baseDefined, headDefined) => {
+    const c = compare(runs(base, baseDefined), runs(head, headDefined));
     return { renames: Object.fromEntries(c.renames), useberry: Object.fromEntries(c.useberry), wiring: c.wiring.map(d => d.id + '@' + d.where) };
   };
   const nothing = { renames: {}, useberry: {} };
@@ -111,6 +113,12 @@ check('rename detection accepts consistent renames only', () => {
     Object.assign({ wiring: ['a@0', 'b@0'] }, nothing));
   assert.deepEqual(judge({ a: ['button onclick=fooA()', 'i onclick=fooA()'] }, { a: ['button onclick=fooB()', 'i onclick=fooA()'] }),
     Object.assign({ wiring: ['a@0'] }, nothing));
+  // A switch to a function that existed but no journey had tapped, or a new
+  // name while the old function stays: not renames. A real one still is.
+  const remind = [{ a: ['button onclick=bpToggleRemind()'] }, { a: ['button onclick=bpLeaseAfford()'] }];
+  assert.deepEqual(judge(...remind, ['bpToggleRemind', 'bpLeaseAfford'], ['bpToggleRemind', 'bpLeaseAfford']), Object.assign({ wiring: ['a@0'] }, nothing));
+  assert.deepEqual(judge(...remind, ['bpToggleRemind'], ['bpToggleRemind', 'bpLeaseAfford']), Object.assign({ wiring: ['a@0'] }, nothing));
+  assert.deepEqual(judge(...remind, ['bpToggleRemind'], ['bpLeaseAfford']), { renames: { 'bpToggleRemind→bpLeaseAfford': 1 }, useberry: {}, wiring: [] });
   // A click-tracking name that changed with no handler rename behind it.
   assert.deepEqual(judge({ a: ['button onclick=fooA()\nbutton data-ub=home/fooA'] }, { a: ['button onclick=fooA()\nbutton data-ub=home/fooZ'] }),
     { renames: {}, useberry: { 'home/fooA→home/fooZ': 1 }, wiring: [] });

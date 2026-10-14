@@ -92,6 +92,11 @@ const SPECS = [
     edits: { 'screens/login.js': [["state.dailyPromptAnswered=(this.value==='true')", "state.dailyPromptAnswered=(this.checked==='true')"]] },
   },
   {
+    id: 'swap-to-untapped-fn', expect: 'wiring', journeys: ['tools-tour'],
+    why: 'the reminder switch calling bpLeaseAfford, an existing function no journey taps, instead of bpToggleRemind',
+    edits: { 'screens/bp-commit.js': [['onclick="bpToggleRemind()"', 'onclick="bpLeaseAfford()"']] },
+  },
+  {
     id: 'consistent-rename', expect: 'rename', journeys: ['picker-tour'],
     why: 'a handler renamed everywhere (reported as a rename only)',
     edits: { 'screens/budget-paywall.js': [[/budgetPaywallTap/, 'paywallPlanTap']] },

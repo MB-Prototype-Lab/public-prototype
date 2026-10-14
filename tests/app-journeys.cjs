@@ -229,11 +229,13 @@ function usesName(texts, name) {
 // Decides over the whole comparison which wiring changes are renames. A
 // substitution is a rename only when every instance of it renames a name (no
 // keyword, literal or property), it maps one name to one name everywhere, the
-// new name was not used before and the old one is used nowhere after (else it
-// is a swap or a merge). A click-tracking name change counts as part of a rename
+// new name was neither used nor defined before and the old one is neither used
+// nor defined after (else it is a swap, a merge, or a switch to a function no
+// journey had tapped). A click-tracking name change counts as part of a rename
 // only when an accepted handler rename explains it; any other is reported as a
-// Useberry click name change.
-function judgeWiring(steps, baseTexts, headTexts) {
+// Useberry click name change. baseDefines/headDefines(name) say whether that
+// side's app defines a global name.
+function judgeWiring(steps, baseTexts, headTexts, baseDefines = () => false, headDefines = () => false) {
   const out = { wiring: [], renames: new Map(), useberry: new Map() };
   const found = steps.map(s => (s.paired ? stepSubstitutions(s.bt, s.ht) : null));
   const handlerPairs = found.flatMap(f => (f ? f.handler : []));
@@ -244,7 +246,8 @@ function judgeWiring(steps, baseTexts, headTexts) {
   const accepted = new Set();
   for (const p of handlerPairs) {
     if (accepted.has(p.key) || bad.has(p.key)) continue;
-    if (fwd.get(p.from).size !== 1 || back.get(p.to).size !== 1 || usesName(base, p.to) || usesName(head, p.from)) bad.add(p.key);
+    if (fwd.get(p.from).size !== 1 || back.get(p.to).size !== 1 || usesName(base, p.to) || usesName(head, p.from) ||
+      baseDefines(p.to) || headDefines(p.from)) bad.add(p.key);
     else accepted.add(p.key);
   }
   const bump = (m, k) => m.set(k, (m.get(k) || 0) + 1);
@@ -258,6 +261,15 @@ function judgeWiring(steps, baseTexts, headTexts) {
     if (renamed) for (const p of f.handler.concat(f.ub.filter(u => explained(u.pairs)).flatMap(u => u.pairs))) bump(out.renames, p.key);
   });
   return out;
+}
+
+// Whether the app a set of runs came from defines a global name. Runs carry
+// their app, or `defines` once the app is let go; made-up runs carry neither.
+function definer(results) {
+  const r = results.find(x => x.defines || x.app);
+  if (!r) return () => false;
+  if (r.defines) return r.defines;
+  return name => { try { return r.app.has(name); } catch (e) { return true; } };
 }
 
 // Is b the same wiring as a with names consistently renamed? The renames, or null.
@@ -290,7 +302,7 @@ function compare(baseResults, headResults) {
       }
     }
   }
-  return Object.assign(out, judgeWiring(wiringSteps, baseWiring, headWiring));
+  return Object.assign(out, judgeWiring(wiringSteps, baseWiring, headWiring, definer(baseResults), definer(headResults)));
 }
 
 // "a→b (3), c→d (1)", the first `limit` entries.
@@ -376,8 +388,13 @@ async function seriesCompare(baseRef, commits, runAt, onRow, gitFn = git) {
   const lastUse = new Map();
   plan.forEach((p, i) => { for (const s of [p.commit, p.mergeBase, p.parent]) lastUse.set(s, i); });
   const cache = new Map();
+  // Keep one app per commit, for the rename check's definitions, not one per run.
   const get = async sha => {
-    if (!cache.has(sha)) cache.set(sha, (await runAt(sha)).map(r => Object.assign({}, r, { app: undefined })));
+    if (!cache.has(sha)) {
+      const results = await runAt(sha);
+      const defines = definer(results);
+      cache.set(sha, results.map(r => Object.assign({}, r, { app: undefined, defines })));
+    }
     return cache.get(sha);
   };
   for (let i = 0; i < plan.length; i++) {
