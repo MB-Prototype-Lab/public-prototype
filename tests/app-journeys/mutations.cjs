@@ -72,6 +72,11 @@ const SPECS = [
     edits: { 'js/screen-url.js': [['url.hash = trail ? "v=" + trail : "";', 'url.hash = "";']] },
   },
   {
+    id: 'fake-keypad-on-phones', expect: 'caught', journeys: ['keyboard-touch'],
+    why: 'the simulated keyboard opening on a touch phone, over its own keyboard',
+    edits: { 'components/keyboard.js': [['  try { return !window.matchMedia("(pointer: coarse)").matches; } catch (e) { return true; }', '  return true;']] },
+  },
+  {
     id: 'tools-label', expect: 'tools', journeys: ['tools-tour'],
     why: 'a Tools heading reworded (reported as a Tools change, not a phone change)',
     edits: { 'index.html': [['<p class="admin-title" style="margin:0;">Admin Tools</p>', '<p class="admin-title" style="margin:0;">Tools</p>']] },

@@ -38,8 +38,9 @@ bash tests/browser/snapshot-smoke.sh <temporary folder>
 A robot taps through the app the way a tester would: onboarding (in full and
 skipped into each of the nine profiles), the emergency fund, the big purchase,
 the budget builder, lessons, the journal, the daily update, chat, goals, every
-tab, every Tools screen, start links and refresh. After every tap it records
-exactly what the phone shows. Every pull request replays those journeys on its
+tab, every Tools screen, start links and refresh, and a touch phone (no simulated
+keyboard) and reduced motion. After every tap it records exactly what the phone
+shows. Every pull request replays those journeys on its
 base branch and on the PR, and compares them step by step:
 
 - **Phone** (what a tester sees and does) must be identical, unless the PR says

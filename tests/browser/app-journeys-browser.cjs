@@ -120,9 +120,14 @@ function scriptMotion(reduce) {
 })(${!!reduce});`;
 }
 
+// Pages booted as a touch phone, where a person taps rather than clicks.
+const TOUCH_PAGES = new WeakSet();
+
 async function newPage(browser, tree, variant, seedId, boot = {}) {
+  // A touch screen makes Chromium report a coarse pointer, as a phone does, so
+  // the app leaves its simulated keyboard closed (components/keyboard.js).
   const ctx = await browser.newContext({ viewport: variant.viewport, deviceScaleFactor: 1, locale: 'en-US',
-    timezoneId: 'UTC', reducedMotion: 'reduce', colorScheme: 'light' });
+    timezoneId: 'UTC', reducedMotion: 'reduce', colorScheme: 'light', hasTouch: !!boot.coarsePointer });
   await ctx.addInitScript({ content: controls.SOURCE });
   await ctx.addInitScript({ content: 'window.__mbReviveQuery = ' + REVIVE + ';' });
   await ctx.addInitScript({ content: 'window.__mbSeed = ' + hashSeed(seedId) + ';\n' + PRELUDE_SRC });
@@ -130,6 +135,7 @@ async function newPage(browser, tree, variant, seedId, boot = {}) {
   await ctx.addInitScript({ content: scriptMotion(boot.reducedMotion) });
   await ctx.addInitScript({ content: KEEP_PERFORMANCE });
   const page = await ctx.newPage();
+  if (boot.coarsePointer) TOUCH_PAGES.add(page);
   // Paused on the start time, the page's clock moves only when a step runs it,
   // as in the VM. Installing a minute early lets the pause jump forward to it.
   await page.clock.install({ time: DEFAULT_CLOCK - 60000 });
@@ -162,14 +168,15 @@ async function find(page, query) {
     } catch (e) { return { ok: false, message: String(e.message || e) }; }
   }, pack(query));
   if (!res.ok) throw new StepError(res.message);
-  return Object.assign(res, { handle: await page.evaluateHandle(() => window.__mbTarget) });
+  return Object.assign(res, { handle: await page.evaluateHandle(() => window.__mbTarget), touch: TOUCH_PAGES.has(page) });
 }
 
 // A real click lands on whatever is on top. When that is another control (an
 // open sheet, say), a person could not tap this one either: the journey's fault.
 async function click(f) {
   try {
-    await f.handle.click({ timeout: 5000 });
+    if (f.touch) await f.handle.tap({ timeout: 5000 });
+    else await f.handle.click({ timeout: 5000 });
   } catch (err) {
     const covered = /([^\n]*intercepts pointer events)/.exec(String(err && err.message).replace(/\x1b\[[0-9;]*m/g, ''));
     if (covered) throw new StepError('cannot tap ' + f.desc + ': ' + covered[1].replace(/^\s*-\s*/, ''));
