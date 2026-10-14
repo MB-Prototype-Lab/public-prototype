@@ -54,12 +54,6 @@ function themeCurrent() {
   return themeById(state.settings && state.settings.colorMode);
 }
 
-/** Is the active theme a dark one? For anything that needs to branch on it. */
-function themeIsDark() {
-  const id = themeCurrent().id;
-  return id === "dark" || id === "naturalDark";
-}
-
 /** Put the right class on .screen. Called from render(). */
 function themeApply() {
   const el = document.querySelector(".screen");

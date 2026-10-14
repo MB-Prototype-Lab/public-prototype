@@ -68,11 +68,8 @@ function homeTasksDone() {
   return state.dailyTasks.filter(t => t.completed).length;
 }
 
-// Each task routes somewhere real and pays kibble. Tasks carrying an
-// observationId show it inline, so the observation is reachable from home as
-// well as from its other surfaces (D18 wants ≥2).
+// Each task routes somewhere real and pays kibble.
 function renderHomeTask(task) {
-  const obs = task.observationId ? observationById(task.observationId) : null;
   return `
     <div class="card home-task ${task.completed ? "home-task-done" : ""}">
       <!-- The bones line sits UNDER THE TITLE, beside the button. It used to be
@@ -82,7 +79,6 @@ function renderHomeTask(task) {
       <div class="row" style="align-items:center;gap:10px;">
         <div style="flex:1;">
           <p class="task-title" style="margin:0 0 2px;">${h(task.label)}</p>
-          ${obs ? `<p class="helper" style="margin:0;">${h(observationDetail(obs))}</p>` : ""}
           <p class="home-task-kibble">🦴 ${task.kibble} bones</p>
         </div>
         ${task.completed
@@ -134,7 +130,7 @@ function renderHomeAdmin() {
         <div class="input-group">
           <label>${i + 1}. ${h(t.label)}</label>
           <div class="helper">
-            route <code>${h(t.route)}</code> · ${t.kibble} bones${t.observationId ? " · " + h(t.observationId) : ""}
+            route <code>${h(t.route)}</code> · ${t.kibble} bones
           </div>
           <select onchange="state.dailyTasks[${i}].completed=(this.value==='true');render()">
             <option value="false" ${!t.completed ? "selected" : ""}>not done</option>

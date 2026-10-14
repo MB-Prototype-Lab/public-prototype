@@ -411,11 +411,6 @@ function journalSubmit() {
   go("journalDone");
 }
 
-function journalDiscard() {
-  state.journalSession = null;
-  navBack();
-}
-
 // Totals for the confirmation screen.
 function journalSessionTotal() {
   const s = state.journalSession;

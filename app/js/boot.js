@@ -156,9 +156,6 @@ function v3EntryScreen() {
 // peer-benchmarks.json flags the discrepancy itself in `_note_gap`.
 //
 // So the numbers are right and the headline is wrong. Reframed here at boot.
-// Phase 2 adds the separate peer card (observationPeerCounterpart) alongside
-// it — both framings must appear, labelled distinctly, and neither may stand
-// in for the other.
 function v3ReframeDiningObservation() {
   const o = (state.observations || []).find(x => x.id === "obs_dining_over_peers");
   if (!o) return;

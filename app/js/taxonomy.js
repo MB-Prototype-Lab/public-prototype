@@ -37,11 +37,6 @@ function catValue(map, category) {
   return (map && Number(map[category])) || 0;
 }
 
-/** [{category, amount}] in taxonomy order — safe for rendering. */
-function catRows(map) {
-  return CATEGORIES.map(c => ({ category: c, amount: catValue(map, c) }));
-}
-
 /** True when the string is a real taxonomy member (guards journal writes). */
 function isCategory(c) {
   return CATEGORIES.indexOf(c) !== -1;

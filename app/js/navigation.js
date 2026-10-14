@@ -165,10 +165,6 @@ function taskGo(destination) {
   go(destination);
 }
 
-function completeAndReward() {
-  go("reward");
-}
-
 // ─── Badge/offer selection ────────────────────────────────────────────────────
 
 // Navigates to the topic page for a badge selected from the Learn tab.

@@ -720,51 +720,32 @@ Two behaviours worth keeping if this is touched:
 
 ## 6. Observation registry
 
-Four seeded observations (D18), each carrying a `surfaces[]` array naming where
-it must appear. D18 and Phase 6 both require every observation reachable from
-**at least two screens**.
+Four seeded observations (D18). D18 requires each to be reachable from **at
+least two screens**. Sweep §3 checks that on rendered screens: it looks for each
+headline in journalDone, dailySummary, myProgress, dailyShare (preview open) and
+dailyUpdate (paused on its `summary_stack` cue), and fails below two.
 
 | id | type | surfaces |
 |---|---|---|
-| `obs_dining_over_peers` | `peer_gap` | home_tip, budget_comparison, daily_update, progress |
+| `obs_dining_over_peers` | `peer_gap` (`plan_gap` after boot) | home_tip, budget_comparison, daily_update, progress |
 | `obs_hulu_unused` | `subscription_flag` | home_task, progress, daily_update |
 | `obs_emergency_behind` | `goal_pace` | goals, daily_update, progress |
 | `obs_insurance_unbudgeted` | `bill_flag` | home_task, progress_bills, budget_comparison |
 
-**Contract:** screens ask the registry what to show; they never hardcode an
-observation.
+Boot copies the observations, `surfaces` tags included, into
+`state.observations`. Code reads only two tags: journalDone shows up to two
+observations tagged `budget_comparison` or `progress`
+(`observationsFor`). dailySummary renders every observation, and dailyUpdate and
+dailyShare the first three, in seed order. The other tags are labels nothing
+reads, so editing them moves no card.
 
-```js
-observationsFor("progress")   // → array of observations naming that surface
-```
-
-This is what makes the Phase 6 reachability check mechanical rather than a
-hunt — and it means adding a surface is a data edit, not a code edit.
-
-**Seven surface names are in use.** They are not screen ids; map them once:
-
-| Surface | Screen / region |
-|---|---|
-| `home_tip` | Home — tip banner |
-| `home_task` | Home — daily task list |
-| `budget_comparison` | Budget — three-layer comparison (only the confirm gate now; the tab itself renders "Worth a look" instead) |
-| `progress` | My Progress — main body |
-| `progress_bills` | My Progress — bills calendar |
-| `goals` | Goals tab |
-| `daily_update` | Daily update sequence |
-
-<!-- Note `progress` and `progress_bills` are two surfaces on ONE screen. The
-     map is surface → region, not surface → screen, so a screen may query more
-     than one key. -->
-<!-- Reachability arithmetic: dining 4 surfaces, hulu 3, emergency 3,
-     insurance 3 — every observation clears the ≥2 bar with room to spare, so
-     Phase 6 should pass by construction. If it doesn't, a surface key got
-     typo'd rather than a screen being missed. -->
+Copy is templated (`observationDetail`, `observationHeadline`,
+`observationFigure`), and `observationsRecompute` re-derives the figures after
+boot and after each journal submit (L17).
 
 <!-- L11 applies here: obs_dining_over_peers ships typed `peer_gap` with the
-     PLAN numbers (429 vs 320). Boot reframes its headline to "over your plan"
-     (`v3ReframeDiningObservation`), and a separate peer card compares 429 with
-     the derived peer value. -->
+     PLAN numbers (429 vs 320). Boot reframes it to a plan comparison headlined
+     "than you planned" (`v3ReframeDiningObservation`). -->
 
 ---
 
@@ -1207,8 +1188,8 @@ Plus, new in v3: a **full-bleed mode class** if the screen hides the nav (§8).
 - **No screen renders empty** (D19). Where six days is too thin, fabricate a
   plausible value. This is a *design* constraint, not a final-pass fix — a
   screen built without it usually can't be retrofitted cheaply.
-- **Every observation reachable from ≥2 screens** (D18) — guaranteed by the
-  registry in §6 rather than by inspection.
+- **Every observation reachable from ≥2 screens** (D18) — checked on the
+  rendered screens by sweep §3 (§6).
 - **`prefers-reduced-motion` respected**: idle animation stops, transitions
   become instant, the daily update plays as timed static frames.
 - **Tap targets ≥44px. Keyboard focus visible throughout.**

@@ -174,23 +174,9 @@ function benchColLocalModifier(category, county, state) {
   return 1;
 }
 
-/**
- * Is this area actually modeled, or is the national baseline standing in?
- *
- * One definition, two entry points: callers holding a resolved lookup use the
- * predicate directly, callers holding only a ZIP use the wrapper below. Written
- * twice they would eventually disagree.
- *
- * (Don't name the wrapper in this comment — sweep.sh §7b counts a mention as a
- * reference, and then it can neither report it as orphaned nor accept it in
- * DEAD_BASELINE.)
- */
+/** Is this area actually modeled, or is the national baseline standing in? */
 function benchColSupported(col) {
   return !!col && col.source !== "fallback";
-}
-
-function benchZipSupported(zip) {
-  return benchColSupported(benchColMultipliers(zip));
 }
 
 /**

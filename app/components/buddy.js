@@ -277,13 +277,6 @@ function renderBuddyDescription(b) {
   `;
 }
 
-/** One-line description — for surfaces too small for the stage. */
-function buddyDescription() {
-  const b = state.buddy || {};
-  return [String(b.breed || "").replace(/_/g, " "), b.furColor && b.furColor + " fur", b.size]
-    .filter(Boolean).join(" · ");
-}
-
 function renderBuddyAdmin() {
   const b = state.buddy || {};
   const fields = [

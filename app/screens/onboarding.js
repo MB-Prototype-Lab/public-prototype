@@ -1062,18 +1062,6 @@ function onbColChart(zip) {
     <p class="task-desc onb-zip-result">We'll use people like you in ${where}.</p>`;
 }
 
-// The composite is a weighted basket, and most of that basket is priced
-// nationally — so even Silicon Valley lands near 120%, which reads as wrong to
-// anyone who knows what their own rent is. Housing is where nearly all the
-// variation actually lives, so name it.
-function onbColHousingLine(col) {
-  return `
-    <p class="onb-col-text onb-col-lead" style="margin-top:16px;">
-      <span class="onb-line">Housing is usually the biggest one, then food, then getting around.</span>
-      <span class="onb-line">Those three are worth getting right.</span>
-    </p>`;
-}
-
 // The declared way out of the ZIP step. The top-bar Skip already leaves the
 // field empty, but it is a generic control that says nothing about what
 // happens next — so a tester who is simply unsure about handing over a ZIP has

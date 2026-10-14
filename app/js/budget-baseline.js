@@ -26,23 +26,6 @@ const BUDGET_BUILDER_LABELS = {
   emergencyFund: "Emergency fund"        // seeds the budget; runs before it
 };
 
-/** Build a baseline from the current plan — powers builder re-entry. */
-function planToBaseline() {
-  const monthly = {};
-  CATEGORIES.forEach(c => { monthly[c] = catValue(state.plan, c); });
-  return {
-    source: state.planBuiltWith || null,
-    at: state.planBuiltDate || null,
-    profile: {
-      zip: state.profile.zip,
-      householdSize: state.profile.householdSize,
-      incomeAnnual: state.profile.incomeAnnual
-    },
-    lifestyle: Object.assign({}, state.lifestyle),
-    monthly: monthly
-  };
-}
-
 /** Commit a baseline: submit/confirm, or the approved immediate ESF save. */
 function applyBudgetBaseline(baseline) {
   if (!baseline || !baseline.monthly) return;

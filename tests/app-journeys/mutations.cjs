@@ -107,9 +107,9 @@ const SPECS = [
   },
   {
     id: 'dead-code-and-comment', expect: 'none', journeys: ['themes', 'onboarding-full'],
-    why: 'an unused function deleted and a comment trimmed (nothing changes)',
+    why: 'an unused function added and a comment trimmed (nothing changes)',
     edits: {
-      'js/theme.js': [['function themeIsDark() {\n  const id = themeCurrent().id;\n  return id === "dark" || id === "naturalDark";\n}\n', '']],
+      'js/theme.js': [['function themeCurrent() {\n', 'function themeUnusedProbe() {\n  return themeCurrent().id === "dark";\n}\n\nfunction themeCurrent() {\n']],
       'screens/onboarding.js': [['// Step 5 is the lifestyle subset — advance within it before moving on.\n', '']],
     },
   },

@@ -476,14 +476,15 @@ var D18_SCREENS = {
     try { return cue === -1 ? "" : renderSafe("dailyUpdate"); } finally { state.du = du; }
   }
 };
-var ids = (state.observations || []).map(function (o) { return o.id; });
+var seededObs = state.observations || [];
+var ids = seededObs.map(function (o) { return o.id; });
 chk(ids.length === 4, "four seeded observations", ids.join(", "));
 var shownOn = {};
 Object.keys(D18_SCREENS).forEach(function (sc) {
   var t = textOf(D18_SCREENS[sc]());
-  ids.forEach(function (id) {
-    var head = textOf(observationHeadline(observationById(id)));
-    if (head && t.indexOf(head) !== -1) (shownOn[id] = shownOn[id] || []).push(sc);
+  seededObs.forEach(function (o) {
+    var head = textOf(observationHeadline(o));
+    if (head && t.indexOf(head) !== -1) (shownOn[o.id] = shownOn[o.id] || []).push(sc);
   });
 });
 ids.forEach(function (id) {
@@ -1083,25 +1084,12 @@ var DEAD_BASELINE = [
   // replaced these earlier bill, typed-buffer, explanation and help surfaces.
   "esfBillsTotal", "esfMaintenanceEstimate", "esfPickChoice", "esfRowSource",
   "esfRunHelp", "esfSetBufferRaw", "esfToggleExplain", "esfUtilitiesSplit",
-  "onbColHousingLine",
-  // The ZIP-only entry point to the cost-of-living predicate. benchColIndex
-  // already holds a resolved lookup and uses benchColSupported, so calling this
-  // instead would repeat the lookup. Kept as the module's public
-  // "is this area modeled?".
-  "benchZipSupported",
-  "buddyDescription",           // buddy plumbing, used once art lands (L22)
   // v3.1 inverted the budget flow, so these two lost their callers THERE.
   // Both are still live in v3, which is why they are not deleted: the two
   // versions are an A/B pair and the files stay readable side by side.
   "lwBuildPreview",             // v3: lazily rebuilt the review preview
   "lwSubmit",                   // v3: the single save path, now split in v3.1
   "budgetDelta",
-  "catRows",                    // taxonomy helper, pairs with catTotal/catValue
-  "completeAndReward",
-  "dailySummaryDone",
-  "journalDiscard",             // journal seam
-  "observationPeerCounterpart",
-  "planToBaseline",             // budget-baseline seam (L6)
   // Both orphaned deliberately when the Budget tab became the review surface:
   // the twelve slider rows moved to the per-category screen, and "Worth a look"
   // replaced the observation cards. Kept because a future edit mode wants them.
@@ -1111,8 +1099,7 @@ var DEAD_BASELINE = [
   // track (components/budget-band.js). Kept, not deleted: it is the only
   // implementation of the old per-flag bar scaling, and v3 still renders that
   // layout — the two versions stay diffable.
-  "cmpFlagBar",
-  "themeIsDark"                 // L21, for a screen that wants to branch on theme
+  "cmpFlagBar"
 ];
 
 // Everything shares one global namespace, so a name declared in two files is
