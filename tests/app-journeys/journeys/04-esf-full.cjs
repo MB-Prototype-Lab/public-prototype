@@ -28,7 +28,7 @@ module.exports = {
     expect({ screen: 'esfPlan' }),
     tap('9 months'),
     choose('Extra percentage', { index: 2 }),
-    type('Amount already saved', '1500'),
+    type('Amount already saved', '1500', { clear: true }),
     tap('Set my goal'),
     expect({ screen: 'goals' }),
     tap({ name: /^Emergency fund/, role: 'button' }),
