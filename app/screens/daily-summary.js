@@ -41,8 +41,7 @@ function renderDailySummary() {
 }
 
 // The streak registers at the END of the share flow, which is now
-// screens/daily-share.js — so skipping share means skipping the streak,
-// exactly as the spec describes the ordering.
+// screens/daily-share.js — so skipping share means skipping the streak.
 function dailySummaryDone() {
   navGoHome();
 }

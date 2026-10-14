@@ -886,7 +886,7 @@ function onbFinish() {
   if (state.trialAccepted == null) state.trialAccepted = true;
 
   // The budget is NOT built here — the setup wizard is the first thing the
-  // Budget tab shows (spec 04: "the wizard, before the budget exists"). We only
+  // Budget tab shows ("the wizard, before the budget exists"). We only
   // carry the lifestyle answers forward (written above), which pre-fill the
   // wizard when the tester opens Budget or taps the "Set up your budget" task.
   // Leaving planStatus empty is what makes renderBudgetEmpty (the wizard door)

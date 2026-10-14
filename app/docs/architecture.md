@@ -239,15 +239,15 @@ category and must never substitute for one another:
 
 - **vs plan** — $429 against a $320 budget = **34% over**
 - **vs peers** — $429 against the peer benchmark (**$295** under the BEA model;
-  the spec's own worked example said $370 under the retired tier table — §5)
+  `worked_example` still says $370, from the retired tier table — §5)
 
 Per L11, the seeded dining observation is the **plan** comparison, and the peer
 comparison gets its own distinct card.
 
 ### Peer benchmark formula
 
-The spec states it as a one-liner. **The one-liner is misleading** — verified
-against the actual data, *all three* terms differ from how it reads:
+**A one-line reading of the formula is misleading** — verified against the
+actual data, *all three* terms differ from how it reads:
 
 ```
 peerValue = base[category][incomeBand][householdSize - 1]        // ARRAY INDEX
@@ -262,7 +262,7 @@ peerValue = base[category][incomeBand][householdSize - 1]        // ARRAY INDEX
    2 → index 1, 3 → index 2, **4+ → index 3 (clamp)**. Reading it as
    `[householdSize]` returns the wrong household's figure and still looks
    plausible — the classic silent-wrong-number bug.
-2. **Cost of living no longer comes from `colTiers` at all.** The spec's
+2. **Cost of living no longer comes from `colTiers` at all.** The old
    two-step prefix→tier→multiplier lookup is retired — it gave Manhattan, Palo
    Alto, Santa Clara and Los Angeles the same figures. **Always go through
    `benchColMultipliers(zip)`**, which resolves the ZIP's county to a BEA
@@ -393,7 +393,7 @@ source and every derivation.
 
 ### `benchSelfTest` no longer asserts 370
 
-The spec's `worked_example` is Dining out, b3, household 2, ZIP 90066 →
+`PEER_BENCHMARKS.worked_example` is Dining out, b3, household 2, ZIP 90066 →
 `275 × 1.34 × 1.0 = 370`. That **1.34 was the `very_high` tier's** Dining-out
 multiplier, i.e. the thing this model replaced. BEA prices restaurant meals
 inside "Services: Other", which for Los Angeles is 107.1 — so the peer value is
@@ -602,11 +602,12 @@ Same for ZIP prefix lookups — `_note` is a key there too.
 
 **Self-test on build** — `benchSelfTest`, from
 `PEER_BENCHMARKS.worked_example`: Dining out, band b3, household 2, ZIP 90066,
-foodie moderate. Base **275** and lifestyle **1.0** still reproduce the spec
-exactly; the cost-of-living factor is BEA's **1.071**, not the retired tier's
-1.34, so the result is **295**. Each factor is asserted separately, which the
-old single assertion could not do — see "`benchSelfTest` no longer asserts 370"
-in §5. If any of the three doesn't reproduce, the wiring is wrong.
+foodie moderate. Base **275** and lifestyle **1.0** still reproduce the
+worked example exactly; the cost-of-living factor is BEA's **1.071**, not the
+retired tier's 1.34, so the result is **295**. Each factor is asserted
+separately, which the old single assertion could not do — see
+"`benchSelfTest` no longer asserts 370" in §5. If any of the three doesn't
+reproduce, the wiring is wrong.
 
 ---
 
@@ -968,7 +969,7 @@ clause does not.
 **One file per segment.** Each file's duration *is* that segment's timing, and a
 single segment can be re-cut without redoing the script.
 
-### Timing model is inverted from the spec
+### Timing model: recorded audio is the clock
 
 `speechSynthesis` `boundary` events don't fire for recorded audio. So:
 
@@ -976,9 +977,9 @@ single segment can be re-cut without redoing the script.
 - Timings are extracted once at generation time and written back.
 - The `<audio>` element is the clock (`elapsed = audio.currentTime`).
 
-This is closer to D29's stated production pipeline ("script → TTS → timing
-extraction → timings written back") than the spec's own prototype shortcut, and
-it removes cross-browser variance in whether boundary events fire at all.
+This follows D29's stated production pipeline ("script → TTS → timing
+extraction → timings written back"), and it removes cross-browser variance in
+whether boundary events fire at all.
 
 **D29's structural rules still bind:**
 - Segment text and timings **never share an object**. Segments carry ids;

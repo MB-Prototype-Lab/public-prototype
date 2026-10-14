@@ -181,8 +181,8 @@
 }
 
 /* ─── Natural Dark ────────────────────────────────────────────────────────────
-   The v3 spec specifies no dark mode, but v2 ships one. These are warm
-   equivalents — the palette dimmed rather than a different, colder theme. */
+   Warm equivalents — the palette dimmed rather than a different, colder
+   theme. */
 .theme-natural-dark {
   --cream:     #26231F;
   --screen:    var(--cream);

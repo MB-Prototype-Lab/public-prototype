@@ -396,7 +396,7 @@ function benchOptsForUser() {
 }
 
 // ─── Self-test (PEER_BENCHMARKS.worked_example) ──────────────────────────────
-// The spec shipped a worked example so the model can verify itself on build:
+// The data ships a worked example so the model can verify itself on build:
 // Dining out, b3, household 2, ZIP 90066, foodie moderate + cooks sometimes →
 // 275 × 1.34 × 1.0 = 370.
 //
@@ -458,7 +458,7 @@ function benchSelfTest() {
     pass: failed.length === 0,
     checks: checks,
     failed: failed,
-    // What the spec's own worked example said, and what the model says now.
+    // What the worked example says, and what the model says now.
     specResult: w.result,
     actual: actual,
     detail: w._check + "  —  col is now BEA " + bucket + ", so " +
