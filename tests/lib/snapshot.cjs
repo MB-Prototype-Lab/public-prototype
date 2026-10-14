@@ -91,15 +91,27 @@ function visibleText(root) {
 
 // aliases (tests/app-journeys/state-aliases.cjs): {key, as} names a renamed key
 // the same on both sides wherever it appears; {removed: 'a.*.c'} leaves out the
-// value at that dot path from the root, `*` matching any key or index.
-function stableJson(value, rewrite, aliases = []) {
+// value at that dot path from the root, `*` matching any key or index. When
+// given, `matched` collects each removal path that left out a value the state
+// still has.
+function stableJson(value, rewrite, aliases = [], matched = null) {
   const seen = new WeakSet();
-  const removed = aliases.filter(a => a.removed).map(a => a.removed.split('.'));
-  // The removal paths that still match below this child, and whether one ends at it.
+  const removed = aliases.filter(a => a.removed).map(a => {
+    const segs = a.removed.split('.');
+    // Wildcards alone would leave out whole levels of state, the root's included.
+    if (segs.every(s => s === '*')) throw new Error('state-aliases.cjs: removal path "' + a.removed + '" is all wildcards');
+    return { path: a.removed, segs };
+  });
+  // The removal paths that still match below this child, and those that end at it.
   const below = (paths, depth, key, name) => {
-    if (!paths.length) return { sub: paths, omit: false };
-    const sub = paths.filter(p => p[depth] === '*' || p[depth] === key || p[depth] === name);
-    return { sub, omit: sub.some(p => p.length === depth + 1) };
+    if (!paths.length) return { sub: paths, ends: paths };
+    const sub = paths.filter(p => p.segs[depth] === '*' || p.segs[depth] === key || p.segs[depth] === name);
+    return { sub, ends: sub.filter(p => p.segs.length === depth + 1) };
+  };
+  const omit = (ends, v) => {
+    if (!ends.length) return false;
+    if (matched && v !== undefined && typeof v !== 'function') for (const p of ends) matched.add(p.path);
+    return true;
   };
   const walk = (v, key, paths, depth) => {
     if (v === undefined || typeof v === 'function') return undefined;
@@ -116,8 +128,8 @@ function stableJson(value, rewrite, aliases = []) {
     if (Array.isArray(v)) {
       out = [];
       for (let i = 0; i < v.length; i++) {
-        const { sub, omit } = below(paths, depth, String(i));
-        if (omit) continue;
+        const { sub, ends } = below(paths, depth, String(i));
+        if (omit(ends, v[i])) continue;
         const w = walk(v[i], String(i), sub, depth + 1);
         out.push(w === undefined ? null : w);
       }
@@ -125,8 +137,8 @@ function stableJson(value, rewrite, aliases = []) {
       out = {};
       const keys = Object.keys(v).map(k => [k, aliasFor(k, aliases)]).sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));
       for (const [k, name] of keys) {
-        const { sub, omit } = below(paths, depth, k, name);
-        if (omit) continue;
+        const { sub, ends } = below(paths, depth, k, name);
+        if (omit(ends, v[k])) continue;
         const w = walk(v[k], k, sub, depth + 1);
         if (w !== undefined) out[name] = w;
       }

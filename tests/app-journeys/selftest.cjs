@@ -167,7 +167,7 @@ check('handler identifiers skip members, keys, locals and strings', () => {
   assert.deepEqual(snap.handlerIdents('const n = 1; (a, b) => a + n; event.preventDefault()'), []);
 });
 
-check('state digests leave out listed removed paths and nothing else', () => {
+check('state digests leave out listed removed paths and nothing else, and report live ones', () => {
   const aliases = [{ key: 'isV3', as: 'isNew' }, { removed: 'lifestyleWizard', why: 't' },
     { removed: 'xpConfig.discountedRate', why: 't' }, { removed: 'goals.*.legacy', why: 't' }];
   const digest = s => JSON.stringify(snap.stableJson(s, x => x, aliases));
@@ -182,9 +182,19 @@ check('state digests leave out listed removed paths and nothing else', () => {
   assert.notEqual(digest(state({ xpConfig: { rate: 1, discount: 1 } })), digest(state()));
   assert.notEqual(digest(state({ goals: [{ id: 1, legacyNote: 'b' }, { id: 2 }] })), digest(state()));
   assert.notEqual(digest(state({ legacy: 2 })), digest(state()));
+  // Paths that matched a value the state still has are reported; null counts.
+  const matched = new Set();
+  snap.stableJson(Object.assign({}, withFields, { lifestyleWizard: null }), x => x, aliases.concat([{ removed: 'absent.field', why: 't' }]), matched);
+  assert.deepEqual([...matched].sort(), ['goals.*.legacy', 'lifestyleWizard', 'xpConfig.discountedRate']);
+  matched.clear();
+  snap.stableJson(state(), x => x, aliases, matched);
+  assert.deepEqual([...matched], []);
+  // Wildcards alone would blank whole levels of state, the root's included.
+  for (const removed of ['*', '*.*']) assert.throws(() => snap.stableJson(state(), x => x, [{ removed, why: 't' }]), /all wildcards/);
   // The reviewed list itself is well formed.
   for (const a of require('./state-aliases.cjs')) {
-    const ok = a.removed ? /^[^.\s]+(\.[^.\s]+)*$/.test(a.removed) && typeof a.why === 'string' && a.why.trim() !== ''
+    const ok = a.removed ? /^[^.\s]+(\.[^.\s]+)*$/.test(a.removed) && !a.removed.split('.').every(s => s === '*') &&
+      typeof a.why === 'string' && a.why.trim() !== ''
       : typeof a.key === 'string' && typeof a.as === 'string';
     assert.ok(ok, 'state-aliases.cjs entry ' + JSON.stringify(a));
   }

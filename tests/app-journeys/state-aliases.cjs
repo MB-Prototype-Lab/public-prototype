@@ -6,6 +6,8 @@
 //     change in what the app remembers.
 //   {removed: 'a.b.c', why: '<one line>'}  a field the app never reads, deleted
 //     by a cleanup: left out of the state digest and deltas on both sides. A dot
-//     path from the state root; `*` matches any key or index at that level. The
-//     commit that deletes the field adds its entry.
+//     path from the state root; `*` matches any key or index at that level, but
+//     not at every level. The commit that deletes the field adds its entry: one
+//     that still matches a field in the app's state warns in the gate and fails
+//     --against and at the head of --series.
 module.exports = [];

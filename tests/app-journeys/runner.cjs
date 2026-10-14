@@ -227,7 +227,7 @@ function recordStep(app, ctx, label) {
   const hist = fresh(app.log.history, 'history');
   const consoleLines = fresh(app.log.console, 'console');
 
-  const stateJson = snap.stableJson(state, rewrite, ctx.aliases);
+  const stateJson = snap.stableJson(state, rewrite, ctx.aliases, ctx.liveRemoved);
   const stateText = JSON.stringify(stateJson);
   const flat = snap.flatten(stateJson);
   const delta = snap.stateDelta(ctx.prevFlat, flat);
@@ -300,11 +300,13 @@ function checkHandlers(app, ctx) {
 }
 
 /**
- * @returns {{id, records, visits, errors, gate}}
+ * @returns {{id, records, visits, errors, gate, warnings, liveRemoved, app}}
  *   records: [{label, screen, participant, tools, wiring}]
  *   visits:  [{screen, via}]  via = 'user' | 'tools' | 'boot'
  *   errors:  journey errors (a step could not be done) — always fatal
  *   gate:    app errors, uncompilable or dangling handlers, unrouted screens
+ *   liveRemoved: state-aliases.cjs removal paths that matched a field this
+ *            app's state still has
  */
 async function runJourney(journey, opts = {}) {
   const folder = opts.folder;
@@ -312,7 +314,7 @@ async function runJourney(journey, opts = {}) {
   const variant = opts.variant;
   const id = journey.id + (variant ? '@' + variant.id : '');
   const steps = typeof journey.steps === 'function' ? journey.steps(variant ? variant.params : journey.defaults || {}) : journey.steps;
-  const ctx = { rewrite: snap.idRewriter(), aliases: opts.aliases || [], seen: {}, prevFlat: null, lastKey: null, handlersOk: new Set() };
+  const ctx = { rewrite: snap.idRewriter(), aliases: opts.aliases || [], liveRemoved: new Set(), seen: {}, prevFlat: null, lastKey: null, handlersOk: new Set() };
   const records = [], visits = [], errors = [], gate = [];
   const fired = new WeakSet();
   const typed = [];
@@ -451,7 +453,7 @@ async function runJourney(journey, opts = {}) {
   if (app.run('typeof window.__lastError !== "undefined" && window.__lastError')) {
     gate.push(id + ': window.__lastError ' + JSON.stringify(app.run('window.__lastError')));
   }
-  return { id, records, visits, errors, gate: [...new Set(gate)], warnings: [...new Set(warnings)], app };
+  return { id, records, visits, errors, gate: [...new Set(gate)], warnings: [...new Set(warnings)], liveRemoved: [...ctx.liveRemoved], app };
 }
 
 module.exports = { runJourney, JourneyError, CALL_ALLOWLIST };

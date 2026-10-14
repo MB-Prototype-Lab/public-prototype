@@ -141,18 +141,31 @@ function sameRun(a, b) {
   return null;
 }
 
+// A removal entry in state-aliases.cjs that still matches a field in this
+// app's state hides a live field: the entry came before its field was deleted,
+// or the field came back.
+function liveRemovals(results) {
+  const live = new Map();
+  for (const r of results) for (const p of r.liveRemoved || []) { if (!live.has(p)) live.set(p, []); live.get(p).push(r.id); }
+  return [...live].map(([p, ids]) => 'state-aliases.cjs removes "' + p + '", but the state still has it (' +
+    ids.slice(0, 3).join(', ') + (ids.length > 3 ? ', … ' + (ids.length - 3) + ' more' : '') + ')');
+}
+
 // cov is null when only some journeys ran: coverage is a whole-suite property.
-function printGateSummary(results, cov, nondeterministic) {
+// A live removal entry warns, or fails when strictRemovals (a comparison).
+function printGateSummary(results, cov, nondeterministic, strictRemovals = false) {
   const errors = results.flatMap(r => r.errors);
   const gate = results.flatMap(r => r.gate);
-  const warnings = [...new Set(results.flatMap(r => r.warnings))];
+  const removals = liveRemovals(results);
+  const warnings = [...new Set(results.flatMap(r => r.warnings))].concat(strictRemovals ? [] : removals);
   for (const e of errors) console.log('JOURNEY  ' + e);
   for (const g of gate) console.log('GATE     ' + g);
   for (const n of nondeterministic) console.log('UNSTABLE ' + n);
   if (cov && cov.missing.length) console.log('COVERAGE no journey reaches (the Tools tour does not count): ' + cov.missing.join(', '));
+  if (strictRemovals) for (const r of removals) console.log('REMOVED  ' + r);
   for (const w of warnings) console.log('WARNING  ' + w);
   const steps = results.reduce((n, r) => n + r.records.length, 0);
-  const ok = !errors.length && !gate.length && !nondeterministic.length && !(cov && cov.missing.length);
+  const ok = !errors.length && !gate.length && !nondeterministic.length && !(cov && cov.missing.length) && !(strictRemovals && removals.length);
   console.log((ok ? 'PASS' : 'FAIL') + '  ' + results.length + ' journey runs, ' + steps + ' recorded steps, ' +
     (cov ? (cov.routed.length - cov.missing.length) + '/' + cov.routed.length + ' screens reached' : 'coverage not checked (--only)') +
     (warnings.length ? ', ' + warnings.length + ' warnings' : ''));
@@ -339,7 +352,7 @@ async function gateMode(args, journeys) {
 async function againstMode(args, journeys) {
   const runs = expand(journeys);
   const head = await runAll(runs, path.join(REPO, 'app'));
-  const gatesOk = printGateSummary(head, args.only ? null : coverage(head, path.join(REPO, 'app')), []);
+  const gatesOk = printGateSummary(head, args.only ? null : coverage(head, path.join(REPO, 'app')), [], true);
   const sha = git(['rev-parse', '--short', args.against]);
   const base = await withWorktree(async wt => { checkout(wt, args.against); return runAll(runs, path.join(wt, 'app')); });
   const cmp = compare(base, head);
@@ -373,7 +386,7 @@ async function seriesCompare(baseRef, commits, runAt, onRow, gitFn = git) {
     const vsBase = compare(await get(p.mergeBase), res);
     const vsParent = compare(await get(p.parent), res);
     const gate = res.flatMap(r => r.errors.concat(r.gate));
-    onRow(Object.assign({ vsBase, vsParent, gate }, p));
+    onRow(Object.assign({ vsBase, vsParent, gate, removals: liveRemovals(res) }, p));
     for (const [s, last] of lastUse) if (last <= i) { cache.delete(s); lastUse.delete(s); }
   }
 }
@@ -383,11 +396,14 @@ async function seriesMode(args, journeys) {
   const commits = git(['rev-list', '--reverse', baseRef + '..' + (headRef || 'HEAD')]).split('\n').filter(Boolean);
   const runs = expand(journeys);
   const short = sha => git(['rev-parse', '--short', sha]);
+  // Earlier commits still have the fields a later one deletes; only the head
+  // must not.
+  const headSha = git(['rev-parse', headRef || 'HEAD']);
   const rows = [];
   let failed = false;
   await withWorktree(async wt => {
     const runAt = sha => { checkout(wt, sha); return runAll(runs, path.join(wt, 'app')); };
-    await seriesCompare(baseRef, commits, runAt, ({ commit: c, mergeBase, parent, vsBase, vsParent, gate }) => {
+    await seriesCompare(baseRef, commits, runAt, ({ commit: c, mergeBase, parent, vsBase, vsParent, gate, removals }) => {
       const subject = git(['log', '-1', '--format=%h %s', c]);
       const baseName = 'merge base ' + short(mergeBase) + ' of ' + baseRef;
       const row = {
@@ -400,10 +416,12 @@ async function seriesMode(args, journeys) {
         useberry: [...vsParent.useberry].map(([k, n]) => k + ' (' + n + ')'),
         wiring: vsParent.wiring.length,
         gate: gate.length,
+        removals: c === headSha ? removals : [],
       };
-      if (row.participant || row.gate) failed = true;
+      const bad = row.participant || row.gate || row.removals.length;
+      if (bad) failed = true;
       rows.push(row);
-      console.log((row.participant || row.gate ? 'FAIL ' : 'ok   ') + subject);
+      console.log((bad ? 'FAIL ' : 'ok   ') + subject);
       if (row.participant) {
         console.log('       Phone differs from its ' + baseName);
         console.log(formatComparison({ participant: vsBase.participant, tools: [], wiring: [], renames: new Map(), useberry: new Map() }, baseName, c).split('\n').slice(1, 25).map(l => '       ' + l).join('\n'));
@@ -413,9 +431,10 @@ async function seriesMode(args, journeys) {
       if (row.useberry.length) console.log('       Useberry click names changed: ' + row.useberry.join(', '));
       if (row.wiring) console.log('       Wiring changed in ' + row.wiring + ' steps (vs first parent ' + row.parent + ')');
       if (row.gate) console.log('       ' + gate.slice(0, 5).join('\n       '));
+      for (const r of row.removals) console.log('       ' + r);
     });
   });
-  const text = rows.map(r => [r.participant ? 'PHONE CHANGED' : 'phone same', r.tools ? 'tools changed' : '', r.renames.length ? 'renames ' + r.renames.join(', ') : '', r.useberry.length ? 'click names changed' : '', r.wiring ? 'wiring changed' : '', r.gate ? 'GATE' : '', '·', r.commit].filter(Boolean).join(' ')).join('\n');
+  const text = rows.map(r => [r.participant ? 'PHONE CHANGED' : 'phone same', r.tools ? 'tools changed' : '', r.renames.length ? 'renames ' + r.renames.join(', ') : '', r.useberry.length ? 'click names changed' : '', r.wiring ? 'wiring changed' : '', r.gate ? 'GATE' : '', r.removals.length ? 'REMOVED FIELD LIVE' : '', '·', r.commit].filter(Boolean).join(' ')).join('\n');
   if (args.out) {
     fs.mkdirSync(args.out, { recursive: true });
     fs.writeFileSync(path.join(args.out, 'series.txt'), text + '\n');
