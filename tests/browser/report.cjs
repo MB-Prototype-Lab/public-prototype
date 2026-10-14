@@ -9,16 +9,17 @@ const path = require('node:path');
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const VARIANT_LABELS = {
-  naturalLight: 'Natural Light', light: 'Light', dark: 'Dark', naturalDark: 'Natural Dark', 'tools-desktop': 'Tools (desktop)',
+  naturalLight: 'Natural Light', light: 'Light', dark: 'Dark', naturalDark: 'Natural Dark', 'tools-desktop': 'Desktop with Tools',
 };
+const PART_TEXT = { phone: 'Phone', tools: 'Tools', selector: 'Selector' };
 const STATUS_TEXT = { same: 'Same', changed: 'Changed', flaky: 'Flaky', onlyBefore: 'Only before', onlyAfter: 'Only after' };
-// A step pictured on one side only (the journey stopped early on the other) counts as changed.
+// A picture only one side took (the journey stopped early, or Tools was closed, on the other) counts as changed.
 const countsAsChange = status => status === 'changed' || status === 'onlyBefore' || status === 'onlyAfter';
 
 function writeReport(outDir, rows, summary, variants) {
   const single = !summary.base;
   const byVariant = variants.map(v => ({ v, rows: rows.filter(r => r.variant === v.id) })).filter(x => x.rows.length);
-  const changedTotal = single ? 0 : summary.phoneChanged + summary.toolsChanged;
+  const changedTotal = single ? 0 : summary.phoneChanged + summary.toolsChanged + summary.selectorChanged;
   const focus = changedTotal || summary.broken;
   const headline = summary.broken ? 'Some journeys broke'
     : single ? 'Every journey finished'
@@ -26,8 +27,9 @@ function writeReport(outDir, rows, summary, variants) {
     : 'No visible change';
   const facts = single
     ? [[rows.length, 'journey runs'], [rows.reduce((n, r) => n + r.items.length, 0), 'pictures'], [summary.broken, 'journeys that broke']]
-    : [[summary.phoneChanged, 'phone pictures changed'], [summary.toolsChanged, 'Tools pictures changed'],
-      [summary.flaky, 'flaky (did not repeat)'], [summary.broken, 'journeys that broke']];
+    : [[summary.phoneChanged, 'phone pictures changed'], [summary.toolsChanged, 'Tools pictures changed']]
+      .concat(summary.gate ? [[summary.selectorChanged, 'selector pictures changed']] : [],
+        [[summary.flaky, 'flaky (did not repeat)'], [summary.broken, 'journeys that broke']]);
   const tabs = byVariant.map((x, i) => {
     const n = x.rows.reduce((k, r) => k + (r.broken ? 1 : 0) + r.items.filter(it => countsAsChange(it.status)).length, 0);
     return `<button class="tab" role="tab" aria-selected="${i === 0}" data-tab="${esc(x.v.id)}">${esc(VARIANT_LABELS[x.v.id] || x.v.id)}${n ? ` <span class="count">${n}</span>` : ''}</button>`;
@@ -93,7 +95,7 @@ body.only-changes .step.same, body.only-changes .journey.all-same { display: non
   </div>
   <p class="note">${single
     ? 'Each journey ran in Chromium, tapping the same buttons in the same order, with the clock fixed. A picture is taken at the start and after every step. "Broke" means a journey stopped before its last step, or the page raised an error.'
-    : 'Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken at the start and after every step, and each step\'s pictures are compared. "Changed" means more than 0.05% of its pixels differ, by any amount, and the difference repeated on a second run. "Only before" or "Only after" means only one version reached that step; it counts as changed. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.'}</p>
+    : 'Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken at the start and after every step, and each step\'s pictures are compared. At desktop width the phone and the Tools panel are pictured apart, and a phone picture counts as a phone change there too; the passcode and selector pages count as the selector. "Changed" means more than 0.05% of its pixels differ, by any amount, and the difference repeated on a second run. "Only before" or "Only after" means only one version has that picture (it stopped early, or Tools was closed, on the other); it counts as changed. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.'}</p>
   <div class="tabs" role="tablist">${tabs}</div>
   <label class="only"><input type="checkbox" id="only"${focus ? ' checked' : ''}> ${single ? 'Show only journeys that broke' : 'Show only changes'}</label>
   ${panels}
@@ -128,21 +130,24 @@ function journeyBlock(r, single) {
     ? `<p class="note step">Before: ${esc(r.baseFailure || 'finished')} · After: ${esc(r.headFailure || 'finished')}${r.headFailure ? '' : ' · It now goes further than before: a phone change.'}</p>` : '';
   const errors = r.pageErrors.length ? `<p class="note step">${single ? 'Page errors' : 'New page errors'}: ${esc(r.pageErrors.join(' | '))}</p>` : '';
   const picture = (src, alt) => `<img loading="lazy" src="${esc(src)}" alt="${esc(alt)}">`;
+  // Name the part only where a step has more than the phone (desktop with Tools, the selector).
+  const showPart = r.items.some(it => it.part && it.part !== 'phone');
+  const title = it => it.label + (showPart ? ' · ' + (PART_TEXT[it.part] || it.part) : '');
   return `
   <details class="journey${allSame ? ' all-same' : ''}"${allSame ? '' : ' open'}>
     <summary><h2>${esc(r.id)}</h2>${badges}</summary>
     ${failure}${errors}
     ${r.items.map(it => single ? `
     <div class="step">
-      <h3>${esc(it.label)}</h3>
-      <div class="pics"><figure>${picture(it.head, it.label)}</figure></div>
+      <h3>${esc(title(it))}</h3>
+      <div class="pics"><figure>${picture(it.head, title(it))}</figure></div>
     </div>` : `
     <div class="step ${it.status}">
-      <h3>${esc(it.label)} <span class="badge ${it.status}">${esc(STATUS_TEXT[it.status] || it.status)}</span></h3>
+      <h3>${esc(title(it))} <span class="badge ${it.status}">${esc(STATUS_TEXT[it.status] || it.status)}</span></h3>
       <div class="pics">
-        <figure><figcaption>Before</figcaption>${it.base ? picture(it.base, 'Before: ' + it.label) : '<p class="note">None</p>'}</figure>
-        <figure><figcaption>After</figcaption>${it.head ? picture(it.head, 'After: ' + it.label) : '<p class="note">None</p>'}</figure>
-        <figure><figcaption>Difference</figcaption>${it.diff ? picture(it.diff, 'Difference: ' + it.label) : '<p class="note">' + (it.status === 'same' ? 'No difference' : '—') + '</p>'}</figure>
+        <figure><figcaption>Before</figcaption>${it.base ? picture(it.base, 'Before: ' + title(it)) : '<p class="note">None</p>'}</figure>
+        <figure><figcaption>After</figcaption>${it.head ? picture(it.head, 'After: ' + title(it)) : '<p class="note">None</p>'}</figure>
+        <figure><figcaption>Difference</figcaption>${it.diff ? picture(it.diff, 'Difference: ' + title(it)) : '<p class="note">' + (it.status === 'same' ? 'No difference' : '—') + '</p>'}</figure>
       </div>
     </div>`).join('')}
   </details>`;

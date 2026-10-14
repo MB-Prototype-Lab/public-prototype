@@ -100,20 +100,25 @@ in `tests/browser/pixels.cjs` and `tests/browser/app-journeys-browser.cjs`, and
 may still change). A changed phone or Tools picture fails the check unless the PR
 declares it under "Phone and Tools changes", as for the journey checks. A change
 only the pictures show (a colour, a one-pixel shift) is declared the same way; the
-journey checks then print a note instead of failing. After a merge, main is
-compared with the previous main in report mode (`--report`): changed pictures,
-which the PR declared, are reported but do not fail; a journey that breaks or a
-new page error still fails.
+journey checks then print a note instead of failing. At desktop width the phone
+and the Tools panel beside it are pictured apart: a changed phone there is a
+phone change, declared under Phone. The passcode and selector pages have their
+own count and are declared under Tools. Screens only Tools can reach (L14) are
+pictured once, in Natural Light at desktop width, during the Tools tour. After a
+merge, main is compared with the previous main in report mode (`--report`):
+changed pictures, which the PR declared, are reported but do not fail; a journey
+that breaks or a new page error still fails.
 
 To see the pictures for a PR, open its **Checks** tab, choose the **Browser
 journeys** job, open the run's summary and download the
 `browser-journey-pictures` artifact. Unzip it and open `index.html`: each step
-shows Before, After and the Difference, with a tab per theme and one for Tools.
+shows Before, After and the Difference, with a tab per theme and one for desktop
+with Tools.
 
 - **Changed**: the picture differs from main, and differed again when the robot
   repeated the journey. **Only before** or **Only after** means only one version
-  reached that step (the journey stopped early on the other); it counts as a
-  change.
+  has that picture (the journey stopped early, or Tools was closed, on the
+  other); it counts as a change.
 - **Flaky**: it differed once but not on the repeat, so it is not counted.
 - **Broke**: the journey stopped before its last step (a button it needed was
   missing, disabled or covered), or the page raised an error.

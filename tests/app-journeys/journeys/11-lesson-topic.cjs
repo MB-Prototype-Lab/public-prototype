@@ -5,6 +5,7 @@ const { skipToProfile } = require('../common.cjs');
 module.exports = {
   id: 'lesson-topic',
   title: 'A lesson from the Learn tab: badge, topic, player, quiz, calculator, reward, Return Home',
+  browser: true,
   steps: skipToProfile().concat([
     tap('Learn'),
     tap({ name: 'Open', nth: 0 }),

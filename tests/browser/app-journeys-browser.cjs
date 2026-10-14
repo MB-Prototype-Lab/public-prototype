@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 // Real-browser journeys: replays the journeys marked `browser: true` in
-// Chromium, in all four themes at phone width plus Tools at desktop width.
+// Chromium, in all four themes at phone width, and at desktop width with the
+// phone and the Tools panel beside it pictured apart.
 //
 //   node tests/browser/app-journeys-browser.cjs [--head DIR] [--out DIR]
 //        one tree (default: this repository): fail if a journey stops early,
@@ -24,7 +25,7 @@
 // A picture is taken at boot and after every step, so states within one view (a
 // picked tile, the open keyboard, a sheet) are compared too. Before and after
 // are paired by the step number that starts each label, not the whole label,
-// which carries live figures; a step only one side reached counts as a change.
+// which carries live figures; a picture only one side took counts as a change.
 //
 // Needs Playwright: (cd tests/browser && npm ci && npx playwright install --with-deps chromium).
 
@@ -50,13 +51,19 @@ const PHONE = { width: 390, height: 844 };
 const DESKTOP = { width: 1440, height: 900 };
 const SETTLE_MS = 450;
 const FAIL_RATIO = 0.0005;          // more than 0.05% of pixels
+// What each variant pictures in the app, one picture per part: the phone, and
+// at desktop width the Tools panel beside it. A phone picture counts as a phone
+// change whichever variant took it. Outside the app (the passcode and selector
+// pages) the page is pictured as one 'selector' part.
 const VARIANTS = [
-  { id: 'naturalLight', theme: 'naturalLight', viewport: PHONE, shot: 'main.phone' },
-  { id: 'light', theme: 'light', viewport: PHONE, shot: 'main.phone' },
-  { id: 'dark', theme: 'dark', viewport: PHONE, shot: 'main.phone' },
-  { id: 'naturalDark', theme: 'naturalDark', viewport: PHONE, shot: 'main.phone' },
-  { id: 'tools-desktop', theme: 'naturalLight', viewport: DESKTOP, shot: '.page', tools: true },
+  { id: 'naturalLight', theme: 'naturalLight', viewport: PHONE, parts: { phone: 'main.phone' } },
+  { id: 'light', theme: 'light', viewport: PHONE, parts: { phone: 'main.phone' } },
+  { id: 'dark', theme: 'dark', viewport: PHONE, parts: { phone: 'main.phone' } },
+  { id: 'naturalDark', theme: 'naturalDark', viewport: PHONE, parts: { phone: 'main.phone' } },
+  { id: 'tools-desktop', theme: 'naturalLight', viewport: DESKTOP, parts: { phone: 'main.phone', tools: 'aside.admin' }, tools: true },
 ];
+const OUTSIDE_APP = { selector: 'body' };
+const PART_ORDER = ['selector', 'phone', 'tools'];
 // Grow the phone frame by however far the screen scrolls, so one picture holds
 // the whole view; restored right after the picture.
 async function growPhone(page) {
@@ -353,17 +360,22 @@ async function runOne(browser, tree, variant, journey, outDir) {
   const shoot = async label => {
     const step = stepOf(label);
     if (shots.some(s => s.step === step)) throw new Error('two pictures for step ' + step);
-    if (!dir) { shots.push({ label, step }); return; }
-    const file = path.join(dir, step + '.png');
     // The pointer rests where the last click landed, and Chromium updates which
     // element it hovers only on a later frame: park it in the page margin first,
     // so no picture shows a hover look on some runs and not others.
     await page.mouse.move(0, 0);
-    const inApp = page.url().includes('/app/');
-    const before = inApp ? await growPhone(page) : null;
-    await page.locator(inApp ? variant.shot : 'body').first().screenshot({ path: file, animations: 'disabled', caret: 'hide', mask: [page.locator('video')] });
-    if (inApp) await restorePhone(page, before);
-    shots.push({ label, step, file });
+    const parts = page.url().includes('/app/') ? variant.parts : OUTSIDE_APP;
+    for (const [part, selector] of Object.entries(parts)) {
+      const target = page.locator(selector).first();
+      // Tools may be closed (before the Tools tour opens it, after a restart): no picture.
+      if (part === 'tools' && !(await target.isVisible())) continue;
+      if (!dir) { shots.push({ label, step, part }); continue; }
+      const file = path.join(dir, step + '-' + part + '.png');
+      const before = part === 'phone' ? await growPhone(page) : null;
+      await target.screenshot({ path: file, animations: 'disabled', caret: 'hide', mask: [page.locator('video')] });
+      if (part === 'phone') await restorePhone(page, before);
+      shots.push({ label, step, part, file });
+    }
   };
   let failure = null;
   try {
@@ -391,13 +403,18 @@ function stepOf(label) {
   return m[0];
 }
 
-// One entry per step either side pictured, in step order: { step, b, h }, with b
-// or h missing for a step only one side reached.
+// One entry per step and part either side pictured, in step order:
+// { key, step, part, b, h }, with b or h missing for a picture only one side took.
 function pairShots(before, after) {
-  const byStep = new Map();
-  for (const s of before) byStep.set(s.step, { step: s.step, b: s });
-  for (const s of after) byStep.set(s.step, Object.assign(byStep.get(s.step) || { step: s.step }, { h: s }));
-  return [...byStep.values()].sort((x, y) => Number(x.step) - Number(y.step));
+  const byKey = new Map();
+  const entry = s => {
+    const key = s.step + ' ' + s.part;
+    if (!byKey.has(key)) byKey.set(key, { key, step: s.step, part: s.part });
+    return byKey.get(key);
+  };
+  for (const s of before) entry(s).b = s;
+  for (const s of after) entry(s).h = s;
+  return [...byKey.values()].sort((x, y) => Number(x.step) - Number(y.step) || PART_ORDER.indexOf(x.part) - PART_ORDER.indexOf(y.part));
 }
 
 async function runTree(browser, tree, plan, outDir) {
@@ -457,8 +474,8 @@ async function main() {
     for (const h of headRes) {
       const b = baseRes.find(r => r.id === h.id && r.variant === h.variant);
       const items = [];
-      for (const { step, b: bs, h: hs } of pairShots(b.shots, h.shots)) {
-        const item = { step, label: (hs || bs).label, base: bs && path.relative(out, bs.file), head: hs && path.relative(out, hs.file) };
+      for (const { key, step, part, b: bs, h: hs } of pairShots(b.shots, h.shots)) {
+        const item = { key, step, part, label: (hs || bs).label, base: bs && path.relative(out, bs.file), head: hs && path.relative(out, hs.file) };
         if (!hs) item.status = 'onlyBefore';
         else if (!bs) item.status = 'onlyAfter';
         else {
@@ -467,7 +484,7 @@ async function main() {
           item.status = changed ? 'changed' : 'same';
           item.diffPixels = r.diffPixels; item.size = [r.sizeA, r.sizeB];
           if (r.diffPng && changed) {
-            const file = path.join(out, 'diffs', h.variant, h.id, step + '.png');
+            const file = path.join(out, 'diffs', h.variant, h.id, step + '-' + part + '.png');
             fs.mkdirSync(path.dirname(file), { recursive: true });
             fs.writeFileSync(file, Buffer.from(r.diffPng.split(',')[1], 'base64'));
             item.diff = path.relative(out, file);
@@ -485,9 +502,9 @@ async function main() {
       const tmp = path.join(out, 'recheck');
       const b2 = await runOne(browser, base, variant, journey, path.join(tmp, 'base'));
       const h2 = await runOne(browser, head, variant, journey, path.join(tmp, 'head'));
-      const again = new Map(pairShots(b2.shots, h2.shots).map(p => [p.step, p]));
+      const again = new Map(pairShots(b2.shots, h2.shots).map(p => [p.key, p]));
       for (const item of row.items) {
-        const p = item.status === 'changed' && again.get(item.step);
+        const p = item.status === 'changed' && again.get(item.key);
         if (!p || !p.b || !p.h) continue;
         const r = await comparer.compare(fs.readFileSync(p.b.file), fs.readFileSync(p.h.file));
         if (r.sameSize && r.diffPixels / r.totalPixels <= FAIL_RATIO) item.status = 'flaky';
@@ -498,10 +515,12 @@ async function main() {
     const body = process.env.PR_BODY || '';
     const phoneDeclared = args.allowDeclared && declaresChange(body, 'Participant');
     const toolsDeclared = args.allowDeclared && declaresChange(body, 'Tools');
-    const summary = { base: describeTree(base), head: describeTree(head), seconds: Math.round((Date.now() - t0) / 1000), phoneChanged: 0, toolsChanged: 0, flaky: 0, broken: 0, brokenAfter: 0, brokenBeforeOnly: 0 };
+    const gate = plan.some(p => p.journeys.includes(GATE_JOURNEY));
+    const summary = { base: describeTree(base), head: describeTree(head), seconds: Math.round((Date.now() - t0) / 1000), gate,
+      phoneChanged: 0, toolsChanged: 0, selectorChanged: 0, flaky: 0, broken: 0, brokenAfter: 0, brokenBeforeOnly: 0 };
+    const COUNTER = { phone: 'phoneChanged', tools: 'toolsChanged', selector: 'selectorChanged' };
     for (const row of rows) {
-      const changed = row.items.filter(i => countsAsChange(i.status)).length;
-      if (row.variant === 'tools-desktop') summary.toolsChanged += changed; else summary.phoneChanged += changed;
+      for (const it of row.items) if (countsAsChange(it.status)) summary[COUNTER[it.part]]++;
       summary.flaky += row.items.filter(i => i.status === 'flaky').length;
       // A journey that stops early after the change, or on both sides (its
       // coverage is lost), or raises new page errors, fails the run. One that
@@ -516,17 +535,19 @@ async function main() {
     for (const row of rows) {
       const bad = row.items.filter(i => i.status !== 'same');
       if (!bad.length && !row.broken) continue;
-      console.log('  ' + row.variant + ' / ' + row.id + ':' + (row.broken ? ' BROKEN' : '') + (bad.length ? ' ' + bad.map(i => STATUS_TEXT[i.status].toLowerCase() + ' @ ' + i.label).join('; ') : '') +
+      const showPart = row.items.some(i => i.part !== 'phone');
+      console.log('  ' + row.variant + ' / ' + row.id + ':' + (row.broken ? ' BROKEN' : '') + (bad.length ? ' ' + bad.map(i => STATUS_TEXT[i.status].toLowerCase() + ' @ ' + i.label + (showPart ? ' (' + i.part + ')' : '')).join('; ') : '') +
         (row.baseFailure || row.headFailure ? ' [before: ' + (row.baseFailure || 'finished') + ' | after: ' + (row.headFailure || 'finished') + ']' : '') +
         (row.pageErrors.length ? ' [new page errors: ' + row.pageErrors.join(' | ') + ']' : ''));
     }
     console.log('Phone pictures changed: ' + summary.phoneChanged + ' · Tools pictures changed: ' + summary.toolsChanged + ' · flaky (did not reproduce): ' + summary.flaky +
       ' · journeys that broke: ' + summary.broken + (summary.brokenBeforeOnly ? ' (' + summary.brokenBeforeOnly + ' only before the change)' : ''));
+    if (gate) console.log('Selector pictures changed: ' + summary.selectorChanged);
     console.log('Report: ' + pathToFileURL(report).href);
     if (summary.brokenAfter) ok = false;
     if (args.report) {
       // Changed pictures are reported, not failed: the PR that made them declared them.
-      if (summary.phoneChanged || summary.toolsChanged || summary.brokenBeforeOnly) console.log('--report: changed pictures are reported, not failed' + (summary.brokenAfter ? '; the journeys that broke still fail' : ''));
+      if (summary.phoneChanged || summary.toolsChanged || summary.selectorChanged || summary.brokenBeforeOnly) console.log('--report: changed pictures are reported, not failed' + (summary.brokenAfter ? '; the journeys that broke still fail' : ''));
     } else {
       // In CI, say what the PR body said, as --justify does.
       const undeclared = (what, channel) => {
@@ -535,6 +556,8 @@ async function main() {
       };
       if ((summary.phoneChanged || summary.brokenBeforeOnly) && !phoneDeclared) undeclared('the phone', 'Participant');
       if (summary.toolsChanged && !toolsDeclared) undeclared('Tools pictures', 'Tools');
+      // The passcode and selector pages are reviewer chrome, declared with Tools.
+      if (summary.selectorChanged && !toolsDeclared) undeclared('Selector pictures', 'Tools');
     }
   } finally {
     await browser.close();
@@ -557,7 +580,7 @@ async function checkTree(tree, plan, out) {
     const results = await runTree(browser, tree, plan, out && path.join(out, 'shots'));
     const rows = results.map(r => ({ id: r.id, variant: r.variant, headFailure: r.failure, pageErrors: r.pageErrors,
       broken: !!(r.failure || r.pageErrors.length),
-      items: r.shots.filter(s => s.file).map(s => ({ label: s.label, head: path.relative(out, s.file) })) }));
+      items: r.shots.filter(s => s.file).map(s => ({ label: s.label, part: s.part, head: path.relative(out, s.file) })) }));
     const summary = { head: describeTree(tree), seconds: Math.round((Date.now() - t0) / 1000), broken: rows.filter(r => r.broken).length };
     console.log('Browser journeys: ' + rows.length + ' runs, ' + results.reduce((n, r) => n + r.shots.length, 0) + ' pictures in ' + summary.seconds + 's');
     for (const row of rows.filter(r => r.broken)) {

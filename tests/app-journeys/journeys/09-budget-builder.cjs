@@ -4,7 +4,7 @@ const { skipToProfile } = require('../common.cjs');
 
 module.exports = {
   id: 'budget-builder',
-  title: 'Budget builder (reached from Tools, as the Budget tab is a paywall): sliders, Help me out, save, then replace',
+  title: 'Budget builder (reached from Tools, as the Budget tab is a paywall): sliders, Help me out on and off, Housing\'s Help me out questions, save, then replace',
   matrix: 'profiles',
   browser: true,
   steps: p => skipToProfile(p).concat([
@@ -12,7 +12,15 @@ module.exports = {
     slide({ name: /^Housing\./, role: 'slider' }, 2000),
     tap({ name: 'Help me out', nth: 1 }),
     tap({ name: 'Help me out', nth: 1 }),
+    tap({ name: 'Help me out', nth: 0 }),
     tap('Continue'),
+    expect({ screen: 'helpMeOut' }),
+    tap('I rent'),
+    tap('2 bedrooms'),
+    tap('No — I pay them separately'),
+    tap('See the figure'),
+    tap('Use this'),
+    expect({ screen: 'budgetBuild' }),
     slide({ name: /^Groceries\./, role: 'slider' }, 520),
     tap({ name: 'Back', nth: 1 }),
     tap('Continue'),
