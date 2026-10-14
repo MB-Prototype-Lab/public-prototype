@@ -232,23 +232,17 @@ function renderLearn() {
 
 function renderLearnAdmin() {
   return `
-    <!-- XP Configuration — the PRD's three core tuning levers -->
+    <!-- XP Configuration — the PRD's two core tuning levers -->
     <div class="admin-card">
       <p class="admin-card-title">XP Configuration</p>
       <p class="helper" style="margin-bottom:10px;">
         Bonus multiplier applies to daily-task lessons.
-        Discounted rate applies to manual learning after daily bonus is consumed.
         Questions required controls how many correct answers end a quiz session.
       </p>
       <div class="input-group">
         <label>Daily task bonus multiplier (×)</label>
         <input type="number" min="1" value="${state.xpConfig.bonusMultiplier}"
                oninput="state.xpConfig.bonusMultiplier=parseFloat(this.value)||1;debouncedRender()">
-      </div>
-      <div class="input-group">
-        <label>Manual learning rate (× after bonus consumed)</label>
-        <input type="number" min="0.1" max="1" step="0.1" value="${state.xpConfig.discountedRate}"
-               oninput="state.xpConfig.discountedRate=parseFloat(this.value)||0.5;debouncedRender()">
       </div>
       <div class="input-group">
         <label>Quiz questions required to complete</label>

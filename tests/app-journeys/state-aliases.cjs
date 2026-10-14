@@ -10,4 +10,6 @@
 //     not at every level. The commit that deletes the field adds its entry: one
 //     that still matches a field in the app's state warns in the gate and fails
 //     --against and at the head of --series.
-module.exports = [];
+module.exports = [
+  { removed: 'xpConfig.discountedRate', why: 'the Learn Tools knob wrote it and nothing read it' },
+];

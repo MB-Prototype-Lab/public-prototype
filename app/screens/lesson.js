@@ -703,19 +703,23 @@ function lpMountHook(wasPlaying) {
   else if (wasPlaying)    { lpPlay(); }
 }
 
+// Tools "Jump to sentence": seek to the line's cue the way a drag does, so the
+// voice restarts on that line instead of stalling on the old one.
 function lpSeekTo(index) {
   const lp = state.lessonPlayback;
-  lp.index   = Math.max(0, Math.min(lp.sentences.length - 1, parseInt(index) || 0));
-  lp.elapsed = lp.cues[lp.index] || 0;
-  lp.ended   = false;
-  const audio = lpHasAudio() ? lpAudioEl() : null;
-  if (audio) audio.currentTime = lp.elapsed;
+  const idx = Math.max(0, Math.min(lp.sentences.length - 1, parseInt(index) || 0));
+  lpApplyElapsed(lp.cues[idx] || 0);
   lpLockNext();
-  lpHighlight(lp.index);
-  lpUpdateProgress();
-  lpUpdatePlayBtn();
-  lpSyncHyperframes();
-  if (lp.playing) lp.lastTick = Date.now();
+}
+
+// The stage the player shows. Video needs a storyboard AND a personalized
+// figure, so a lesson without either (or an "I don't know" path with nothing to
+// plot) shows a clean stage rather than a frame full of dashes. The waveform
+// renders ONLY when Tools picks it (L10). renderLesson and the Tools readout
+// both read this, so the readout names the stage that is on screen.
+function lpStageShown() {
+  if (state.lpStageStyle === "auto" && hyperframesCanRender(state.lessonVisualPlan)) return "video";
+  return state.lpStageStyle === "waveform" ? "waveform" : "clean";
 }
 
 // ─── Renderer ─────────────────────────────────────────────────────────────────
@@ -762,15 +766,9 @@ function renderLesson() {
     if (lp.timer) { clearInterval(lp.timer); lp.timer = null; }
   }
 
-  // Video is the default stage. It needs a storyboard AND a personalized figure,
-  // so a lesson without either (or an "I don't know" path with nothing to plot)
-  // shows a clean stage rather than drawing a frame full of dashes.
-  //
-  // Waveform renders ONLY when an admin explicitly picks it (L10) — falling
-  // through to it meant every lesson but `apr` played the animation L10 rejected.
-  const videoOn     = (state.lpStageStyle === "auto" || state.lpStageStyle === "video")
-                      && hyperframesCanRender(state.lessonVisualPlan);
-  const isWaveform  = !videoOn && state.lpStageStyle === "waveform";
+  const stage       = lpStageShown();
+  const videoOn     = stage === "video";
+  const isWaveform  = stage === "waveform";
   const totalTime   = lpFmtTime(Math.round(state.lessonPlayback.total));
   const barPct      = (state.lessonPlayback.total > 0 ? state.lessonPlayback.elapsed / state.lessonPlayback.total * 100 : 0).toFixed(2);
   const elapsed     = lpFmtTime(Math.round(state.lessonPlayback.elapsed));
@@ -849,8 +847,9 @@ function renderLesson() {
 // things you need to tell "the animation is wrong" from "the data is wrong".
 function lpAdminVisualReadout() {
   const plan = state.lessonVisualPlan;
-  if (!plan) return `<p class="helper" style="font-size:10px;margin-top:6px;">No visual plan — this lesson has no storyboard, so the stage falls back to the waveform.</p>`;
-  const canRender = typeof hyperframesCanRender === "function" && hyperframesCanRender(plan);
+  const shown = lpStageShown() === "waveform" ? "the waveform" : "a clean stage";
+  if (!plan) return `<p class="helper" style="font-size:10px;margin-top:6px;">No visual plan — this lesson has no storyboard, so the player shows ${h(shown)}.</p>`;
+  const canRender = hyperframesCanRender(plan);
   const band = plan.band || {};
   const lp = state.lessonPlayback;
   const frac = lp.total > 0 ? lp.elapsed / lp.total : 0;
@@ -858,7 +857,7 @@ function lpAdminVisualReadout() {
   const beat = beats.find(b => frac >= b.from && frac < b.to) || beats[beats.length - 1];
   return `
     <p class="helper" style="font-size:10px;line-height:1.7;margin-top:6px;">
-      ${canRender ? "" : "<strong>not renderable</strong> (no figure) — waveform shown<br>"}
+      ${canRender ? "" : `<strong>not renderable</strong> (no figure) — ${h(shown)} shown<br>`}
       card ${h(plan.cardName || "—")} ·
       you ${plan.userFigure == null ? "—" : plan.userFigure + "%"} ·
       typical ${plan.marketAvg == null ? "—" : plan.marketAvg + "%"}<br>
@@ -877,7 +876,6 @@ function renderLessonAdmin() {
         <label>Stage style</label>
         <select onchange="state.lpStageStyle=this.value;render()">
           <option value="auto"     ${state.lpStageStyle === "auto"     ? "selected" : ""}>Auto — video if the lesson has one (default)</option>
-          <option value="video"    ${state.lpStageStyle === "video"    ? "selected" : ""}>Video — hyperframes (force)</option>
           <option value="waveform" ${state.lpStageStyle === "waveform" ? "selected" : ""}>Waveform (audio only)</option>
           <option value="clean"    ${state.lpStageStyle === "clean"    ? "selected" : ""}>Clean (nothing)</option>
         </select>

@@ -265,16 +265,12 @@ const state = {
   //
   //   "auto"     the default: video when the lesson HAS a storyboard and a
   //              personalized figure, clean otherwise
-  //   "video"    force hyperframes (still needs a storyboard to show anything)
   //   "waveform" the animated bar — admin-only, never a default
   //   "clean"    nothing behind the captions
   //
   // L10: the narration is a recorded .wav, and an animated waveform that does
   // not correspond to it is decoration pretending to be a visualisation — so
-  // waveform renders ONLY when explicitly selected here. A hardcoded "video"
-  // default reversed that, because only `apr` has a storyboard: every other
-  // lesson failed the storyboard test and fell through to the waveform.
-  // "auto" gives the intended split — apr is video, the rest are clean.
+  // waveform renders ONLY when explicitly selected here (lpStageShown).
   lpStageStyle: "auto",
 
   // ── Lesson playback session state ─────────────────────────────────────────
@@ -836,15 +832,13 @@ const state = {
   ],
 
   // ─── XP configuration (admin-editable) ───────────────────────────────────
-  // These are the PRD's core tuning levers. All three are surfaced in the
-  // Learn admin panel so they can be adjusted during user testing without
-  // touching code.
+  // These are the PRD's core tuning levers. Both are surfaced in the Learn
+  // admin panel so they can be adjusted during user testing without touching
+  // code.
   //   bonusMultiplier:       daily task lessons earn this multiple of base XP (PRD placeholder: 5x)
-  //   discountedRate:        manual learning after daily bonus consumed (PRD placeholder: 0.5x)
   //   quizQuestionsRequired: questions answered correctly before quiz ends (default: 3)
   xpConfig: {
     bonusMultiplier: 5,
-    discountedRate: 0.5,
     quizQuestionsRequired: 3
   },
 
