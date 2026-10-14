@@ -14,8 +14,9 @@
 // anything that reads the peer model — and the reason "$10 of transport" was
 // only ever found by hand is that there was one profile to find it in.
 //
-// TEMPORARY. PROFILE_PICKER (js/config.js) takes the screen out of the flow;
-// everything here still works because the sweep and the skip fallback use it.
+// Both uses are recorded (L26): "Skip all setup" always opens the picker
+// (screens/profile-picker.js), and the sweep drives every feature through the
+// same nine.
 
 function profileData() {
   return (typeof TEST_PROFILES !== "undefined" && TEST_PROFILES) || null;

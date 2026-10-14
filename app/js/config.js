@@ -12,26 +12,6 @@
 // Default is false per the spec.
 const SKIP_ONBOARDING = false;
 
-// RECORDED PRODUCT SETTING (docs/decisions.md L26) — the "Skip all setup"
-// profile picker. Changing it is a product decision, never a study.
-//
-// Skipping used to be silent: every write in onbFinish() is guarded, so a
-// skipped field fell through to the persona and the tester spent the session as
-// Sam from Los Angeles without being told. The picker asks two questions and
-// names the figures they are about to see.
-//
-//   true  -> "Skip all setup" opens the picker (screens/profile-picker.js)
-//   false -> skip applies profileDefault() silently; the screen is never routed
-//
-// Flipping it must not require unwinding anything else. The nine profiles
-// survive either way — the skip fallback and scripts/sweep.js's test matrix both
-// read them.
-//
-// SKIP_ONBOARDING deliberately does NOT show the picker even when this is true.
-// That flag exists to reach Home fast; stopping it for two questions defeats
-// the one thing it is for. Two skip paths, two intents.
-const PROFILE_PICKER = true;
-
 // The version's own name, for admin-panel strings that would otherwise name a
 // folder they are no longer in.
 //

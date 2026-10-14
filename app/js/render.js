@@ -61,7 +61,7 @@ function adminSubtitle() {
                                                  ? "Budget — PAYWALLED. The tab is the Platinum wall; D31 overridden (L27)."
                                                  : "Budget — 12 flat categories, plan vs what the journal says.";
   if (state.screen === "profilePicker")   return "Starting profile — 3 cost-of-living tiers x 3 income levels. " +
-                                                 "Shown on \"Skip all setup\"; PROFILE_PICKER turns it off.";
+                                                 "Shown on \"Skip all setup\".";
   if (state.screen === "helpMeOut")       return "Help me out — " +
                                                  (state.helpMeOut ? catLabel(state.helpMeOut.category) + ", " + state.helpMeOut.stage : "no session") +
                                                  ". Habits in, a monthly figure out; never pro-rated.";

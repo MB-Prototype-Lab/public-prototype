@@ -9,9 +9,8 @@
 // the rest of the session as Sam from Los Angeles without being told. Two taps
 // is a small price for knowing which figures you are looking at.
 //
-// TEMPORARY SCAFFOLDING. PROFILE_PICKER (js/config.js) is one line and takes
-// this out of the flow entirely — skip then applies profileDefault() silently
-// and nothing else changes. That is the flag's whole promise; keep it true.
+// Recorded (L26): skipping setup always picks one of the nine profiles here,
+// and the same nine are the sweep's test matrix.
 
 function ppStart() {
   const d = profileDefaults();

@@ -19,7 +19,8 @@ Framing questions are asked on every lesson entry, even when the session
 already answered them. A theme with no onboarding film render of its own plays
 another look's render; a film rendered in no look falls back to the SVG engine.
 The budget band compares spend to date with whole-month budget and peer
-figures; it never scales them to the date.
+figures; it never scales them to the date. "Skip all setup" always opens the
+picker of nine starting profiles (L26).
 
 ### ESF budget exception (user approved)
 
@@ -100,10 +101,10 @@ Telltales:
   rule in `js/screen-url.js`: open a screen that stands on its own through the
   product's own start function, inside the full journey, without hand-off or return
   state. A study that needs a contained or shortened journey uses a Flow.
-- Recorded product settings, each kept at its recorded value; changing one is a
-  product decision, never a study: `BUDGET_PAYWALL = true` (L27),
-  `PROFILE_PICKER = true` (L26). A new journey-affecting setting needs a
-  recorded PM decision; see [decisions](decisions.md).
+- The recorded product setting `BUDGET_PAYWALL = true` (L27), kept at its
+  recorded value; changing it is a product decision, never a study. A new
+  journey-affecting setting needs a recorded PM decision; see
+  [decisions](decisions.md).
 - Dormant code that nothing turns on, such as unused onboarding steps. The ban
   applies to whatever would turn it on.
 

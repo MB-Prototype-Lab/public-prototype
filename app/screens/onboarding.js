@@ -457,18 +457,11 @@ function onbSkipName() {
   render();
 }
 
-// "Skip all setup" — hand over to the profile picker, or, with the picker
-// switched off, finish right here on the default profile. Either way the tester
-// ends up with a profile somebody chose rather than the persona's by accident.
+// "Skip all setup" — hand over to the profile picker (L26), so the tester ends
+// up with a profile somebody chose rather than the persona's by accident.
 function onbSkipAll() {
   state.onboarding.skipPrompt = false;
-  if (typeof PROFILE_PICKER !== "undefined" && PROFILE_PICKER &&
-      typeof ppStart === "function") { ppStart(); return; }
-  if (typeof profileDefault === "function") {
-    const d = profileDefault();
-    if (d) profileApply(d.id);
-  }
-  onbFinish();
+  ppStart();
 }
 
 function onbSkipCancel() {
@@ -2393,7 +2386,7 @@ function renderOnboardingAdmin() {
            "which profile am I" is the first thing that answers it. -->
       ${renderProfileAdminSwitcher()}
       <p class="helper" style="font-size:10px;margin:0 0 12px;">
-        SKIP_ONBOARDING = ${SKIP_ONBOARDING} · PROFILE_PICKER = ${PROFILE_PICKER}
+        SKIP_ONBOARDING = ${SKIP_ONBOARDING}
       </p>
       ${!o ? `<p class="helper">Not running.</p>` : `
         <div class="input-group">
