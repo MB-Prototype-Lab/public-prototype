@@ -48,18 +48,6 @@ function bpMoney(n) {
   return (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US");
 }
 
-/** "$44,900" — headline figures are rounded to $100; they are estimates. */
-/**
- * NOTHING ON THESE SCREENS USES THIS ANY MORE (2026-09-27).
- *
- * Rounding the big figures to the nearest hundred was meant to stop an
- * estimate looking more precise than it is. What it actually did was print the
- * same number differently in two places — $760 of running costs as "$800" in
- * the summary and "$760" in the table beneath it, and a five-year total that
- * moved by $11 between screen 2 and screen 3. The owner reads down a screen
- * and adds things up; that has to work. Kept because it costs nothing and the
- * argument for it is not wrong, only outweighed.
- */
 function bpPct(apr) {
   const n = Number(apr) || 0;
   return (Math.round(n * 100) / 100) + "%";
