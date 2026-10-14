@@ -153,9 +153,10 @@ checkpoint reach outside `flows/ID/`; only the generated `flows/catalog.json` an
 `app/` still counts. The refusal lists the files: explain them to the PM in plain
 terms, then revert them in the variant or obtain a separate decision. Never work
 around it. After the merge run `python3 scripts/flows.py check`,
-`bash scripts/check-syntax.sh flows` and `node tests/flows-runtime.cjs` (plus the
-Flow's affected behavior checks) before `--verified`. Keeping a Flow variant updates
-that Flow only; it is not app integration (see [Flows](flows.md)).
+`python3 -m unittest tests.test_flows`, `bash scripts/check-syntax.sh flows` and
+`node tests/flows-runtime.cjs` (plus the Flow's affected behavior checks) before
+`--verified`. Keeping a Flow variant updates that Flow only; it is not app
+integration (see [Flows](flows.md)).
 
 ## Close, cleanup, and recovery
 

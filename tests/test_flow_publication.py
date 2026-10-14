@@ -6,7 +6,10 @@ import shutil
 import subprocess
 from pathlib import Path
 import unittest
-import test_publication as legacy
+try:
+    import test_publication as legacy  # discover -s tests
+except ModuleNotFoundError:
+    from tests import test_publication as legacy  # python3 -m unittest tests.test_flow_publication
 pub = legacy.pub
 
 
