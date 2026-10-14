@@ -57,6 +57,7 @@ browser_missing() {
 
 FAILED=0
 BLOCKED=0
+WARNED=0
 n=0
 
 # A log's warnings with their indented detail lines: the sweep's "  warn  "
@@ -93,6 +94,7 @@ run() {
     count="$(grep -cE '^(  warn  |WARNING  )' "$log")"
     if [ "$count" -gt 0 ]; then
       printf 'PASS     %s  (%s warning%s)\n' "$name" "$count" "$([ "$count" -eq 1 ] || echo s)"
+      WARNED=$((WARNED + 1))
       warn_lines "$log" | sed 's/^/         | /'
     else
       printf 'PASS     %s\n' "$name"
@@ -165,4 +167,8 @@ if [ "$BLOCKED" -gt 0 ]; then
   echo "$BLOCKED of $n checks were blocked: not verified on this machine."
   exit 2
 fi
-echo "All $n checks passed."
+if [ "$WARNED" -gt 0 ]; then
+  echo "All $n checks passed ($WARNED with warnings — read them above)."
+else
+  echo "All $n checks passed."
+fi
