@@ -593,7 +593,7 @@ as a tile, blow up a total, or fail a benchmark lookup. **Always drive
 iteration from `CATEGORIES`** (§4) and index into the data, never the reverse.
 Same for ZIP prefix lookups — `_note` is a key there too.
 
-**Self-test on build** — `benchSelfTest`, from
+**Self-test** — the sweep's `benchSelfTest` (§7 of `scripts/sweep.js`), from
 `PEER_BENCHMARKS.worked_example`: Dining out, band b3, household 2, ZIP 90066,
 foodie moderate. Base **275** and lifestyle **1.0** still reproduce the
 worked example exactly; the cost-of-living factor is BEA's **1.071**, not the

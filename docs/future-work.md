@@ -13,7 +13,7 @@ deletion and Git history cleanup are outside this integration.
 
 ## Open cleanup
 
-- **Purge `DEAD_BASELINE`.** The 26 functions on `scripts/sweep.js` §7b's baseline
+- **Purge `DEAD_BASELINE`.** The six functions on `scripts/sweep.js` §7b's baseline
   are unreferenced in `app/`. Several entries give reasons that no longer hold, such
   as "v3 still renders", from the retired v3/v3.1 copies. Remove them as a separate
   task, checking each with §7b rather than by grep.
