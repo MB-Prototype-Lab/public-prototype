@@ -14,8 +14,10 @@ const { PRELUDE_SRC } = require('./determinism.cjs');
 const REPO = path.resolve(__dirname, '..', '..');
 // Wednesday 15 April 2026, 15:00 UTC: a fixed, ordinary afternoon.
 const DEFAULT_CLOCK = Date.UTC(2026, 3, 15, 15, 0, 0);
-// A machine-independent address, so no snapshot contains a local path.
-const DEFAULT_HREF = 'file:///moneybuddy/app/index.html';
+// A machine-independent address, so no snapshot contains a local path. Hosted
+// (https), as participants open it: on file:// the app writes no screen URL and
+// no value trail (js/screen-url.js).
+const DEFAULT_HREF = 'https://prototype.example/app/index.html';
 
 function memoryStorage(initial = {}) {
   const data = Object.assign({}, initial);

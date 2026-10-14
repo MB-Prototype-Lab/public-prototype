@@ -58,6 +58,20 @@ const SPECS = [
     edits: { 'screens/onboarding.js': [['  if (key === "name")      return !!o.name;', '  if (key === "name")      return false;']] },
   },
   {
+    id: 'trail-checkpoints-dropped', expect: 'caught', journeys: ['onboarding-full', 'journal', 'budget-builder'],
+    why: 'setup, a journal entry and a saved budget no longer marking the value trail',
+    edits: {
+      'screens/onboarding.js': [['    ubTrailCheckpoint("setup");\n', '']],
+      'js/journal.js': [['    ubTrailCheckpoint("journal");\n', '']],
+      'js/budget-baseline.js': [['    ubTrailCheckpoint("budget");\n', '']],
+    },
+  },
+  {
+    id: 'trail-fragment-dropped', expect: 'caught', journeys: ['onboarding-full'],
+    why: 'the screen address written without its #v= value trail',
+    edits: { 'js/screen-url.js': [['url.hash = trail ? "v=" + trail : "";', 'url.hash = "";']] },
+  },
+  {
     id: 'tools-label', expect: 'tools', journeys: ['tools-tour'],
     why: 'a Tools heading reworded (reported as a Tools change, not a phone change)',
     edits: { 'index.html': [['<p class="admin-title" style="margin:0;">Admin Tools</p>', '<p class="admin-title" style="margin:0;">Tools</p>']] },

@@ -2,9 +2,13 @@
 const { tap, tool, toolCheck, reload, boot, expect } = require('../dsl.cjs');
 const { skipToProfile } = require('../common.cjs');
 
+// Booted on file://, whose address never carries ?screen=, so a pinned refresh
+// restarts in place. On https it leaves for the address without it (the last
+// steps).
 module.exports = {
   id: 'refresh-pin',
   title: 'Refresh without the pin returns to the selector; with Pin on refresh it restarts fresh; Exit and Reset',
+  boot: { href: 'file:///moneybuddy/app/index.html' },
   steps: skipToProfile().concat([
     reload(),
     expect({ left: true }),

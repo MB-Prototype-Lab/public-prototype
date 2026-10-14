@@ -70,8 +70,10 @@ change; what the phone shows is still compared in full.
 
 Journeys live in `tests/app-journeys/journeys/`, written as taps on visible
 labels. A journey that can no longer find a label fails loudly with the controls
-it can see. This robot does not judge layout or colour; the browser check below
-does.
+it can see. They open the app at a hosted (https) address, as participants do, so
+they also record each screen's address and the value trail Useberry reads; a word
+the robot typed (a name, a note) showing up in the address fails the check. This
+robot does not judge layout or colour; the browser check below does.
 
 Node or macOS JavaScriptCore is needed for JS checks; Python 3.11+ for publication
 checks; Playwright with Chromium for the browser checks. CI explicitly installs all

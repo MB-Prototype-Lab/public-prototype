@@ -304,6 +304,7 @@ async function runJourney(journey, opts = {}) {
   const ctx = { rewrite: snap.idRewriter(), aliases: opts.aliases || [], seen: {}, prevFlat: null, lastKey: null, handlersOk: new Set() };
   const records = [], visits = [], errors = [], gate = [];
   const fired = new WeakSet();
+  const typed = [];
   const bootOpts = Object.assign({}, journey.boot || {});
   const tab = { storage: memoryStorage(bootOpts.storage || {}) };
 
@@ -354,6 +355,7 @@ async function runJourney(journey, opts = {}) {
         case 'type':
           label += ' ' + JSON.stringify(step.text) + ' into ' + JSON.stringify(step.query.name);
           typeText(app, step.query, step.text, step.commit);
+          if (/[a-z]/i.test(step.text)) typed.push(step.text);
           break;
         case 'choose':
           label += ' ' + (step.option && typeof step.option === 'object' && !(step.option instanceof RegExp) ? 'option #' + step.option.index : JSON.stringify(String(step.option))) + ' in ' + JSON.stringify(String(step.query.name));
@@ -422,6 +424,13 @@ async function runJourney(journey, opts = {}) {
     if (!app.left) note(app, via);
     records.push(recordStep(app, ctx, label));
     gate.push(...checkHandlers(app, ctx).map(p => id + ' @ ' + label + ': ' + p));
+    // The address is the study's record (the value trail): words a person
+    // typed, such as a name, must never reach it, as typed or as a slug.
+    const words = s => '-' + s.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-';
+    let href = app.location.href;
+    try { href = decodeURIComponent(href); } catch (e) { /* a stray %: read it as written */ }
+    const url = words(href);
+    for (const t of typed) if (url.includes(words(t))) gate.push(id + ' @ ' + label + ': typed text ' + JSON.stringify(t) + ' is in the address');
   }
   const warnings = [];
   for (const a of apps) {
