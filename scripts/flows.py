@@ -237,11 +237,15 @@ def check_package(directory, m):
             scripts.index('js/flow.js') < scripts.index('js/navigation.js')):
         raise ValueError(f'{directory}: policy must load before app config, runtime before navigation boot')
     registry = directory / 'js/state.js'
-    if registry.is_file():
-        declared = set(re.findall(r'\[\s*[\"\']([^\"\']+)[\"\']\s*,', registry.read_text()))
-        if declared and not set(m['allowed_screens']) <= declared:
-            raise ValueError(f'{directory}: policy includes undeclared screens')
-    check_dependencies(directory)
+    if not registry.is_file():
+        raise ValueError(f'{directory}: missing js/state.js, whose destinations registry declares the screens')
+    literal = re.search(r'^const destinations\s*=\s*\[(.*?)^\];', registry.read_text(), re.S | re.M)
+    if not literal:
+        raise ValueError(f'{registry}: no "const destinations = [...];" screen registry to check allowed_screens against')
+    declared = set(re.findall(r'\[\s*[\"\']([^\"\']+)[\"\']\s*,', literal.group(1)))
+    undeclared = sorted(set(m['allowed_screens']) - declared)
+    if undeclared:
+        raise ValueError(f'{directory}: allowed_screens not in the js/state.js destinations registry: ' + ', '.join(undeclared))
 
 
 GENERIC_RUNTIME = '''// Generated starter containment. Adapt policy and prerequisites for the concrete Flow.

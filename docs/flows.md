@@ -77,8 +77,8 @@ setup, then a feature with detours) are the references;
 [Edit and check](#edit-and-check) lists the runtime invariants.
 
 1. **Policy (`flow.json`).** Set `entry` and `completion`, the exact
-   `allowed_screens` (screen IDs declared in `js/state.js`), and `setup_steps` as an
-   ordered subset of the source `ONB_STEPS` (`[]` for no setup). Describe
+   `allowed_screens` (IDs from the `destinations` registry in `js/state.js`), and
+   `setup_steps` as an ordered subset of the source `ONB_STEPS` (`[]` for no setup). Describe
    `profile_behavior` and PM-readable `proposed_differences`, then run
    `python3 scripts/flows.py catalog`. Never hand-edit generated files.
 2. **Containment (`js/flow.js`).** Replace the generic starter runtime.

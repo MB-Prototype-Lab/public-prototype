@@ -25,6 +25,8 @@ class FlowsTest(unittest.TestCase):
         self.write('app/js/refresh-pin.js', '')
         self.write('app/js/config.js', '')
         self.write('app/js/navigation.js', 'bootV3();')
+        # Only the destinations registry declares screens; other arrays in state.js do not.
+        self.write('app/js/state.js', 'const destinations = [\n  ["onboarding", "Onboarding"],\n  ["goals", "Goals"]\n];\nconst quizAnswers = [["Retirement", "Saving for later"]];\n')
         self.write('app/css/keyboard.css', '')
         self.write('app/docs/excluded.json', '{}')
         self.write('app/.secret', 'hidden')
@@ -188,6 +190,26 @@ class FlowsTest(unittest.TestCase):
         m['allowed_screens'] = ['goals']
         with self.assertRaises(ValueError):
             flows.validate_metadata(m, 'sample')
+
+    def test_allowed_screens_must_be_in_the_destinations_registry(self):
+        self.create()
+        package = self.root / 'flows/sample'
+        m = json.loads((package / 'flow.json').read_text())
+        m['allowed_screens'] = ['onboarding', 'goals']
+        (package / 'flow.json').write_text(json.dumps(m))
+        flows.catalog(self.root)
+        flows.check(self.root)
+        m['allowed_screens'].append('Retirement')
+        (package / 'flow.json').write_text(json.dumps(m))
+        flows.catalog(self.root)
+        with self.assertRaisesRegex(ValueError, 'allowed_screens not in the js/state.js destinations registry: Retirement$'):
+            flows.check(self.root)
+        (package / 'js/state.js').write_text('const screens = [["Retirement", "Retirement"]];\n')
+        with self.assertRaisesRegex(ValueError, 'no "const destinations = \\[...\\];" screen registry'):
+            flows.check(self.root)
+        (package / 'js/state.js').unlink()
+        with self.assertRaisesRegex(ValueError, 'missing js/state.js'):
+            flows.check(self.root)
 
     def test_scope_rejects_staged_change_when_worktree_matches_base(self):
         self.write('app/js/config.js', '// staged product change')
