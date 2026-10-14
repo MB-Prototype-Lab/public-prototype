@@ -107,12 +107,12 @@ only the pictures show (a colour, a one-pixel shift) is declared the same way; t
 journey checks then print a note instead of failing. At desktop width the phone
 and the Tools panel beside it are pictured apart: a changed phone there is a
 phone change, declared under Phone. With Tools closed the whole desktop page is
-pictured too, so a phone that moves on the page is a phone change. The passcode and selector pages have their
-own count and are declared under Tools. Screens only Tools can reach (L14) are
-pictured once, in Natural Light at desktop width, during the Tools tour. After a
-merge, main is compared with the previous main in report mode (`--report`):
-changed pictures, which the PR declared, are reported but do not fail; a journey
-that breaks or a new page error still fails.
+pictured too, so a phone that moves on the page is a phone change. The passcode
+and selector pages have their own count and are declared under Tools. Screens
+only Tools can reach (L14) are pictured once, in Natural Light at desktop width,
+during the Tools tour. After a merge, main is compared with the previous main in
+report mode (`--report`): changed pictures, which the PR declared, are reported
+but do not fail; a journey that breaks or a new page error still fails.
 
 To see the pictures for a PR, open its **Checks** tab, choose the **Browser
 journeys** job, open the run's summary and download the
@@ -151,12 +151,26 @@ not a pass. Still manual: audio and video playback, real phones, and file:// on
 Windows and macOS (CI runs Chromium on Linux).
 
 The pictures leave some looks out on purpose, so that two runs of the same
-version give the same pictures: hover looks (the pointer is moved off the page
-first), pressed looks (each picture waits until a tap is let go), the tap
-highlight (turned off), the text cursor, and video frames (each video is hidden
-under a plain mask). "0 pictures changed" therefore proves nothing about a
-change to `:hover`, `:active` or `-webkit-tap-highlight-color` rules, the caret,
-or how a video looks; check those by hand and say so in the PR.
+version give the same pictures:
+
+- hover looks: before each picture the pointer is moved to the window's top-left
+  corner, where every page is empty;
+- pressed looks: each picture waits until a tap is let go;
+- the tap highlight, which is turned off, and the text cursor;
+- video frames: each video is hidden under a plain mask;
+- animations and transitions, shown only where they end: the browser asks for
+  reduced motion, which the app's CSS answers by cutting their durations to
+  almost nothing, and each picture finishes any still running;
+- scrollbars: headless Chromium hides them, so `::-webkit-scrollbar` rules never
+  show.
+
+The desktop › tab that opens Tools is visible to participants. In the
+whole-page picture it is masked, so a change to how it looks counts as Tools
+(the tab has its own picture), while a moved or resized tab moves the mask and
+counts as Phone. "0 pictures changed" therefore proves nothing about a change to
+`:hover`, `:active`, `-webkit-tap-highlight-color` or `::-webkit-scrollbar`
+rules, to animations and transitions, to the caret, or to how a video looks;
+check those by hand and say so in the PR.
 
 PM checklist: open root index.html on file://, enter 1337, open Local Prototype, exercise
 the changed flow, check narrow layout and all four themes, input focus and sliders,
