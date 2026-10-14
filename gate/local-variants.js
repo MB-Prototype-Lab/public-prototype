@@ -4,6 +4,8 @@
   "use strict";
 
   var safeId = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+  var flowId = /^[a-z0-9]+(?:-[a-z0-9]+)*$/; // gate/flows.js and scripts/local-variants.py
+  var APP_PATH = "app/index.html";
 
   // Pin on refresh: one per browser tab, shared with Tools in the Prototype and
   // Flows (app/js/refresh-pin.js). While pinned, the workspace layout is kept so a
@@ -64,13 +66,100 @@
     }
   }
 
+  // The primary checkout's listing of a Flow, from local discovery (gate/flows.js).
+  function listedFlow(id, path) {
+    var data = window.MB_FLOWS;
+    if (!data || data.schema !== 1 || !Array.isArray(data.flows)) return null;
+    for (var i = 0; i < data.flows.length; i += 1) {
+      var flow = data.flows[i];
+      if (flow && flow.id === id && flow.path === path && typeof flow.label === "string" && flow.label.trim()) return flow;
+    }
+    return null;
+  }
+
+  // What every variant opens: the full app (also when the manifest predates
+  // targets) or one contained Flow. Anything else shows nothing.
+  function comparisonTarget(manifest) {
+    var target = manifest.target;
+    if (target === undefined || (target && target.kind === "app" && target.path === APP_PATH)) {
+      return { kind: "app", label: "Prototype", path: APP_PATH, listed: true };
+    }
+    if (!target || target.kind !== "flow" || typeof target.id !== "string" || target.id.length > 64 ||
+        !flowId.test(target.id) || typeof target.label !== "string" || !target.label.trim() ||
+        target.path !== "flows/" + target.id + "/index.html") return null;
+    // The primary's current name wins; the recorded one covers a Flow it no longer lists.
+    var listed = listedFlow(target.id, target.path);
+    return { kind: "flow", label: (listed ? listed.label : target.label).trim(), path: target.path, listed: !!listed };
+  }
+
+  // The primary checkout's own copy, offered in the workspace beside the variants.
+  function baselineChoice(target) {
+    if (!target.listed) return null;
+    return target.kind === "app"
+      ? { label: "Local Prototype", description: "Your current checkout; not necessarily the original baseline.", href: APP_PATH }
+      : { label: "Local " + target.label, description: "Your current checkout of this Flow; not necessarily the original baseline.", href: target.path };
+  }
+
+  // Same row shape as gate/flows.js. Like every selector entry it opens in this
+  // tab; a person who wants another tab uses the browser's own link menu.
+  function variantRow(variant) {
+    var row = document.createElement("a");
+    row.className = "gate-row";
+    row.href = variant.href;
+    var name = document.createElement("span");
+    name.className = "gate-row-name";
+    name.textContent = variant.label;
+    row.appendChild(name);
+    if (variant.description.trim()) {
+      var note = document.createElement("span");
+      note.className = "gate-row-note";
+      note.textContent = variant.description;
+      row.appendChild(note);
+    }
+    return row;
+  }
+
+  // Variants sit on the tab of what they change: under the Prototype list, or
+  // under the Flows list for a Flow. Returns the tab that now holds them.
+  function placeVariants(target, section) {
+    var slot = target.kind === "flow" && document.getElementById("localFlowVariantsSlot");
+    if (!slot) return "prototype";
+    slot.appendChild(section);
+    return "flows";
+  }
+
+  // "Flows (2)" on the tab that holds the variants. Screen readers hear
+  // "Flows, 2 variants" instead of the bare digits.
+  function markTab(tab, count) {
+    var button = document.getElementById(tab === "flows" ? "gateTabFlows" : "gateTabPrototype");
+    if (!button) return;
+    var badge = document.createElement("span");
+    badge.className = "local-tab-count";
+    var shown = document.createElement("span");
+    shown.setAttribute("aria-hidden", "true");
+    shown.textContent = " (" + count + ")";
+    badge.appendChild(shown);
+    var spoken = document.createElement("span");
+    spoken.className = "gate-sr-only";
+    spoken.textContent = ", " + count + (count === 1 ? " variant" : " variants");
+    badge.appendChild(spoken);
+    button.appendChild(badge);
+  }
+
+  // gate/gate.js opens this tab when the person has not chosen one this session.
+  function suggestTab(tab) {
+    var tabs = document.getElementById("gateTabs");
+    if (tabs) tabs.setAttribute("data-default-tab", tab);
+  }
+
   function localVariantsInit() {
     var saved = takeSavedLayout();
     var manifest = window.MB_LOCAL_VARIANTS;
     if (!manifest || manifest.active !== true || !Array.isArray(manifest.variants)) return;
+    var target = comparisonTarget(manifest);
     var section = document.getElementById("localAlternatives");
     var list = document.getElementById("localAlternativesList");
-    if (!section || !list) return;
+    if (!target || !section || !list) return;
 
     var seen = Object.create(null);
     var choices = [];
@@ -79,42 +168,33 @@
           !safeId.test(variant.id) || seen[variant.id] ||
           typeof variant.label !== "string" || !variant.label.trim() ||
           typeof variant.description !== "string" ||
-          variant.href !== ".worktrees/" + variant.id + "/app/index.html") return;
+          variant.href !== ".worktrees/" + variant.id + "/" + target.path) return;
       seen[variant.id] = true;
-
-      var card = document.createElement("div");
-      card.className = "local-alternative";
-      var mainLink = document.createElement("a");
-      mainLink.className = "gate-btn";
-      mainLink.href = variant.href;
-      mainLink.textContent = variant.label;
-      card.appendChild(mainLink);
-      if (variant.description.trim()) {
-        var description = document.createElement("p");
-        description.textContent = variant.description;
-        card.appendChild(description);
-      }
-      var tabLink = document.createElement("a");
-      tabLink.className = "local-open-new-tab";
-      tabLink.href = variant.href;
-      tabLink.target = "_blank";
-      tabLink.rel = "noopener";
-      tabLink.textContent = "Open " + variant.label + " in new tab";
-      card.appendChild(tabLink);
-      list.appendChild(card);
+      list.appendChild(variantRow(variant));
       choices.push(variant);
     });
-    if (choices.length) {
-      section.hidden = false;
-      choices.push({ label: "Local Prototype", description: "Your current checkout; not necessarily the original baseline.", href: "app/index.html" });
-      localCompareInit(choices, saved);
-    }
+    if (!choices.length) return;
+    var tab = placeVariants(target, section);
+    var title = document.getElementById("localAlternativesTitle");
+    if (title) title.textContent = target.label + " variants";
+    markTab(tab, choices.length);
+    suggestTab(tab);
+    section.hidden = false;
+    var baseline = baselineChoice(target);
+    if (baseline) choices.push(baseline);
+    localCompareInit(choices, saved, target, tab);
   }
 
-  function localCompareInit(choices, saved) {
+  function localCompareInit(choices, saved, target, tab) {
     var launch = document.getElementById("localCompare");
     var selector = document.getElementById("selectorScreen");
     if (!launch || !selector) return;
+    // One variant with no listed baseline leaves nothing to compare.
+    launch.hidden = choices.length < 2;
+    if (launch.hidden) return;
+    // A layout kept for another comparison target is not reopened here.
+    if (saved && (saved.target === undefined ? APP_PATH : saved.target) !== target.path) saved = null;
+    var heading = "Compare " + target.label + " variants";
     var workspace, stage, countControl;
     var assignments = choices.map(function (_, index) { return index; });
     var previews = [];
@@ -148,6 +228,7 @@
       previews.forEach(function (preview, index) { if (preview && preview.tools) tools.push(choices[index].href); });
       storageSet(LAYOUT_KEY, JSON.stringify({
         v: 1,
+        target: target.path,
         count: visibleCount,
         slots: assignments.map(function (index) { return choices[index].href; }),
         tools: tools
@@ -247,7 +328,7 @@
       if (layoutRecord) restore(layoutRecord);
       workspace = node("section", "", document.body);
       workspace.className = "local-compare-workspace";
-      workspace.setAttribute("aria-label", "Compare local alternatives");
+      workspace.setAttribute("aria-label", heading);
       var toolbar = node("div", "", workspace);
       toolbar.className = "local-compare-toolbar";
       var back = node("button", "Back to versions", toolbar);
@@ -263,9 +344,12 @@
         savedTools = Object.create(null);
         document.body.classList.remove("local-comparing");
         selector.style.display = "flex";
+        // The selector may show the other tab (a pinned refresh restores the
+        // remembered one), which would hide the button focus returns to.
+        if (typeof gateSelectTab === "function") gateSelectTab(tab, false);
         launch.focus();
       });
-      node("h1", "Compare side by side", toolbar);
+      node("h1", heading, toolbar);
       var countLabel = node("label", "Visible panes ", toolbar);
       countControl = node("select", "", countLabel);
       for (var i = 1; i <= choices.length; i += 1) {

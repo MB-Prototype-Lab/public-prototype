@@ -15,8 +15,10 @@ A Flow also opens directly at `flows/<id>/index.html`, without the passcode. Eac
 launch is a separate document and session; no server or dependency installation is
 needed. Ask the agent for a browser file URL with the checkout path properly encoded
 (including Windows/WSL paths and spaces). The selector passcode is a convenience,
-not a security boundary. Existing **Local alternatives** remain a separate workspace;
-Flow comparisons are outside that tool's current scope.
+not a security boundary. To iterate on one Flow with several variants, ask for a
+local comparison of that Flow: its variants appear below the Flows list and can be
+compared side by side (see [local comparisons](local-variants.md)). Keeping one
+updates that Flow only; integration into `app/` stays separate work.
 
 Refresh returns to the selector, exactly as in Local Prototype. **Pin on refresh**,
 the first control in Tools, keeps a refresh in place instead: the same Flow begins

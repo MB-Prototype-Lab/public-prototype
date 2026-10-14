@@ -174,7 +174,8 @@ class PublicationTests(unittest.TestCase):
                            'local-variants.js', 'local-compare.css', 'localCompare', 'Compare side by side', '.worktrees/', 'Current local app',
                            'Live historical builds', 'LOCAL PREVIEW', 'LOCAL SCRIPTS', 'localFlows', 'Local Prototype',
                            'Historical versions', 'flows/catalog.js', 'gate/flows.js', 'mb-prototype-lab.github.io',
-                           'CATALOG -->'):
+                           'CATALOG -->', 'localFlowVariantsSlot', 'localAlternativesTitle', 'Prototype variants',
+                           'local-tab-count', 'data-default-tab'):
             with self.subTest(local_text=local_text):
                 self.assertNotIn(local_text, page)
         self.assertIn('versions/v1/index.html', page)

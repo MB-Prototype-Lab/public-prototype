@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import os
 from pathlib import Path, PureWindowsPath
 import subprocess
 import tempfile
@@ -22,6 +23,8 @@ class VariantsTest(unittest.TestCase):
         self.git('config', 'user.name', 'Test')
         self.write('.gitignore', '.worktrees/\n.local-preview/\n')
         self.write('app/index.html', 'app')
+        self.write('flows/sample/flow.json', json.dumps({'schema': 1, 'id': 'sample', 'label': 'Sample flow'}))
+        self.write('flows/sample/index.html', 'flow')
         self.write('index.html', 'selector')
         self.write('task', 'initial\n')
         self.write('unrelated', 'original\n')
@@ -51,6 +54,12 @@ class VariantsTest(unittest.TestCase):
 
     def path(self, variant):
         return self.root / '.worktrees' / variant['id']
+
+    def manifest(self):
+        text = (self.root / '.local-preview/variants.js').read_text()
+        prefix = 'window.MB_LOCAL_VARIANTS = '
+        self.assertTrue(text.startswith(prefix))
+        return json.loads(text[len(prefix):].rstrip().rstrip(';'))
 
     def test_url_command_needs_no_session_or_metadata(self):
         result = self.cli('url')
@@ -99,6 +108,121 @@ class VariantsTest(unittest.TestCase):
         self.cli('cleanup', winner['id'])
         self.assertFalse(self.path(winner).exists())
         self.git('rev-parse', winner['branch'])
+
+    def test_flow_comparison_opens_that_flow(self):
+        result = self.cli('create', '--flow', 'sample', '--option', 'A', 'first', '--option', 'B', 'second')
+        state = self.state()
+        self.assertEqual(state['target'], {'kind': 'flow', 'id': 'sample', 'label': 'Sample flow'})
+        manifest = self.manifest()
+        self.assertEqual(manifest['target'], {'kind': 'flow', 'id': 'sample', 'label': 'Sample flow',
+                                              'path': 'flows/sample/index.html'})
+        self.assertEqual([v['href'] for v in manifest['variants']],
+                         ['.worktrees/variant-A/flows/sample/index.html', '.worktrees/variant-B/flows/sample/index.html'])
+        self.assertIn('Comparing: Sample flow', result.stdout)
+        self.assertIn('/.worktrees/variant-A/flows/sample/index.html', result.stdout)
+        self.assertNotIn('/app/index.html', result.stdout)
+        for variant in state['variants']:
+            # Exit and refresh from a variant Flow reach the worktree root, which returns here.
+            self.assertEqual((self.path(variant) / '.local-preview/return.js').read_text(),
+                             'window.MB_LOCAL_RETURN = {"href": "../../index.html"};\n')
+
+    def test_unusable_flow_is_refused_before_any_commit(self):
+        self.write('flows/mismatch/flow.json', json.dumps({'id': 'other', 'label': 'Mismatch'}))
+        self.write('flows/mismatch/index.html', 'flow')
+        self.write('flows/blank/flow.json', json.dumps({'id': 'blank', 'label': ' '}))
+        self.write('flows/blank/index.html', 'flow')
+        self.write('flows/dir/flow.json', json.dumps({'id': 'dir', 'label': 'Directory'}))
+        self.write('flows/dir/index.html/inner', 'not an entry')
+        (self.root / 'flows/linked').mkdir()
+        os.symlink('../sample/flow.json', self.root / 'flows/linked/flow.json')
+        self.write('flows/linked/index.html', 'flow')
+        self.git('add', 'flows')
+        self.git('commit', '-m', 'unusable flows')
+        self.write('flows/fresh/flow.json', json.dumps({'id': 'fresh', 'label': 'Fresh'}))
+        self.write('flows/fresh/index.html', 'flow')
+        self.write('flows/wrong/flow.json', json.dumps({'id': 'nope', 'label': 'Wrong'}))
+        self.write('flows/wrong/index.html', 'flow')
+        head = self.git('rev-parse', 'HEAD')
+        for args in (['../app'], ['Sample'], ['a--b'], ['a' * 65], ['missing'], ['mismatch'], ['blank'],
+                     ['dir'], ['linked'], ['fresh'],
+                     ['wrong', '--file', 'flows/wrong/flow.json', '--file', 'flows/wrong/index.html']):
+            with self.subTest(args=args):
+                self.cli('create', '--option', 'A', 'first', '--flow', *args, ok=False)
+                self.assertEqual(self.git('rev-parse', 'HEAD'), head)
+                self.assertFalse((self.root / '.local-preview/current').exists())
+                self.assertFalse((self.root / '.worktrees').exists())
+
+    def test_uncommitted_flow_selected_with_file_is_accepted(self):
+        self.write('flows/fresh/flow.json', json.dumps({'id': 'fresh', 'label': 'Fresh'}))
+        self.write('flows/fresh/index.html', 'flow')
+        state = self.create('--flow', 'fresh', '--file', 'flows/fresh/flow.json', '--file', 'flows/fresh/index.html')
+        self.assertEqual(state['target'], {'kind': 'flow', 'id': 'fresh', 'label': 'Fresh'})
+        self.assertEqual(self.git('show', state['checkpoint'] + ':flows/fresh/index.html'), 'flow')
+
+    def test_session_without_target_compares_the_app(self):
+        state = self.create()
+        del state['target']
+        module.save(self.root, state)
+        self.cli('refresh')
+        manifest = self.manifest()
+        self.assertEqual(manifest['target'], {'kind': 'app', 'label': 'Prototype', 'path': 'app/index.html'})
+        self.assertEqual(manifest['variants'][0]['href'], '.worktrees/variant-A/app/index.html')
+
+    def test_invalid_target_refuses_refresh_but_close_and_cleanup_work(self):
+        state = self.create('--flow', 'sample')
+        before = (self.root / '.local-preview/variants.js').read_text()
+        state['target'] = {'kind': 'flow', 'id': '../app', 'label': 'Escape'}
+        module.save(self.root, state)
+        self.cli('refresh', ok=False)
+        self.assertEqual((self.root / '.local-preview/variants.js').read_text(), before)
+        self.cli('close')
+        self.assertFalse(self.manifest()['active'])
+        self.cli('cleanup', *[v['id'] for v in state['variants']])
+        self.assertFalse(self.path(state['variants'][0]).exists())
+
+    def test_flow_adoption_keeps_changes_inside_that_flow(self):
+        self.cli('create', '--flow', 'sample', '--option', 'A', 'app edit', '--option', 'B', 'moved',
+                 '--option', 'C', 'flow only')
+        state = self.state()
+        head = self.git('rev-parse', 'HEAD')
+        app_edit, moved, winner = state['variants']
+        self.write('app/index.html', 'changed app', root=self.path(app_edit))
+        refused = self.cli('adopt', app_edit['id'], '--file', 'app/index.html', ok=False)
+        self.assertIn('outside flows/sample/', refused.stderr)
+        self.assertIn('app/index.html', refused.stderr)
+        # A move into the Flow must still show the app/ deletion.
+        self.git('mv', 'app/index.html', 'flows/sample/moved.html', root=self.path(moved))
+        self.git('commit', '-m', 'move', root=self.path(moved))
+        self.assertIn('app/index.html', self.cli('adopt', moved['id'], ok=False).stderr)
+        self.assertEqual(self.state()['status'], 'active')
+        self.assertNotIn('winner', self.state())
+        self.assertEqual(self.git('rev-parse', 'HEAD'), head)
+        self.write('flows/sample/index.html', 'winning flow', root=self.path(winner))
+        self.write('flows/catalog.json', '{}', root=self.path(winner))
+        self.cli('adopt', winner['id'], '--file', 'flows/sample/index.html', '--file', 'flows/catalog.json')
+        self.assertEqual(self.state()['status'], 'verification')
+        self.assertEqual((self.root / 'flows/sample/index.html').read_text(), 'winning flow')
+        self.assertEqual((self.root / 'app/index.html').read_text(), 'app')
+        self.cli('adopt', winner['id'], '--verified')
+        self.assertEqual(self.state()['status'], 'closed')
+
+    def test_variant_missing_its_flow_is_omitted(self):
+        state = self.create('--flow', 'sample')
+        (self.path(state['variants'][0]) / 'flows/sample/index.html').unlink()
+        result = self.cli('refresh')
+        self.assertIn('Missing flows/sample/index.html in variant-A', result.stderr)
+        self.assertEqual([v['id'] for v in self.manifest()['variants']], ['variant-B'])
+        self.assertNotIn('.worktrees/variant-A/', result.stdout)
+        self.assertIn('.worktrees/variant-B/flows/sample/index.html', result.stdout)
+
+    def test_archived_flow_cleanup_keeps_current_app_comparison(self):
+        old = self.create('--flow', 'sample')
+        self.cli('close')
+        current = self.create()
+        self.cli('--session', old['id'], 'cleanup', old['variants'][0]['id'])
+        manifest = self.manifest()
+        self.assertEqual(manifest['target']['kind'], 'app')
+        self.assertEqual(manifest['variants'][0]['id'], current['variants'][0]['id'])
 
     def test_dirty_cleanup_and_original_refused(self):
         winner = self.create()['variants'][0]

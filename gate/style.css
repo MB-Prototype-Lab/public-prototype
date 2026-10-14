@@ -338,11 +338,6 @@ a.gate-btn { display: block; text-decoration: none; }
 }
 
 .local-alternatives h2 { font-size: 16px; margin: 0 0 12px; }
-#localAlternativesList { display: flex; flex-direction: column; gap: 12px; }
-.local-alternative { display: flex; flex-direction: column; gap: 6px; }
-.local-alternative .gate-btn { display: block; text-decoration: none; }
-.local-alternative p { color: var(--gate-muted); font-size: 13px; margin: 0; }
-.local-open-new-tab { font-size: 13px; color: var(--gate-accent); }
 
 /* Mobile-style scroll indicators (thin rounded thumb, no track/arrows) */
 ::-webkit-scrollbar { width: 5px; height: 5px; }

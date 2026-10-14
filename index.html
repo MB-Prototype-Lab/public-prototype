@@ -34,9 +34,10 @@
         <a class="gate-btn gate-btn-primary" href="app/index.html">Local Prototype</a>
         <a class="gate-btn" href="https://mb-prototype-lab.github.io/public-prototype/" target="_blank" rel="noopener">Historical versions <span aria-hidden="true">↗</span><span class="gate-sr-only"> (opens in a new tab)</span></a>
       </div>
-      <section id="localAlternatives" class="local-alternatives" hidden aria-label="Local alternatives">
-        <h2>Local alternatives</h2>
-        <div id="localAlternativesList"></div>
+      <!-- Moved under the Flows list when the comparison is of a Flow (gate/local-variants.js). -->
+      <section id="localAlternatives" class="local-alternatives" hidden aria-labelledby="localAlternativesTitle">
+        <h2 id="localAlternativesTitle">Prototype variants</h2>
+        <div id="localAlternativesList" class="gate-list"></div>
         <button type="button" id="localCompare" class="gate-btn">Compare side by side</button>
       </section>
       <!-- LOCAL PREVIEW END -->
@@ -49,6 +50,7 @@
       <div id="localFlows" hidden>
         <div id="localFlowsList" class="gate-list"></div>
       </div>
+      <div id="localFlowVariantsSlot"></div>
       <!-- LOCAL PREVIEW END -->
     </section>
   </div>

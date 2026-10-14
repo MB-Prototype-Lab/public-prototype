@@ -11,15 +11,17 @@ function element() {
     style: {}, value: '', hidden: false, tabIndex: 0, attrs: {}, handlers: {}, entries: false, focused: 0,
     setAttribute(name, value) { this.attrs[name] = String(value); },
     removeAttribute(name) { delete this.attrs[name]; },
+    getAttribute(name) { return name in this.attrs ? this.attrs[name] : null; },
     addEventListener(type, fn) { (this.handlers[type] ||= []).push(fn); },
     querySelector(selector) { assert.equal(selector, 'a[href]'); return this.entries ? {} : null; },
     focus() { this.focused += 1; },
   };
 }
 
-function boot({ prototype = true, flows = true, stored, unlocked = true, storageThrows = false, domThrows = false } = {}) {
+function boot({ prototype = true, flows = true, stored, suggested, unlocked = true, storageThrows = false, domThrows = false } = {}) {
   const elements = {};
   const el = id => elements[id] ||= element();
+  if (suggested !== undefined) el('gateTabs').attrs['data-default-tab'] = suggested;
   el('gatePanelPrototype').entries = prototype;
   el('gatePanelFlows').entries = flows;
   if (domThrows) el('gatePanelFlows').querySelector = () => { throw new Error('broken DOM'); };
@@ -67,6 +69,15 @@ assert.equal(selected(gate), 'flows');
 assert.equal(gate.store.mb_gate_tab, 'flows');
 assert.equal(selected(boot({ stored: 'flows' })), 'flows');
 assert.equal(selected(boot({ stored: 'other' })), 'prototype');
+
+// A local comparison suggests the tab holding its variants until the person picks one.
+gate = boot({ suggested: 'flows' });
+assert.equal(selected(gate), 'flows');
+assert.equal(gate.store.mb_gate_tab, null, 'a suggestion is not remembered');
+assert.equal(selected(boot({ suggested: 'flows', stored: 'prototype' })), 'prototype');
+assert.equal(selected(boot({ suggested: 'prototype', stored: 'flows' })), 'flows');
+assert.equal(selected(boot({ suggested: 'other' })), 'prototype');
+assert.equal(selected(boot({ suggested: 'flows', flows: false })), 'prototype');
 
 // Keyboard: arrows wrap and move focus; Home/End jump; other keys are ignored.
 gate = boot();

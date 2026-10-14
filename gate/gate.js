@@ -64,8 +64,13 @@ function gateTabsSync() {
   });
   var stored = null;
   try { stored = sessionStorage.getItem(GATE_TAB_KEY); } catch (e) { /* private-mode storage block */ }
+  // A local comparison suggests the tab holding its variants; the person's own
+  // choice still wins. Published pages never set the suggestion.
+  var suggested = tabs.getAttribute("data-default-tab");
   // Fall back without overwriting what the person last chose.
-  var chosen = available.indexOf(stored) !== -1 ? stored : available.indexOf("prototype") !== -1 ? "prototype" : available[0] || "prototype";
+  var chosen = available.indexOf(stored) !== -1 ? stored
+    : available.indexOf(suggested) !== -1 ? suggested
+    : available.indexOf("prototype") !== -1 ? "prototype" : available[0] || "prototype";
   gateSelectTab(chosen, false);
 }
 

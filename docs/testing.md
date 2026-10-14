@@ -40,16 +40,24 @@ is complete; these checks preserve the established migration baseline.
 
 Local comparison tests use disposable repositories to check selective checkpointing,
 common starting commits, original-branch advancement, merge conflicts, interrupted
-creation, path/branch collisions, and preservation during cleanup. The Node selector
-test covers missing/invalid manifests, safe rendering, pane assignments and swaps,
-count changes, retained iframe identity, tools toggles, restart isolation, and exit. Publication tests assert
-local controls and metadata never appear in output.
+creation, path/branch collisions, and preservation during cleanup. They also cover
+Flow targets: Flow links, refusal of unusable Flows before any commit, sessions
+without a target, and refusal to keep a Flow variant that changed files outside its
+Flow (including renames). The Node selector test covers missing/invalid manifests and
+targets, safe row rendering, placement on the target's tab with its count and
+suggested tab, the Flow baseline, pane assignments and swaps, count changes, retained
+iframe identity, tools toggles, restart isolation, layout records per target, and
+exit to the right tab. The tab test covers suggested versus remembered tabs.
+Publication tests assert local controls and metadata never appear in output.
 
 For comparison changes, manually check file:// in separate tabs/windows, independent
 app state, and refresh from each app through its root selector to the primary
-selector. Check checkout paths with spaces on Windows and macOS. Automated DOM and
-Git tests do not substitute for these browser/platform checks; record unavailable
-checks explicitly.
+selector. For a Flow comparison, also check from a variant Flow, standalone and in a
+pane: Exit Flow and an unpinned refresh return to the primary selector on the Flows
+tab, a pinned refresh restarts the variant, and in a pane Exit and the pin are
+disabled. Check the selector's variant rows at phone width and in dark mode. Check
+checkout paths with spaces on Windows and macOS. Automated DOM and Git tests do not
+substitute for these browser/platform checks; record unavailable checks explicitly.
 
 For the side-by-side workspace, browser-check file embedding early on Windows/WSL
 and macOS, including paths with spaces. Verify laptop and ultrawide layouts, all

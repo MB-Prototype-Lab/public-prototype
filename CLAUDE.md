@@ -11,7 +11,7 @@ loads through script tags so `file://` works.
 ## Collaboration
 
 Use the project skills in `.claude/skills/` for ordinary requests to start work,
-sync, ship, publish, or compare local alternatives. Read [workflow](docs/workflow.md) for the operating procedure.
+sync, ship, publish, or compare local variants. Read [workflow](docs/workflow.md) for the operating procedure.
 Start a unique task branch from current main; preserve dirty files and local-only
 commits. Sync by merging main, never rebasing or force pushing. Ship through a
 reviewed PR and passing CI with applicable PM testing. Publishing is a separate,
@@ -50,7 +50,7 @@ Do not regenerate media as part of packaging. `MB_VERSION` is retired and errors
 | Tracking and participant URLs | [app/docs/useberry.md](app/docs/useberry.md) |
 | Looking up historical decisions | `docs/history/`, `app/PROGRESS.md` (reference, not a task queue) |
 | Creating/editing/checking Flows or selectively integrating proposals | [docs/flows.md](docs/flows.md) |
-| Local alternatives | [docs/local-variants.md](docs/local-variants.md) |
+| Local variants of the app or one Flow | [docs/local-variants.md](docs/local-variants.md) |
 | Future PM feature ports | [docs/future-work.md](docs/future-work.md) |
 
 App files: `js/state.js`, `js/render.js`, `js/navigation.js`; `screens/` renderers;

@@ -1,5 +1,7 @@
 /* Loaded only inside the selector's stripped LOCAL SCRIPTS boundary. */
 #localCompare { margin-top: 16px; width: 100%; }
+/* Empty unless a Flow comparison moves its variants here; no stray panel gap. */
+#localFlowVariantsSlot:empty { display: none; }
 body.local-comparing { display: block; padding: 0; }
 .local-comparing > .gate-wrap { display: none; }
 .local-compare-workspace {

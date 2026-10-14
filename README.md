@@ -130,7 +130,7 @@ your request; the agent reads its instructions and the linked project guides.
 | When you want to… | Ask for… | What the agent does |
 | --- | --- | --- |
 | Begin a task or resume unfinished work | [start-work](.claude/skills/start-work/SKILL.md) | Checks branches and uncommitted files, then starts or resumes a task branch without losing existing work. |
-| Compare local alternatives | [compare-local](.claude/skills/compare-local/SKILL.md) | Creates independent previews, keeps a chosen alternative, and cleans up only selected work. |
+| Compare local variants | [compare-local](.claude/skills/compare-local/SKILL.md) | Creates independent previews of the app or one Flow, keeps a chosen variant, and cleans up only selected work. |
 | Bring in changes from `main` | [sync](.claude/skills/sync/SKILL.md) | Fetches and merges current `main` into your task branch, then checks affected work. |
 | Get tested work into a pull request | [ship](.claude/skills/ship/SKILL.md) | Reviews changes, runs checks, prepares the PR, and records your testing. A merge needs separate authorization. |
 | Update the live selector or add a snapshot | [publish](.claude/skills/publish/SKILL.md) | Follows the release procedure after an explicit publication request. Publication needs separate authorization. |
@@ -143,19 +143,21 @@ handles routine code changes and automated checks. See
 update the live site. A GitHub login does not itself authorize a merge,
 repository settings change, or publication.
 
-## Compare alternatives locally
+## Compare variants locally
 
-Ask your agent: “Make two alternatives.” It prepares named choices under **Local
-alternatives** on the selector's **Prototype** tab. Use **Open in new tab** and arrange the
-windows side by side. Readable URL folders such as `variant-A` and `variant-B`
-help you identify the option; later comparisons may add a suffix such as `variant-A-2`.
-Each alternative runs independently; refresh returns to the
-primary selector. In **Compare side by side**, **Pin on refresh** beside **Visible panes**
-makes a refresh reopen the same panes from the start. No server, package installation,
-or Git commands are needed from you.
+Ask your agent: “Make two variants,” or “Make two variants of the Emergency fund
+Flow.” It prepares named choices under **Prototype variants** on the selector's
+**Prototype** tab, or under **Emergency fund variants** below the Flows list. The tab
+shows how many there are, such as **Flows (2)**. Each row opens that variant in the
+same tab; **Compare side by side** shows variants next to your current version.
+Readable URL folders such as `variant-A` and `variant-B` help you identify the
+option; later comparisons may add a suffix such as `variant-A-2`. Each variant runs
+independently; refresh returns to the primary selector. In **Compare side by side**,
+**Pin on refresh** beside **Visible panes** makes a refresh reopen the same panes from
+the start. No server, package installation, or Git commands are needed from you.
 
 Continue with “Change option A,” then “Keep B” when you choose. The agent verifies
-and merges B into your task branch locally. Alternatives remain available to the
+and merges B into your task branch locally. Variants remain available to the
 agent until you explicitly ask “Clean up this comparison.” The ordinary selector
 returns when the comparison closes. See [local comparisons](docs/local-variants.md).
 

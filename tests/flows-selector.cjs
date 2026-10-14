@@ -31,11 +31,16 @@ assert.equal(row.children[1].textContent, valid.description);
 assert.equal(boot({schema: 1, flows: [{...valid, description: ' '}]}).localFlowsList.children[0].children.length, 1);
 const html = fs.readFileSync('index.html', 'utf8');
 for (const retained of ['id="passcodeScreen"', 'id="localAlternatives"', 'gate/local-variants.js', 'app/index.html']) assert.ok(html.includes(retained));
-// Variants stay under the Prototype tab; local Flows sit only in the Flows tab.
+// Variants start under the Prototype tab; local Flows sit only in the Flows tab.
 const at = id => html.indexOf('id="' + id + '"');
 assert.ok(at('selectorScreen') < at('gatePanelPrototype'));
 assert.ok(at('gatePanelPrototype') < at('localPreview') && at('localAlternatives') < at('gatePanelFlows'));
 assert.ok(at('gatePanelFlows') < at('localFlows'));
+// A Flow comparison moves its variants below the Flows list, inside the stripped block.
+const flowsPanel = html.slice(at('gatePanelFlows'));
+const slotAt = flowsPanel.indexOf('id="localFlowVariantsSlot"');
+assert.ok(flowsPanel.indexOf('id="localFlows"') < slotAt);
+assert.ok(flowsPanel.indexOf('<!-- LOCAL PREVIEW START -->') < slotAt && slotAt < flowsPanel.indexOf('<!-- LOCAL PREVIEW END -->'));
 assert.ok(html.indexOf('<!-- CATALOG -->') < at('gatePanelFlows') && html.indexOf('<!-- FLOW CATALOG -->') > at('gatePanelFlows'));
 // gate.js decides the toggle after the local lists fill, so it must run last and synchronously.
 assert.ok(html.indexOf('<script src="gate/gate.js"></script>') > html.indexOf('<!-- LOCAL SCRIPTS END -->'));

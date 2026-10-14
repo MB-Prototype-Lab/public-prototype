@@ -287,3 +287,43 @@ checks.
 PM visual re-acceptance: switch between Local Prototype and each Flow at desktop width
 and confirm nothing outside the phone moves, then open Tools and narrow the window
 below 769px. Windows/WSL and macOS acceptance remain pending.
+
+## Local variants for Flows — 2026-10-13
+
+Change base `a833438dd1d5fcc1d8cdb32ebce7f6fb46ecd2d6`. A local comparison can now
+target one Flow (`local-variants.py create --flow <id>`) as well as the full app,
+with one comparison at a time. Agreed with the PM owner:
+- Variants appear on the tab of what they change, under **Prototype variants** or
+  **<Flow> variants**, as compact rows that open in the same tab.
+- The selector's separate new-tab links are gone, but each comparison pane keeps its
+  Open in new tab link as the embedding fallback.
+- The tab shows a count, such as **Flows (2)**, and opens first until the PM picks
+  a tab.
+- Side by side offers **Local <Flow>** as the baseline.
+- Keeping a Flow variant is refused if it changed files outside its Flow, apart from
+  the generated catalog.
+
+No app or Flow runtime files changed. Variant Flows already exit and refresh through
+their worktree root to the primary selector.
+
+Python discovery passed: 73 tests, one skipped because Node is unavailable. The new
+cases cover Flow targets, refusals before any commit, older sessions, the keep guard
+with renames, and missing entries. Flow check, path checks and publication check
+also passed.
+
+In headless Chrome:
+- The edited selector, tab and Flow-selector Node tests passed under a scratch
+  `require`/`vm` shim.
+- The same tests fail against the previous selector code, so the shim does detect
+  regressions.
+- Screenshots matched the agreed layout in light and dark mode, at 460 and 340px,
+  with a remembered Prototype tab, and for the side-by-side heading.
+
+Not run on this machine, by agreement: the real Node suite and `check-syntax.sh`
+(CI runs these). Windows/WSL and macOS acceptance remain pending.
+
+PM acceptance uses a throwaway Emergency fund comparison:
+- The Flows tab opens first, showing **Flows (2)**.
+- Rows open in place, and Exit Flow and an unpinned refresh return to the Flows tab.
+- Side by side shows A, B and **Local Emergency fund**, with a pinned layout restore.
+- **Back to versions** returns to the Flows tab.
