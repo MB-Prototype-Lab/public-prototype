@@ -403,12 +403,6 @@ function lessonSkipFraming() {
 }
 
 /**
- * Entry point from a task route or the Learn tab. If the lesson was already
- * framed THIS session, skip the questions and replay the same variant (D03:
- * state is in-memory, so a refresh clears it and we ask again — no persistent
- * cooldown, which does not matter for the prototype).
- */
-/**
  * The figure framing inferred for this lesson, or null.
  *
  * For APR that is the card's rate -- an issuer + card lookup in CARD_APR, or a
@@ -420,12 +414,13 @@ function lessonProfileFigure(lessonId) {
   return (prof && prof.figure != null) ? prof.figure : null;
 }
 
+/**
+ * Entry point from a task route or the Learn tab. Every open asks the framing
+ * questions again, even when this session already answered them: a tester who
+ * once answered "no card" must still be able to see them.
+ */
 function lessonV3Start(lessonId) {
-  const lesson = lessonV3(lessonId);
-  if (!lesson) return;
-  const prof = state.lessonProfile && state.lessonProfile[lessonId];
-  const reuse = typeof LESSON_REUSE_FRAMING !== "undefined" && LESSON_REUSE_FRAMING;
-  if (reuse && prof && prof.variantId) { lessonOpenPlayer(lesson, prof.variantId); return; }
+  if (!lessonV3(lessonId)) return;
   lessonFramingStart(lessonId);
   go("lessonFraming");
 }
@@ -488,8 +483,7 @@ function lessonV3LearnRow(lesson) {
  *
  * `state.lessonProfile` is deliberately NOT cleared: it holds the latest
  * framing answers, which the calculator seeds from. Re-opening a lesson asks
- * again all the same (LESSON_REUSE_FRAMING, js/config.js -- owner's decision,
- * reversing the earlier "don't re-ask"). Only resetUserData() drops them.
+ * again all the same. Only resetUserData() drops them.
  */
 function lessonV3ClearSession() {
   state.lessonVariantId     = null;

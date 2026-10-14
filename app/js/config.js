@@ -68,11 +68,3 @@ const USEBERRY_TRACKING = window.MB_RELEASE.tracking === true;
 // CLAUDE.md as known. Widening it is moving renderBudgetPaywall's guard into
 // renderScreen() against a list of screen ids.
 const BUDGET_PAYWALL = true;
-
-// ─── Lesson framing: ask every time ─────────────────────────────────────────
-// OFF (owner, 2026-09-25): every Begin on a framed lesson (APR) runs its card
-// questions again. ON restores the earlier behaviour -- a re-open replays the
-// variant from this session's stored answers without asking -- which left a
-// tester who once answered "no card" unable to see the questions at all.
-// state.lessonProfile is still written either way; the calculator seeds from it.
-const LESSON_REUSE_FRAMING = false;

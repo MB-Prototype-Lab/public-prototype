@@ -2503,8 +2503,7 @@ section("7o. Full app integration: onboarding, ESF and Buddy");
         "contained entry flags are absent from the full app");
     chk(typeof onbDocked === "undefined" && typeof onbStepDock === "undefined",
         "docked onboarding helpers are absent from the full app");
-    chk(BUDGET_PAYWALL === true &&
-        LESSON_REUSE_FRAMING === false && USEBERRY_TRACKING === false,
+    chk(BUDGET_PAYWALL === true && USEBERRY_TRACKING === false,
         "combined development flags retain the full app and disable tracking");
     onbStart();
     var o = state.onboarding;

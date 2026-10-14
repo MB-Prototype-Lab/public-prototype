@@ -31,8 +31,8 @@
 //     variants to "cover" them.
 //
 // The result is kept per lesson for the session (state.lessonProfile), but a
-// re-open asks again: LESSON_REUSE_FRAMING in js/config.js is off (owner's call
-// -- a tester who once answered "no card" never saw the questions again).
+// re-open asks again: a tester who once answered "no card" must still see the
+// questions.
 
 function renderLessonFraming() {
   const f = state.lessonFraming;

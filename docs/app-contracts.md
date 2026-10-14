@@ -15,8 +15,8 @@ Both checkout buttons are placeholders. This is a tab-only gate; task, builder,
 category and supported deep-link routes can still reach budget features.
 Every Buddy stage draws the one illustration whatever the appearance attributes
 say; the description card shows only when the image fails to load.
-`LESSON_REUSE_FRAMING = false` asks framing questions on every lesson entry.
-Missing film looks retain the supplied SVG fallback.
+Framing questions are asked on every lesson entry, even when the session
+already answered them. Missing film looks retain the supplied SVG fallback.
 
 ### ESF budget exception (user approved)
 
@@ -99,10 +99,10 @@ Telltales:
   state. A study that needs a contained or shortened journey uses a Flow.
 - Recorded product settings, each kept at its recorded value; changing one is a
   product decision, never a study: `BUDGET_PAYWALL = true` (L27),
-  `PROFILE_PICKER = true` (L26), `LESSON_REUSE_FRAMING = false` (above). The
-  presentation and calculation settings `ONB_FILM_ANY_LOOK` and `BAND_PRORATE` do
-  not change the journey. A new journey-affecting setting needs a
-  recorded PM decision; see [decisions](decisions.md).
+  `PROFILE_PICKER = true` (L26). The presentation and calculation settings
+  `ONB_FILM_ANY_LOOK` and `BAND_PRORATE` do not change the journey. A new
+  journey-affecting setting needs a recorded PM decision; see
+  [decisions](decisions.md).
 - Dormant code that nothing turns on, such as unused onboarding steps. The ban
   applies to whatever would turn it on.
 
