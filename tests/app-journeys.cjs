@@ -304,7 +304,8 @@ function declared(body, channel) {
   const sec = /##\s*Phone and Tools changes\s*\n([\s\S]*?)(\n##\s|$)/i.exec(body || '');
   if (!sec) return undefined;
   for (const name of CHANNEL_NAMES[channel] || [channel]) {
-    const m = new RegExp('^\\s*[-*]?\\s*' + name + '\\s*:\\s*(.*)$', 'im').exec(sec[1]);
+    // [ \t], not \s: an empty line must not read the next line as its value.
+    const m = new RegExp('^[ \\t]*[-*]?[ \\t]*' + name + '[ \\t]*:[ \\t]*(.*)$', 'im').exec(sec[1]);
     if (m) return m[1].replace(/<!--[\s\S]*?-->/g, '').trim();
   }
   return undefined;
@@ -315,15 +316,25 @@ async function justifyMode(args, journeys) {
   const { ok: gatesOk, cmp } = await againstMode(Object.assign({}, args, { against: args.base, report: true }), journeys);
   const body = process.env.PR_BODY || '';
   const problems = [];
+  const notes = [];
   const channels = [['Participant', cmp.participant.length], ['Tools', cmp.tools.length], ['Wiring', cmp.wiring.length + cmp.renames.size]];
+  // The browser check compares pictures, so it sees phone and Tools changes this
+  // check cannot (a colour, a 1px shift). A declared change there is not an error
+  // here; wiring has no picture, so only this check can confirm it.
+  const pictured = ['Participant', 'Tools'];
   for (const [name, n] of channels) {
     const d = declared(body, name);
     const label = CHANNEL_NAMES[name][0];
     if (d === undefined) { problems.push('the PR body needs a "' + label + ':" line under "## Phone and Tools changes"'); continue; }
+    if (!d) { problems.push('the PR\'s "' + label + ':" line is empty; write "none" or say what changed and why'); continue; }
     const none = /^none\.?$/i.test(d);
     if (n && none) problems.push(label + ' changed in ' + n + ' step(s) but the PR says "none"; say what changed and why');
-    if (!n && !none) problems.push(label + ' did not change; the PR should say "' + label + ': none"');
+    if (!n && !none) {
+      if (pictured.includes(name)) notes.push(label + ': the journeys show no change; the PR declares one, which only the browser picture check may see');
+      else problems.push(label + ' did not change; the PR should say "' + label + ': none"');
+    }
   }
+  for (const n of notes) console.log('NOTE     ' + n);
   for (const p of problems) console.log('JUSTIFY  ' + p);
   console.log((problems.length ? 'FAIL' : 'PASS') + '  PR declaration of phone, Tools and wiring changes');
   return gatesOk && !problems.length;

@@ -96,6 +96,7 @@ check('PR declarations are read from the "Phone and Tools changes" section', () 
   assert.equal(declared(body, 'Participant'), 'none');
   assert.equal(declared(body, 'Tools'), 'wording of a Tools heading');
   assert.equal(declared(body, 'Wiring'), undefined);
+  assert.equal(declared('## Phone and Tools changes\nPhone:\nTools: none\n', 'Participant'), '');
 });
 
 check('a different machine locale and time zone change nothing', () => {
