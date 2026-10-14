@@ -22,7 +22,7 @@ node tests/flows-selector.cjs
 node tests/gate-tabs.cjs
 node tests/flows-runtime.cjs
 python3 scripts/flows.py check
-find flows -type f -name "*.js" -print0 | xargs -0 -r -n 1 node --check
+bash scripts/check-syntax.sh flows
 node tests/app-journeys.cjs --selftest
 node tests/app-journeys.cjs
 python3 -m unittest discover -s tests -v

@@ -62,16 +62,35 @@ if [ "${#files[@]}" -eq 0 ]; then
   echo "no .js files matched"; exit 0
 fi
 
+# node: compile each file as a classic browser <script>, all in one process.
+# `node --check` parses a .js file as a CommonJS or ES module, so it accepts a
+# top-level `return` or `export` that stops the file loading in a page.
+if [ "$ENGINE" = "node" ]; then
+  exec "$NODE" -e '
+    const fs = require("fs"), vm = require("vm");
+    const files = process.argv.slice(1);
+    let fail = 0;
+    for (const f of files) {
+      try {
+        new vm.Script(fs.readFileSync(f, "utf8"), { filename: f });
+      } catch (e) {
+        fail++;
+        const at = e instanceof SyntaxError ? e.stack.split("\n")[0] + "  " : "";
+        console.log("FAIL " + f);
+        console.log("     " + at + e.name + ": " + e.message);
+      }
+    }
+    console.log("─────────────────────────────────");
+    console.log((files.length - fail) + " passed, " + fail + " failed  (" + files.length + " files)");
+    process.exitCode = fail ? 1 : 0;
+  ' -- "${files[@]}"
+fi
+
 pass=0; fail=0
 for f in "${files[@]}"; do
   # Absolute path — jsc resolves relative to its own cwd, not necessarily ours.
   abs="$(cd "$(dirname "$f")" && pwd)/$(basename "$f")"
-  if [ "$ENGINE" = "node" ]; then
-    err_cmd() { "$NODE" --check "$abs" 2>&1; }
-  else
-    err_cmd() { "$JSC" -e "checkSyntax('$abs')" 2>&1; }
-  fi
-  if err=$(err_cmd); then
+  if err=$("$JSC" -e "checkSyntax('$abs')" 2>&1); then
     pass=$((pass + 1))
   else
     fail=$((fail + 1))

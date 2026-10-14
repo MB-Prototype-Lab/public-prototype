@@ -32,7 +32,7 @@ jobs:
       - run: node tests/flows-runtime.cjs
       - run: python3 scripts/flows.py check
       - name: Flow script syntax
-        run: find flows -type f -name "*.js" -print0 | xargs -0 -r -n 1 node --check
+        run: bash scripts/check-syntax.sh flows
       - run: node tests/app-journeys.cjs --selftest
       - run: node tests/app-journeys.cjs
       - name: Journeys compared with the PR base, commit by commit

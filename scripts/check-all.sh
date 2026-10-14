@@ -89,10 +89,6 @@ run() {
   fi
 }
 
-flow_script_syntax() {
-  find flows -type f -name '*.js' -print0 | xargs -0 -r -n 1 "$NODE" --check
-}
-
 publication_rehearsal() {
   local out="$LOG_DIR/rehearsal"
   "$PYTHON" scripts/publish.py build --offline --output "$out"
@@ -135,7 +131,7 @@ run "Flows selector"                   node   "$NODE" tests/flows-selector.cjs
 run "Selector tabs"                    node   "$NODE" tests/gate-tabs.cjs
 run "Flows runtime"                    node   "$NODE" tests/flows-runtime.cjs
 run "Flows check"                      python "$PYTHON" scripts/flows.py check
-run "Flow script syntax"               node   flow_script_syntax
+run "Flow script syntax"               node   bash scripts/check-syntax.sh flows
 run "Journey harness self-checks"      node   "$NODE" tests/app-journeys.cjs --selftest
 run "Journeys (every flow, twice)"     node   "$NODE" tests/app-journeys.cjs
 run "Python tests"                     python "$PYTHON" -m unittest discover -s tests

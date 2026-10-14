@@ -2581,4 +2581,6 @@ print("");
 print("═══════════════════════════════════════════════════════════════");
 print("  " + CHECKS + " checks · " + FAIL + " failed · " + WARN + " warnings");
 print("═══════════════════════════════════════════════════════════════");
+// sweep.sh fails a run without this line, so a bundle cut short cannot pass.
+print("SWEEP COMPLETE");
 if (FAIL) throw new Error(FAIL + " sweep checks failed");

@@ -11,7 +11,7 @@ if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling u
 # because separately-evaluated scripts do not share top-level `const` bindings
 # but a browser's <script> tags do.
 #
-# Exits non-zero if any check fails.
+# Exits non-zero if any check fails, or if the sweep stops before its last line.
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
@@ -31,7 +31,7 @@ APP="app"
 # Explicit template — `mktemp -t <prefix>` is BSD-only; GNU mktemp needs the
 # XXXXXX and otherwise fails, leaving OUT as a bare ".js" written to the repo.
 OUT="$(mktemp "${TMPDIR:-/tmp}/mb-sweep.XXXXXX").js"
-trap 'rm -f "$OUT"' EXIT
+trap 'rm -f "$OUT" "$OUT.log"' EXIT
 
 # ── The screen inventory, read from the version being swept ─────────────────
 # SCREENS used to be a hardcoded list in sweep.js. With two versions whose
@@ -231,4 +231,11 @@ printf '\n// ══ sweep ══\n' >> "$OUT"
 cat scripts/sweep.js >> "$OUT"
 
 echo "Money Buddy v3 — Phase 6 sweep  ($n app files)"
-"$ENGINE" "$OUT"
+"$ENGINE" "$OUT" | tee "$OUT.log"
+rc=${PIPESTATUS[0]}
+[ "$rc" -eq 0 ] || exit "$rc"
+# A top-level `return` in an app file ends the bundle early and still exits 0.
+grep -qx 'SWEEP COMPLETE' "$OUT.log" || {
+  echo "error: the sweep stopped before its last line; most checks never ran" >&2
+  exit 1
+}
