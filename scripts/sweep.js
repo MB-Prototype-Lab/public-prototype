@@ -976,7 +976,7 @@ var deadNames = __UNREFERENCED.map(function (d) { return d.name; });
 var appeared = __UNREFERENCED.filter(function (d) { return DEAD_BASELINE.indexOf(d.name) === -1; });
 var resolved = DEAD_BASELINE.filter(function (n) { return deadNames.indexOf(n) === -1; });
 
-ok(deadNames.length + " unreferenced, " + DEAD_BASELINE.length + " expected (kept on purpose)");
+ok(deadNames.length + " unreferenced, " + DEAD_BASELINE.length + " expected (baseline)");
 if (appeared.length) {
   warn("newly unreferenced since the baseline — orphaned by a refactor?",
        appeared.map(function (d) { return d.name + "  " + d.file; }).join("\n          "));

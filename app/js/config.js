@@ -55,11 +55,10 @@ const USEBERRY_TRACKING = window.MB_RELEASE.tracking === true;
 // and six places in v4 cited it. plan.md §0 L27 records the override; without
 // that record the next reader finds D31, calls this a bug, and removes it.
 //
-// A FLAG RATHER THAN A DELETION, for two reasons. "Do not delete unused code"
-// is a hard rule and flipping this back must unwind nothing. And a deleted call
-// site would orphan all ten functions in screens/budget-v3.js into sweep.sh
-// §7b's newly-unreferenced warning — the only fix for which is padding
-// DEAD_BASELINE with ten names that then misstate why they are there.
+// A FLAG RATHER THAN A DELETION. It is a recorded product setting (plan.md §0
+// L27), and turning it off must bring the real tab back without unwinding
+// anything. The ten functions in screens/budget-v3.js are that tab; deleting
+// its call site would orphan them into sweep.sh §7b's newly-unreferenced warning.
 //
 // ⚠ IT GUARDS THE TAB, NOT THE BUDGET. Owner's call, and deliberately narrow:
 // the daily task, the Home task, budget-update-confirm's Rebuild and two deep
