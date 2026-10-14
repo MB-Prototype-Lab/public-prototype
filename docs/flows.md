@@ -3,8 +3,7 @@
 `app/` is the approved full product. `flows/<id>/` holds independently editable,
 contained proposals for PM iteration, ticket references and studies. Merging a Flow
 makes it available to the team; product approval and integration into `app/` are
-separate work. Publication is also separate. Repository cutover is complete;
-preserve historical snapshots, source/publication tags, `demo` and PM/HoffDemo branches.
+separate work. Publication is also separate.
 
 ## Preview and review
 
@@ -33,7 +32,7 @@ Reviewer controls live outside the phone in the initially collapsed **Tools**
 panel, including in snapshots. Open the **›** button (accessible name **Tools**) for Pin on refresh, Restart Flow, Exit Flow, themes,
 Copy State and controls for the current initialized screen. The page around the
 phone matches Local Prototype exactly: the panel sits alongside the phone on desktop
-and below it at medium widths, and phone-width windows (768px and below) offer no Tools.
+and below it at 769–900px, and phone-width windows (768px and below) offer no Tools.
 The button appears only while collapsed; **‹** (Close Tools) restores it and returns focus to it. Setup steps stay within each Flow's policy, and
 no unrestricted product screen picker is available. The phone retains the source
 participant headers, footers and contextual Back controls.
@@ -75,7 +74,7 @@ this configuration inside the package, never a switch in `app/` (see
 [create-flow](../.claude/skills/create-flow/SKILL.md) skill routes such requests here.
 `flows/emergency-fund` (setup, then one feature) and `flows/big-purchase` (shortened
 setup, then a feature with detours) are the references;
-[runtime interfaces](flows-contract.md#runtime-interfaces) lists the invariants.
+[Edit and check](#edit-and-check) lists the runtime invariants.
 
 1. **Policy (`flow.json`).** Set `entry` and `completion`, the exact
    `allowed_screens` (screen IDs declared in `js/state.js`), and `setup_steps` as an
@@ -128,7 +127,8 @@ allowed screens, ordered setup steps, profile behavior and proposed differences.
 Keep original source provenance when iterating; document later proposals separately.
 `flow-config.js` is generated policy and `flows/catalog.*` is local discovery,
 including newly created uncommitted packages. Neither is publication identity or
-product signoff. Combine catalog entries carefully when resolving merges.
+product signoff. In a merge conflict, resolve `flow.json`, then run
+`python3 scripts/flows.py catalog`.
 
 ```sh
 python3 scripts/flows.py catalog
@@ -146,12 +146,18 @@ base. Ordinary Flow tasks must leave app bytes unchanged. All packages receive
 metadata, entry, syntax and boundary checks; run affected behavior tests plus the
 complete commands in [testing](testing.md) before shipping.
 
-Runtime policy must exist before setup/navigation seed. Guard navigation, tab/admin
-jumps, restored history and final rendering; reject forbidden destinations before
-stack writes. Allowed screens also need valid feature state: start through the
-existing feature initializer, or restart an unsupported cold link safely. Back at
-the entry stays within the Flow. Retained disabled controls must have no effects.
-Keep screen slugs and control identifiers useful for studies.
+Runtime policy must exist before setup/navigation seed. In `index.html`,
+`release-config.js` and `flow-config.js` load before `js/config.js`, with
+`js/refresh-pin.js` between `release-config.js` and `js/config.js`, and `js/flow.js`
+loads before `js/navigation.js`; `flows.py check` enforces this. `js/refresh-pin.js`
+decides whether a refresh returns to the selector or restarts the Flow in place. A
+URL `profile` parameter is applied once at boot, on file URLs too, and never again
+during navigation. Guard navigation, tab/admin jumps, restored history and final
+rendering; reject forbidden destinations before stack writes. Allowed screens also
+need valid feature state: start through the existing feature initializer, or restart
+an unsupported cold link safely. Back at the entry stays within the Flow. Retained
+disabled controls must have no effects. Keep screen slugs and control identifiers
+useful for studies.
 
 The static dependency checker covers literal HTML/CSS paths and app conventions for
 JavaScript/data asset strings, including dynamic directory prefixes. It rejects
@@ -182,9 +188,8 @@ fallback remains. Verify selected images, audio, films and generated URLs at run
    Record the checked commit, results and limitations; repeat affected checks after
    material changes. Then follow [ship](../.claude/skills/ship/SKILL.md).
 
-Routine PM Flow work does not require subagents. Current authorization permits
-branch pushes, PR creation and CI verification; merge, repository settings and
-publication require separate authorization. Report each outcome separately.
+Routine PM Flow work does not require subagents. Remote actions follow the
+authorization boundary in [CLAUDE.md](../CLAUDE.md); report each outcome separately.
 
 ## Publish a specific revision
 
