@@ -165,13 +165,20 @@ function kbdNotify() {
 }
 
 /** Return / Done: commit the field the way a blur would, and put it away. */
+let kbdCommitting = false;
 function kbdCommit() {
-  const el = kbdTarget;
-  if (el) {
-    try { el.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
-    try { el.blur(); } catch (e) {}
-  }
-  kbdClose();
+  // A field's change handler may auto-finish the same keypad (ZIP does).
+  // Dispatch exactly once rather than recursively committing that change.
+  if (kbdCommitting) return;
+  kbdCommitting = true;
+  try {
+    const el = kbdTarget;
+    if (el) {
+      try { el.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
+      try { el.blur(); } catch (e) {}
+    }
+    kbdClose();
+  } finally { kbdCommitting = false; }
 }
 
 /**
