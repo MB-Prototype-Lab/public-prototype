@@ -337,12 +337,12 @@ function bpVDescribe(inputs) {
 // What a priced car has answered. bpEnsureSetup() checks them without knowing
 // about cars.
 const BP_VEHICLE_SETUP = [
-  { id: "type",      label: "Type",      ask: "What kind of vehicle?", options: () => bpVData().types || [] },
-  { id: "tier",      label: "Brand",     ask: "What kind of brand?", options: () => (bpVData().tierOrder || []).map(t => ({ id: t, label: bpVTierLabel(t) })) },
-  { id: "fuel",      label: "Runs on",   ask: "What does it run on?", options: i => (bpVData().fuels || []).filter(f => !(f.hideFor || []).includes(i.type)) },
-  { id: "condition", label: "Condition", ask: "New or used?", options: () => [{ id: "new", label: "New" }, { id: "used", label: "Used" }] },
-  { id: "age",       label: "Age",       ask: "How old is it?", options: () => bpVData().ages || [], showIf: i => i.condition === "used" },
-  { id: "price",     label: "Price",     ask: "What's the sticker price?", typed: true }
+  { id: "type" },
+  { id: "tier" },
+  { id: "fuel" },
+  { id: "condition" },
+  { id: "age",   showIf: i => i.condition === "used" },
+  { id: "price", typed: true }
 ];
 
 bpRegisterCategory({

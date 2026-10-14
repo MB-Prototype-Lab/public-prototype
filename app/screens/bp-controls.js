@@ -265,11 +265,5 @@ function bpCommit(opts) {
     target: afford.toSave, date: date, remindBudget: !!s.plan.remind, card: card.id, payMode: s.pay.mode
   });
 
-  if (opts && opts.thenEsf && typeof esfStart === "function") {
-    state.nav.stacks.goals = ["goals"];
-    state.nav.activeStack = "goals";
-    esfStart();
-    return;
-  }
   navGoTabRoot("goals");
 }

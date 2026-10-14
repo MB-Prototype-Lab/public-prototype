@@ -34,7 +34,7 @@ function bpBuddy() {
 }
 
 function bpBuddyStepKey() {
-  return BP_BUDDY_SCREENS[state.screen] || "1";
+  return BP_BUDDY_SCREENS[state.screen] || "0";
 }
 
 function bpBuddyItems() {

@@ -53,7 +53,7 @@ const BIG_PURCHASE =
     "tierLabels": { "luxury": "Luxury", "premium": "Premium", "everyday": "Standard", "value": "Value" },
     "fuels": [
       { "id": "gas",      "label": "Gas" },
-      { "id": "diesel",   "label": "Diesel", "hideFor": ["motorcycle", "minivan"] },
+      { "id": "diesel",   "label": "Diesel" },
       { "id": "hybrid",   "label": "Hybrid" },
       { "id": "electric", "label": "Electric" }
     ],
