@@ -116,7 +116,10 @@ jobs:
         run: |
           git worktree add --detach "$RUNNER_TEMP/base" "$BEFORE"
           node tests/browser/app-journeys-browser.cjs --base "$RUNNER_TEMP/base" --head . --out "$RUNNER_TEMP/browser"
+      # Run even after a failed picture comparison, so one run reports every
+      # browser check.
       - name: Flow browser tests (file and HTTP)
+        if: success() || failure()
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 --directory . >/dev/null 2>&1 &
           server=$!
@@ -127,6 +130,7 @@ jobs:
           done
           MB_FLOW_BASE_URL=http://127.0.0.1:8765/ node tests/flows-browser.cjs
       - name: Flow snapshot rehearsal
+        if: success() || failure()
         run: bash tests/browser/snapshot-smoke.sh "$RUNNER_TEMP/snapshot-smoke"
       - if: always()
         uses: actions/upload-artifact@v4
