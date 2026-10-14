@@ -2376,12 +2376,15 @@ function onbTrial(accepted) {
   onbFinish();
 }
 
-// Tools "Restart onboarding": a blank run with the chosen profile forgotten too,
-// so a skip lands on the default profile the way it does for a new tester
-// (onbFinish applies it only when none is chosen).
+// Tools "Restart onboarding": a blank run with the chosen profile and the last
+// run's household answers forgotten too, so a skip lands on the default profile
+// the way it does for a new tester (onbFinish applies it only when none is
+// chosen). The profile goes back to the persona seed, as at boot; left alone,
+// a skipped place, coverage, miles or household would keep the last run's.
 function onbRestart() {
   state.activeProfileId = null;
   state.profilePick = null;
+  state.profile = v3Clone(PERSONA.identity);
   onbStart();
   go("onboarding");
 }
