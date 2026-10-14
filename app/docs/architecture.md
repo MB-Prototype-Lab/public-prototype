@@ -1143,9 +1143,9 @@ generic "Jump to screen" fallback. v3 adds ~15 screens = ~75 wiring points.
 
 1. `screens/<name>.js` → `render<Name>()` (+ optional `render<Name>Admin()`)
 2. `<script>` tag in `index.html`, in the screens block
-3. `js/render.js` → `renderScreen()` · `adminSubtitle()` · `renderAdmin()` · jump list
+3. `js/render.js` → `renderScreen()` · `adminSubtitle()` · `renderAdmin()`
 4. `js/utils.js` → `activeTabFor` (or the stack map, per §7)
-5. `js/state.js` → `destinations[]`
+5. `js/state.js` → `destinations[]` (the Tools jump list and the page title)
 
 Plus, new in v3: a **full-bleed mode class** if the screen hides the nav (§8).
 

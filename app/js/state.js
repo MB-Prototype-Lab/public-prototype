@@ -12,8 +12,9 @@
 // resetUserData() clears all user-entered fields (budget, debts, profile) while
 // leaving seed/demo content (lessons, badges, tasks) intact.
 //
-// destinations[] drives two surfaces: the admin "Jump to screen" dropdown and
-// the per-task destination picker in the home admin panel.
+// destinations[] is the screen registry: each screen's id and the label it
+// shows in the Tools "Jump to screen" list (js/render.js) and the page title
+// (js/screen-url.js).
 
 const destinations = [
   ["streak",         "Streak Splash"],

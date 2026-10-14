@@ -150,7 +150,7 @@ function renderBudgetPaywallAdmin() {
           · the Home task, destination <code>budgetBuild</code><br>
           · budget-update-confirm → Rebuild<br>
           · <code>?screen=budget-build</code> and <code>?screen=comparison</code><br>
-          · this jump list<br>
+          · the Tools &ldquo;Jump to screen&rdquo; list<br>
           Deliberate, and listed in CLAUDE.md.
         </div>
       </div>

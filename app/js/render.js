@@ -32,10 +32,11 @@
 // those three, not a new partial-render mechanism.
 //
 // -- ADDING A SCREEN NEEDS FIVE EDITS, THREE OF THEM HERE ---------------------
-// renderScreen(), adminSubtitle(), renderAdmin(), plus the jump list below and
-// activeTabFor in js/utils.js. Miss one and the admin panel quietly degrades to
-// its generic fallback rather than erroring -- which is what a cold session
-// misreads as a finished screen. See the checklist in architecture section 11.
+// renderScreen(), adminSubtitle(), renderAdmin(), plus destinations[] in
+// js/state.js (it fills the Tools jump list below) and activeTabFor in
+// js/utils.js. Miss one and the admin panel quietly degrades to its generic
+// fallback rather than erroring -- which is what a cold session misreads as a
+// finished screen. See the checklist in architecture section 11.
 
 function adminSubtitle() {
   if (state.screen === "streak")         return "Streak splash — static launch screen shown first on every refresh.";
@@ -227,12 +228,8 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="navAdminJump(this.value)">
-          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetCategory","spendEstimator","budgetBuild","helpMeOut","esfBuild","esfPlan","bpLanding","bpFinder","bpYourCar","bpSetup","bpQuiz","bpCost","bpOptions","bpFinance","bpCommit","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","myProgress","comparison",
-             "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
-             "goals","learn","topic","lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation","marketplace",
-             "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
-             "chat","budgetUpdateConfirm"].map(s => `
-            <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
+          ${destinations.map(([id, label]) => `
+            <option value="${h(id)}" ${state.screen === id ? "selected" : ""}>${h(label)}</option>
           `).join("")}
         </select>
       </div>

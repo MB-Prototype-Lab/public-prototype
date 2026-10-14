@@ -387,10 +387,10 @@ silently degrades to its generic fallback:
 
 1. `screens/<name>.js` → `render<Name>()` (+ optional `render<Name>Admin()`)
 2. `<script>` tag in `index.html`, screens block
-3. `js/render.js` → `renderScreen()` · `adminSubtitle()` · `renderAdmin()` · jump list
+3. `js/render.js` → `renderScreen()` · `adminSubtitle()` · `renderAdmin()`
 4. `js/utils.js` → `activeTabFor` (the nav stack is the real source of truth —
    see architecture §7; keep this as the admin-jump fallback)
-5. `js/state.js` → `destinations[]`
+5. `js/state.js` → `destinations[]` (the Tools jump list and the page title)
 
 Plus a **full-bleed mode class** if the screen hides the nav, zeroing *both* the
 top-bar and nav offsets.

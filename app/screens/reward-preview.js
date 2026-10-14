@@ -15,9 +15,9 @@
 // that here is why three rings moving at the end reads as designed rather than
 // as a bug.
 //
-// NOT on the main path. Lessons opened from the Learn tab or a daily task go
-// straight into framing and then the player; this screen is reachable from the
-// admin jump list and kept for the v2 flow that used it (L14).
+// Every lesson opens here first: selectLesson (js/navigation.js), the one door
+// from the Learn tab, a topic page and a Home task, lands on this screen, and
+// Begin Lesson goes on to framing and the player.
 
 function renderRewardPreview() {
   const lesson = state.currentLesson;
