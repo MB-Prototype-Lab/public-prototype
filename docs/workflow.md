@@ -19,8 +19,9 @@ reset local-ahead main: identify its commits, preserve them, and explain whether
 belong to this task. Fast-forward a clean behind main only when safe. If histories
 diverged, preserve both and reconcile deliberately; do not create work from an
 unexplained base. Resume a matching task branch after checking its history, or create
-`work/<short-task>-<unique-suffix>` from the agreed current main. Check branch name
-collisions before creating. Dirty or unrelated work stays intact: finish on its branch,
+`work/<short-task-name>` from the agreed current main. Use plain words a PM can say
+and paste (`work/full-code-review`), with no date or random suffix. Check local and
+remote names first; on a collision, choose a more specific name. Dirty or unrelated work stays intact: finish on its branch,
 or ask the operator how to separate it. Never silently stash, discard, or
 combine it.
 Concurrent operators use distinct task branches. For alternatives within one task,

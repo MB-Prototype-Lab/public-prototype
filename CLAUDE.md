@@ -12,10 +12,10 @@ loads through script tags so `file://` works.
 
 Use the project skills in `.claude/skills/` for ordinary requests to start work,
 sync, ship, publish, compare local variants, or create a Flow. Read [workflow](docs/workflow.md) for the operating procedure.
-Start a unique task branch from current main; preserve dirty files and local-only
-commits. Sync by merging main, never rebasing or force pushing. Ship through a
-reviewed PR and passing CI with applicable PM testing. Publishing is a separate,
-explicit request; merging main never deploys. Do not infer remote success.
+Start a task branch with a short readable name (no date) from current main;
+preserve dirty files and local-only commits. Sync by merging main, never rebasing
+or force pushing. Ship through a reviewed PR and passing CI with applicable PM
+testing. Publishing is a separate, explicit request; merging main never deploys. Do not infer remote success.
 
 Repository cutover is complete. Keep `demo` as a historical fallback. Leave all PM/HoffDemo branches untouched;
 the approved blue/PM features are integrated in `app/`. Never restore editable
