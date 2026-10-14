@@ -1635,17 +1635,14 @@ chk(ONB_BUDDY_STEPS.join(",") === "meet",
     ONB_BUDDY_STEPS.join(", "));
 
 // ── ⚠ `breed` MUST NEVER HOLD A BODY-TYPE ID ─────────────────────────────
-// Not because the portrait would blank -- buddyIsPrototype() is an indexOf, so
-// it stays true while any other attribute is prototype, and an earlier version
-// of this gate asserted that consequence and caught nothing. The real damage is
-// quieter: renderBuddyDescription() prints `breed` as the breed name, the admin
+// Not because the portrait would blank -- every stage draws the one
+// illustration whatever `breed` holds. The damage is quieter:
+// renderBuddyDescription() prints `breed` as the breed name, the admin
 // dropdown offers BUDDY_BREEDS which contains no body-type id, and onbSetBuddy's
 // cascade fires on `breed` and would fill in five attributes nobody picked.
 var _ob = state.onboarding, _b = state.buddy;
 if (typeof onbStart === "function") onbStart();
-var protoBefore = buddyIsPrototype();
 onbSetBuddy("bodyType", "mastiff");
-var stillProto = buddyIsPrototype();
 var breedKept = state.buddy.bodyType === "mastiff" && state.buddy.breed === BUDDY_PROTOTYPE;
 // PAINT IT TOO. Checking only the setter missed a write added at render time --
 // the step drew itself and the portrait went with it, with every assertion
@@ -1665,7 +1662,7 @@ state.onboarding = _ob; state.buddy = _b;
 // `prototype` is legitimately BOTH a body type and a breed value, so the
 // forbidden set is the other eight.
 var bodyOnlyIds = bodyIds.filter(function (i) { return i !== BUDDY_PROTOTYPE; });
-chk(protoBefore && stillProto && breedKept &&
+chk(breedKept &&
     bodyOnlyIds.indexOf(breedAfterPaint) === -1 &&
     stageAfterPaint.indexOf("buddy-img") !== -1,
     "a body-type pick never reaches `breed`, through a repaint",
@@ -2103,37 +2100,30 @@ if (typeof __COMPONENTS_CSS === "string") {
 }
 
 // ── one buddy, one picture ────────────────────────────────────────────────
-// Home drew a text card ("golden retriever · cream fur") for any buddy that was
-// not in prototype mode -- the persona, a profile, SKIP_ONBOARDING.
-if (typeof BUDDY_SINGLE_ART !== "undefined") {
-  state.buddy = Object.assign({}, PERSONA.buddy, { breed: "golden_retriever",
-    furColor: "cream", furPattern: "solid", eyeColor: "brown", noseColor: "black", size: "medium" });
-  var nonProto = !buddyIsPrototype();
-  var homeStage = "";
-  try { state.screen = "home"; homeStage = renderScreen() || ""; } catch (e) { homeStage = "threw: " + e.message; }
-  var inner = renderBuddyInner();
-  chk(nonProto && (BUDDY_SINGLE_ART
-        ? /buddy-img/.test(inner) && /buddy-img/.test(homeStage) && !/buddy-desc/.test(homeStage)
-        : /buddy-desc/.test(inner)),
-      BUDDY_SINGLE_ART
-        ? "a non-prototype buddy still gets the one illustration, on Home too"
-        : "BUDDY_SINGLE_ART is off and the attribute-driven stage is back",
-      "stage: " + inner.replace(/\s+/g, " ").slice(0, 90));
+// Every stage draws the one illustration, also for a buddy whose attributes
+// name a real breed and coat -- the persona, a profile, SKIP_ONBOARDING.
+state.buddy = Object.assign({}, PERSONA.buddy, { breed: "golden_retriever",
+  furColor: "cream", furPattern: "solid", eyeColor: "brown", noseColor: "black", size: "medium" });
+var homeStage = "";
+try { state.screen = "home"; homeStage = renderScreen() || ""; } catch (e) { homeStage = "threw: " + e.message; }
+var inner = renderBuddyInner();
+chk(/buddy-img/.test(inner) && /buddy-img/.test(homeStage) && !/buddy-desc/.test(homeStage),
+    "a non-prototype buddy still gets the one illustration, on Home too",
+    "stage: " + inner.replace(/\s+/g, " ").slice(0, 90));
 
-  // The missing-file fallback must survive the flag: words, never a blank stage.
-  var broken = "";
-  try { buddyImgBroken = true; broken = renderBuddyInner(); }
-  finally { buddyResetArt(); }
-  chk(/buddy-desc/.test(broken) && !/buddy-img/.test(broken),
-      "a missing image still falls back to the description card");
-}
+// The missing-file fallback: words, never a blank stage.
+var broken = "";
+try { buddyImgBroken = true; broken = renderBuddyInner(); }
+finally { buddyResetArt(); }
+chk(/buddy-desc/.test(broken) && !/buddy-img/.test(broken),
+    "a missing image still falls back to the description card");
 
 state.onboarding = _o7; state.buddy = _b7; state.screen = _s7;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // v4 only — Home's task cards are two lines, so the third task peeks above the nav.
-if (typeof renderHomeTask === "function" && typeof BUDDY_SINGLE_ART !== "undefined") {
+if (typeof renderHomeTask === "function") {
 section("7i. Home shows a hint of the third task");
 // The bones line used to be its own row under the title AND the button, so a
 // card was three lines tall for two lines of content and the third task sat
@@ -2513,7 +2503,7 @@ section("7o. Full app integration: onboarding, ESF and Buddy");
         "contained entry flags are absent from the full app");
     chk(typeof onbDocked === "undefined" && typeof onbStepDock === "undefined",
         "docked onboarding helpers are absent from the full app");
-    chk(BUDGET_PAYWALL === true && BUDDY_SINGLE_ART === true &&
+    chk(BUDGET_PAYWALL === true &&
         LESSON_REUSE_FRAMING === false && USEBERRY_TRACKING === false,
         "combined development flags retain the full app and disable tracking");
     onbStart();

@@ -1362,8 +1362,8 @@ function onbSetBuddy(key, value) {
   // values would put the tester in a state the stage has to silently ignore.
   // Filling them makes the remaining steps show what actually applies.
   //
-  // Only forward, and only from breed: picking a real breed later is how a
-  // tester leaves prototype mode, and that must not drag the others with it.
+  // Only forward, and only from breed: picking a real breed later must not
+  // drag the others with it.
   if (key === "breed" && value === BUDDY_PROTOTYPE) {
     ["furColor", "furPattern", "eyeColor", "noseColor", "size"]
       .forEach(k => set(k, BUDDY_PROTOTYPE));

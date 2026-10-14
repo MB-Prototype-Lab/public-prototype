@@ -4,17 +4,11 @@
 // still holds.
 //
 // -- THE IMAGE IS PREFERRED, THE DESCRIPTION IS THE FALLBACK ------------------
-// The labelled description below is NOT dead code now that art exists. No image
-// set covers every breed x coat x pattern x eyes x nose x size x pose, and D19
-// forbids a screen rendering empty — so a state with no matching image must
-// degrade to the description rather than to a gap. Deleting it would turn a
+// The labelled description below is NOT dead code now that art exists. Every
+// stage draws the one illustration whatever the appearance attributes say, and
+// D19 forbids a screen rendering empty — so an image that fails to load
+// degrades to the description rather than to a gap. Deleting it would turn a
 // missing file into a blank stage.
-//
-// Why the description was worth building in the first place: it proves the
-// customization plumbing works end to end. A tester picks a breed and the stage
-// visibly reflects it — the choice registers and is legible, which is what
-// onboarding step 7 exists to test. A swatch would have tested nothing. That
-// same plumbing is what makes the art swap cheap now.
 //
 // -- STILL NO SHEETS ----------------------------------------------------------
 // Flat cream sheets, CSS background-position cropping, six fixed sheets and
@@ -47,9 +41,8 @@ const BUDDY_IDLE_POSES = BUDDY_POSES.filter(p => p.idle).map(p => p.id);
 // -- "prototype": the one attribute value backed by a real illustration -------
 // L22 allows owner-supplied art, and the first image to arrive is ONE fixed
 // illustration with its background baked in. It cannot vary by breed, coat,
-// eyes or size -- so it is not a breed, it is a MODE. Picking it on any
-// attribute means "show me the picture"; every other value keeps the
-// description exactly as it was.
+// eyes or size -- so it is not a breed: it names the picture, and every stage
+// draws that picture whatever value an attribute holds.
 //
 // First in every list on purpose: it is the option a tester is meant to find.
 const BUDDY_PROTOTYPE = "prototype";
@@ -75,10 +68,9 @@ const BUDDY_BREEDS = [
 // telling them apart. The sizes are spread on purpose rather than decorative:
 // nine identical circles would be nine tiles with no reason to prefer any.
 //
-// ⚠ A body type must NEVER be written into `breed`, and the reason is NOT what
-// it first looks like. buddyIsPrototype() returns true if ANY attribute is
-// still `prototype` (it is an indexOf, not an every), so the portrait would in
-// fact survive — the damage is quieter than that:
+// ⚠ A body type must NEVER be written into `breed`. The portrait would survive
+// (every stage draws the one illustration whatever `breed` holds); the damage
+// is quieter than that:
 //
 //   · renderBuddyDescription() prints `b.breed` as the breed, so a tester who
 //     later picks a real coat would read "mastiff" where a breed name belongs
@@ -256,36 +248,21 @@ function buddyResetArt() {
   buddyImgBroken = false;
 }
 
-/**
- * Is the buddy in prototype mode -- i.e. should the stage show the illustration?
- *
- * ANY attribute set to `prototype` counts. A single baked illustration cannot be
- * half-applied: "prototype breed with chocolate fur" describes nothing the image
- * can show, so there is no useful state between "picture" and "description".
- * Onboarding reinforces this by filling the rest in when breed is picked
- * (onbSetBuddy), but the check stays permissive so an admin poking one dropdown
- * still gets a coherent stage rather than a contradiction.
- */
-function buddyIsPrototype() {
-  const b = state.buddy || {};
-  return [b.breed, b.furColor, b.furPattern, b.eyeColor, b.noseColor, b.size]
-    .indexOf(BUDDY_PROTOTYPE) !== -1;
-}
-
 // Kept separate so the idle tick can repaint just this, rather than calling
 // render() every 4–6 seconds and blowing away focus across the whole screen.
 //
 // This is the swap architecture section 13 predicted: the image branch lives
 // HERE, inside the content, so the frame, the idle tick, the pickers and
-// state.buddy are all untouched by art arriving.
+// state.buddy are all untouched by art arriving. Every stage draws the one
+// illustration whatever the appearance attributes say; the description is the
+// missing-image fallback (L22).
 function renderBuddyInner() {
   const b = state.buddy || {};
-  const single = typeof BUDDY_SINGLE_ART !== "undefined" && BUDDY_SINGLE_ART;
-  if ((single || buddyIsPrototype()) && !buddyImgBroken) return renderBuddyImage(b);
+  if (!buddyImgBroken) return renderBuddyImage(b);
   return renderBuddyDescription(b);
 }
 
-/** The labelled frame. Still governs every state the art does not cover. */
+/** The labelled frame, drawn when the illustration fails to load. */
 function renderBuddyDescription(b) {
   const pose = buddyCurrentPose();
   const breed = String(b.breed || "").replace(/_/g, " ");
@@ -324,16 +301,16 @@ function renderBuddyAdmin() {
       <p class="helper" style="margin-bottom:10px;">
         All attributes are live. The creator now asks only for a name and
         pronouns; every appearance attribute lives here.
-        <strong>While <code>BUDDY_SINGLE_ART</code> is on (js/config.js) these
-        dropdowns are inert</strong> — every stage draws the one illustration.
+        <strong>The appearance dropdowns do not change the picture</strong> —
+        every stage draws the one illustration.
       </p>
       <p class="helper" style="margin-bottom:10px;">
         <strong>Body type:</strong> ${h(buddyBodyLabel(b.bodyType || BUDDY_PROTOTYPE))}.
         The creator no longer asks for it (its grid is dormant). It is deliberately INERT — eight of the
         nine have no art, so picking one changes nothing on the stage. It is also
-        kept out of <code>breed</code> on purpose: buddyIsPrototype() turns false
-        on any non-prototype attribute, so storing it there would swap the
-        illustration for the description frame the moment a tester tapped a tile.
+        kept out of <code>breed</code> on purpose: the description card a missing
+        image falls back to would print it as the breed, and the breed dropdown
+        cannot show it.
       </p>
       <div class="input-group">
         <label>Name</label>

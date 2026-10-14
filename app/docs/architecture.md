@@ -1294,15 +1294,13 @@ kept apart so only the content changes.
 with its background painted in, so it cannot vary by breed, coat, eyes or size.
 Rather than pretend otherwise, `prototype` is the **first value in every
 attribute list** (`BUDDY_BREEDS`, `BUDDY_FUR_COLORS`, `BUDDY_FUR_PATTERNS`,
-`BUDDY_EYE_COLORS`, plus the admin-only `BUDDY_NOSE_COLORS` / `BUDDY_SIZES`),
-and `buddyIsPrototype()` is true when **any** attribute holds it.
+`BUDDY_EYE_COLORS`, plus the admin-only `BUDDY_NOSE_COLORS` / `BUDDY_SIZES`).
+**Every stage draws the one illustration whatever the attributes hold**
+(`renderBuddyInner`); the description shows only when the image fails to load.
 
 - **Picking it on `breed` fills the rest in** (`onbSetBuddy`). Leaving the later
   steps on real values would put the tester in a state the stage has to ignore —
   "prototype breed, chocolate fur" describes nothing the picture can show.
-- **Leaving is one attribute at a time.** Picking a real breed does *not* reset
-  the others, so the image persists until every attribute is real. The cascade
-  is deliberately one-directional.
 - **Both colour pickers need a swatch entry.** Fur and eyes render as circles,
   not labels, so a value missing from `BUDDY_FUR_COLOR_CSS` /
   `BUDDY_EYE_COLOR_CSS` draws a blank. `prototype` uses a neutral checker — not
