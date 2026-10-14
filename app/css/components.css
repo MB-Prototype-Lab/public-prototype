@@ -212,16 +212,6 @@
 .lp-stage-video { padding: 4px 10px 12px; gap: 0; }
 .lp-hyperframes { width: 100%; height: 100%; display: block; }
 
-.lp-stage-title {
-  font-size: 22px;
-  font-weight: 850;
-  color: var(--on-dark);
-  text-align: center;
-  letter-spacing: -.03em;
-  margin: 0;
-  line-height: 1.25;
-}
-
 /* Back button — top-left of staging area */
 .lp-back-btn {
   position: absolute;
@@ -418,50 +408,10 @@
   margin-bottom: 10px;
 }
 
-.item-card:hover,
-.task-card:hover {
+.item-card:hover {
   background: var(--soft);
   cursor: pointer;
 }
-
-.stage-card {
-  height: 245px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 34px;
-  font-weight: 850;
-  letter-spacing: -.04em;
-  /* Anchors .chat-buddy-btn, which deliberately overhangs the bottom edge.
-     The extra bottom margin is the room that overhang needs. */
-  position: relative;
-  margin-bottom: 34px;
-}
-
-/* Chat pill — straddles the stage's bottom edge, half on/half off, so it reads
-   as attached to the scene rather than to the task list below it. */
-.chat-buddy-btn {
-  position: absolute;
-  bottom: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--card);
-  color: var(--text);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 12px 26px;
-  font-size: 15px;
-  font-weight: 850;
-  letter-spacing: 0;
-  white-space: nowrap;
-  cursor: pointer;
-  box-shadow: 0 6px 16px rgba(16, 24, 40, .16);
-  z-index: 2;
-}
-
-.chat-buddy-btn:hover  { background: var(--soft); }
-.chat-buddy-btn:active { opacity: .86; }
 
 /* Typography */
 .title {
@@ -501,11 +451,6 @@
   color: var(--text-strong);
   line-height: 1.35;
 }
-
-/* Spacing utility overrides */
-.mb-sm  { margin-bottom: 8px;  }
-.mb-md  { margin-bottom: 12px; }
-.mb-0   { margin-bottom: 0;    }
 
 /* Layout helpers */
 .row {
@@ -646,21 +591,6 @@
   padding: 13px;
 }
 
-.badge-patch {
-  width: 52px;
-  height: 52px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 850;
-  color: var(--muted);
-  margin-bottom: 10px;
-  background: var(--soft);
-}
-
 .badge-name {
   font-size: 13px;
   font-weight: 850;
@@ -674,42 +604,6 @@
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 14px;
-}
-
-.settings-btn {
-  min-width: 74px;
-  height: 38px;
-  border-radius: 13px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 850;
-  cursor: pointer;
-}
-
-.task-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-bottom: 8px;
-}
-
-.task-card {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  align-items: center;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 14px;
-  box-shadow: 0 1px 4px rgba(16, 24, 40, .04);
-}
-
-.task-card.completed {
-  opacity: .72;
-  background: var(--soft);
 }
 
 .task-title {
@@ -726,36 +620,11 @@
   margin: 0;
 }
 
-.done-state {
-  border: 1px solid var(--good-border);
-  background: var(--good-bg);
-  color: var(--good);
-  border-radius: 13px;
-  padding: 9px 11px;
-  font-size: 12px;
-  font-weight: 850;
-  white-space: nowrap;
-}
-
 /* Flow */
 .flow-footer {
   display: flex;
   gap: 10px;
   margin-top: 14px;
-}
-
-/* Lesson */
-.audio-box {
-  height: 64px;
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  background: var(--soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 850;
 }
 
 /* Quiz */
@@ -797,70 +666,7 @@
   line-height: 1.35;
 }
 
-/* Baby Budget iframe */
-.bb-iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  display: block;
-  background: var(--screen);
-}
-
 /* ─── Budget Dashboard ────────────────────────────────────────────────────── */
-
-/* Ghost overlay — empty-state promise view */
-.budget-ghost-wrap { position: relative; margin-bottom: 14px; }
-.budget-ghost-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: 2;
-}
-.budget-ghost-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 20px;
-  width: 100%;
-  max-width: 280px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.10);
-}
-
-/* Category tile grid — 2 columns; savings spans full width */
-.budget-tile-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.budget-tile {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 14px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  transition: box-shadow .15s;
-}
-.budget-tile:active { box-shadow: 0 2px 10px rgba(49,94,251,.18); }
-.budget-tile-full { grid-column: 1 / -1; }
-
-.budget-tile-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 2px;
-}
-.budget-tile-icon { font-size: 16px; flex-shrink: 0; }
-.budget-tile-name { font-size: 12px; font-weight: 850; flex: 1; }
-.budget-tile-amount { font-size: 20px; font-weight: 850; line-height: 1.1; }
-.budget-tile-delta  { font-size: 10px; color: var(--muted); line-height: 1.3; }
-.budget-tile-target { font-size: 10px; font-weight: 850; color: var(--accent); }
 
 /* Signal pills */
 .budget-signal-pill {
@@ -879,63 +685,7 @@
 .budget-signal-pill.worth-a-look.strong { background: var(--warn-pill-strong-bg); color: var(--warn-pill-strong-text); }
 .budget-signal-pill.context-only  { background: var(--soft);                color: var(--muted); }
 
-/* Goals mini — inside Savings tile */
-.budget-goals-mini {
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-}
-.budget-goals-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--muted);
-  padding: 2px 0;
-  cursor: pointer;
-}
-
-/* Header metrics — Income / Plan / Remaining */
-.budget-header-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 12px;
-}
-.budget-header-metric { text-align: center; }
-.budget-header-label {
-  font-size: 10px;
-  font-weight: 850;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: var(--muted);
-  margin-bottom: 2px;
-}
-.budget-header-value { font-size: 18px; font-weight: 850; line-height: 1.1; }
-.budget-header-sub   { font-size: 9px; color: var(--muted); }
-
-/* Expandable overhead detail */
-.budget-overhead-detail.hidden { display: none; }
-
 /* ─── Budget Category Detail ─────────────────────────────────────────────── */
-
-/* Intentional toggle pill */
-.budget-intentional-toggle {
-  flex-shrink: 0;
-  padding: 8px 18px;
-  border-radius: 99px;
-  border: 2px solid var(--line);
-  background: var(--soft);
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 850;
-  cursor: pointer;
-  transition: border-color .15s, background .15s, color .15s;
-}
-.budget-intentional-toggle.active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
 
 /* ±$25 stepper */
 .budget-stepper {
@@ -977,64 +727,8 @@
 .budget-stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .budget-stepper-input:focus { outline: none; border-color: var(--accent); }
 
-/* Goals V2 form fields — theme-aware (light + dark), no number spinners.
-   Mirrors .input-group input; spinner removal scoped to number inputs so
-   <select> keeps its native caret. */
-.goal-field {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--card);
-  color: var(--text);
-  font-size: 13px;
-  padding: 9px;
-  font-family: inherit;
-  outline: none;
-}
-.goal-field:focus { border-color: var(--accent); }
-.goal-field option { background: var(--card); color: var(--text); }
-input.goal-field[type="number"] { -moz-appearance: textfield; }
-input.goal-field[type="number"]::-webkit-outer-spin-button,
-input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
-/* Income-relative progress bar with peer marker */
-.budget-sub-bar {
-  position: relative;
-  height: 8px;
-  border-radius: 99px;
-  background: var(--bar);
-  overflow: visible;
-}
-.budget-sub-bar-fill {
-  height: 100%;
-  border-radius: 99px;
-  background: var(--accent);
-  max-width: 100%;
-  transition: width .2s ease;
-}
-.budget-sub-bar-peer {
-  position: absolute;
-  top: -3px;
-  width: 2px;
-  height: 14px;
-  background: var(--warn);
-  border-radius: 2px;
-  transform: translateX(-50%);
-  opacity: 0.8;
-}
-
-/* Card color variants — accent-soft or warn backgrounds */
-.card.card--accent { background: var(--accent-soft); border-color: var(--accent-border); }
+/* Card color variant — warn background */
 .card.card--warn   { background: var(--warn-bg);     border-color: var(--warn-border);   }
-
-/* Inline alert strip — warn variant (reconciliation signal, budget alerts) */
-.budget-alert--warn {
-  padding: 10px 12px;
-  background: var(--warn-bg);
-  border: 1px solid var(--warn-border);
-  border-radius: 12px;
-  font-size: 12px;
-}
 
 /* Debt strategy pills — semantic colors for each payoff strategy */
 .strategy-pill--snowball  { color: var(--accent); }
@@ -1080,77 +774,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent);
-}
-
-/* ─── Lifestyle question chain ────────────────────────────────────────────────
-   Ported from the retired 2MB wizard. Used by lifestyle-chain.js.
-*/
-.lifestyle-img-box {
-  width: 100%;
-  height: 120px;
-  background: var(--progress-bg, var(--soft));
-  border-radius: 16px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.lifestyle-img-section {
-  position: absolute;
-  top: 10px;
-  left: 14px;
-  font-size: 11px;
-  font-weight: 850;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .04em;
-}
-.lifestyle-img-coords {
-  font-size: 22px;
-  font-weight: 850;
-  color: var(--accent);
-  letter-spacing: .2em;
-}
-.lifestyle-img-subprog {
-  position: absolute;
-  bottom: 10px;
-  right: 14px;
-  font-size: 11px;
-  color: var(--muted);
-}
-.tier-pill-row {
-  display: flex;
-  gap: 8px;
-  margin: 12px 0 10px;
-  flex-wrap: wrap;
-}
-.tier-pill {
-  flex: 1;
-  min-width: 60px;
-  text-align: center;
-  padding: 9px 6px;
-  border: 1.5px solid var(--line);
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 700;
-  background: var(--card);
-  -webkit-user-select: none;
-  user-select: none;
-  transition: background .12s, border-color .12s, color .12s;
-}
-.tier-pill.active {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.tier-selected-desc {
-  font-size: 12px;
-  color: var(--text);
-  line-height: 1.45;
-  padding: 9px 11px;
-  background: var(--soft);
-  border-radius: 10px;
 }
 
 /* ─── Chat with Buddy ────────────────────────────────────────────────────────
@@ -1274,165 +897,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 }
 
 .chat-input:focus { border-color: var(--accent); }
-
-/* ─── Lifestyle Survey (builder flow) ────────────────────────────────────────
-   Screens: screens/lifestyle-survey.js. Full-screen flow (nav hidden). The
-   4-notch slider is a native range input with decorative dots under the track;
-   commit on release (onchange) — never oninput, a mid-drag re-render would
-   destroy the thumb. Theme tokens only. */
-.ls-wrap { padding-top: 6px; }
-
-.ls-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.ls-header .button { font-size: 12px; padding: 8px 14px; }
-
-/* Question phase: full-height column so the stage grows and the selector pins
-   to the bottom. (Basics/Review still use .ls-wrap normal flow.) */
-.ls-q-layout {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding-top: 6px;
-}
-
-/* Large stage — the star of the screen; describes the current selection (or the
-   typical reference before a pick) in real-world terms. Grows to fill space. */
-.ls-q-stage {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-border);
-  border-radius: 20px;
-  padding: 22px 20px;
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.ls-stage-eyebrow {
-  font-size: 21px;
-  font-weight: 850;
-  letter-spacing: -.02em;
-  line-height: 1.2;
-  margin-bottom: 14px;
-}
-.ls-stage-ref,
-.ls-stage-figure { font-size: 15px; line-height: 1.5; margin: 0 0 12px; }
-.ls-stage-ref strong,
-.ls-stage-figure strong { font-weight: 850; }
-.ls-stage-lead {
-  font-size: 24px;
-  font-weight: 850;
-  letter-spacing: -.02em;
-  line-height: 1.15;
-  margin-bottom: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.ls-stage-pct { font-size: 12px; font-weight: 850; }
-.ls-stage-desc { font-size: 14px; line-height: 1.6; color: var(--text); margin: 0 0 12px; }
-.ls-stage-desc:last-child { margin-bottom: 0; }
-.ls-stage-prompt { font-size: 15px; font-weight: 800; color: var(--muted); margin: 0; }
-
-/* Bottom selector: tappable 4-notch scale (all labels shown, hollow until
-   tapped — no misleading fill) + Next. */
-.ls-q-selector { flex: 0 0 auto; padding-bottom: 4px; }
-.ls-notches {
-  position: relative;
-  display: flex;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-.ls-notches::before {
-  content: "";
-  position: absolute;
-  top: 9px;
-  left: 12.5%;
-  right: 12.5%;
-  height: 2px;
-  background: var(--line);
-}
-.ls-notch {
-  flex: 1;
-  background: transparent;
-  border: none;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-.ls-notch-dot {
-  position: relative;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--card);
-  border: 2px solid var(--line);
-  transition: background .12s, border-color .12s, transform .12s;
-}
-.ls-notch.active .ls-notch-dot { background: var(--accent); border-color: var(--accent); transform: scale(1.12); }
-.ls-notch-label { font-size: 10px; font-weight: 700; color: var(--muted); text-align: center; line-height: 1.2; }
-.ls-notch.active .ls-notch-label { color: var(--accent); }
-
-/* Slider used by the Review step (kept from the original ls- section). */
-.ls-slider {
-  width: 100%;
-  position: relative;
-  z-index: 1;
-  padding: 0;
-  accent-color: var(--accent);
-  background: transparent;
-}
-
-/* Income mode toggle (twin of the wizard's seg-toggle) */
-.ls-seg {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--line);
-  border-radius: 13px;
-  overflow: hidden;
-  margin-bottom: 10px;
-}
-.ls-seg-btn {
-  padding: 9px;
-  font-size: 13px;
-  font-weight: 850;
-  background: var(--card);
-  color: var(--muted);
-  border: none;
-  border-radius: 0;
-  cursor: pointer;
-}
-.ls-seg-btn.active { background: var(--accent); color: var(--on-accent); }
-
-/* Review step: compact slider rows + pinned-feel totals */
-.ls-review-totals {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  background: var(--screen);
-  padding: 4px 0 8px;
-}
-.ls-total-box {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 10px 12px;
-}
-.ls-review-row { padding: 10px 12px; margin-bottom: 8px; }
 
 /* Modal overlay (skip confirm / save prompt) */
 .ls-modal-bg {
@@ -1651,27 +1115,13 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    read as one series — "never blur these" is the whole point of the screen. */
 .cmp-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--muted); }
 .cmp-legend > div { display: flex; align-items: center; gap: 5px; }
-.cmp-key { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-.cmp-key-plan { background: var(--bar); }
-.cmp-key-user { background: var(--accent); }
-.cmp-key-peer { background: var(--good); }
 
 .cmp-row { margin-bottom: 8px; padding: 12px 14px; }
-.cmp-bars {
-  display: grid;
-  grid-template-columns: 38px 1fr 54px;
-  align-items: center;
-  gap: 4px 8px;
-}
-.cmp-label { font-size: 10px; color: var(--muted); }
-.cmp-val   { font-size: 11px; font-weight: 500; text-align: right; }
 .cmp-bar   { height: 7px; background: var(--progress-bg); border-radius: 99px; overflow: hidden; }
 .cmp-bar > span { display: block; height: 100%; border-radius: 99px; }
 
 .cmp-gaps { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
-.cmp-compact { padding: 7px 0; border-bottom: 1px solid var(--line); gap: 8px; }
-.cmp-compact:last-of-type { border-bottom: 0; }
 .cmp-compact-name { font-size: 12px; font-weight: 700; flex: 1; }
 
 /* ─── Phase 2.5 repaint (D36) ─────────────────────────────────────────────────
@@ -1687,7 +1137,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 
 .screen .card,
 .screen .item-card,
-.screen .task-card,
 .screen .journal-opt,
 .screen .journal-freetext,
 .screen .budget-row,
@@ -1749,9 +1198,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .screen .journal-total,
 .screen .budget-row-amt,
 .screen .journal-amount { font-family: var(--font-display); font-weight: 850; }
-
-/* The buddy stage is fully round. */
-.screen .stage-card { border-radius: var(--radius-pill); }
 
 /* ─── Reduced motion ──────────────────────────────────────────────────────────
    Idle animation stops, transitions become instant. Respected globally, not
@@ -1965,7 +1411,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   opacity: .55;
   transform: translateX(-50%);
 }
-.onb-col-teaser { text-align: left; margin: 14px 0 0; }
 .onb-col-teaser-card { margin-top: 16px; }
 
 .onb-col-axis {
@@ -2593,22 +2038,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   display: block; height: 100%; background: var(--accent);
   transition: width var(--dur) var(--ease);
 }
-.onb-video-controls { display: flex; gap: 10px; }
-.onb-video-controls .button { flex: 1; }
-
-.onb-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
-.onb-swatch {
-  min-height: 36px;
-  padding: 7px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: var(--card);
-  color: var(--text);
-  font-size: 12px;
-  cursor: pointer;
-  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
-}
-.onb-swatch.picked { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
 /* ─── Budget paywall: two plans ────────────────────────────────────────────
    Annual is the filled button and the one that sells: a "Save 30%" pill on its
    top edge and the full year struck through beside the real price. Monthly is
@@ -2768,34 +2197,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 /* ─── Lesson quiz / simulation / reward ───────────────────────────────────── */
 .quiz-right { border-color: var(--good); background: var(--good-bg); }
 .quiz-wrong { border-color: var(--warn-border); background: var(--warn-bg); opacity: .7; }
-/* Lesson calculator — the common-case shortcuts above the sliders. Chips, so a
-   row of four fits a 390px frame without becoming four full-width buttons. */
-.sim-presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-.sim-preset {
-  flex: 0 1 auto;
-  min-height: 34px;
-  padding: 7px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--card);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.sim-preset:hover { border-color: var(--accent); }
-.sim-preset.picked {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-}
-.sim-preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .sim-row { margin-bottom: 8px; padding: 12px 14px; }
 .sim-out { text-align: center; padding: 18px 14px; background: var(--accent-soft); border-color: var(--accent-border); }
@@ -3132,23 +2533,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .bb-row-input { min-width: 0; }
 .bb-row-input.is-disabled { opacity: .4; pointer-events: none; }
 
-.bb-exact {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: inherit;
-  color: var(--text);
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-button);
-}
-.bb-exact:focus { outline: none; border-color: var(--accent); }
-.bb-exact:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.bb-exact:disabled { color: var(--muted); background: var(--soft); }
-.bb-exact::-webkit-outer-spin-button,
-.bb-exact::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
 .bb-help { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
 /* Lights up when the line is handed over — with the figure gone, this label is
    the only thing left saying what is happening to the row. */
@@ -3342,24 +2726,13 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    both a background and a radius, so a bare component class is (0,1,0) and
    silently loses — which is invisible until it is not. Same trap the band
    slider hit. */
-.esf-row-label { font-weight: 600; color: var(--text); }
 .esf-row-help  { margin: 4px 0 0; }
 
-.esf-row-off   { opacity: 0.62; }
 /* Must out-specify `.screen .item-card.esf-row` below, or an added bill keeps
    the plain field background and nothing on the row says it was added. */
 .screen .item-card.esf-row.esf-row-on {
   border-color: var(--good-border); background: var(--good-bg);
 }
-
-/* A disclosure, not a control — it explains a figure rather than changing one,
-   so it reads as text with an underline, not as a button. */
-.esf-link {
-  background: none; border: 0; padding: 6px 0;
-  font: inherit; font-size: 12px; color: var(--accent);
-  text-decoration: underline; cursor: pointer; min-height: 32px;
-}
-.esf-source { margin: 8px 0 0; font-size: 11px; }
 
 .screen .esf-amount {
   width: 110px; padding: 10px 12px; min-height: 44px;
@@ -3367,26 +2740,11 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   color: var(--text); background: var(--card);
   border: 1px solid var(--rail); border-radius: 10px;
 }
-.screen .esf-extra-label {
-  flex: 1 1 120px; min-width: 0; padding: 10px 12px; min-height: 44px;
-  font-size: 14px; color: var(--text); background: var(--card);
-  border: 1px solid var(--rail); border-radius: 10px;
-}
 .screen .esf-select, .screen .esf-date {
   padding: 10px 12px; min-height: 44px; font-size: 14px;
   color: var(--text); background: var(--card);
   border: 1px solid var(--rail); border-radius: 10px;
 }
-
-/* Percentage rather than dollars, so one control works on a $2,195 housing
-   figure and a $60 phone bill alike. */
-.esf-step {
-  padding: 10px 12px; min-height: 44px; min-width: 64px;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  color: var(--text); background: var(--soft);
-  border: 1px solid var(--line); border-radius: 10px;
-}
-.esf-step:hover { background: var(--accent-soft); border-color: var(--accent-border); }
 
 .esf-add, .esf-added {
   padding: 10px 16px; min-height: 44px;
@@ -3401,17 +2759,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   border: 1px solid var(--accent-fill);
 }
 
-.esf-chip {
-  padding: 10px 14px; min-height: 44px;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  color: var(--text); background: var(--card);
-  border: 1px solid var(--line); border-radius: 999px;
-}
-.esf-chip.on {
-  color: var(--accent-fill-text); background: var(--accent-fill);
-  border-color: var(--accent-fill);
-}
-
 /* `.screen .item-card` is already --soft, so a row that wants to read as a
    FIELD has to lift off it. Without this every card on the screen is the same
    colour and there is no hierarchy — which is what it looked like before this
@@ -3422,7 +2769,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    and no card around it — it used to be a full card with a heading and two
    lines of explanation, which gave the one thing nobody has to do more weight
    than the fields they do. Inert here: there is no integration behind it. */
-.esf-offer { margin-bottom: 12px; }
 .esf-plaid {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%; min-height: 44px; padding: 11px 14px;
@@ -3486,19 +2832,11 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   display: block; margin-top: 4px; font-size: 11px; color: var(--muted);
 }
 
-/* The disclosure sits above the fields and right-aligned, so it never competes
-   with a label for the start of a line. */
-.esf-explain { display: block; margin: 0 0 2px auto; padding: 0 0 4px; }
-
 /* ── ESF: fit the whole first step on one screen ──────────────────────────── */
 
 /* The title breaks after the product name so "Emergency Savings Fund" reads as
    the thing and the rest as its description, rather than one long run-on. */
 .esf-title { font-size: 20px; line-height: 1.2; margin: 8px 0 0; }
-.esf-title-sub {
-  display: block; margin-top: 2px;
-  font-size: 14px; font-weight: 500; color: var(--muted);
-}
 
 /* Buddy stops at the boxes' own edges — no longer bleeding past the shell's
    padding — and lost a third of its height to buy room below the fold. */
@@ -3548,7 +2886,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    Everything below is that budget being spent deliberately rather than each
    element taking what it likes. */
 .journal-shell .esf-title { font-size: 18px; }
-.journal-shell .esf-title-sub { font-size: 13px; }
 .esf-banner { height: 58px; margin-bottom: 9px; }
 .esf-plaid  { min-height: 40px; padding: 8px 12px; font-size: 12.5px; line-height: 1.25; margin-bottom: 10px; }
 .esf-lead   { margin-bottom: 8px; font-size: 13px; }
@@ -3597,7 +2934,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    revise later" — the part that lowers the stakes of guessing — got lost in
    the middle of a sentence. */
 .esf-lead { margin-bottom: 2px; }
-.esf-lead-sub { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
 
 /* Box headlines are BOLD, not semibold. Applies to the utilities label too, so
    every box heading reads at the same weight — it plays the same role as
@@ -3650,12 +2986,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .esf-intro { text-align: center; padding: 0 6px; }
 .esf-intro p { margin: 0 0 18px; font-size: 14.5px; line-height: 1.5; color: var(--text); }
 .esf-intro p:last-child { margin-bottom: 0; }
-
-/* Names what this step is about, above its picture. */
-.esf-step-heading {
-  margin: 0 0 8px; font-size: 15px; font-weight: 700;
-  color: var(--text); text-align: center;
-}
 
 /* The goal figure is the whole point of the plan screen, so it is the largest
    thing on it. */
@@ -3815,7 +3145,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
 .esf-based { margin: 1px 0 4px; font-size: 10.5px; }
 .esf-estimate + .esf-estimate { margin-top: 6px; }
 .esf-lead { margin-bottom: 1px; }
-.esf-lead-sub { margin-bottom: 6px; }
 
 /* The two escrow rows are a label and a button — no description, no control —
    so they do not need a full card's breathing room. */
@@ -3867,7 +3196,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    .helper's muted gray, which is right for incidental chrome and wrong for a
    sentence explaining where somebody's money figure came from — that sentence
    is the thing that earns an override. */
-.esf-row-help, .esf-qualifier, .esf-based, .esf-lead-sub, .esf-field-unit {
+.esf-row-help, .esf-qualifier, .esf-based, .esf-field-unit {
   color: var(--text);
 }
 .esf-label-note { color: var(--text); opacity: 0.7; }
@@ -3888,7 +3217,7 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
    lines carry the reason a figure exists, so they get --text-strong (a token
    added for them, defined in all four themes) plus a size and weight that hold
    up at this scale. */
-.esf-based, .esf-row-help, .esf-qualifier, .esf-lead-sub, .esf-inline-note {
+.esf-based, .esf-row-help, .esf-qualifier, .esf-inline-note {
   color: var(--text-strong);
   font-size: 11.5px;
   font-weight: 500;
@@ -3997,8 +3326,6 @@ input.goal-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance:
   border-radius: 0 0 28px 28px;
 }
 .esf-buddy-chips { padding-bottom: 9px; }
-/* The two ways back read as navigation, not as an answer to the question. */
-.esf-buddy-chip-nav { background: transparent; color: var(--muted); font-weight: 600; }
 
 /* ── The bar: X bottom-left, inert input beside it ───────────────────────────
    Everything the user touches lives in the lower half — the panel is
@@ -4324,17 +3651,10 @@ button.esf-based {
 /* ── Questions and tiles ─────────────────────────────────────────────────── */
 .bp-q { margin: 0 0 16px; }
 .bp-q-label { margin: 0 0 7px; font-size: 13px; font-weight: 800; color: var(--text-strong); }
-.bp-q-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
-.bp-q-row:first-child { margin-top: 0; }
-.bp-q-row .bp-q-label { margin: 0; }
-.bp-unit { font-weight: 600; color: var(--muted); }
-.bp-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 .bp-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(62px, 1fr)); gap: 6px; }
-.bp-tiles-wrap { grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); }
 .bp-tiles-2 { grid-template-columns: 1fr 1fr; margin-bottom: 14px; }
 .bp-tiles-3 { grid-template-columns: repeat(3, 1fr); margin: 10px 0; }
-.bp-tiles-4 { grid-template-columns: repeat(4, 1fr); }
 .bp-tiles-list { grid-template-columns: 1fr; }
 
 .bp-tile {
@@ -4347,14 +3667,12 @@ button.esf-based {
 .bp-tiles-list .bp-tile { align-items: flex-start; text-align: left; padding: 9px 12px; }
 .bp-tile.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 .bp-tile-sub { font-size: 11px; font-weight: 500; color: var(--text); }
-.bp-tile-inline { flex: 0 0 auto; padding: 8px 14px; }
 
-.screen .bp-price, .screen .bp-zip, .screen .bp-rate, .screen .bp-row-input {
+.screen .bp-price, .screen .bp-zip, .screen .bp-row-input {
   min-height: 44px; font-size: 16px;
 }
 .screen .bp-price { width: 100%; }
 .screen .bp-zip { width: 120px; }
-.screen .bp-rate { width: 110px; }
 .screen .bp-row-input { width: 120px; text-align: right; }
 
 .bp-link {
@@ -4377,63 +3695,16 @@ button.esf-based {
 .bp-hl-split > div + div { border-left: 1px solid var(--line); }
 .bp-hl-split > div { justify-content: center; padding: 0 6px; }
 .bp-hl-split span { line-height: 1.25; }
-.bp-hl-sub { margin: 4px 0 0; font-size: 12px; text-align: center; color: var(--text); }
 .bp-hl-center { font-size: 30px; }
 
-/* ── Summary line ────────────────────────────────────────────────────────── */
-.bp-summary {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px;
-  margin: 12px 0 4px; font-size: 13px; font-weight: 700; color: var(--text-strong);
-}
-.bp-edit {
-  min-height: 44px; padding: 0 10px; border: 1px dashed var(--rail); border-radius: 10px;
-  background: var(--card); color: var(--text-strong); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
-}
-.bp-edit.on { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
-.bp-inline-edit { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 4px; }
-
-.bp-section {
-  margin: 20px 0 8px; padding-top: 12px; border-top: 1px solid var(--line);
-  font-size: 12px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; color: var(--text);
-}
-.bp-group { margin: 14px 0 6px; font-size: 13px; font-weight: 800; color: var(--text-strong); }
-
 /* ── Option cards ────────────────────────────────────────────────────────── */
-.bp-cards { display: flex; flex-direction: column; gap: 8px; }
-.bp-card {
-  padding: 11px 13px; border: 1px solid var(--line); border-radius: 14px;
-  background: var(--card); cursor: pointer;
-}
-.bp-card.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
-.bp-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-.bp-card-title { font-size: 12px; font-weight: 900; letter-spacing: .03em; text-transform: uppercase; color: var(--text); }
-.bp-radio {
-  width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--rail); background: var(--card); flex: 0 0 auto;
-}
-.bp-card.on .bp-radio { border-color: var(--accent); box-shadow: inset 0 0 0 4px var(--card); background: var(--accent); }
-.bp-card-line { margin: 2px 0 0; font-size: 13px; color: var(--text-strong); }
-.bp-card-strong { font-size: 15px; font-weight: 800; }
-.bp-diff { margin: 8px 0 0; font-size: 13px; font-weight: 800; color: var(--text-strong); }
-.bp-diff-sub { display: block; font-weight: 600; color: var(--text); }
-.bp-worth { margin: 2px 0 0; font-size: 13px; color: var(--text-strong); }
 .bp-pencil {
   display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
   min-width: 44px; min-height: 44px; margin: -14px -10px -14px -6px; padding: 0; border: 0; background: none;
   color: var(--accent); font-size: 17px; cursor: pointer;
 }
-.bp-none { margin-top: 8px; }
 
 /* ── Financing ───────────────────────────────────────────────────────────── */
-.bp-tip {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 10px;
-  padding: 0 14px; border: 1px solid #C97B0E; border-radius: 999px;
-  background: #E9A227; color: #2B1A0E;
-  font: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
-}
-.bp-payline {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap;
-  margin: 4px 0 0; font-size: 13px; color: var(--text-strong);
-}
 .bp-block {
   margin-top: 14px; padding: 12px 13px; border-radius: 13px;
   background: var(--soft); border: 1px solid var(--line);
@@ -4446,21 +3717,11 @@ button.esf-based {
 .bp-block-note { margin: 6px 0 0; font-size: 12px; font-weight: 700; color: var(--text-strong); }
 
 /* ── Cost rows ───────────────────────────────────────────────────────────── */
-.bp-row { padding: 8px 0; border-bottom: 1px solid var(--line); }
-.bp-row-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
-.bp-row-label { font-size: 14px; font-weight: 700; color: var(--text-strong); }
-.bp-row-fixed { font-size: 14px; color: var(--text-strong); white-space: nowrap; }
 .bp-based { margin: 3px 0 0; font-size: 12px; line-height: 1.4; color: var(--text-strong); }
 .bp-foot-note { margin: 12px 0 4px; }
-.bp-drop {
-  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px;
-  border: 1px solid var(--rail); border-radius: 10px; background: var(--card);
-  color: var(--text-strong); font: inherit; font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer;
-}
 .bp-drop-caret { font-size: 11px; color: var(--muted); }
 
 /* ── Screen 3 ────────────────────────────────────────────────────────────── */
-.bp-choice { margin: 0 0 14px; }
 .bp-keep { margin: 0 0 16px; padding-left: 18px; font-size: 13px; line-height: 1.6; color: var(--text-strong); }
 .bp-math { margin: 0 0 16px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--card); }
 .bp-math-row {
@@ -4521,7 +3782,6 @@ button.esf-based {
   border: 1px solid var(--info-border); border-radius: 16px; background: var(--info-bg);
 }
 .bp-esf-q { margin: 0 0 4px; font-size: 15px; font-weight: 800; line-height: 1.35; color: var(--text-strong); }
-.bp-esf-sub { margin: 0 0 10px; font-size: 13px; line-height: 1.4; color: var(--text-strong); }
 .bp-esf-opts { display: flex; flex-direction: column; gap: 6px; }
 .bp-esf-opt {
   min-height: 44px; padding: 0 14px; border: 1px solid var(--info-border); border-radius: 12px;
@@ -4553,42 +3813,7 @@ button.esf-based {
 .bp-dock .bp-tiles-list { gap: 6px; }
 .bp-dock .bp-tile { min-height: 48px; }
 
-/* Screen 2: summary line */
-.bp-summary { justify-content: space-between; }
-.bp-summary-noun { font-size: 14px; }
-.bp-summary-edits { display: flex; gap: 6px; }
-.bp-edit { border-style: solid; }
-
-/* Option cards: one saving pill, one sticker line */
-.bp-diff-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-.bp-pill { font-size: 11px; padding: 3px 9px; font-weight: 800; }
-
-/* The money pile */
-.bp-pile { margin-top: 14px; }
-.bp-pile-lead { margin: 0 0 6px; font-size: 14px; line-height: 1.4; color: var(--text-strong); }
-.bp-pile-svg { display: block; width: 100%; height: auto; margin: 4px 0 2px; }
-.bp-pile-note { margin: 0; font-size: 13px; line-height: 1.4; color: var(--text-strong); }
-
-/* The hidden costs, as one read-only expense list */
-.bp-list { margin-top: 14px; }
-.bp-list-title { margin: 0 0 2px; font-size: 15px; font-weight: 900; color: var(--text-strong); }
-.bp-list-cap { margin: 0 0 6px; font-size: 12px; color: var(--text); }
-.bp-list-group {
-  margin: 12px 0 2px; font-size: 11px; font-weight: 900; letter-spacing: .05em;
-  text-transform: uppercase; color: var(--text);
-}
-.bp-list-row {
-  display: flex; justify-content: space-between; align-items: center; gap: 12px;
-  padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 14px; color: var(--text-strong);
-}
-.bp-list-row strong { white-space: nowrap; }
-.bp-list-label { display: block; font-weight: 700; }
-.bp-list-sub { display: block; font-size: 12px; color: var(--text); }
-.bp-list-total { margin-top: 4px; padding-top: 10px; border-bottom: 0; border-top: 2px solid var(--text-strong); font-size: 15px; font-weight: 900; }
-.bp-list-foot { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
-
 /* How you'll pay: a segmented control and three setting rows */
-.bp-paycard { margin-top: 14px; }
 .bp-seg {
   display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 8px 0 6px; padding: 4px;
   border-radius: 13px; background: var(--soft);
@@ -4604,49 +3829,13 @@ button.esf-based {
   background: none; color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
 }
 .bp-setrow-label { font-size: 14px; }
-.bp-setrow-val { font-size: 14px; font-weight: 800; white-space: nowrap; }
-.bp-setrow-total { border-bottom: 0; cursor: default; font-size: 14px; }
-.bp-setrow-total strong { font-size: 16px; }
 .screen .bp-inline-input { width: 100%; min-height: 44px; margin: 6px 0; font-size: 16px; }
-.bp-tips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.bp-tips .bp-tip { margin-top: 0; min-height: 44px; padding: 0 12px; font-size: 12px; }
-.bp-tip-plain { border-color: var(--rail) !important; background: var(--card) !important; color: var(--text-strong) !important; }
 
 /* ═══ Big Purchase — second review (2026-09-22): four screens ══════════════ */
 
-/* The car this screen is about, stated once and not editable here. */
-.bp-carline { margin: 10px 0 8px; font-size: 15px; font-weight: 800; color: var(--text-strong); }
-
-/* The costs table: one line per expense, figures right, month and year. */
-.bp-table2 { margin: 10px 0 4px; }
-.bp-t2row {
-  display: flex; align-items: center; justify-content: space-between; gap: 14px;
-  padding: 10px 0; border-bottom: 1px solid var(--line);
-}
-.bp-t2row:last-child { border-bottom: 0; }
-.bp-t2label { font-size: 15px; font-weight: 700; color: var(--text-strong); }
-.bp-t2fig { text-align: right; white-space: nowrap; }
-.bp-t2fig strong { display: block; font-size: 15px; color: var(--text-strong); }
-.bp-t2fig span { display: block; font-size: 12px; color: var(--text); }
 .bp-financed { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
-.bp-fin-total {
-  margin-top: 16px; padding: 4px 13px; border: 1px solid var(--line);
-  border-radius: 13px; background: var(--card);
-}
 
 /* Ways to spend less: a summary card that expands. */
-.bp-option { margin-bottom: 10px; padding: 0; overflow: hidden; }
-.bp-option.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-.bp-option-head {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-  width: 100%; padding: 14px; border: 0; background: none; text-align: left; cursor: pointer;
-}
-.bp-option-title { display: block; font-size: 16px; font-weight: 900; color: var(--text-strong); line-height: 1.25; }
-.bp-option-sub { display: block; margin-top: 4px; font-size: 13px; line-height: 1.4; color: var(--text-strong); }
-.bp-option-mark {
-  flex: 0 0 auto; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-  border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 18px; font-weight: 900;
-}
 .bp-opt-detail { padding: 0 14px 14px; }
 
 /* Buddy and the bag of money. */
@@ -4657,9 +3846,6 @@ button.esf-based {
 }
 .bp-bag-buddy { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; background: var(--card); }
 .bp-bag-svg { width: 62px; height: 58px; flex: 0 0 auto; }
-.bp-bag-amt { margin: 0; flex: 1; min-width: 0; text-align: right; }
-.bp-bag-amt strong { display: block; font-size: 22px; font-weight: 900; color: var(--good); line-height: 1.1; }
-.bp-bag-amt span { display: block; font-size: 12px; color: var(--text-strong); }
 
 /* The two-column, apples-to-apples comparison. */
 .bp-compare { margin: 6px 0 10px; }
@@ -4749,8 +3935,6 @@ button.esf-based {
 
 /* ═══ Big Purchase — spec revision 4 review (2026-09-26) ═══════════════════ */
 
-/* Landing rows carry an emoji, one size up from the label and centred on it. */
-.bp-cat-emoji { flex: 0 0 auto; font-size: 20px; line-height: 1; }
 .bp-cat-label { flex: 1; min-width: 0; }
 
 /* The fund box: three side-by-side buttons, label over subtext. */
@@ -4766,11 +3950,6 @@ button.esf-based {
 .bp-esf-said { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-strong); }
 .bp-esf-said span { color: var(--good); margin-right: 4px; }
 
-/* The bag now carries two figures: saved, and what it could be worth. */
-.bp-bag-amt strong { display: block; font-size: 20px; font-weight: 900; color: var(--good); line-height: 1.15; }
-.bp-bag-amt span { display: block; font-size: 11px; color: var(--text-strong); }
-.bp-bag-worth { margin-top: 4px; font-size: 16px !important; color: var(--text-strong) !important; }
-
 /* The comparison table, now up to three columns. The grid-template-columns are
    set inline per row because the column count varies with what is on screen. */
 .bp-cmp-col {
@@ -4784,13 +3963,11 @@ button.esf-based {
 /* Only the TOTAL row is ever coloured. Colouring every row turns the table into
    a scorecard, and the cheapest car is not automatically the right one. */
 .bp-cmp-low { color: var(--good); font-weight: 900; }
-.bp-cmp-note { margin: 6px 0 10px; font-size: 11px; line-height: 1.45; color: var(--text); }
 .bp-addcol {
   width: 100%; min-height: 44px; margin-bottom: 10px;
   border: 1px dashed var(--rail); border-radius: 12px; background: var(--card);
   color: var(--accent); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
 }
-.bp-option.chosen { border-color: var(--accent); }
 
 /* Two summary lines: the month, then the first year. The month line is a
    subtotal rule, the year line is the bold one the headline repeats. */
@@ -4816,17 +3993,6 @@ button.esf-based {
 
 /* A title that must not wrap on a 390px frame. */
 .esf-title.bp-title-fit { font-size: 17px; white-space: nowrap; }
-
-/* The one-line cheaper-options teaser on the costs screen. Reads as a link to
-   the next screen, not as a card competing with the table above it. */
-.bp-teaser {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  width: 100%; min-height: 48px; margin: 14px 0 0; padding: 10px 14px;
-  border: 1px solid var(--good-border); border-radius: 13px; background: var(--good-bg);
-  color: var(--text-strong); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
-}
-.bp-teaser strong { color: var(--good); font-weight: 900; }
-.bp-teaser-go { font-size: 20px; color: var(--good); }
 
 /* ═══ Cost table, restyled (owner, 2026-09-26) ════════════════════════════
    Bold black column headings, plain black expense rows, one bold Total, and a
@@ -4858,7 +4024,6 @@ button.esf-based {
   margin: 2px 0 0; font-size: 34px; font-weight: 900; line-height: 1.05;
   color: var(--good); letter-spacing: -.02em;
 }
-.bp-save-sub { margin: 2px 0 12px; font-size: 12px; color: var(--text-strong); }
 /* Declined: one line, and a way back in. */
 .bp-skipped {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -4900,25 +4065,6 @@ button.esf-based {
 .bp-cost-shell .journal-body { display: flex; flex-direction: column; gap: 10px; }
 .bp-head-tight { padding-bottom: 8px; }
 
-/* The summary box: the first-year figure, its two halves, and the running cost
-   behind a vertical rule so the month is never read as the car's payment. */
-.bp-sum {
-  padding: 12px 14px; border: 1px solid var(--line); border-radius: 15px;
-  background: var(--card);
-}
-.bp-sum-title { margin: 0; font-size: 13px; font-weight: 700; color: var(--text); }
-.bp-sum-sub { margin: 1px 0 8px; font-size: 15px; font-weight: 900; color: var(--text-strong); }
-.bp-sum-figs { display: flex; align-items: stretch; gap: 12px; }
-.bp-sum-main { flex: 1; min-width: 0; }
-.bp-sum-main strong { display: block; font-size: 27px; font-weight: 900; line-height: 1.05; color: var(--text-strong); }
-.bp-sum-main span { display: block; margin-top: 2px; font-size: 11px; color: var(--text-strong); }
-.bp-sum-side {
-  flex: 0 0 auto; padding-left: 12px; border-left: 1px solid var(--line);
-  display: flex; flex-direction: column; justify-content: center; text-align: right;
-}
-.bp-sum-side strong { display: block; font-size: 17px; font-weight: 900; color: var(--text-strong); }
-.bp-sum-side span { display: block; font-size: 10px; line-height: 1.3; color: var(--text); max-width: 92px; }
-
 /* The running-cost box. Compact rows, big total, one rule running the full
    height between the two figure columns rather than per-row dashes. */
 .bp-costbox { padding: 12px 14px; }
@@ -4945,16 +4091,13 @@ button.esf-based {
 .bp-save { margin: 0; padding: 10px 12px; }
 .bp-save-lead { font-size: 13px; }
 .bp-save-big { font-size: 28px; }
-.bp-save-sub { margin-bottom: 8px; font-size: 11px; }
 .bp-financed { margin: 0; padding: 0; border: 0; }
 .bp-financed .bp-q-label { margin-bottom: 6px; }
 
 /* Final squeeze so screen 2 holds without scrolling on a 390x844 frame.
    Measured, not guessed: scrollHeight was 31px over clientHeight. */
 .bp-cost-shell .journal-body { gap: 8px; }
-.bp-cost-shell .bp-sum { padding: 10px 12px; }
 .bp-cost-shell .bp-costbox { padding: 10px 12px; }
-.bp-cost-shell .bp-sum-sub { margin-bottom: 6px; }
 .bp-cost-shell .bp-tbl-foot { margin-top: 6px; }
 .bp-cost-shell .bp-save { padding: 9px 12px; }
 .bp-cost-shell .bp-save-big { font-size: 26px; }
@@ -5000,21 +4143,6 @@ button.esf-based {
 
 /* The estimated cost over 5 years — this car, then the cheaper options. */
 .bp-fiveyear { margin-top: 14px; }
-.bp-fy-row {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  width: 100%; min-height: 52px; margin-bottom: 6px; padding: 8px 13px;
-  border: 1px solid var(--line); border-radius: 13px; background: var(--card);
-  color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
-}
-.bp-fy-row.on { border-color: var(--accent); background: var(--accent-soft); }
-.bp-fy-label { font-size: 14px; font-weight: 700; }
-.bp-fy-tag {
-  margin-left: 6px; padding: 1px 7px; border-radius: 999px;
-  background: var(--accent); color: var(--on-accent); font-size: 10px; font-weight: 900;
-}
-.bp-fy-figs { text-align: right; white-space: nowrap; }
-.bp-fy-figs strong { display: block; font-size: 17px; font-weight: 900; }
-.bp-fy-figs span { display: block; font-size: 11px; color: var(--text); }
 
 /* ═══ Cost table + summary polish (2026-09-27) ════════════════════════════ */
 
@@ -5026,19 +4154,6 @@ button.esf-based {
    there for a label longer than the track can ever hold. */
 .bp-tbl-row .bp-tbl-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .bp-tbl-soft .bp-tbl-label { white-space: nowrap; }
-
-/* The summary is the highlight of the screen, so it is the one block that
-   carries colour: a tinted plate, an accent rule, and the figure in the accent
-   rather than body black. Tokens only — it has to hold in all four themes. */
-.bp-sum {
-  border: 1px solid var(--accent-border);
-  background: var(--accent-soft);
-  box-shadow: inset 0 3px 0 -1px var(--accent);
-}
-.bp-sum-title { color: var(--accent); font-weight: 800; }
-.bp-sum-main strong { color: var(--accent); }
-.bp-sum-side { border-left-color: var(--accent-border); }
-.bp-sum-side strong { color: var(--text-strong); }
 
 /* ═══ Steps 4 and 5 on one screen, no scrolling (2026-09-27) ═════════════ */
 
@@ -5057,7 +4172,6 @@ button.esf-based {
 
 /* Screen 4 */
 .bp-fin-shell .journal-body { display: flex; flex-direction: column; gap: 8px; }
-.bp-fin-shell .bp-carline { margin: 0; font-size: 13px; }
 .bp-fin-shell .bp-q { margin: 0; }
 .bp-fin-shell .screen .bp-price, .bp-fin-shell .bp-price { min-height: 40px; font-size: 15px; }
 .bp-fin-shell .bp-seg { margin: 0; }
@@ -5067,8 +4181,6 @@ button.esf-based {
 .bp-fin-shell .bp-fin-sumrow { min-height: 0; padding: 2px 0; font-size: 12px; }
 .bp-fin-shell .bp-fin-sumtotal { font-size: 14px; }
 .bp-fin-shell .bp-fiveyear { margin-top: 4px; }
-.bp-fin-shell .bp-fy-row { min-height: 44px; margin-bottom: 5px; padding: 6px 12px; }
-.bp-fin-shell .bp-fy-figs strong { font-size: 15px; }
 .bp-fin-shell .journal-foot { padding-top: 10px; }
 
 /* The price sits on one line with its label, like the settings under it —
@@ -5084,28 +4196,15 @@ button.esf-based {
 .bp-fin-shell .journal-body { gap: 6px; }
 .bp-fin-shell .bp-setrow { min-height: 38px; }
 .bp-fin-shell .bp-fin-sum { padding: 6px 12px; }
-.bp-fin-shell .bp-fy-row { min-height: 40px; margin-bottom: 4px; }
 
 /* Worst case on screen 2 is a Premium car: it carries a subscriptions row the
    others do not. Measured at 6px over with that row present. */
 .bp-cost-shell .bp-tbl-ruled .bp-tbl-row { padding: 1px 0; }
-.bp-cost-shell .bp-save-sub { margin-bottom: 6px; }
 
 /* "May need: Home charger" is the longest label in the table and was landing
    a few pixels over its track. One step down in size fits it whole, which is
    better than an ellipsis on a row whose point is that it is optional. */
 .bp-cost-shell .bp-tbl-soft .bp-tbl-label { font-size: 12px; }
-
-/* ═══ Step 2 summary, restyled (2026-09-27) ══════════════════════════════
-   The box no longer repeats the screen title — that moved up to be the header.
-   The year-one figure is centred, its two halves bold beneath it, and the
-   monthly sits behind the rule where it cannot read as the car's payment. */
-.bp-sum { display: flex; align-items: stretch; gap: 12px; }
-.bp-sum-main { flex: 1; min-width: 0; text-align: center; }
-.bp-sum-main strong { font-size: 30px; }
-.bp-sum-main span { font-size: 12px; }
-.bp-sum-main span b { font-weight: 900; color: var(--text-strong); }
-.bp-sum-side { justify-content: center; }
 
 /* ═══ Savings row on one line, with captions above the figures ════════════ */
 .bp-bag { display: block; padding: 10px 12px; }
@@ -5132,7 +4231,6 @@ button.esf-based {
 .bp-priceline .bp-setrow-label { flex: 0 0 auto; font-size: 14px; }
 .screen .bp-price-inline { width: 130px; text-align: left; }
 .bp-price-fixed { font-size: 16px; font-weight: 900; color: var(--text-strong); }
-.bp-price-note { margin: 0 0 2px; font-size: 11px; }
 .bp-finbox .bp-fin-sum { margin-top: 8px; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 6px 0 0; }
 
 /* Screen 4 gained a box and lost 18px of room with it. */
@@ -5140,7 +4238,6 @@ button.esf-based {
 .bp-fin-shell .bp-finbox .bp-seg { margin: 6px 0; }
 .bp-fin-shell .bp-priceline { min-height: 38px; }
 .bp-fin-shell .bp-fin-sum { margin-top: 6px; }
-.bp-fin-shell .bp-fy-row { min-height: 38px; margin-bottom: 3px; }
 .bp-fin-shell .bp-fiveyear .bp-based { margin-top: 1px; }
 /* The derived price says where it came from on the same line, not in a
    paragraph under it — that paragraph cost this screen 29px it did not have. */
@@ -5149,8 +4246,6 @@ button.esf-based {
 /* "What it costs" sits apart from "how you pay" — two boxes, never one list. */
 .bp-costof { margin-top: 8px; padding: 10px 12px; }
 .bp-costof .bp-fin-sumrow { font-size: 13px; }
-.bp-costof-y1 { border-top: 0; padding-top: 2px; font-size: 12px !important; font-weight: 400; color: var(--text); }
-.bp-costof-y1 strong { font-weight: 800; }
 
 /* Cheaper options as chips: what it is, what it costs, one tap to compare. */
 .bp-altchips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -5205,7 +4300,6 @@ button.esf-based {
 /* Worst case (electric Premium) needs a few more pixels on both screens. */
 .bp-cost-shell .bp-save { padding: 8px 12px; }
 .bp-cost-shell .bp-financed .bp-q-label { margin-bottom: 4px; }
-.bp-fin-shell .bp-costof-y1 { line-height: 1.3; }
 .bp-fin-shell .bp-costof .bp-fin-sumrow { font-size: 12px; }
 .bp-fin-shell .bp-fin-sumtotal { font-size: 13px; }
 
@@ -5230,7 +4324,6 @@ button.esf-based {
 .bp-cost-shell .bp-financed .bp-tiles .bp-tile { min-height: 36px; padding: 4px 8px; font-size: 13px; }
 .bp-cost-shell .bp-save-lead { font-size: 12px; }
 .bp-cost-shell .bp-save-big { font-size: 22px; }
-.bp-cost-shell .bp-save-sub { margin-bottom: 6px; font-size: 10px; }
 .bp-cost-shell .bp-save .button { min-height: 38px; }
 .bp-cost-shell .bp-tbl-ruled .bp-tbl-row { padding: 1px 0; font-size: 12.5px; }
 .bp-cost-shell .bp-tbl-ruled .bp-tbl-total { margin-top: 3px; padding-top: 4px; font-size: 17px; }
@@ -5255,7 +4348,6 @@ button.esf-based {
 .bp-fin-shell .bp-altchip { padding: 6px 10px; }
 .bp-fin-shell .bp-fiveyear .bp-box-head { font-size: 12px; margin-bottom: 3px; }
 .bp-fin-shell .bp-altchip { padding: 5px 10px; font-size: 12px; }
-.bp-fin-shell .bp-costof-y1 { font-size: 11px; line-height: 1.3; }
 .bp-fin-shell .bp-box-head { font-size: 13px; margin-bottom: 3px; }
 .bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { padding: 6px 12px; }
 .bp-fin-shell .journal-head { padding-bottom: 4px; }
@@ -5374,7 +4466,6 @@ button.esf-based {
 .bp-cost-shell .bp-ladder-hero .bp-ladder-fig { font-size: 19px; }
 .bp-cost-shell .bp-save { padding: 6px 12px; }
 .bp-cost-shell .bp-save-big { font-size: 20px; }
-.bp-cost-shell .bp-save-sub { margin-bottom: 5px; }
 .bp-cost-shell .bp-save .button { min-height: 34px; font-size: 13px; }
 .bp-cost-shell .bp-costbox { padding: 7px 12px; margin-bottom: 8px; }
 .bp-cost-shell .bp-tbl-foot { font-size: 9.5px; margin-top: 4px; }
@@ -5405,7 +4496,6 @@ button.esf-based {
 /* The saving chips are three lines where they were one; the rest of step 3
    gives it back a few pixels at a time. */
 .bp-fin-shell .bp-fin-sumrow { font-size: 12px; }
-.bp-fin-shell .bp-costof-y1 { font-size: 10px; }
 .bp-fin-shell .bp-setrow { min-height: 27px; }
 .bp-fin-shell .bp-box-head { font-size: 12.5px; margin-bottom: 2px; }
 .bp-fin-shell .bp-fiveyear .bp-box-head { font-size: 11px; }
@@ -5425,7 +4515,6 @@ button.esf-based {
 .bp-fin-shell .bp-altchips { gap: 6px; }
 .bp-fin-shell .bp-altchip { min-height: 38px; }
 .bp-fin-shell .bp-costof { margin-bottom: 2px; }
-.bp-fin-shell .bp-costof-y1 { line-height: 1.25; }
 
 /* ═══ The emergency-fund box: an open question, not an answered one ═══════
    (owner, 2026-09-27: "it looks like it's preselected and something will
@@ -5520,8 +4609,8 @@ button.esf-based {
 .bp-fin-shell .bp-fin-sumrow, .bp-fin-shell .bp-setrow-label,
 .bp-fin-shell .bp-setrow-pill { font-size: 12.5px; }
 .bp-cost-shell .bp-ladder-label em, .bp-cost-shell .bp-tbl-note,
-.bp-cost-shell .bp-tbl-ruled .bp-tbl-head, .bp-fin-shell .bp-costof-y1,
-.bp-fin-shell .bp-altchip-what, .bp-altchip-worth, .bp-cost-shell .bp-save-sub { font-size: 11px; }
+.bp-cost-shell .bp-tbl-ruled .bp-tbl-head,
+.bp-fin-shell .bp-altchip-what, .bp-altchip-worth { font-size: 11px; }
 .bp-cost-shell .bp-box-head, .bp-fin-shell .bp-box-head,
 .bp-fin-shell .bp-fiveyear .bp-box-head, .bp-cost-shell .bp-save-lead,
 .bp-cost-shell .bp-financed .bp-q-label { font-size: 13px; }
@@ -5566,7 +4655,6 @@ button.esf-based {
 .bp-fin-shell .bp-setrow { min-height: 24px; }
 .bp-fin-shell .bp-setrow { min-height: 23px; }
 .bp-fin-shell .bp-altchip { min-height: 33px; padding: 3px 10px; }
-.bp-fin-shell .bp-costof-y1 { line-height: 1.2; }
 .bp-fin-shell .bp-fiveyear .bp-box-head { margin-bottom: 4px; }
 /* The two tallest rows in the financing box were never the ones being trimmed:
    min-height does nothing when a child's own padding sets the height. */
@@ -5648,19 +4736,6 @@ button.esf-based {
    so nothing here can reach an existing step. */
 
 /* Landing */
-.bp-land-hero { display: flex; align-items: center; gap: 10px; }
-.bp-land-buddy { flex: 0 0 auto; width: 76px; height: auto; }
-.bp-land-bubble {
-  position: relative; flex: 1; min-width: 0; padding: 10px 14px;
-  border: 1px solid var(--accent-border); border-radius: 16px; background: var(--accent-soft);
-}
-.bp-land-bubble::before {
-  content: ""; position: absolute; left: -7px; top: 50%; width: 12px; height: 12px;
-  transform: translateY(-50%) rotate(45deg);
-  border-left: 1px solid var(--accent-border); border-bottom: 1px solid var(--accent-border);
-  background: var(--accent-soft);
-}
-.bp-land-bubble .esf-title { margin: 0; font-size: 18px; line-height: 1.2; }
 .bp-land-shell .journal-head { padding-bottom: 10px; }
 /* The owner's banner (2026-09-29): Buddy and a car with a bow. Full width,
    height capped so the categories still fit; cover crops the sky, not Buddy. */
@@ -5723,7 +4798,6 @@ button.esf-based {
 .bpf-start-shell .bp-lead { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; text-align: center; }
 .bpf-start-shell .bpf-banner { margin-bottom: 14px; }
 .bpf-start-shell .journal-head .esf-title { margin-top: 4px; }
-.bpf-start-shell .bpf-paths { gap: 12px; }
 .bpf-start-shell .bpf-know-pick { margin-top: 0; padding: 10px 14px; }
 .bpf-start-shell .bpf-path-quiz { grid-template-rows: auto; min-height: 44px; padding-top: 8px; padding-bottom: 8px; }
 .bpf-start-shell .bpf-path-quiz .bpf-path-title { font-size: 15px; }
@@ -5751,8 +4825,7 @@ button.esf-based {
 .bpf-peerfact-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
   padding: 2px 0; font-size: 12.5px; color: var(--text-strong); }
 .bpf-peerfact-row strong { font-size: 15px; font-weight: 900; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.bpf-peerfact-row i, .bpf-alt-month i { font-style: normal; font-size: 11px; font-weight: 600; color: var(--text); }
-.bpf-paths { display: flex; flex-direction: column; gap: 10px; }
+.bpf-peerfact-row i { font-style: normal; font-size: 11px; font-weight: 600; color: var(--text); }
 .bpf-path {
   display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; align-items: center;
   column-gap: 10px; width: 100%; min-height: 64px; padding: 12px 16px;
@@ -5760,7 +4833,6 @@ button.esf-based {
   color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
 }
 .bpf-path-title { font-family: var(--font-display); font-size: 17px; font-weight: 800; }
-.bpf-path-sub { grid-row: 2; font-size: 12.5px; color: var(--text); }
 .bpf-path-go { grid-column: 2; grid-row: 1 / span 2; font-size: 24px; color: var(--accent); }
 
 /* Know: the make-and-model list scrolls inside the dock */
@@ -5826,8 +4898,6 @@ button.esf-based {
 }
 .bpf-line-hero .bpf-line-label { font-weight: 800; }
 .bpf-line-hero .bpf-line-fig { font-size: 20px; color: var(--accent); }
-.bpf-assume { margin: -3px 2px 0; font-size: 11px; line-height: 1.4; color: var(--text); }
-.bpf-assume .bp-link { font-size: 11.5px; padding: 0; margin-left: 2px; }
 .bpf-peer, .bpf-save { padding: 8px 13px; border: 1px solid var(--line); border-radius: 15px; background: var(--card); }
 .bpf-grid { display: grid; grid-template-columns: 1fr auto auto; column-gap: 16px; row-gap: 2px;
   align-items: baseline; font-size: 12.5px; color: var(--text-strong); }
@@ -5840,12 +4910,9 @@ button.esf-based {
   min-height: 44px; margin-top: 5px; padding: 6px 11px; border: 1px solid var(--rail); border-radius: 12px;
   background: var(--card); color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
 }
-.bpf-alt-text, .bpf-alt-figs { display: flex; flex-direction: column; min-width: 0; }
-.bpf-alt-figs { align-items: flex-end; flex: 0 0 auto; }
+.bpf-alt-text { display: flex; flex-direction: column; min-width: 0; }
 .bpf-alt-head { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text); }
 .bpf-alt-name { font-size: 13px; font-weight: 800; }
-.bpf-alt-month { font-size: 14px; font-weight: 900; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.bpf-alt-diff { font-size: 11.5px; font-weight: 700; color: var(--accent); white-space: nowrap; }
 
 /* Buddy: the breakdown, every figure editable */
 .bpf-calc { margin: 4px 0 10px 34px; padding: 8px 12px; border: 1px solid var(--line);
@@ -5903,11 +4970,6 @@ button.esf-based {
 .bpf-car-shell .bpf-box-note { margin-bottom: 4px; }
 .bpf-car-shell .bpf-alt { margin-top: 4px; padding: 4px 11px; }
 .bpf-car-shell .bpf-gap { margin-top: 3px; }
-/* The loan line and its link share one row: the link keeps its 44px tap
-   height, and the text beside it wraps inside that height rather than pushing
-   the link onto a line of its own. */
-.bpf-assume { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px 0; }
-.bpf-assume .bp-link { flex: 0 0 auto; margin-left: 0; }
 /* Same shrinkable spacer as step 3: surplus height lifts the last box off the
    menu first (up to about two lines), then spreads into the gaps. */
 .bpf-car-shell .journal-body::after { content: ""; display: block; flex: 1 1 0; min-height: 0; max-height: 28px; }
@@ -5932,8 +4994,7 @@ button.esf-based {
 }
 :is(.bp-shell, .bpf-shell, .bp-land-shell, .bp-cost-shell, .bp-fin-shell, .bp-plan-shell)
   :is(.bp-lead, .bpf-why, .bpf-car-why, .bpf-fit, .bpf-fit-why, .bpf-fit-also, .bpf-know-why,
-      .bpf-box-note, .bp-esf-sub, .bp-esf-why, .bp-pile-lead, .bp-pile-note, .bp-quiz-why,
-      .bp-quiz-said, .bp-list-cap, .bp-hl-sub, .bp-ask-done) {
+      .bpf-box-note, .bp-esf-why, .bp-quiz-why, .bp-quiz-said, .bp-ask-done) {
   text-align: center;
 }
 .bpf-shell .bpf-eyebrow, .bpf-shell .esf-title { text-align: center; }
@@ -5997,7 +5058,6 @@ button.esf-based {
 .bpf-t-me { font-size: 16px; font-weight: 900; }
 .bpf-t-peer { font-size: 15px; font-weight: 500; }
 .bpf-t-name { font-size: 13px; font-weight: 700; color: var(--text-strong); }
-.bpf-t-sub { font-size: 11.5px; font-weight: 500; color: var(--text-strong); }
 .bpf-t-link { align-self: flex-start; margin-top: 2px; padding: 4px 0; border: 0; background: none; font: inherit; font-size: 13px;
   font-weight: 800; color: var(--accent); text-decoration: underline; cursor: pointer; }
 .bpf-t-total { background: var(--accent-soft); border-top-color: var(--accent-border); }
@@ -6006,12 +5066,6 @@ button.esf-based {
 .bpf-t-label.bpf-t-total .bpf-t-name { font-size: 15px; font-weight: 900; }
 .bpf-t-me.bpf-t-total { font-size: 26px; color: var(--accent); }
 .bpf-t-peer.bpf-t-total { font-size: 17px; font-weight: 500; }
-.bpf-t-who { margin: -2px 0 0; font-size: 11.5px; }
-.bpf-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 7px 8px; border: 1px solid var(--line);
-  border-radius: 15px; background: var(--card); text-align: center; }
-.bpf-stat { display: flex; flex-direction: column; gap: 1px; }
-.bpf-stat span { font-size: 10.5px; font-weight: 700; color: var(--text-strong); }
-.bpf-stat strong { font-size: 14px; font-weight: 900; font-variant-numeric: tabular-nums; }
 .bpf-alt { justify-content: space-between; }
 .bpf-alt-head { color: var(--text-strong); }
 .bpf-quiz-shell .bpf-fit-also { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0 6px; }
@@ -6021,11 +5075,10 @@ button.esf-based {
 .bpf-t-me, .bpf-t-peer { padding-left: 14px; }
 .bpf-t-label.bpf-t-total .bpf-t-name { font-size: 14px; }
 .bpf-t-link { text-align: left; white-space: nowrap; font-size: 12.5px; }
-.bpf-t-name, .bpf-t-sub { text-align: left; }
+.bpf-t-name { text-align: left; }
 .bpf-table { align-items: stretch; }
 .bpf-t-label { justify-content: center; }
 .bpf-t-h { align-self: end; }
-.bpf-stat span { white-space: nowrap; }
 
 /* Compact cars (owner, 2026-10-03: "this takes up way too much space"). */
 .bpf-quiz-shell .bpf-car { padding: 6px 9px 7px; }
@@ -6053,13 +5106,10 @@ button.esf-based {
 .bpf-t-label.bpf-t-total .bpf-t-name { font-size: 15px; font-weight: 800; }
 .bpf-t-me.bpf-t-total { font-size: 24px; font-weight: 800; }
 .bpf-t-h { font-weight: 700; }
-.bpf-deal { margin-top: -4px; font-size: 12.5px; font-weight: 600; }
 .bpf-save .bpf-box-head { font-size: 14px; font-weight: 700; text-align: left; }
 .bpf-alt { align-items: center; padding: 6px 12px; text-align: left; }
 .bpf-alt-name { font-size: 14px; font-weight: 700; color: var(--text-strong); }
 .bpf-alt-head { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--text-strong); }
-.bpf-alt-month { font-size: 14px; font-weight: 700; color: var(--text-strong); }
-.bpf-alt-diff { font-size: 12px; font-weight: 500; color: var(--text-strong); }
 /* Fit: the table's rows and the options' rows take the room from inside themselves. */
 .bpf-table { padding: 2px 13px 6px; }
 .bpf-t-me, .bpf-t-peer, .bpf-t-h { padding-left: 8px; }
@@ -6070,7 +5120,6 @@ button.esf-based {
 .bpf-car-shell .bpf-alt { min-height: 40px; margin-top: 4px; padding: 3px 12px; }
 .bpf-car-shell .bpf-save { padding: 6px 12px 7px; }
 .bpf-car-shell .journal-body { gap: 6px; }
-.bpf-car-shell .bpf-t-who { margin: -2px 0 0; }
 
 /* The question rows (owner, 2026-10-03): the one being asked is an open, outlined row
    with its choices docked below; the ones still to come are locked. */
@@ -6102,7 +5151,7 @@ button.esf-based {
   font-family: var(--font-body); font-variant-numeric: normal; font-weight: 400; font-style: normal;
 }
 .bpf-shell .bpf-t-name, .bpf-shell .bpf-t-me, .bpf-shell .bpf-t-h, .bpf-shell .bpf-t-link,
-.bpf-shell .bpf-save .bpf-box-head, .bpf-shell .bpf-alt-name, .bpf-shell .bpf-alt-diff { font-weight: 700; }
+.bpf-shell .bpf-save .bpf-box-head, .bpf-shell .bpf-alt-name { font-weight: 700; }
 .bpf-shell .bpf-t-label.bpf-t-long .bpf-t-name { font-weight: 400; }
 .bpf-shell .bpf-t-me.bpf-t-long { font-weight: 700; }
 .bpf-shell .bpf-t-peer { font-weight: 400; }
@@ -6118,12 +5167,8 @@ button.esf-based {
 .bpf-shell .bpf-alt-text { flex: 1 1 auto; min-width: 0; }
 .bpf-shell .bpf-alt-name { font-size: 14px; }
 .bpf-shell .bpf-alt-head { font-size: 12px; }
-.bpf-shell .bpf-alt-diff { font-size: 15px; }
-.bpf-shell .bpf-alt-month { font-size: 12px; }
-.bpf-shell .bpf-alt-best .bpf-alt-diff { color: var(--good); }
 
 /* Cost screen, round 3 (owner, 2026-10-03). */
-.bpf-shell .bpf-deal { margin-top: -2px; font-size: 15px; font-weight: 700; }
 .bpf-shell .bpf-t-peer, .bpf-shell .bpf-t-h-peer { border-left: 1px solid var(--line); }
 .bpf-shell .bpf-t-peer { font-size: 13px; }
 .bpf-shell .bpf-t-h-peer { font-size: 10.5px; }
@@ -6132,7 +5177,6 @@ button.esf-based {
 .bpf-shell .bpf-t-me.bpf-t-total { font-size: 17px; color: var(--accent); }
 .bpf-shell .bpf-t-peer.bpf-t-total { font-size: 13px; }
 .bpf-shell .bpf-t-name { white-space: nowrap; }
-.bpf-shell .bpf-t-sub { font-size: 11.5px; line-height: 1.25; }
 .bpf-shell .bpf-t-foot { grid-column: 1 / -1; margin: 4px -13px -6px; padding: 5px 13px 0; border-top: 1px solid var(--line);
   font-size: 11px; line-height: 1.35; text-align: center; }
 .bpf-shell .bpf-t-foot, .bpf-shell .bpf-t-foot * { font-family: var(--font-body); font-weight: 400; }
@@ -6141,8 +5185,6 @@ button.esf-based {
 .bpf-car-shell .bpf-alt { margin-top: 7px; }
 .bpf-shell .bpf-alt-name { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bpf-shell .bpf-alt-head { white-space: nowrap; }
-.bpf-shell .bpf-alt-figs { flex: 0 0 auto; }
-.bpf-shell .bpf-alt-diff, .bpf-shell .bpf-alt-month { white-space: nowrap; }
 .bpf-shell .bpf-alt-good { color: var(--good); }
 .bpf-shell .bpf-alt.bpf-alt-on { box-shadow: inset 4px 0 0 hsl(var(--h, 215) 48% 42%), 0 0 0 2px var(--accent); }
 .bpf-logo-peers { background: var(--soft); color: var(--text-strong); border: 1px solid var(--line); }
@@ -6169,7 +5211,7 @@ button.esf-based {
 .bpf-shell .bpf-alt.bpf-alt-orig, .bpf-shell .bpf-alt.bpf-alt-orig.bpf-alt-on {
   background: var(--soft); border: 1px solid var(--line); box-shadow: none;
 }
-.bpf-shell .bpf-alt-orig .bpf-alt-diff, .bpf-shell .bpf-alt-orig .bpf-alt-month, .bpf-shell .bpf-alt-orig .bpf-alt-head { font-weight: 400; }
+.bpf-shell .bpf-alt-orig .bpf-alt-head { font-weight: 400; }
 .bpf-shell .bpf-car-title { font-size: 20px; line-height: 1.15; }
 .bpf-shell .bpf-car-title span { min-width: 0; }
 .bpf-shell .bpf-deal-cell strong { font-size: 21px; }
@@ -6421,7 +5463,6 @@ button.esf-based {
 .bpf-shell .bpf-save-cols span { text-align: right; line-height: 1.1; }
 .bpf-shell .bpf-alt { padding: 3px 13px; min-height: 40px; }
 .bpf-shell .bpf-alt-c1, .bpf-shell .bpf-alt-c2 { text-align: right; font-size: 14px; font-weight: 700; white-space: nowrap; }
-.bpf-shell .bpf-alt-c1 .bpf-alt-dash { font-weight: 400; font-size: 12px; white-space: nowrap; }
 .bpf-shell .bpf-alt-orig .bpf-alt-c1 { grid-column: 3 / 5; }
 .bpf-shell .bpf-alt-good { color: var(--good); }
 .bpf-shell .bpf-alt-text { min-width: 0; }
@@ -6472,7 +5513,7 @@ button.esf-based {
 .bpf-dock .bp-tile.on { background: var(--accent-soft); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .bp-emoji { font-style: normal; font-size: 18px; line-height: 1; margin-right: 8px; vertical-align: -2px; }
 .bpf-dock .bp-tile-label { display: flex; align-items: center; }
-.bpf-dock .bp-tiles.bp-full .bp-tile, .bpf-dock .bp-tile { text-align: left; }
+.bpf-dock .bp-tile { text-align: left; }
 
 /* The expense table: a different colour from the green highlight, so the total stands out. */
 .bpf-shell .bpf-table { background: var(--info-bg); border: 2px solid var(--info); }
@@ -6548,7 +5589,7 @@ button.esf-based {
 .bp-land-shell .bp-cat:disabled { border-color: var(--rail); }
 
 /* Quiz answers are centred: emoji and answer on one line, the context line under it. */
-.bpf-dock .bp-tile, .bpf-dock .bp-tiles.bp-full .bp-tile { text-align: center; align-items: center; }
+.bpf-dock .bp-tile { text-align: center; align-items: center; }
 .bpf-dock .bp-tile-label { justify-content: center; text-align: center; }
 .bpf-dock .bp-tile-sub { text-align: center; }
 .bpf-dock .bp-tiles.bp-tiles-list .bp-tile { text-align: center; align-items: center; }
