@@ -456,9 +456,9 @@ bootV3();
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("3. D18 — every observation renders on >= 2 screens");
-// The screens that show observations, each in the state that shows them. A
-// headline found in the rendered text counts; the seed's `surfaces` tags do
-// not, because these screens never read them.
+// The screens that show observations, each in the state that shows them. Only
+// a headline found in the rendered text counts, never the seed's `surfaces`
+// tags: journalDone is the one screen that picks its cards by those tags.
 var D18_SCREENS = {
   journalDone:  function () { return renderSafe("journalDone"); },
   dailySummary: function () { return renderSafe("dailySummary"); },
