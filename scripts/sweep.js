@@ -495,7 +495,7 @@ ids.forEach(function (id) {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section("4. D26 / L20 — no financial advice anywhere");
+section("4. D26 / L20 — advice wording in screens, scripts, lessons and chat");
 var ADVICE = [/\byou should\b/i, /\bwe recommend\b/i, /\byou ought to\b/i, /\bcancel your\b/i,
               /\bswitch to\b/i, /\byou must\b/i, /\bbest option\b/i, /\bwe suggest\b/i,
               /\bI recommend\b/i, /\byou need to\b/i];
@@ -504,13 +504,14 @@ SCREENS.forEach(function (sc) {
   var t = textOf(renderSafe(sc));
   ADVICE.forEach(function (re) { var m = t.match(re); if (m) adviceHits.push(sc + ': "' + m[0] + '"'); });
 });
-chk(adviceHits.length === 0, "no advice-shaped copy on any screen", adviceHits.slice(0, 6).join("\n          "));
+chk(adviceHits.length === 0, "no advice phrase on any screen in its seeded state",
+    adviceHits.slice(0, 6).join("\n          "));
 
 var libHits = [];
 (BUDDY_RESPONSES.responses || []).forEach(function (r) {
   ADVICE.forEach(function (re) { if (re.test(r.text)) libHits.push(r.id); });
 });
-chk(libHits.length === 0, "no advice in the buddy response library", libHits.join(", "));
+chk(libHits.length === 0, "no advice phrase in the buddy response library", libHits.join(", "));
 
 var scriptHits = [];
 Object.keys(LESSON_SCRIPTS).forEach(function (k) {
@@ -518,7 +519,7 @@ Object.keys(LESSON_SCRIPTS).forEach(function (k) {
     ADVICE.forEach(function (re) { if (re.test(line)) scriptHits.push(k); });
   });
 });
-chk(scriptHits.length === 0, "no advice in the 15 lesson scripts", scriptHits.join(", "));
+chk(scriptHits.length === 0, "no advice phrase in the 15 framed lesson scripts", scriptHits.join(", "));
 
 var duHits = [];
 (DAILY_SCRIPTS.scripts || []).forEach(function (s) {
@@ -526,7 +527,98 @@ var duHits = [];
     ADVICE.forEach(function (re) { if (re.test(seg.text)) duHits.push(s.id + "/" + seg.id); });
   });
 });
-chk(duHits.length === 0, "no advice in the daily-update scripts", duHits.join(", "));
+chk(duHits.length === 0, "no advice phrase in the daily-update scripts", duHits.join(", "));
+
+// ── The older lessons: warnings until the PMs rewrite them ──────────────────
+// The lessons that predate the framed player narrate and quiz in imperatives
+// ("Avoid investing your emergency fund", "the smartest first move"), which the
+// phrase list above mostly misses, and the screen walk above opens one topic
+// page and no older lesson. The copy is the PMs' to change (D26: the number and
+// the gap, never what to do), so these warn; once it is rewritten they can fail.
+var ADVICE_PHRASES = ADVICE.concat([
+  /\b(always|never) (take|pay|choose|pick|buy|sell|invest|keep|put|use|start|skip|cancel|borrow)\b/i,
+  /\b(smartest|wisest|best) (first )?(move|choice|step)\b/i,
+  /\bmost appropriate\b/i,
+  /\bshould you\b/i,
+  /\byour (\w+ ){1,2}should\b/i
+]);
+// A sentence opening on one of these verbs tells the reader what to do. Read
+// in authored sentences only: rendered text runs a button label into the prose
+// before it ("... ahead of it. Start"), and a quiz choice is an answer
+// fragment ("Keep everything in cash" is a wrong answer, not an instruction).
+var ADVICE_IMPERATIVE = /(?:^|[.!?] )(Avoid|Exhaust|Start|Review|Match|Always|Never|Don't|Make sure|Consider|Try|Stop|Choose|Pick|Cancel|Switch|Invest|Keep|Put|Take|Buy|Sell|Pay|Save|Contribute|Use|Get)\b/;
+// Exact authored text that matches a pattern without telling anyone what to
+// do. It is cut out of rendered pages too, so one entry covers both.
+var ADVICE_ALLOWED = [
+  "The exact home you should buy",                               // q20: a wrong answer
+  "What type of health plan do you need to qualify for an HSA?"   // q41: eligibility
+];
+/** Each distinct advice-shaped phrase in `text`, with the text around it. */
+function adviceIn(text, sentence) {
+  text = String(text || "");
+  ADVICE_ALLOWED.forEach(function (a) { text = text.split(a).join(" "); });
+  var found = [], seen = {};
+  (sentence ? ADVICE_PHRASES.concat([ADVICE_IMPERATIVE]) : ADVICE_PHRASES).forEach(function (re) {
+    var m = re.exec(text);
+    if (!m) return;
+    var phrase = m[0].replace(/^[.!?] /, ""), at = m.index + m[0].length - phrase.length;
+    if (seen[phrase]) return;
+    seen[phrase] = true;
+    found.push({ phrase: phrase, around: text.slice(Math.max(0, at - 40), at + phrase.length + 20).trim() });
+  });
+  return found;
+}
+function advicePhrases(found) {
+  return found.map(function (f) { return '"' + f.phrase + '"'; }).join(", ");
+}
+function adviceReport(hits, where, pages) {
+  var n = hits.length;
+  if (!n) { ok((pages ? "none of " : "no line in ") + where + " reads as advice"); return; }
+  warn((pages ? n + " of " : n + " line" + (n === 1 ? "" : "s") + " in ") + where +
+       (n === 1 ? " reads" : " read") + " as advice (D26; copy for the PMs to rewrite)",
+       hits.join("\n          "));
+}
+
+var lpHits = [];
+Object.keys(LP_SCRIPTS).forEach(function (id) {
+  LP_SCRIPTS[id].forEach(function (line, i) {
+    var f = adviceIn(line, true);
+    if (f.length) lpHits.push(id + " #" + (i + 1) + " " + advicePhrases(f) + ": " + line);
+  });
+});
+adviceReport(lpHits, "the " + Object.keys(LP_SCRIPTS).length + " older lesson scripts");
+
+var quizHits = [];
+state.quizQuestions.forEach(function (q) {
+  [q.question].concat(q.choices).forEach(function (text, i) {
+    var f = adviceIn(text, i === 0);
+    if (f.length) quizHits.push(q.id + " (" + q.lessonId + ") " + advicePhrases(f) + ": " + text);
+  });
+});
+adviceReport(quizHits, "the " + state.quizQuestions.length + "-question quiz pool");
+
+var lessonHits = [];
+state.lessons.forEach(function (l) {
+  [l.title, l.description].forEach(function (text) {
+    var f = adviceIn(text, true);
+    if (f.length) lessonHits.push(l.id + " " + advicePhrases(f) + ": " + text);
+  });
+});
+adviceReport(lessonHits, "the " + state.lessons.length + " older lessons' titles and descriptions");
+
+// Every badge's page, not just the seeded Credit Cards one the walk above sees.
+var topicHits = [], badgeBefore = state.selectedBadge;
+state.badges.forEach(function (b) {
+  state.selectedBadge = b.name;
+  var html = renderSafe("topic");
+  if (html && html.__error) { bad(b.name + "'s topic page renders", html.__error); return; }
+  var f = adviceIn(textOf(html), false);
+  if (f.length) topicHits.push(b.name + " " + f.map(function (x) {
+    return '"' + x.phrase + '": ...' + x.around + "...";
+  }).join(" · "));
+});
+state.selectedBadge = badgeBefore;
+adviceReport(topicHits, "the " + state.badges.length + " badges' topic pages", true);
 
 // The guardrail itself, both directions.
 var ADVICE_Q = ["should i invest","what should i do","is it a good idea to cancel hulu",
