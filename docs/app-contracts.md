@@ -35,7 +35,7 @@ is added. Development tracking remains off; releases control tracking.
 ### Big Purchase Calculator
 
 Ported from blue `HoffDemo-BigPurchase` (`f84f142`, `b4abe14`); see
-docs/big-purchase-spec.md and docs/history/big-purchase-notes.md. The calculator
+docs/big-purchase-spec.md. The calculator
 opens from the Goals tab's "Estimate a big purchase" card (`bpOpen()`) and the
 full-app admin jump list. Full onboarding and all product tabs remain available.
 Calculator-first setup and contained presentation belong to the standalone Big
