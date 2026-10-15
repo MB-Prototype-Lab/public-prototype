@@ -2345,7 +2345,7 @@ section("7o. Full app integration: onboarding, ESF and Buddy");
 })();
 
 section("8. Cannot be checked here — needs the owner");
-print("  These are real Phase 6 items that no headless check can settle:");
+print("  These items need checks beyond the headless sweep:");
 print("");
 print("    · Mobile viewport at 390px — layout, wrapping, no horizontal scroll");
 print("    · Keyboard focus visibly moving through every interactive element");

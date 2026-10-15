@@ -274,7 +274,7 @@ printf ';\n' >> "$OUT"
 printf '\n// ══ sweep ══\n' >> "$OUT"
 cat scripts/sweep.js >> "$OUT"
 
-echo "Money Buddy v3 — Phase 6 sweep  ($n app files)"
+echo "Money Buddy sweep ($n app files)"
 "$ENGINE" "$OUT" | tee "$OUT.log"
 rc=${PIPESTATUS[0]}
 [ "$rc" -eq 0 ] || exit "$rc"
