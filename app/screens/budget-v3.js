@@ -1,17 +1,9 @@
-// ─── Budget (v3) ─────────────────────────────────────────────────────────────
-// TAB: Budget | NAV BAR: Visible
-//
-// Replaces v2's about-me hub + budget-setup dashboard. Twelve flat categories,
-// each with a slider, plus the plan-vs-actual signal per row.
-//
-// Empty state: no budget yet → the wizard is the only door (L6). D19 still
-// applies — the screen shows the seeded plan rather than a blank.
+// The Budget tab reviews the flat plan and spend comparison when the
+// paywall is disabled. Before the first save, offer the single builder (L6).
 
 function renderBudgetV3() {
-  // The tab is a paywall now (js/config.js, docs/decisions.md L27 overriding
-  // D31).
-  // A branch rather than a deletion: everything below stays referenced and
-  // flipping the flag restores the budget with nothing to unwind.
+  // L27 overrides D31 for this tab. Retain the budget view behind the flag
+  // so turning the paywall off restores the same review surface.
   if (typeof BUDGET_PAYWALL !== "undefined" && BUDGET_PAYWALL) return renderBudgetPaywall();
   if (state.planStatus !== "complete") return renderBudgetEmpty();
 
@@ -51,26 +43,13 @@ function renderBudgetV3() {
 
     ${renderGoalSuggestions({ source: "budget" }, "Suggested Budget Goals")}
 
-    <!-- Once a budget exists this tab is the REVIEW surface, not an editing one:
-         the twelve rows are the three-layer comparison, and the sliders live on
-         the per-category screen a row taps into. It used to render twelve
-         sliders here, which meant the tab that says "your budget" was the only
-         place you could never see how it was going. renderComparisonBody is
-         shared with the standalone screen so there is one implementation. -->
+    <!-- Share the review body with comparison; category detail holds sliders. -->
     ${renderComparisonBody()}
   `;
 }
 
-/**
- * The slider's ceiling. Derived ONLY from things a drag cannot change — the
- * seeded plan and the peer benchmark, both stable for the session.
- *
- * It used to be `Math.ceil(plan * 2.2)`, i.e. a function of the value the
- * slider controls. Undebounced that just churned; debounced it recoils — drag
- * 200 to 400 and 400ms later the re-render doubles the ceiling and the thumb
- * springs back to the same 45% while the number reads 400. Every drag ended
- * with the handle jumping.
- */
+// Derive the slider ceiling from seed and peer figures, never the value
+// being dragged: a moving maximum makes the thumb recoil after repaint.
 function budgetSliderMax(category) {
   const seeded = catValue(SEED_STATE.budget.monthly, category) || 0;
   let peer = 0;
@@ -103,17 +82,13 @@ function budgetSetPlan(category, amount, live) {
   debouncedRender();
 }
 
-// No budget yet. One door — the wizard (L6). A picker with one option is a
-// button, which is why v2's two-card fork is gone.
+// Offer the single budget builder when no budget exists (L6).
 function renderBudgetEmpty() {
   return `
     <h1 class="title" style="margin:0 0 4px;font-size:20px;">Monthly budget</h1>
     <p class="helper" style="margin:0 0 16px;">You haven't built one yet.</p>
 
-    <!-- v3.1's pitch is the opposite of v3's. v3 says "answer six questions and
-         we will work out the numbers"; here the tester sets the numbers and the
-         questions are an optional second opinion. The copy has to say which one
-         this is, or the flow surprises them one screen in. -->
+    <!-- Explain that figures come first and Help me out is optional. -->
     <div class="card">
       <p class="task-title" style="margin:0 0 6px;">Let's build your budget</p>
       <p class="task-desc" style="margin:0 0 12px;">
@@ -130,18 +105,8 @@ function renderBudgetEmpty() {
 
 // ─── Post-save ───────────────────────────────────────────────────────────────
 
-/**
- * "Budget Saved!" — a beat, then the Budget tab.
- *
- * This used to render the "budget_comparison" observation cards — the
- * dining-over-plan and car-insurance flags — which have nothing to do with
- * having just saved a budget and read as errors on the screen that confirms it.
- *
- * The continue is navGoTabRoot, not navGoTab: this screen is sitting ON the
- * aboutMe stack when the wizard was opened from the Budget tab, and navGoTab
- * re-commits that stack's top — this same screen. That is why "See my budget"
- * did nothing.
- */
+// Return to the tab root after the saved confirmation. navGoTab would
+// restore this confirmation from the stack instead of showing the budget.
 const BUDGET_DONE_MS = 2000;
 
 function renderBudgetDone() {

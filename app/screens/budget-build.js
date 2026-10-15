@@ -1,23 +1,6 @@
-// ─── Budget builder — three steps, and a Help me out toggle per line ─────────
-// TAB: Budget (sub-screen) | NAV BAR: Hidden — full-bleed
-//
-// It asks nothing unless the tester says they cannot estimate a line, and then
-// asks only about that line.
-//
-// ── ONE SCREEN, THREE STEPS ──────────────────────────────────────────────────
-// The step index lives on state.budgetBuild rather than in three screen ids.
-// A screen here costs five wiring points (render.js x4, utils.js, state.js) and
-// each one is a place to forget; three steps of one screen cost them once.
-//
-// ── EVERY LINE IS A SLIDER ───────────────────────────────────────────────────
-// The steps group categories by how well a tester knows them, NOT by how the
-// figure is entered. That distinction was misread once and built as a number
-// field on step 1; it is not one. Rent is a figure you can state, which is why
-// it opens on a good default and needs less dragging — not why it would need a
-// keyboard.
-//
-// The thumb opens on the PEER figure for this profile, so it starts dead centre
-// of the band drawn behind it and any move away from it is deliberate.
+// Keep three category groups in one screen session to avoid duplicate routing.
+// Every line uses a slider, initially centered on this profile's peer band;
+// Help me out asks about only the lines the tester hands over.
 
 const BB_STEPS = [
   {
@@ -40,42 +23,20 @@ const BB_STEPS = [
   }
 ];
 
-// The three steps must partition the taxonomy exactly — no category asked
-// twice, none skipped. A skipped one would save at whatever the peer model
-// opened it on, silently, and nothing on screen would ever have mentioned it.
-// scripts/sweep.js asserts this; the function is here so both read the same
-// definition.
+// The steps must partition the taxonomy exactly, with no omitted or repeated
+// category. The sweep reads this same definition.
 function bbAllStepCategories() {
   return BB_STEPS.reduce((all, s) => all.concat(s.categories), []);
 }
 
-/**
- * Opening figures — the peer figure for THIS profile, category by category.
- *
- * benchOptsForUser() is the same set of options the band behind the thumb is
- * drawn with, and that identity is the point: the slider opens exactly on the
- * peer median, so the tester starts where people like them sit and every drag
- * away from it is a deliberate statement.
- *
- * It used to open on benchAllPeerValues({lifestyle: {}}) — the no-lifestyle
- * national figure — which left the thumb a little off the band it was being
- * compared against, for no reason a tester could see. Owner's call; it
- * supersedes "the start of the slider is unchanged logic" from the original
- * brief.
- */
+// Use the same profile options for the opening figure and peer band so
+// the thumb begins at the peer median.
 function bbOpeningValues() {
   return benchAllPeerValues(benchOptsForUser());
 }
 
-/**
- * The session, with no navigation.
- *
- * Split out of bbStart() so a deep link (js/screen-url.js) can open the builder
- * at boot. go() at that point would render before navigation.js has seeded its
- * first history entry, and push a stack entry the link then has to overwrite.
- * Copying the six lines instead would leave two ideas of what a fresh builder
- * session is, and they would drift the first time one gains a field.
- */
+// Initialize without navigation so deep links can create a session before
+// the first history entry. Share this with bbStart to avoid divergent defaults.
 function bbSessionInit() {
   const opening = bbOpeningValues();
   state.budgetBuild = {
@@ -125,15 +86,8 @@ function bbSet(category, amount, live) {
   debouncedRender();
 }
 
-/**
- * "Help me out" — this is a line I cannot estimate, ask me about it instead.
- *
- * Toggling ON disables the row's own input, because the two are alternatives:
- * a slider you have abandoned and a set of questions you have not answered yet
- * would leave the row showing a figure that means nothing. Toggling OFF hands
- * the line back and discards any answer the tree had reached — it was an answer
- * to a question the tester has just withdrawn.
- */
+// Help disables the slider until the question tree hands the line back.
+// Turning help off clears its completion marker so it can be requested again.
 function bbToggleHelp(category) {
   if (!isCategory(category)) return;
   const b = bbSession();
@@ -152,27 +106,16 @@ function bbPendingHelp() {
   return bbStep().categories.filter(c => b.help[c] && !b.helped[c]);
 }
 
-/**
- * Continue.
- *
- * Any line on this step still waiting on its questions goes first — that is
- * the whole contract of the toggle, and advancing past it would leave the line
- * sitting on a peer figure the tester explicitly said they could not vouch for.
- */
+// Finish pending help before advancing; its peer default is not an answer
+// the tester has confirmed.
 function bbNext() {
   const pending = bbPendingHelp();
   if (pending.length) { bbRunHelp(pending[0]); return; }
   bbAdvanceStep();
 }
 
-/**
- * Move on — the next step, or save if this was the last.
- *
- * Split out because the Help-me-out queue calls it too. Handing three lines
- * over used to walk you through one and drop you back on the step with the
- * toggle still lit, so Continue had to be pressed again for a question that had
- * already been answered. The queue now runs to the end and lands here.
- */
+// Share advancement with the help queue so all handed-over lines complete
+// before moving to the next step or saving.
 function bbAdvanceStep() {
   const b = bbSession();
   if (b.step < BB_STEPS.length - 1) { b.step++; render(); return; }
@@ -194,15 +137,8 @@ function bbRunHelp(category) {
   hmoStart(category);
 }
 
-/**
- * The tree calls this back with the figure it reached.
- *
- * The toggle switches OFF. It stayed on before, leaving the row greyed with its
- * figure hidden — so a line the tester had just answered four questions about
- * looked exactly like one they had not started, and its own slider was still
- * disabled. Handing it back is what "done" should look like: the figure is
- * there, and it is theirs to move.
- */
+// Turn the help toggle off after the tree returns a figure, exposing the
+// result on the row's editable slider.
 function bbApplyHelp(category, amount) {
   const b = bbSession();
   if (!isCategory(category)) return;
@@ -221,15 +157,8 @@ function bbCategoriesSoFar() {
     .reduce((all, s) => all.concat(s.categories), []);
 }
 
-/**
- * The running total the header bar shows — REVIEWED categories only.
- *
- * Not all twelve. "Budgeted so far" has to mean what it says, and a bar that
- * opens near full because ten unseen categories are already counted has nothing
- * left to show as the tester works. This one fills: roughly half after step 1,
- * most of the way after step 2, and over the line at the end if that is where
- * their answers land.
- */
+// Count only reviewed categories in Budgeted so far, so unseen defaults
+// do not fill the bar before the tester reaches them.
 function bbTotalSoFar() {
   return bbCategoriesSoFar().reduce((t, c) => t + bbValue(c), 0);
 }
@@ -306,15 +235,8 @@ function renderBudgetBuild() {
   `;
 }
 
-/**
- * One line: its figure, its input, and the toggle that hands it over.
- *
- * The peer band behind the input is drawn with the tester's REAL options, so
- * what they are setting their figure against is on screen while they set it.
- * Its axis is budgetSliderMax(), which is derived from the seeded plan and the
- * peer figure and never from the value being dragged — a ceiling that moved
- * with the value would make the thumb recoil on release.
- */
+// Keep the peer band visible while editing. Derive the axis from stable
+// seed and peer figures, never the dragged value, to prevent thumb recoil.
 function bbRow(category, step) {
   const b = bbSession();
   const idx = CATEGORIES.indexOf(category);

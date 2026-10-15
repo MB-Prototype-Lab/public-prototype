@@ -1,19 +1,8 @@
-// ─── Spend estimator (behavioral, extends the Money Journal) ─────────────────
-// TAB: Budget (sub-screen) | NAV BAR: Hidden (full-bleed)
-//
-// Full-bleed like every other `.journal-shell` flow: the shell supplies its own
-// padding and its `.journal-foot` owns the bottom edge, which a tab bar would
-// collide with. That means `journal-mode` in render.js, and staying OUT of
-// NAV_VISIBLE_SCREENS — the two go together for this markup.
-//
-// "Basically the Money Journal itself." It never asks a dollar figure — people
-// remember their HABITS (how often, what type: specialty café vs donut shop),
-// not their totals. Each option carries a full-rate monthly estimate; we scale
-// by how far into the month we are (except bills already incurred, `fullMonth`)
-// to triangulate month-to-date, and write it into the "What you told me" layer
-// (state.mtd). An answered question sits out the rest of the day on the
-// journal's day clock, unless every question for the category is sitting out
-// (see estimatorStart).
+// Use habits to estimate month-to-date spending in state.mtd. Prorate monthly
+// rates by the date except fullMonth bills. Questions use the journal day
+// clock; fully cooled-down categories can reopen for corrections.
+// The full-bleed shell owns its footer, so keep journal-mode and exclude this
+// screen from NAV_VISIBLE_SCREENS to avoid a colliding tab bar.
 
 function estimatorConfig() {
   return (typeof ESTIMATOR_QUESTIONS !== "undefined" && ESTIMATOR_QUESTIONS.config) || {};
@@ -45,21 +34,8 @@ function estimatorMonthFraction() {
   return Math.max(0.05, Math.min(1, day / days));
 }
 
-// ─── What the app already knows ──────────────────────────────────────────────
-// The estimator asks about HABITS because people don't remember totals. But for
-// some categories the app is not guessing at all — it already holds the answer,
-// and asking anyway is the app failing to listen.
-//
-// Subscriptions is the case that made this obvious. It asked "Just one or two /
-// A handful / Quite a few" and scored 55, while state.subs held four named
-// services adding to $60.46 and, if the tester had answered the setup question,
-// state.journalProfile.streaming named the ones they said they pay for. Two
-// exact sources, ignored, in favour of a three-way guess.
-//
-// So: where the app knows, it says so and offers the figure. Where it doesn't,
-// it asks. This is a SEAM — estimatorKnown() is the only place that decides
-// whether a category has a known figure, and adding another category is one
-// branch here rather than a change to the flow.
+// Offer known figures before estimating. estimatorKnown is the single seam
+// for deciding which categories have usable account or journal information.
 
 /**
  * What we already hold for a category, or null to fall through to the questions.
@@ -130,14 +106,9 @@ function estimatorStart(category) {
   const all = estimatorQuestionsFor(category);
   if (!all.length) return;
   let qs = all.filter(q => !estimatorOnCooldown(q.id));
-  // The day clock is seeded and never advances within a session (journalDayIndex
-  // is SEED_STATE.journalHistory.length + 1; D03 wipes on refresh), so the
-  // config's cooldownDays:1 latches PERMANENTLY the moment a question is
-  // answered — `(day - day) < 1` is always true. Without this fallback the
-  // category's primary CTA would have nothing to ask for the rest of the
-  // session, and a mis-tapped answer could never be corrected
-  // (the estimator is the only way to touch actuals — nothing takes a dollar
-  // figure). Partial cooldowns still apply; only a fully-latched set reopens.
+  // The seeded journal day clock does not advance within a session (D03),
+  // so a fully cooled-down set must reopen to allow corrections. Partial
+  // cooldowns still apply.
   if (!qs.length) qs = all;
   const known = estimatorKnown(category);
   state.estimator = { category: category, questions: qs, qIndex: 0, answers: {},
@@ -289,11 +260,7 @@ function estimatorDiscard() {
 
 function renderSpendEstimator() {
   const e = state.estimator;
-  // D19 — reached with no session: an admin jump, or a reset mid-flow. This
-  // used to return one twenty-character line with no heading and no way back,
-  // which is a dead end rather than a screen. Every comparable surface has a
-  // real fallback (lessonOutcomeNoSession); this one was missed because the
-  // sweep's screen list did not include it.
+  // D19: provide context and a route back when Tools or Reset leaves no session.
   if (!e) {
     return `
       <div class="card">

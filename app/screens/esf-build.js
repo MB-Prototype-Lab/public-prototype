@@ -1,37 +1,13 @@
-// ─── Emergency fund — the three capture screens ──────────────────────────────
-// TAB: Goals (sub-screen) | NAV BAR: Hidden — full-bleed
-//
-// One screen id, three steps on state.esf.step, the same shape as the budget
-// builder next door: a screen costs five wiring points and each is a place to
-// forget, so three steps of one screen cost them once.
-//
-// ── TYPED FIGURES ONLY ───────────────────────────────────────────────────────
-// No sliders and no steppers. The builder next door is all sliders, deliberately
-// so; here it is deliberately the opposite. A slider gets you close and not
-// precise, and these are survival figures where the real number matters — and
-// with two fields sharing a box there is no room for a stepper pair anyway.
-//
-// Number entry rides the SIMULATED KEYBOARD that already exists
-// (components/keyboard.js): `inputmode="numeric"` is what selects its pad
-// layer, and that pad already carries a Done key which commits the field and
-// closes it. Nothing here needs to build a submit control.
-//
-// ── WATCH THE KEYBOARD LATCH ─────────────────────────────────────────────────
-// Closing the pad removes 250px of layout, which pulls a button out from under
-// a finger mid-press so no click is ever dispatched. kbdInit holds the close
-// while a press is in flight. Any new control below the fields inherits that
-// problem; do not work around it locally.
-
-// ── ONE HEADER, EVERY STEP ───────────────────────────────────────────────────
-// The per-step titles are gone on the owner's call. They named the step rather
-// than the feature, so a tester three screens in had been told what KIND of
-// number to expect but never what they were building or why. The progress pips
-// carry the position; the header carries the point.
+// One capture-screen ID holds the intro and three expense steps; the plan
+// completes the five-step progress indicator. Known amounts use typed fields;
+// estimated rows use range dropdowns. Numeric input opens the shared simulated
+// keypad, whose Done key commits and closes it.
+// Keypad closing changes layout during a press: kbdInit owns the close latch.
+// Do not add a local workaround for controls below the fields.
+// The shared title names the feature; progress pips carry position.
 const ESF_TITLE_MAIN = "Emergency Savings Fund";
 
-// Step 0 is an INTRO — no fields, no picture, just what this is and why. It
-// exists because a tester arriving from a task card was previously asked for
-// their rent before anything had explained what they were building.
+// Explain the fund before asking for housing figures.
 const ESF_STEPS = [
   { id: "intro" },
   { id: "fixed",     heading: "Housing and Car Payments" },
@@ -50,29 +26,9 @@ function esfAskedCategoryCount() {
   return new Set(ESF_ROWS.map(r => r.category)).size;
 }
 
-// ── Buddy, per step ──────────────────────────────────────────────────────────
-// Owner-supplied art (L22), one scene per step, matched to what that step asks
-// about: the house and cars where rent and a car payment are collected, the
-// living room where the phone and internet bills are.
-//
-// Not generated — D10 forbids that and it holds. A step with no entry here
-// simply shows no banner, which is the right degradation: a missing image must
-// never leave a gap where a picture was promised.
-// These two are WIDE (roughly 2.36:1), authored for this banner rather than
-// borrowed from elsewhere, so `cover` barely crops them — unlike the square-ish
-// yard illustration the Home screen uses.
-// `ratio` is the art's own aspect. The first two were drawn wide for this slot;
-// the living-expenses and safe illustrations are near-square, so a shared fixed
-// ratio would crop a third off one pair or letterbox the other. Each image
-// brings its own.
-// `maxH` is what keeps every screen off the scrollbar. The art's own aspect
-// decides the shape; this decides how much vertical budget that step can spare
-// for it, and it varies because the steps do not carry the same load. A 2.36
-// image at frame width is naturally ~136px and needs no cap; a 1.79 one is
-// ~180px and gets trimmed on the screens that cannot afford it.
-//
-// Measured, not guessed — every value here was set by checking
-// scrollHeight against clientHeight on the real screen.
+// Use owner-supplied art only (D10, L22). Each image brings its aspect ratio
+// to avoid cropping meaningful details. Step-specific maxH caps keep the
+// capture screens within their vertical budget; verify with actual scroll height.
 const ESF_STEP_IMAGE = {
   1: { src: "assets/img/buddy-home.jpg",            ratio: 2.36, maxH: 140 },
   2: { src: "assets/img/buddy-utilities.jpg",       ratio: 2.36, maxH: 112 },
@@ -84,15 +40,8 @@ const ESF_STEP_IMAGE = {
 const ESF_PLAN_IMAGE = { src: "assets/img/buddy-esf.jpg", ratio: 1.79, maxH: 150 };
 const ESF_INTRO_IMAGE_MAX = 176;
 
-/**
- * Wide art fills the width; near-square art is sized by HEIGHT instead and
- * centred at its natural width.
- *
- * A 1.03:1 illustration stretched across a 322px frame would be 322px tall and
- * eat the screen, and cropping it to a banner shape cuts exactly the part that
- * carries the meaning — the labelled drawers, the money in the case. Below this
- * threshold the picture is shown whole and small rather than partial and large.
- */
+// Keep near-square art whole and height-limited; stretching it across the
+// frame would consume the screen and cropping could remove meaningful details.
 const ESF_WIDE_RATIO = 1.6;
 
 function esfBannerClass(img) {
@@ -156,19 +105,9 @@ function esfMoney(n) {
   return "$" + Math.round(Number(n) || 0).toLocaleString("en-US");
 }
 
-/**
- * One field. `inputmode="numeric"` is what opens the simulated number pad —
- * components/keyboard.js picks the layer off the input, and that pad already
- * carries its own Done key, which commits the field and puts the keyboard away.
- * No separate submit control is needed or wanted here.
- */
-/**
- * "Based on …" — what an estimate was built from, in one line.
- *
- * An auditable estimate earns an override; an unexplained one gets a shrug. The
- * drivers named here are the ones the tester actually answered, so the line
- * doubles as a receipt for the onboarding questions.
- */
+
+// Name the estimate's drivers so the tester can check it against the
+// onboarding answers and decide whether to override it.
 function esfBasedOn(rowId) {
   const hh = typeof esfHousehold === "function" ? esfHousehold() : null;
   const zip = (state.profile || {}).zip;
@@ -247,12 +186,8 @@ function esfRenderField(row, bare) {
   const annual = row.cadence === "annual";
   const note = esfFieldNote(row);
 
-  // `bare` drops the label: the group label above already names what the
-  // field is, and repeating it underneath reads as a second question.
-  //
-  // An ANNUAL row puts its monthly conversion beside the box rather than under
-  // it. "$5,160" and "$430 per month" are the same fact twice, and stacking
-  // them read as two separate figures.
+  // Drop a field label when its group already supplies it. Keep an annual
+  // figure's monthly conversion alongside it to show that they are the same amount.
   const inlineNote = annual && note;
 
   return `
@@ -274,23 +209,12 @@ function esfRenderField(row, bare) {
   `;
 }
 
-/**
- * The line under a field.
- *
- * Only where it earns its place. "a month" used to sit under every field and
- * said nothing — the header now states once that this is all monthly. What is
- * left either converts a figure the tester entered in another cadence, or reads
- * their number back in units they can actually check.
- */
+// Annual fields show their monthly conversion; the header already supplies
+// the monthly cadence for other rows.
 function esfFieldNote(row) {
   if (row.cadence === "annual") return esfMoney(esfRowMonthly(row.id)) + " per month";
 
-  // The car box is one combined figure now, so there is no per-component note
-  // to write — the "Based on" line above it names the drivers instead.
-  // Insurance and maintenance carry no note on purpose. Only the fuel figure
-  // converts into something a tester can check — miles. "Estimated from your
-  // area" under the other two says nothing they can act on and cost two lines
-  // on the one screen this step has to fit inside.
+
   return "";
 }
 
@@ -364,7 +288,7 @@ function esfRenderGroup(group) {
   `;
 }
 
-/** The intro — centred in the screen, no fields, no picture. */
+// Intro art and explanation precede the expense fields.
 function esfRenderIntro() {
   return `
     <div class="esf-intro">
@@ -388,17 +312,8 @@ function esfRenderIntro() {
   `;
 }
 
-/**
- * "I already have one" — done, and stop asking.
- *
- * NO FIGURE IS COLLECTED, deliberately. Plenty of people are comfortable with
- * what they have set aside and have no wish to track it here; for them the
- * useful outcome is not a goal, it is the tool never surfacing as a task again.
- * Asking for a number to create a goal nobody wanted would be charging them for
- * the privilege of opting out.
- *
- * So this marks the task complete and leaves the Goals tab alone.
- */
+// I already have one completes the task without collecting a figure.
+// Respect the opt-out instead of creating an unwanted tracked goal.
 function esfSkipToGoal() {
   state.esfSelfReported = { at: todayISO() };
   esfLog("already_have_one", {});

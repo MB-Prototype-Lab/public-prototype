@@ -1,13 +1,5 @@
-// ─── Budget helpers ───────────────────────────────────────────────────────────
-// SLIMMED IN 2b. This file used to carry v2's nested-bucket maths and a crude
-// ZIP-index peer average (budgetCategoryTotal, budgetPeerAvg, budgetSignal,
-// budgetPlanTotal, budgetMonthlyIncome, getZipIndex…). All of it is gone: the
-// flat 12 lives in js/taxonomy.js and the real peer model in js/benchmarks.js.
-//
-// What survives is what still has consumers:
-//   budgetFmt   — used in 15 files
-//   debt totals — the v2 debt screens are features v3 never specified, so L14
-//                 keeps them off the main paths, and they still need their sums.
+// Shared money formatting and debt-catalog totals. Inherited debt screens
+// remain off the main paths under L14.
 
 /** Currency, no decimals — the app's single money formatter. */
 function budgetFmt(n) {

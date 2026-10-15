@@ -1,20 +1,7 @@
-// ─── Budget category detail ──────────────────────────────────────────────────
-// TAB: Budget (sub-screen) | NAV BAR: Visible
-//
-// Reached by tapping a category on the budget tab or a "Worth a look" flag.
-// Read-only by design: it shows the three-layer comparison for one category and
-// the goals scoped to it. Two edit affordances, kept distinct (owner's model):
-//   • the PLAN is editable here (a slider, same seam as the list)
-//   • the ACTUALS are updated through a clear CTA that opens the behavioral
-//     estimator (Money-Journal style) — you never type a dollar figure.
-
-// The plan slider is the SAME track as the comparison above it, made
-// draggable — so the peer band a tester is setting their plan against stays on
-// screen, in the same place, while they set it.
-//
-// Its ceiling is budgetSliderMax(), derived from the seeded plan and the peer
-// figure and never from the value being dragged. A ceiling that moved with the
-// value is what made the old thumb recoil on release.
+// Keep plan edits and spending updates distinct: the slider changes the plan;
+// the estimator updates self-reported spending. Use the same peer track for
+// comparison and editing. Derive its ceiling from stable seed and peer figures
+// so changing the plan cannot move the track under the thumb.
 function renderBudgetCategory() {
   const category = isCategory(state.selectedCategory) ? state.selectedCategory : CATEGORIES[0];
   const r = cmpRow(category);
@@ -71,16 +58,9 @@ function renderBudgetCategory() {
   `;
 }
 
-/**
- * This one category has nothing logged against it.
- *
- * The screen-wide banner in comparison.js is gated on the whole month being
- * empty; this is the per-category case, and it is the one the owner described
- * — you are looking at a category, its dot is on zero, and nothing on screen
- * explains why. The estimator button below does a different job (it asks about
- * habits and writes a figure); this offers the journal, which is where real
- * spend comes from.
- */
+// Explain a zero spend dot for this category and offer the journal.
+// The screen-wide comparison banner covers only a wholly empty month;
+// the estimator below asks habits rather than recording journal entries.
 function renderCategoryNoSpend(category) {
   return `
     <div class="card cmp-nospend cmp-nospend-banner">

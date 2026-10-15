@@ -1,22 +1,6 @@
-// ─── Emergency fund — the number, and the plan ───────────────────────────────
-// TAB: Goals (sub-screen) | NAV BAR: Hidden — full-bleed
-//
-// ── ONE NUMBER, NOT TWO ──────────────────────────────────────────────────────
-// The spec put two cards here — "What I spend now" against "If my pay stopped"
-// — and called the choice between them the experiment. The owner cut it, and
-// the reasoning holds: an emergency fund sized on the assumption that you keep
-// your employer's health cover is not covering the emergency, so the higher
-// figure is the only honest target and there is nothing to choose between.
-//
-// What survives is the INSIGHT, not the choice. The health-cover adjustment is
-// stated on this screen with its own line, because a target built on $3,000 a
-// month when the tester just entered $2,700 reads as a bug unless something
-// names the difference.
-//
-// ── NO ADVICE, ANYWHERE ──────────────────────────────────────────────────────
-// D26. The spec's own header read "We recommend 6 months of expenses", which is
-// one of the forbidden shapes verbatim. Coverage is stated as a setting with a
-// correction beside it — which is what the spec's §1.1 asked for anyway.
+// Size the fund for loss of employer health coverage; explain that adjustment
+// so the target is traceable to entered expenses. State coverage as an editable
+// setting rather than recommending a number of months (D26).
 
 function esfCoverageChoices() {
   return ESF_CONFIG.coverageChoices || [3, 6];
