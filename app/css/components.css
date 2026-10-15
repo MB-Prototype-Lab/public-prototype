@@ -90,8 +90,8 @@
 
 /* ─── Quiz answer states ─────────────────────────────────────────────────────
    Correct/incorrect feedback on quiz choices. Wrong answers show red background
-   and are visually disabled — user must keep trying until correct. This is intentional
-   UX per spec: quiz is a learning tool, not a pass/fail gate. */
+   and are visually disabled — user must keep trying until correct. This is
+   intentional: the quiz is a learning tool, not a pass/fail gate. */
 .choice.correct  { border-color: var(--good); background: var(--good-bg); color: var(--good); }
 .choice.wrong    { border-color: var(--danger); background: var(--danger-bg);
                    color: var(--danger); opacity: 0.55;
@@ -442,9 +442,7 @@
 /* Body copy is DARK. --muted is reserved for genuine chrome — axis labels,
    counters, timestamps — not for sentences the tester is meant to read. It
    measures well against --card on a contrast checker and still reads as
-   greyed-out next to a bold header, which is why every "make this darker"
-   pass on a screen kept appearing to do nothing: the text was already the
-   colour it was designed to be, and the design was wrong.
+   greyed-out next to a bold header.
    Standing rule from the owner: text is dark unless specifically stated. */
 .helper {
   font-size: 12px;
@@ -597,7 +595,7 @@
   margin-bottom: 4px;
 }
 
-/* Task cards */
+/* Home header and task text */
 .home-header {
   display: flex;
   justify-content: space-between;
@@ -898,7 +896,7 @@
 
 .chat-input:focus { border-color: var(--accent); }
 
-/* Modal overlay (skip confirm / save prompt) */
+/* Modal overlay (onboarding's skip confirmation) */
 .ls-modal-bg {
   position: absolute;
   inset: 0;
@@ -1001,7 +999,7 @@
 .journal-total  { margin: 0; font-size: 20px; font-weight: 500; }
 .journal-slider { width: 100%; accent-color: var(--accent); }
 
-/* ─── Budget (v3) ─────────────────────────────────────────────────────────────
+/* ─── Budget ──────────────────────────────────────────────────────────────────
    One row per category — twelve flat rows, no nesting. */
 /* My Progress — the one place on that screen where something goes IN rather
    than out. Tinted so it reads as an action among a column of read-outs. */
@@ -1124,9 +1122,8 @@
 
 .cmp-compact-name { font-size: 12px; font-weight: 700; flex: 1; }
 
-/* ─── Phase 2.5 repaint (D36) ─────────────────────────────────────────────────
-   Shape, depth and motion, applied as overrides so the v2 rules above stay
-   readable rather than being rewritten line by line.
+/* ─── Shape, depth and motion (D36) ───────────────────────────────────────────
+   Applied as overrides on the base rules above.
 
    Radius 16 on cards, 24 on primary buttons, full round on pills and the buddy
    stage. Shadows wide and soft. Nothing square, no hard edges, no heavy
@@ -1211,7 +1208,7 @@
     /* Delay must be reset too, not just duration. .du-stack-card staggers with
        `animation-delay: calc(var(--i) * 90ms)` and `backwards` fill, which
        holds each card at the keyframe's opacity:0 for the length of its delay.
-       Zeroing only the duration left the cards invisible and then popping in
+       Zeroing only the duration leaves the cards invisible and then popping in
        one by one — the exact motion the setting asks us to remove. */
     animation-delay: -1ms !important;
     transition-delay: 0s !important;
@@ -1220,7 +1217,7 @@
 
 
 /* ─── Admin buttons are chrome ───────────────────────────────────────────────
-   The base .button now resolves --accent to sage, which cannot carry white
+   The base .button resolves --accent to sage, which cannot carry white
    text. Admin lives outside .screen so the app override never reaches it —
    point it at the chrome accent instead. */
 .admin .button {
@@ -1308,7 +1305,7 @@
 .buddy-note { margin: 6px 0 0; font-size: 9px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); opacity: .42; }
 
 /* ─── Home ────────────────────────────────────────────────────────────────── */
-/* Square dog stage with the chat button overhanging its bottom edge (v2 look).
+/* Square dog stage with the chat button overhanging its bottom edge.
    The wrapper anchors the absolute button; the bottom margin is the overhang's
    room. The stage's own margin is zeroed here so the overhang measures cleanly. */
 .home-stage-wrap { position: relative; margin-bottom: 40px; }
@@ -1421,10 +1418,9 @@
 }
 .onb-col-text { text-align: left; margin: 0; }
 
-/* The ZIP step's answer, now that the bar chart is gone. It is the payoff for
-   handing over the field, so it is set as body copy rather than as a caption
-   under something — .helper's 11.5px was sized to sit beneath a chart that no
-   longer exists. Dark, roomy, and the widest measure on the screen. */
+/* The ZIP step's answer. It is the payoff for handing over the field, so it is
+   set as body copy rather than as a caption: dark, roomy, and the widest
+   measure on the screen. */
 .onb-col-lead {
   font-size: 15px;
   line-height: 1.5;
@@ -1438,17 +1434,17 @@
    tester gets instead, in their own voice. */
 .onb-zip-later { margin-top: 20px; text-align: center; }
 
-/* Button-shaped, but NOT the call to action. On the accent fill it read as the
-   thing to press, which inverted the screen: the step's job is to get a ZIP,
-   and the way out was the loudest control on it. Pale neutral fill, ordinary
-   outline, dark label — unmistakably pressable, clearly the second choice.
-   Inline-block rather than block so .onb-zip-step's centring positions it. */
+/* Button-shaped, but NOT the call to action: the step's job is to get a ZIP,
+   so the way out must not be the loudest control on it. Pale neutral fill,
+   ordinary outline, dark label — unmistakably pressable, clearly the second
+   choice. Inline-block rather than block so .onb-zip-step's centring positions
+   it. */
 /* Specificity, twice over. `.screen .button:not(.secondary)` sets the accent
    fill and is (0,3,0) — `:not()` contributes its argument's weight, so the
    negation counts as a class. A bare `.onb-zip-later-btn` (0,1,0) loses, and
-   so does `.screen .onb-zip-later-btn` (0,2,0), which is the version that
-   looked correct and silently kept rendering green. Matching (0,3,0) and
-   sitting later in the file is what actually wins it. */
+   so does `.screen .onb-zip-later-btn` (0,2,0), which looks correct and still
+   renders green. Matching (0,3,0) and sitting later in the file is what
+   actually wins it. */
 .onb-zip-later-btn {
   display: inline-block;
   width: 100%;
@@ -1480,9 +1476,9 @@
 
 /* The confirmation under the field. It carries .task-desc so it is set in the
    same face and size as the "How this helps" card below it — the two are the
-   same kind of remark and were reading as two different voices. This rule adds
-   only the placement: it sits INSIDE .onb-zip-ask, so it needs its own top gap
-   and a rule separating it from the input. */
+   same kind of remark and must read as one voice. This rule adds only the
+   placement: it sits INSIDE .onb-zip-ask, so it needs its own top gap and a
+   rule separating it from the input. */
 .onb-zip-result {
   margin-top: 12px;
   padding-top: 12px;
@@ -1490,10 +1486,8 @@
   text-align: center;
 }
 
-/* The ask — the reason and the field it is asking for, boxed together. They
-   were two loose blocks with the explanation card below competing for the same
-   attention, so the one thing the step actually wants was the quietest element
-   on it. */
+/* The ask — the reason and the field it is asking for, boxed together, so the
+   one thing the step wants is not the quietest element on it. */
 .onb-zip-ask {
   border: 1px solid var(--accent);
   background: var(--accent-soft);
@@ -1512,8 +1506,8 @@
      has to read as the writable well cut into it — same wash on both would
      flatten the two into one shape. */
   background: var(--card);
-  /* Capped BELOW .onb-title's 18px. The field was 20px, which made the thing
-     being filled in louder than the question asking for it. */
+  /* Capped BELOW .onb-title's 18px, so the thing being filled in is never
+     louder than the question asking for it. */
   font-size: 16px;
   font-weight: 800;
   letter-spacing: 2px;
@@ -1590,7 +1584,7 @@
 .buddy-scroll-list {
   /* A ceiling for any caller that is not in a flex column. Inside the creator
      the rule below overrides it and the list FILLS the space instead — a fixed
-     height there showed two and a half breeds with a dead gap underneath. */
+     height there leaves a dead gap underneath. */
   max-height: 208px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 8px;
   padding: 2px; -webkit-overflow-scrolling: touch;
@@ -1616,10 +1610,9 @@
      scrollbar having to say so. flex:1 lets it shrink on a short frame; the
      max-height stops it growing past the intended half-row on a tall one.
 
-     A ROW IS NOT A SQUARE. The first version measured 2.5 rows off the tile's
-     width alone and forgot the label sitting under it, so "two and a half rows"
-     was really 2.3 and the third row's labels were sliced mid-word. Build the
-     row out of its parts and it stays honest if any part changes. */
+     A ROW IS NOT A SQUARE: it is the tile plus the label under it. Measured
+     off the tile's width alone, the third row's labels get sliced mid-word.
+     Built out of its parts, the row stays honest if any part changes. */
   --tile-w: 78px;
   --tile-gap: 10px;
   --tile-label: 16px;
@@ -1712,10 +1705,9 @@
    the wizard and the lesson tail all use that shell and none of them asked. */
 .journal-shell.onb-pinned {
   height: 100%; min-height: 0;
-  /* The shared shell's 4px top assumes a 52px top bar above it. Onboarding no
-     longer has one (components/topbar.js), and at 4px the step counter sat
-     hard against the bezel. This is the breathing room the bar used to supply,
-     without the 34px of dead strip that came with it.
+  /* The shared shell's 4px top assumes a 52px top bar above it. Onboarding
+     has none (components/topbar.js), so at 4px the step counter would sit hard
+     against the bezel.
      Scoped to onb-pinned, which only onboarding carries -- every other
      journal-shell screen still has its bar and still wants the 4px. */
   padding-top: 18px;
@@ -1723,11 +1715,11 @@
 
 /* `overflow-y: auto` is not a one-axis declaration. When one axis is not
    `visible` the other's `visible` COMPUTES to `auto`, so this body is a scroll
-   container horizontally too — and it clipped the focus ring, which reaches 4px
+   container horizontally too — and that clips the focus ring, which reaches 4px
    outside an input's border box (.screen :focus-visible, 2px ring + 2px offset)
-   on a field that is width:100% of the content box. The green ends of the ZIP
-   field were being sliced off. An outline is ink overflow rather than scrollable
-   overflow, which is why it clipped without ever showing a horizontal scrollbar.
+   on a field that is width:100% of the content box. An outline is ink overflow
+   rather than scrollable overflow, which is why it clips without ever showing a
+   horizontal scrollbar.
 
    So: borrow the shell's side padding back and re-spend it inside the scroll
    container. The content box lands in the same place — still aligned with the
@@ -1739,32 +1731,23 @@
   padding: 0 18px;
 }
 
-/* The film step has nothing to scroll to, and its body differed from its content
-   by a sub-pixel amount — enough for `auto` to show a scrollbar, which then took
-   5px off the right of the content and left the stage no longer lining up with
+/* The film step has nothing to scroll to, but its body can differ from its
+   content by a sub-pixel amount — enough for `auto` to show a scrollbar that
+   takes 5px off the right of the content, so the stage no longer lines up with
    Continue below it. BOTH axes, or the computed-value rule above reappears. */
 .journal-shell.onb-pinned .journal-body.onb-body-video { overflow: hidden; }
 
 /* --- Onboarding headers ---
    ONE size for all ten, so "consistent throughout" is enforced by the
    stylesheet rather than by ten inline literals agreeing with each other.
-   18px rather than 21px: at the old size the longest header wrapped to three
-   rows in a 354px column. Size alone was not enough -- the worst offender was
-   also shortened, because no size saves a 65-character question. */
+   18px keeps the longest header within two rows of a 354px column; no size
+   saves a 65-character question, so the headers stay short as well. */
 .onb-title { font-size: 18px; line-height: 1.25; }
 
-/* --- The character creator has to fit one screen ---
-   Step 7 had TWO scrollbars: the breed list's own, and the page's. The list is
-   meant to scroll; the page is not. The cause was height, not overflow -- a
-   square stage is ~354px tall in a 390px frame, which pushed Continue below the
-   fold on its own. Capping the stage here leaves room for the list and the
-   footer without touching the shared .buddy-stage rules. */
 /* --- The character creator fills its screen ---
-   The step used to overflow, so the stage was shrunk to make room. That was the
-   wrong lever: the stage is the thing the tester is here to look at, and the
-   real cause was the LIST being a fixed height inside a body that stretches —
-   so whatever the list did not use became dead space above the footer.
-   The stage keeps its full square size and the list takes what is left. */
+   The stage is the thing the tester is here to look at, so it keeps its full
+   square size and the list takes what is left. A fixed-height list inside a
+   body that stretches would leave dead space above the footer. */
 .onb-buddy-step {
   display: flex;
   flex-direction: column;
@@ -1778,7 +1761,7 @@
   min-height: 96px;       /* two options, so it never collapses to nothing */
 }
 /* Breathing room under the stage for the controls that are NOT a list — the
-   swatch rows and the name field sat hard against the illustration. */
+   swatch rows and the name field. */
 .onb-buddy-step .buddy-swatch-row,
 .onb-buddy-step .input-group { margin-top: 4px; }
 
@@ -1787,23 +1770,21 @@
    stage keeps its full square and never gives up height to anything. The title
    is the greeting, so it gets the size a greeting deserves. */
 .onb-buddy-step-meet .onb-buddy-stage { flex-shrink: 0; margin: 0 0 14px; }
-/* The greeting heads the screen, in the slot the "Your buddy" counter held. */
+/* The greeting heads the screen, in the step counter's slot. */
 .onb-buddy-step-meet .onb-title { font-size: 22px; line-height: 1.25; margin: 0 0 10px; }
 .onb-buddy-step-meet .onb-buddy-sub { line-height: 1.5; }
 
 /* The name box and the pronouns dropdown, centred under the greeting.
    Colours are deliberately the SAME tokens as the Name and ZIP steps' boxes
-   (--card fill, --line border, --text) -- those read right to the owner, these
-   read harsh. Headless Chrome computes identical colours for both, so the
-   difference was what the browser draws on its own: the native <select>
-   chrome (its own border, arrow and, in dark themes, its own fill) and the
-   bold admin-style labels, which are gone from the markup. `appearance: none`
-   takes the native drawing away and the caret below is drawn in --muted. */
+   (--card fill, --line border, --text). What makes a <select> read harsh is
+   what the browser draws on its own: the native chrome (its own border, arrow
+   and, in dark themes, its own fill). `appearance: none` takes the native
+   drawing away and the caret below is drawn in --muted. */
 .onb-buddy-fields { width: 100%; max-width: 260px; margin: 0 auto; }
 .onb-buddy-fields .input-group { margin: 0 0 12px; }
 /* Captions, not a form header: centred, muted, normal weight. The shared
-   .input-group label is 11px at 850 -- the admin panel's voice, and part of
-   what made these boxes read harsh before. */
+   .input-group label is 11px at 850 -- the admin panel's voice, which reads
+   harsh here. */
 .screen .onb-buddy-fields label {
   text-align: center;
   font-size: 12px;
@@ -1883,11 +1864,11 @@
 
 /* ─── Body-type step: buy the grid its rows ──────────────────────────────────
    Three claims on one 390px screen -- portrait, search field, 2.5 rows of tiles
-   -- and at the old sizes they need about 145px more than there is. Two levers,
+   -- and at full size they need about 145px more than there is. Two levers,
    both scoped to this sub-step so the other four are untouched:
 
      1. the TITLE drops to one line. "Now the fun part -- let's give me a look."
-        wrapped to two at 18px.
+        wraps to two at 18px.
      2. the PORTRAIT drops from a full-width square (~330px) to 200px. The owner
         allowed resizing it; it is still the largest thing on the screen. */
 .onb-buddy-step-body .onb-title { font-size: 15px; line-height: 1.3; }
@@ -1897,18 +1878,13 @@
   align-self: center;
   flex-shrink: 0;
 }
-/* The counter sat 4px below a header that already has 14px of its own padding.
-   Closing that gap is the cheapest 18px on the screen. `.onb-skip` KEEPS its
-   44px min-height -- it is a tap target and the quality floor requires it, so
-   that is the floor on how far this can tighten. */
+/* Closing the gap under a header that already has 14px of its own padding is
+   the cheapest 18px on the screen. `.onb-skip` KEEPS its 44px min-height -- it
+   is a tap target and the quality floor requires it, so that is the floor on
+   how far this can tighten. */
 .onb-buddy-count { margin: 0 0 2px; }
-/* The header's own buffer, trimmed. `.onb-skip` KEEPS its 44px min-height --
-   it is a tap target and the quality floor requires it, so that is the floor on
-   how tight this gets.
-   There used to be a `margin-top: -8px` here too. It was scraping back space
-   that the top bar was sitting on (css/layout.css), and it did not even work:
-   shifting a height:100% block upward does not shorten it, it just hangs 8px
-   out of the bottom of its container. */
+/* The header's own buffer, trimmed; `.onb-skip`'s 44px tap target (above) is
+   the floor. */
 .journal-shell.onb-pinned .journal-head { padding-bottom: 8px; }
 
 /* ─── Search mode ────────────────────────────────────────────────────────────
@@ -1919,9 +1895,8 @@
 
    HIDING is what moves it -- there is no re-ordering. The search already sits
    directly after the portrait in the DOM, so `display: none` on the portrait,
-   the title and the subtitle lifts it to the top on its own. `order` was the
-   first idea and it was wrong: it would have lifted the field above the step
-   header too.
+   the title and the subtitle lifts it to the top on its own. `order` would lift
+   the field above the step header too.
 
    Nothing here moves a node, which is the point. The <input> keeps its focus and
    its caret, both of which it loses the instant anything re-renders around it.
@@ -1930,9 +1905,8 @@
    (css/keyboard.css) is what makes this work rather than something to fight:
    it shrinks the scroller's content box, the step compresses into what is left
    above the keyboard, and with the portrait hidden that compression lands on
-   the grid. An earlier attempt here tried to SUPPRESS that rule -- one of the
-   two attempts was inert anyway, setting padding on the step when the padding
-   lives on the scroller. */
+   the grid. Do not suppress it here; the padding lives on the scroller, not on
+   the step. */
 .onb-buddy-step-body.searching .onb-buddy-stage,
 .onb-buddy-step-body.searching .onb-title,
 .onb-buddy-step-body.searching .onb-buddy-sub { display: none; }
@@ -1945,13 +1919,11 @@
    Mirrors the lesson player, which is a full-height flex column with
    .lp-controls last. Without this the transport lands wherever the caption
    happens to end, which is the middle of the screen. */
-/* THE PARENT HAS TO BE THE FLEX CONTAINER — that was the missing half both
-   earlier attempts assumed was already there. `flex: 1` alone was inert (no
-   flex parent); `min-height: 100%` then gave this element the body's FULL
-   height while the eyebrow and the <h1> still sat above it inside that same
-   body. Content came to header + 100%, so the body overflowed by exactly the
-   header's height on every screen size, and what fell below the fold was the
-   bottom of this box: the transport row and the scrubber.
+/* THE PARENT HAS TO BE THE FLEX CONTAINER. `flex: 1` on the child is inert
+   without a flex parent, and `min-height: 100%` gives this element the body's
+   FULL height while the eyebrow and the <h1> still sit above it inside that
+   same body — so the body overflows by exactly the header's height, and what
+   falls below the fold is the transport row and the scrubber.
    .onb-body-video (renderOnboarding, film step only) supplies the container. */
 .journal-body.onb-body-video { display: flex; flex-direction: column; }
 
@@ -1959,12 +1931,11 @@
 /* Caption and transport keep their size; the stage is the one thing that gives
    way, so a short laptop viewport loses picture rather than losing controls. */
 .onb-video > * { flex-shrink: 0; }
-/* This used to be `margin-top: auto`, which pushed the transport onto the bottom
-   edge and left a dead band under the caption. The spare height goes to the
-   picture instead (see .onb-video-stage), so there is nothing left to push. */
+/* The spare height goes to the picture (see .onb-video-stage), not to a
+   `margin-top: auto` that would leave a dead band under the caption. */
 .onb-video-controls-foot { flex-shrink: 0; }
 
-/* --- v3.1: "which is closer" rows ---
+/* --- "Which is closer" rows ---
    Three tap targets across a 390px frame, so each gets about a third minus the
    gaps. Ordered low-to-high by the renderer, which is why nothing here encodes
    which column is "theirs" — the selected one is the only distinguished state,
@@ -1998,19 +1969,15 @@
 /* The hyperframes stage. .lp-stage is written for the lesson player's
    full-height flex column, where it takes 42% of the screen; inside the
    onboarding card it has to state its own height instead, or it collapses to
-   its content. Rounded to match the buddy card it replaced. */
+   its content. Rounded to match the buddy card. */
 .onb-video-stage {
   /* THE BOX IS THE PICTURE'S SHAPE. Both tiers draw at 100:72 -- the SVG engine
      is xMidYMid meet on a 0 0 100 72 viewBox, and the film canvas is 1000x720 --
-     and this box used to be free to be taller than that. At 354px wide the
-     picture is 255px tall, so the old 340px ceiling left up to 85px that could
-     never be anything but accent green. The rule's own comment said as much and
-     capped at 340 anyway.
+     so any taller box shows bare accent green under the picture.
 
-     Squeezing is safe now, which it was not before: flex-shrink still lets a
-     short viewport take height from the stage -- the point of the original rule
-     -- and object-fit letterboxes when it does, but those bars are the film's
-     own ground (onbFilmGroundStyle) rather than green, so they are invisible. */
+     flex-shrink still lets a short viewport take height from the stage, and
+     object-fit letterboxes when it does, but those bars are the film's own
+     ground (onbFilmGroundStyle), so they are invisible. */
   width: 100%;
   aspect-ratio: 100 / 72;
   height: auto;
@@ -2179,7 +2146,7 @@
 .mp-bill-days { display: block; font-family: var(--font-display); font-size: 16px; font-weight: 850; line-height: 1; }
 .mp-bill-unit { display: block; font-size: 9px; color: var(--muted); }
 .mp-bill-amt  { font-size: 13px; font-weight: 850; }
-/* A flagged bill uses clay, never alarm colouring — nothing here is an
+/* A flagged bill uses --warn, never alarm colouring — nothing here is an
    emergency. */
 .mp-bill-flagged .mp-bill-when { background: var(--warn-bg); color: var(--warn); }
 .mp-bill-flagged .mp-bill-amt  { color: var(--warn); }
@@ -2211,7 +2178,7 @@
   gap: 8px;
   margin-bottom: 4px;
 }
-/* A button now, not a card: tapping one moves the sliders to that outcome.
+/* A button, not a card: tapping one moves the sliders to that outcome.
    Buttons need the reset — .card gives it the surface, these give it back the
    block layout and the inherited type a <button> throws away. */
 .sim-scenario {
@@ -2225,7 +2192,7 @@
   letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
   /* Two lines reserved whether the label needs them or not. "Healthy outcome"
      wraps in a third of a 390px frame and the others do not, so without this
-     its figure sat a row lower than the two beside it. */
+     its figure sits a row lower than the two beside it. */
   min-height: 2.2em;
   display: flex; align-items: center; justify-content: center;
 }
@@ -2289,24 +2256,23 @@
 }
 
 /* ─── Budget band — the box-and-whiskers track (components/budget-band.js) ────
-   Replaces the three stacked .cmp-bar rows. Built from absolutely-positioned
-   spans on a percentage scale rather than SVG, so it is correct at any width
-   and the dot stays a circle.
+   Built from absolutely-positioned spans on a percentage scale rather than SVG,
+   so it is correct at any width and the dot stays a circle.
 
-   COLOUR, and why it is not the legend's old three:
-   `--accent` and `--good` are near-identical greens in the Natural themes
-   (#557B58 vs #4B7650). Three separated bars carried that fine; three marks on
-   ONE track would not. So peers become the pale --good-bg wash with a
-   --good-border edge, the budget becomes a neutral --muted rule, and --accent
-   is spent on the one mark that matters most — the tester's own dot. */
+   COLOUR: `--accent` and `--good` are near-identical greens in the Natural
+   themes (#557B58 vs #4B7650). Three separated bars can carry that; three marks
+   on ONE track cannot. So peers are the pale --good-bg wash with a
+   --good-border edge, the budget is a neutral --muted rule, and --accent is
+   spent on the one mark that matters most — the tester's own dot. */
 
 .band { position: relative; width: 100%; }
 
 /* --progress-bg is a FILL, and against --card it measures 1.02-1.20:1 in every
-   theme — no perceptible edge, which is why these read as a thumb floating in
-   space with no rail under it. The hairline in --rail (~2.6:1) is what makes it
-   a channel; the fill stays soft so the pale peer wash still reads on top of
-   it. Swap the border for `background: var(--rail)` if it wants more weight. */
+   theme — no perceptible edge, so on its own the track reads as a thumb
+   floating in space with no rail under it. The hairline in --rail (~2.6:1) is
+   what makes it a channel; the fill stays soft so the pale peer wash still
+   reads on top of it. Swap the border for `background: var(--rail)` if it wants
+   more weight. */
 .band-track {
   position: relative;
   height: 10px;
@@ -2319,7 +2285,7 @@
 /* Where peers like you land. A wash, not a fill — it is context behind the
    figures, and a saturated band would out-shout the dot sitting on it. */
 /* --good-bg is a CARD background — against the rail fill it is barely a tint
-   (#EDF3EC on #EFE8DC in Natural Light) and the band read as a smudge.
+   (#EDF3EC on #EFE8DC in Natural Light) and the band reads as a smudge.
    --good-border is the lightest token that is unambiguously green on the rail
    in all four themes, and still recessive enough that the dot sitting on it
    stays the loudest thing on the track. */
@@ -2456,8 +2422,8 @@
 /* ── THE THUMB HAS TO BE CENTRED BY HAND ────────────────────────────────────
    With -webkit-appearance: none, WebKit aligns the thumb to the TOP of the
    runnable track — it does not centre it. The track here is height: 100%, i.e.
-   the whole 44px tap target, so an 18px thumb sat at 9px while the visual rail
-   is centred at 22px: the dot floated above its own slider.
+   the whole 44px tap target, so an 18px thumb would sit at 9px while the
+   visual rail is centred at 22px.
    margin-top closes exactly that gap, and box-sizing keeps the 2px ring inside
    the 18px rather than making the thumb 22px and the arithmetic wrong. */
 .screen .band-range::-webkit-slider-thumb {
@@ -2759,9 +2725,8 @@
 }
 
 /* The bank-connect offer. It is an offer, not a gate, so it gets one control
-   and no card around it — it used to be a full card with a heading and two
-   lines of explanation, which gave the one thing nobody has to do more weight
-   than the fields they do. Inert here: there is no integration behind it. */
+   and no card around it: the one thing nobody has to do must not outweigh the
+   fields they do. Inert here: there is no integration behind it. */
 .esf-plaid {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%;
@@ -2779,7 +2744,7 @@
    a statement of fact rather than a question. Zero taps either way. */
 .esf-qualifier { margin: 6px 0 0; font-size: 11px; }
 
-/* ── ESF restructure ──────────────────────────────────────────────────────── */
+/* ── ESF: banner and fields ───────────────────────────────────────────────── */
 
 .esf-banner img {
   width: 100%; height: 100%;
@@ -2797,8 +2762,8 @@
    the thing and the rest as its description, rather than one long run-on. */
 .esf-title { font-size: 20px; line-height: 1.2; margin: 8px 0 0; }
 
-/* Buddy stops at the boxes' own edges — no longer bleeding past the shell's
-   padding — and lost a third of its height to buy room below the fold. */
+/* Buddy stops at the boxes' own edges rather than bleeding past the shell's
+   padding. */
 .esf-banner {
   overflow: hidden;
   margin: 0 0 12px; width: 100%;
@@ -2808,8 +2773,8 @@
 .esf-lead { margin: 0 0 10px; color: var(--text); }
 .esf-lead strong { font-weight: 700; }
 
-/* Boxes again tighter. Five of them plus a banner and two headers have to clear
-   a 390px frame without the first field falling below the fold. */
+/* Five boxes plus a banner and two headers have to clear a 390px frame
+   without the first field falling below the fold. */
 .esf-row-help, .esf-qualifier { margin: 5px 0 0; }
 .esf-qualifier { font-style: italic; }
 
@@ -2829,11 +2794,10 @@
 .esf-fields-narrow .esf-field { flex: 1 1 0; }
 .esf-fields-narrow .esf-field .esf-amount { width: 100%; }
 
-/* ── ESF: the last pass to clear the fold ─────────────────────────────────────
-   Step 1 carries five boxes, a banner, a header and a button, and the whole
-   point of the restructure was that a tester sees all of it without scrolling.
-   Everything below is that budget being spent deliberately rather than each
-   element taking what it likes. */
+/* ── ESF: clear the fold ──────────────────────────────────────────────────────
+   Step 1 carries five boxes, a banner, a header and a button, and a tester has
+   to see all of it without scrolling. Everything below is that budget being
+   spent deliberately rather than each element taking what it likes. */
 .esf-plaid  { min-height: 40px; padding: 8px 12px; font-size: 12.5px; line-height: 1.25; margin-bottom: 10px; }
 .esf-lead   { font-size: 13px; }
 .esf-group-label { font-size: 12px; }
@@ -2842,18 +2806,12 @@
 .esf-field-unit { font-size: 10px; line-height: 1.2; margin-top: 2px; }
 .esf-row-help, .esf-qualifier { margin-top: 3px; font-size: 10.5px; line-height: 1.3; }
 
-/* Buddy gets the room that moving property tax, the HOA fee and the car running
-   costs off step 1 freed up — measured at 240px spare, and this spends most of
-   it while leaving a margin for font rendering that differs by machine.
-   At this height the frame is close to the art's own 1.4:1, so `cover` barely
-   crops: near enough the whole illustration, fence and bushes included. The
-   banner only renders on step 1 now, so nothing else has to pay for it. */
 .esf-banner { margin-bottom: 12px; }
 
 /* ── ESF: segmented picker ────────────────────────────────────────────────────
    Rent-or-mortgage and car-or-transit are one question each, so they get one
    field with a two-way switch above it. Four boxes where two are always empty
-   was both busier and more work than this. */
+   would be busier and more work than this. */
 .esf-seg {
   display: flex; gap: 0; margin-bottom: 8px;
   border: 1px solid var(--line); border-radius: 9px;
@@ -2880,22 +2838,17 @@
    "Staying Connected" even though it is worded as a description. */
 .esf-group-label { font-weight: 700; }
 
-/* Centre the crop. The step art is roughly 4:3 in a ~1.5:1 frame, so `cover`
-   trims about 14% of the height — splitting that evenly between the sky above
-   and the grass below keeps the whole scene, where favouring the top cut the
-   dog and the cars off at the wheels. */
+/* Centre the art in its frame (see the `contain` rule below). */
 .esf-banner img { object-position: center 50%; }
 
 /* The step art is authored WIDE (about 2.36:1) for this exact slot, so the
-   banner takes the art's own aspect instead of a fixed height. At a fixed
-   208px the frame was 1.55:1 and `cover` cropped roughly a third of the width
-   away — the "Home" sign and the trees went with it. Sizing by ratio shows the
-   whole scene and gives back about 70px of vertical space as a bonus. */
+   banner takes the art's own aspect instead of a fixed height and shows the
+   whole scene. */
 .esf-banner { height: auto; aspect-ratio: 2.36 / 1; }
 
 /* ── ESF: tint the boxes ──────────────────────────────────────────────────────
-   The cards were plain white on an off-white page, which read as sterile. A
-   soft accent wash with a matching edge gives them presence.
+   A soft accent wash with a matching edge gives the cards presence; plain white
+   on an off-white page reads as sterile.
 
    The FIELDS deliberately stay --card. Tinted card against a white input is
    what makes the enterable thing obvious at a glance — tinting both would
@@ -2903,9 +2856,9 @@
 
    Semantic tokens only, so all four themes come along: --accent-soft and
    --accent-border are the same pair the peer band and the chips already use.
-   Colour-coding each box by category was the other option and was rejected —
-   the palette only resolves to three distinct tints, which is fewer than there
-   are box types, so the hues would have carried no meaning. */
+   Colour-coding each box by category does not work: the palette only resolves
+   to three distinct tints, which is fewer than there are box types, so the
+   hues would carry no meaning. */
 .screen .item-card.esf-row {
   background: var(--accent-soft);
   border-color: var(--accent-border);
@@ -2913,9 +2866,9 @@
 
 /* ── ESF: centred header, intro step, goal figure ─────────────────────────── */
 
-/* The title is now the only thing in the header, centred and larger — the
-   "a cushion for hard times" line moved into the intro step, where it has room
-   to be a sentence rather than a subtitle. */
+/* The title is the only thing in the header, centred and larger; the "a
+   cushion for hard times" line lives in the intro step, where it has room to be
+   a sentence rather than a subtitle. */
 .journal-shell .esf-title {
   text-align: center; font-size: 23px; line-height: 1.2; margin: 10px 0 2px;
 }
@@ -2966,17 +2919,15 @@
 }
 .esf-banner-tall img { width: auto; height: 100%; object-fit: contain; }
 
-/* 168px was too generous on the densest screen — five boxes plus a heading
-   pushed the footer off. 124 still reads as an illustration rather than an
-   icon, and it is what makes step 4 fit. */
+/* 124px still reads as an illustration rather than an icon, and it is what
+   makes step 4 (five boxes plus a heading) fit. */
 .esf-banner-tall { height: 124px; margin-bottom: 10px; }
 
 /* ── ESF: even field distribution, and the label caveat ───────────────────── */
 
-/* Fields SHARE the box width evenly. They used to be a fixed 108px each, which
-   left a two-field box with a ragged gap on the right and a three-field box
-   tight. Equal columns read as one question with N answers, which is what they
-   are. */
+/* Fields SHARE the box width evenly: equal columns read as one question with N
+   answers, which is what they are. A fixed width leaves a two-field box ragged
+   on the right and a three-field box tight. */
 .esf-field { flex: 1 1 0; min-width: 0; }
 .esf-field .esf-amount { width: 100%; }
 
@@ -2987,8 +2938,7 @@
   margin-left: 4px; white-space: nowrap;
 }
 
-/* The banner's cap is set per step inline; this keeps the earlier blanket cap
-   from overriding it. */
+/* The banner's cap is set per step inline. */
 .esf-banner { max-height: none; }
 
 /* The emergency fund's goal card reopens the tool, so it has to LOOK like it
@@ -3051,8 +3001,8 @@
 }
 
 /* The Add-it button sits BESIDE its label, not under it. The label plus its
-   caveat is long enough to wrap the flex line, which pushed the button onto a
-   row of its own and cost ~40px on a screen that has two of these. */
+   caveat is long enough to wrap the flex line, which would push the button onto
+   a row of its own. */
 .esf-optin-head { flex-wrap: nowrap; align-items: center; }
 .esf-optin-head .esf-field-label { flex: 1 1 auto; min-width: 0; }
 .esf-optin-head .esf-add,
@@ -3075,33 +3025,30 @@
 
 /* ── Height comes out of the CONTROLS, not the pictures ───────────────────────
    Buddy is the reason these screens read as a tool rather than a tax form, so
-   the banners are no longer cropped to buy space. The dropdowns and number
-   boxes give it back instead: they were sized at the 44px tap-target floor and
-   are now 36, which is the deliberate trade — this is a desktop-reviewed
-   prototype, and the owner asked for no scrolling over the floor. Revisit if it
-   ever ships to a phone. */
+   the banners are not cropped to buy space. The dropdowns and number boxes give
+   it back instead: 29px, under the 44px tap-target floor, is the deliberate
+   trade — this is a desktop-reviewed prototype, and the owner asked for no
+   scrolling over the floor. Revisit if it ever ships to a phone. */
 
 /* The figure rides inside the Add-it button, so the row stays one line. */
 .esf-add, .esf-added { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.1; }
 .esf-add-figure { font-size: 10px; font-weight: 600; opacity: 0.75; }
 
-/* CONTAIN, not cover. Capping the height used to crop the sides off — the
+/* CONTAIN, not cover. Cropping to a capped height cuts the sides off — the
    "Home" sign, the cabinet labels, the money in the case, which is the part
-   that carries the meaning. Scaling the whole picture down instead keeps every
-   one of them; the card's own ground fills the space either side, so it reads
-   as a framed illustration rather than a trimmed one. */
+   that carries the meaning. Scaling the whole picture down keeps every one of
+   them; the card's own ground fills the space either side, so it reads as a
+   framed illustration rather than a trimmed one. */
 .esf-banner img { object-fit: contain; }
 .esf-banner { background: var(--soft); border-radius: 10px; }
 
-/* The last 13px on the owner's living-expenses screen — six boxes is the
-   densest the flow gets, and this is the gap between them rather than anything
-   inside them. */
+/* Six boxes on the living-expenses screen are the densest the flow gets; the
+   room comes from the gap between them rather than anything inside them. */
 .screen .item-card.esf-row { margin-bottom: 4px; }
 
-/* Controls down another 20% — 36px to 29. Owner's call, and the third time
-   this floor has moved: fitting five screens with no scrolling and keeping a
-   44px tap target are not both possible at this row count. Recorded rather
-   than quietly absorbed. */
+/* The 29px controls (see the header above): fitting five screens with no
+   scrolling and keeping a 44px tap target are not both possible at this row
+   count. Owner's call. */
 .screen .esf-range,
 .screen .esf-amount,
 .screen .esf-select,
@@ -3110,17 +3057,16 @@
 .esf-optin-head { min-height: 29px; }
 
 /* ── ESF: readable descriptions, aligned controls ─────────────────────────────
-   Every explanatory line under a heading is FULL text colour. They inherited
-   .helper's muted gray, which is right for incidental chrome and wrong for a
-   sentence explaining where somebody's money figure came from — that sentence
-   is the thing that earns an override. */
+   Every explanatory line under a heading is FULL text colour, not .helper's
+   muted gray: that is right for incidental chrome and wrong for a sentence
+   explaining where somebody's money figure came from — that sentence is the
+   thing that earns an override. */
 .esf-row-help, .esf-qualifier, .esf-based, .esf-field-unit {
   color: var(--text);
 }
 
-/* A control and the figure it produces, on one line, aligned. The two used to
-   be separate labelled fields of different widths sitting far apart, which
-   read as two questions rather than one setting and its consequence. */
+/* A control and the figure it produces, on one line, aligned, so they read as
+   one setting and its consequence rather than two questions. */
 .esf-inline { display: flex; align-items: center; gap: 10px; }
 .esf-inline-ctl { flex: 0 0 auto; width: 120px; }
 .esf-inline-note { font-size: 13px; font-weight: 600; color: var(--text); }
@@ -3129,11 +3075,9 @@
 .esf-intro-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
 
 /* ── The explanation lines read as BLACK ──────────────────────────────────────
-   --text is #3D3A36, a warm dark gray. At 10.5px it reads washed out, which is
-   why "make the text darker" kept not landing: it was already --text. These
-   lines carry the reason a figure exists, so they get --text-strong (a token
-   added for them, defined in all four themes) plus a size and weight that hold
-   up at this scale. */
+   --text is #3D3A36, a warm dark gray, which reads washed out at 10.5px. These
+   lines carry the reason a figure exists, so they get --text-strong (defined in
+   all four themes) plus a size and weight that hold up at this scale. */
 .esf-based, .esf-row-help, .esf-qualifier, .esf-inline-note {
   color: var(--text-strong);
   font-size: 11.5px;
@@ -3301,19 +3245,12 @@ button.esf-based {
 .esf-disclosed:hover { text-decoration: underline; }
 
 /* ── The Ask button, in the footer ───────────────────────────────────────────
-   [Back] [Ask 🐶] [primary]. It floated above the footer at first, which cost
-   no vertical layout but covered whatever row sat under it. In the bar it
-   costs height once, shared with buttons that were already there.
+   [Back] [Ask 🐶] [primary]. In the bar it costs height once, shared with the
+   buttons already there, and covers no row.
 
-   `margin-left: auto` on the primary is what pins the three: Back hard left,
-   the primary hard right, Ask sitting between them. .journal-foot is
-   space-between, which would otherwise spread three children evenly and drift
-   Ask off-centre as the primary's label changes length.
-
-   AMBER, not the LEGO orange it started as -- that read as a warning light
-   beside a calm sage primary. Dark #2B1A0E on this amber is about 7.9:1, up
-   from the orange's 5.2:1, and both pass AA. White on either FAILS (2.9:1 on
-   the orange), so the dark text is not a style choice.
+   AMBER: an orange reads as a warning light beside a calm sage primary. Dark
+   #2B1A0E on this amber is about 7.9:1 and passes AA; white FAILS, so the dark
+   text is not a style choice.
 
    Literals rather than theme tokens on purpose: this is Buddy's own accent and
    must not drift with the four themes, or it stops being his. */
@@ -3364,8 +3301,8 @@ button.esf-based {
   cursor: pointer;
 }
 .esf-ask:hover { filter: brightness(1.05); }
-/* 22px, not 30 — the dog sized the button before, standing taller than the
-   type beside it and pushing Ask out of line with Back and Continue. */
+/* 22px, so the dog does not size the button: any taller and he stands above
+   the type beside him and pushes Ask out of line with Back and Continue. */
 .esf-ask-face {
   width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: block;
   background: #FFF;                      /* the art's own ring, continued */
@@ -3374,22 +3311,16 @@ button.esf-based {
 .esf-ask-emoji { font-size: 17px; line-height: 1; }
 
 /* ── The panel header ────────────────────────────────────────────────────────
-   TYPE LEFT, BUDDY RIGHT, and as short as it can be. The picture is what says
-   "you are talking to someone" before a word is read — without it the header
-   was two lines of grey type and read as a settings pane.
+   The picture is what says "you are talking to someone" before a word is read;
+   without it the header is two lines of grey type and reads as a settings pane.
 
-   He was briefly centred with the words underneath, which made him unmissable
-   and cost about 75px of a panel that is only three-quarters of a phone tall.
-   The transcript is what people opened this for, and the header was eating two
-   bubbles' worth of it.
-
-   He sits flush to the bottom edge with no padding under him, so the header is
-   only as tall as he is. Every pixel of chrome here comes out of the
-   conversation. */
+   One row, as short as it can be: the transcript is what people open this
+   for, and the panel is only three-quarters of a phone tall. He sits flush to
+   the bottom edge with no padding under him, so the header is only as tall as
+   he is. */
 /* The title and Buddy are ONE centred group, not two things pinned to opposite
-   edges. Apart, the eye had to travel the width of the panel and they read as
-   a label on the left and a logo on the right; together they read as him
-   introducing himself. Still one row, so the header stays short. */
+   edges: apart, they read as a label on the left and a logo on the right;
+   together they read as him introducing himself. */
 .esf-buddy-head {
   flex-shrink: 0;
   display: flex;
@@ -3426,12 +3357,11 @@ button.esf-based {
 .esf-buddy-thread .chat-row-user  { margin-left: 37px; }
 
 /* ── A lifestyle question, and the figure it reaches ─────────────────────────
-   THE OPTIONS LIVE INSIDE THE PANEL. A native <select> was the first build and
-   the owner's own ask, and on a real phone it is right — the options open as a
-   picker sheet. But this prototype is a phone FRAME inside a desktop browser,
-   and a select's option list is drawn by the operating system rather than laid
-   out by the page, so it ignores the frame and spills out of the bottom of the
-   phone. No CSS can contain it; the control has to change.
+   THE OPTIONS LIVE INSIDE THE PANEL. On a real phone a native <select> would be
+   right — the options open as a picker sheet. But this prototype is a phone
+   FRAME inside a desktop browser, and a select's option list is drawn by the
+   operating system rather than laid out by the page, so it ignores the frame
+   and spills out of the bottom of the phone. No CSS can contain it.
 
    These are ordinary buttons, capped in height and scrolling inside the footer.
    The cap is what guarantees it: six options at 40px would be 240px and the
@@ -3485,9 +3415,9 @@ button.esf-based {
    [ Back to the list ]  [ Start over ]  [ Help me calculate this ]
 
    A GRID, not a chip rack. Chips size themselves to their text and wrap, which
-   is exactly wrong here: these three moved position on nearly every screen and
-   spilled onto a second line, so the pattern had to be re-read each time.
-   Equal columns pin each action to a place the user can learn once.
+   would move these three on nearly every screen and make the pattern something
+   to re-read each time. Equal columns pin each action to a place the user can
+   learn once.
 
    A button that does not apply is disabled rather than removed — removing one
    would shift the other two, which is the one thing this row exists to stop. */
@@ -3538,7 +3468,7 @@ button.esf-based {
 }
 .esf-buddy-apply:hover { filter: brightness(1.06); }
 
-/* ═══ Big Purchase Calculator (v3.1c) ═══════════════════════════════════════
+/* ═══ Big Purchase Calculator ═══════════════════════════════════════════════
    docs/big-purchase-spec.md. Scrolling is allowed on these screens, so the
    ESF's 29px compromise does NOT carry over: every control is 44px (§1.8).
    Theme tokens only; the one literal pair is Buddy's amber on the 💡 chips,
@@ -3607,7 +3537,7 @@ button.esf-based {
 .bp-hl-big { font-size: 24px; font-weight: 900; line-height: 1.1; color: var(--text-strong); letter-spacing: -.01em; }
 .bp-hl-pair span, .bp-hl-cap { font-size: 12px; color: var(--text); }
 /* A rule between the two halves, so the down payment and the monthly figure
-   read as two separate facts rather than one run-on (owner, 2026-09-27). */
+   read as two separate facts rather than one run-on. */
 .bp-hl-split > div + div { border-left: 1px solid var(--line); }
 .bp-hl-split > div { justify-content: center; padding: 0 6px; }
 .bp-hl-split span { line-height: 1.25; }
@@ -3690,8 +3620,6 @@ button.esf-based {
 .button.bp-off { opacity: .55; cursor: default; }
 .button.bp-off:hover { filter: none; }
 
-/* ═══ Big Purchase — revision after the owner's review (2026-09-22) ════════ */
-
 /* Landing: the fund question is a highlighted box at the bottom, not a screen. */
 .bp-esf-box {
   border: 1px solid var(--info-border); border-radius: 16px; background: var(--info-bg);
@@ -3746,8 +3674,6 @@ button.esf-based {
 .bp-setrow-label { font-size: 14px; }
 .screen .bp-inline-input { width: 100%; min-height: 44px; margin: 6px 0; font-size: 16px; }
 
-/* ═══ Big Purchase — second review (2026-09-22): four screens ══════════════ */
-
 .bp-financed { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
 
 /* Ways to spend less: a summary card that expands. */
@@ -3774,16 +3700,6 @@ button.esf-based {
 .bp-cmp-label { font-weight: 700; }
 .bp-cmp-total { border-bottom: 0; border-top: 2px solid var(--text-strong); font-weight: 900; padding-top: 8px; }
 
-/* ═══ Big Purchase — third review (2026-09-22) ═════════════════════════════ */
-
-/* ── The docked choices sit RIGHT OF CENTRE ─────────────────────────────────
-   Owner: "keep thinking one handed experience… these options should skew
-   towards right hand of middle. They should be centered."
-
-   So the tiles are a centred flex cluster rather than a full-width grid: each
-   one is only as wide as it needs to be, a short last row centres under the
-   one above it, and the whole cluster is nudged toward the right thumb by
-   borrowing padding from the left. Two-option questions keep their own layout.  */
 .bp-dock .bp-tiles {
   flex-wrap: wrap; justify-content: center;
 }
@@ -3811,12 +3727,11 @@ button.esf-based {
    two lines — the table reads as one line per expense or it reads as nothing. */
 .bp-tbl-soft .bp-tbl-label { font-size: 13px; }
 
-/* ═══ Big Purchase — dock layout, fourth review (2026-09-23) ═══════════════
-   The centred, right-nudged cluster is GONE. It wrapped to "2 + 2 + 1" with
-   three different left edges — a wrapped grid, not a layout. Every dock
-   question is now a full-width grid of equal cells (see bpDockLayout), so the
-   edges line up and a five-option question is a plain list, one per line,
-   which is what a one-of-many choice looks like in a shipped app.
+/* ═══ Big Purchase — dock layout ═══════════════════════════════════════════
+   Every dock question is a full-width grid of equal cells (see bpDockLayout),
+   so the edges line up and a five-option question is a plain list, one per
+   line, which is what a one-of-many choice looks like in a shipped app. A
+   centred cluster wraps to "2 + 2 + 1" with three different left edges.
 
    These override the earlier `.bp-dock .bp-tiles` rules further up the file. */
 .bp-dock .bp-tiles {
@@ -3840,8 +3755,6 @@ button.esf-based {
 }
 .bp-dock .bp-tiles-col .bp-tile { flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; }
 
-/* ═══ Big Purchase — spec revision 4 review (2026-09-26) ═══════════════════ */
-
 .bp-cat-label { flex: 1; min-width: 0; }
 
 /* The fund box: three side-by-side buttons, label over subtext. */
@@ -3857,7 +3770,7 @@ button.esf-based {
 .bp-esf-said { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-strong); }
 .bp-esf-said span { color: var(--good); margin-right: 4px; }
 
-/* The comparison table, now up to three columns. The grid-template-columns are
+/* The comparison table, up to three columns. The grid-template-columns are
    set inline per row because the column count varies with what is on screen. */
 .bp-cmp-col {
   display: flex; align-items: center; justify-content: center; gap: 3px;
@@ -3901,7 +3814,7 @@ button.esf-based {
 /* A title that must not wrap on a 390px frame. */
 .esf-title.bp-title-fit { font-size: 17px; white-space: nowrap; }
 
-/* ═══ Cost table, restyled (owner, 2026-09-26) ════════════════════════════
+/* ═══ Cost table ══════════════════════════════════════════════════════════
    Bold black column headings, plain black expense rows, one bold Total, and a
    dotted rule between the two figure columns so the month is never read as
    part of the year. The rule is drawn as a border on the middle cell rather
@@ -3921,7 +3834,7 @@ button.esf-based {
 .bp-tbl-total .bp-tbl-label { font-weight: 900; }
 
 /* The cheaper-options callout. The saving is the loudest thing on the screen
-   after the headline — the quiet version of this got missed entirely. */
+   after the headline — a quiet version gets missed entirely. */
 .bp-save {
   text-align: center;
   border: 1px solid var(--good-border); border-radius: 16px; background: var(--good-bg);
@@ -3940,13 +3853,11 @@ button.esf-based {
 .bp-cat:not(:disabled) .bp-cat-icon { color: var(--accent); }
 .bp-cat:disabled .bp-cat-icon { color: var(--muted); }
 
-/* ═══ Landing, third pass (2026-09-27) ════════════════════════════════════ */
-
 /* Coming soon dims the whole illustration rather than needing a second asset. */
 .bp-cat:disabled .bp-cat-icon { filter: grayscale(.35); }
 
-/* The fund box sits at the top now, and its question needs air above the
-   answers — they were touching. */
+/* The fund box sits at the top, and its question needs air above the
+   answers. */
 .bp-esf-box { margin: 4px 0 18px; padding: 15px 14px 14px; }
 .bp-esf-q { margin: 0 0 14px; line-height: 1.4; }
 .bp-esf-opt { justify-content: center; }
@@ -3957,7 +3868,7 @@ button.esf-based {
 }
 .bp-esf-opt.strong .bp-esf-opt-label { font-weight: 900; }
 
-/* ═══ Screen 2 rebuilt to fit one screen (2026-09-27) ═════════════════════ */
+/* ═══ Screen 2 fits one screen ════════════════════════════════════════════ */
 
 .bp-cost-shell .journal-body { display: flex; flex-direction: column; }
 .bp-head-tight { padding-bottom: 8px; }
@@ -3975,8 +3886,8 @@ button.esf-based {
   border-left: 1px solid var(--line);
 }
 .bp-tbl-ruled .bp-tbl-head, .bp-tbl-ruled .bp-tbl-row { padding: 2px 0; }
-/* Centred, black and bold over their columns (owner, 2026-09-27). The figures
-   under them stay right-aligned — a column of money reads off its right edge. */
+/* Centred, black and bold over their columns. The figures under them stay
+   right-aligned — a column of money reads off its right edge. */
 .bp-tbl-ruled .bp-tbl-head span { text-align: center; color: var(--text-strong); font-weight: 900; }
 .bp-tbl-ruled .bp-tbl-row { font-size: 13px; }
 .bp-tbl-ruled .bp-tbl-head { font-size: 10px; }
@@ -3991,11 +3902,10 @@ button.esf-based {
 .bp-financed { margin: 0; padding: 0; border: 0; }
 .bp-financed .bp-q-label { margin-bottom: 6px; }
 
-/* Final squeeze so screen 2 holds without scrolling on a 390x844 frame.
-   Measured, not guessed: scrollHeight was 31px over clientHeight. */
+/* Screen 2 holds without scrolling on a 390x844 frame. */
 .bp-cost-shell .journal-foot { padding-top: 10px; }
 
-/* ═══ Options as two side-by-side cards (2026-09-27) ══════════════════════
+/* ═══ Options as two side-by-side cards ═══════════════════════════════════
    The saving is the headline of each card, in the invested figure — that is
    the number the owner wants a tester to weigh. Tapping a card opens the
    full comparison underneath, so both cards stay visible while reading one. */
@@ -4016,7 +3926,7 @@ button.esf-based {
 
 /* ═══ Screen 4: settings that look tappable, and the 5-year list ══════════ */
 
-/* The value sits in a pill with a caret — as plain text it read as a fact. */
+/* The value sits in a pill with a caret — as plain text it would read as a fact. */
 .bp-setrow-pill {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 10px; border: 1px solid var(--rail); border-radius: 999px;
@@ -4036,18 +3946,15 @@ button.esf-based {
 /* The estimated cost over 5 years — this car, then the cheaper options. */
 .bp-fiveyear { margin-top: 14px; }
 
-/* ═══ Cost table + summary polish (2026-09-27) ════════════════════════════ */
-
-/* THE MAY-NEED ROW WAS PUSHING ITS OWN COLUMN OFF THE GRID. `nowrap` on a
-   label in a `1fr` track does not shrink it — the track grows past the
-   container and drags the figure columns right with it, so that one row's
-   numbers no longer lined up with the rest. A grid item's implicit `min-width:
-   auto` is the whole trap; min-width:0 lets it shrink, and the ellipsis is
-   there for a label longer than the track can ever hold. */
+/* `nowrap` on a label in a `1fr` track does not shrink it — the track grows
+   past the container and drags the figure columns right with it, so that one
+   row's numbers stop lining up with the rest. A grid item's implicit
+   `min-width: auto` is the whole trap; min-width:0 lets it shrink, and the
+   ellipsis is there for a label longer than the track can ever hold. */
 .bp-tbl-row .bp-tbl-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .bp-tbl-soft .bp-tbl-label { white-space: nowrap; }
 
-/* ═══ Steps 4 and 5 on one screen, no scrolling (2026-09-27) ═════════════ */
+/* ═══ Steps 4 and 5 on one screen, no scrolling ══════════════════════════ */
 
 /* Screen 5 */
 .bp-plan-shell .journal-body { display: flex; flex-direction: column; gap: 8px; }
@@ -4076,12 +3983,12 @@ button.esf-based {
 .screen .bp-price-inline { min-height: 40px; font-size: 16px; }
 .bp-fin-shell .bp-fiveyear .bp-based { margin: 2px 0 0; font-size: 10px; }
 
-/* Screen 4 was still 28px over at 390x844. Measured trims, smallest first. */
+/* Screen 4 at 390x844: measured trims. */
 .bp-fin-shell .bp-fin-sum { padding: 6px 12px; }
 
-/* "May need: Home charger" is the longest label in the table and was landing
-   a few pixels over its track. One step down in size fits it whole, which is
-   better than an ellipsis on a row whose point is that it is optional. */
+/* "May need: Home charger" is the longest label in the table. One step down in
+   size fits it whole, which is better than an ellipsis on a row whose point is
+   that it is optional. */
 .bp-cost-shell .bp-tbl-soft .bp-tbl-label { font-size: 12px; }
 
 /* ═══ Savings row on one line, with captions above the figures ════════════ */
@@ -4093,10 +4000,10 @@ button.esf-based {
 .bp-bag-col { flex: 1; }
 .bp-bag-col .bp-pencil { min-width: 28px; min-height: 28px; margin: -8px -4px -8px 0; font-size: 14px; }
 
-/* ═══ Step 4 boxed (2026-09-27) ══════════════════════════════════════════
+/* ═══ Step 4 boxed ═══════════════════════════════════════════════════════
    Everything about paying lives in one card — price, loan or cash, the three
-   settings and what the loan totals. Loose on the background it read as four
-   unrelated fragments. */
+   settings and what the loan totals. Loose on the background they would read
+   as four unrelated fragments. */
 .bp-finbox { padding: 12px 14px; }
 .bp-finbox .bp-seg { margin: 8px 0; }
 .bp-finbox .bp-setrow { border-bottom: 1px solid var(--line); }
@@ -4108,10 +4015,9 @@ button.esf-based {
 .bp-price-fixed { font-size: 16px; font-weight: 900; color: var(--text-strong); }
 .bp-finbox .bp-fin-sum { margin-top: 8px; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 6px 0 0; }
 
-/* Screen 4 gained a box and lost 18px of room with it. */
 .bp-fin-shell .bp-fiveyear .bp-based { margin-top: 1px; }
 /* The derived price says where it came from on the same line, not in a
-   paragraph under it — that paragraph cost this screen 29px it did not have. */
+   paragraph under it that this screen has no room for. */
 .bp-price-from { flex: 1; min-width: 0; font-size: 10px; line-height: 1.25; color: var(--text); }
 
 /* "What it costs" sits apart from "how you pay" — two boxes, never one list. */
@@ -4129,8 +4035,8 @@ button.esf-based {
 .bp-altchip span { font-size: 11px; color: var(--text); }
 .bp-altchip strong { font-size: 16px; font-weight: 900; color: var(--good); }
 
-/* Step 4 holds a lot now. Measured trims: the payment lives in the headline,
-   so the loan block states only what is borrowed. */
+/* Step 4 holds a lot. The payment lives in the headline, so the loan block
+   states only what is borrowed. */
 .bp-fin-shell .bp-finbox { padding: 8px 12px; }
 .bp-fin-shell .bp-finbox .bp-box-head { font-size: 12px; margin-bottom: 2px; }
 .bp-fin-shell .bp-finbox .bp-seg { margin: 5px 0; }
@@ -4139,7 +4045,7 @@ button.esf-based {
 .bp-fin-shell .bp-costof .bp-fin-sumrow { padding: 1px 0; }
 .bp-fin-shell .bp-priceline { min-height: 34px; }
 
-/* ═══ Step 2's ladder: upfront → monthly → year 1 → 5 years (2026-09-27) ═══
+/* ═══ Step 2's ladder: upfront → monthly → year 1 → 5 years ════════════════
    Each figure is built from the one above it, so they read down the page and
    the five-year saving underneath has something to be a saving against. */
 .bp-ladder { border: 1px solid var(--accent-border); border-radius: 15px; }
@@ -4155,15 +4061,15 @@ button.esf-based {
 .bp-ladder-row.last strong { font-size: 21px; color: var(--accent); }
 .bp-date-note small { font-size: 10px; font-weight: 600; color: var(--text); }
 
-/* The ladder added a row; measured 35px over with an electric Premium (the
-   worst case, which carries a charger line and subscriptions). */
+/* The worst case is an electric Premium, which carries a charger line and
+   subscriptions. */
 .bp-cost-shell .bp-box-head { font-size: 13px; margin-bottom: 4px; }
 /* Worst case (electric Premium) needs a few more pixels on both screens. */
 .bp-cost-shell .bp-financed .bp-q-label { margin-bottom: 4px; }
 .bp-fin-shell .bp-costof .bp-fin-sumrow { font-size: 12px; }
 .bp-fin-shell .bp-fin-sumtotal { font-size: 13px; }
 
-/* ═══ Onboarding, docked (owner, 2026-09-27) ══════════════════════════════
+/* ═══ Onboarding, docked ══════════════════════════════════════════════════
    The two questions in front of the Big Purchase flow put their choices in the
    same bottom dock the calculator uses, and drop Continue — the tap is the
    answer. Only the layout differs from .bp-dock: these are .journal-opt rows,
@@ -4172,10 +4078,9 @@ button.esf-based {
 .onb-dock .journal-options { display: grid; gap: 8px; margin: 0; }
 .onb-dock .journal-opt { min-height: 46px; margin: 0; }
 
-/* Screen 2 gained a row when the radio-and-apps line stopped being zero on a
-   Standard car (2026-09-27), which put the body 63px past the frame. Trimmed
-   where it costs nothing to read: the financed question is one row instead of
-   two, and the callout and the table give a few pixels each. */
+/* Screen 2 carries a radio-and-apps line even on a Standard car. It fits by
+   trimming where it costs nothing to read: the financed question is one row
+   instead of two, and the callout and the table give a few pixels each. */
 .bp-cost-shell .bp-financed {
   display: flex; align-items: center; gap: 10px;
 }
@@ -4183,9 +4088,9 @@ button.esf-based {
 .bp-cost-shell .bp-financed .bp-tiles { flex: 1; min-width: 0; margin: 0; }
 .bp-cost-shell .bp-tbl-ruled .bp-tbl-total { margin-top: 3px; padding-top: 4px; font-size: 17px; }
 
-/* Step 3 has to hold one screen too, and the headline caption grew a line when
-   the monthly figure became "car payment + running it" (owner, 2026-09-27).
-   Every row here gives 2-6px; nothing is removed. */
+/* Step 3 has to hold one screen too, under a headline caption of two lines
+   ("car payment + running it"). Every row here gives 2-6px; nothing is
+   removed. */
 .bp-fin-shell .bp-hl-split span { font-size: 11px; }
 .bp-fin-shell .bp-fiveyear { margin-top: 0; }
 .bp-fin-shell .bp-altchip { font-size: 12px; }
@@ -4194,12 +4099,10 @@ button.esf-based {
 .bp-fin-shell .bp-setrow-label, .bp-fin-shell .bp-setrow-pill { font-size: 12px; }
 .bp-fin-shell .bp-fin-sumrow { padding: 0; }
 
-/* ═══ Money saved, lined up (owner, 2026-09-27) ═══════════════════════════
+/* ═══ Money saved, lined up ═══════════════════════════════════════════════
    Two equal grid cells, caption over figure, so both pairs share their
-   baselines whatever the captions say. The old version was two right-aligned
-   flex columns of different widths with a pencil hanging off one figure. The
-   rate the invested number assumes was never stated; it is a line of its own
-   now, and tapping it opens the rate sheet. */
+   baselines whatever the captions say. The rate the invested number assumes
+   is a line of its own, and tapping it opens the rate sheet. */
 .bp-bag-row {
   display: grid; grid-template-columns: auto 1fr 1fr; align-items: end; gap: 10px;
 }
@@ -4213,7 +4116,7 @@ button.esf-based {
 }
 .bp-bag-rate .bp-pencil { margin-left: 4px; font-size: 12px; color: var(--good); }
 
-/* ═══ Step 2's six rows (owner, 2026-09-27) ═══════════════════════════════
+/* ═══ Step 2's six rows ═══════════════════════════════════════════════════
    Bold label, the qualifier in brackets italic and not bold, figure right.
    No second line under anything — the brackets are the explanation. */
 .bp-ladder-label { display: block; font-weight: 400; }
@@ -4221,24 +4124,22 @@ button.esf-based {
 /* The loan question sits above everything it changes, so it reads as the
    question it is rather than a switch at the foot of the screen. */
 .bp-cost-shell .bp-financed .bp-q-label { flex: 0 0 auto; }
-/* Six rows and a question that used to be four rows and no question: every
-   line gives a little so the screen still holds without scrolling. */
+/* Six rows and a question: every line gives a little so the screen still
+   holds without scrolling. */
 .bp-cost-shell .bp-financed .bp-tiles .bp-tile { padding: 4px 6px; }
 .bp-cost-shell .bp-ladder-row strong { white-space: nowrap; }
-/* nowrap pushed the longest row's figure off the right edge (it overflowed by
-   54px), so the label is allowed to wrap again — a bracket that runs onto a
-   second line is still the same line of copy, not the subtext the owner cut.
-   Sized down instead, which keeps every row but one on one line. */
+/* The label may wrap: a nowrap label pushes the longest row's figure off the
+   right edge, and a bracket that runs onto a second line is still the same
+   line of copy. The smaller size keeps every row but one on one line. */
 .bp-cost-shell .bp-ladder-row { gap: 8px; }
 .bp-cost-shell .bp-ladder-label { white-space: normal; min-width: 0; }
 .bp-cost-shell .bp-ladder-row strong { font-size: 14px; }
 .bp-cost-shell .bp-ladder-row.last strong { font-size: 16px; }
 
-/* ═══ Step 2's six rows, laid out properly (owner, 2026-09-27) ════════════
-   Six dashed bands of equal weight had no shape and no figure column — the
-   bracket pushed each number to a different place. Now: one fixed figure
-   column with tabular numerals so the digits stack, groups separated by air
-   rather than rules, and only the last line — the answer — large and green. */
+/* ═══ Step 2's six rows, laid out ═════════════════════════════════════════
+   One fixed figure column with tabular numerals so the digits stack, groups
+   separated by air rather than rules, and only the last line — the answer —
+   large and green. */
 .bp-ladder { padding: 10px 14px; }
 .bp-ladder-row,
 .bp-cost-shell .bp-ladder-row {
@@ -4274,7 +4175,7 @@ button.esf-based {
 .bp-cost-shell .bp-costbox { margin-bottom: 8px; }
 .bp-cost-shell .bp-tbl-foot { font-size: 9.5px; margin-top: 4px; }
 /* The block reads better on card white with only the answer tinted — the
-   whole thing in accent-soft made the hero band invisible against it. */
+   whole thing in accent-soft would hide the hero band. */
 .bp-ladder { background: var(--card); border-color: var(--line); }
 .bp-cost-shell .bp-ladder-row { font-size: 12.5px; }
 .bp-cost-shell .bp-ladder-label em { font-size: 10px; }
@@ -4284,9 +4185,9 @@ button.esf-based {
 .bp-cost-shell .bp-financed .bp-tiles .bp-tile { font-size: 10.5px; min-height: 32px; }
 .bp-cost-shell .bp-financed .bp-q-label { font-size: 11.5px; }
 
-/* The cheaper options as a SAVING, not a total to subtract (owner,
-   2026-09-27). Three lines per chip: what it is, what it saves, what the
-   saving is worth kept. The saving is the loud one. */
+/* The cheaper options as a SAVING, not a total to subtract. Three lines per
+   chip: what it is, what it saves, what the saving is worth kept. The saving
+   is the loud one. */
 .bp-fin-shell .bp-altchip {
   flex-direction: column; align-items: flex-start; justify-content: center;
   gap: 0;
@@ -4294,8 +4195,8 @@ button.esf-based {
 .bp-altchip-what { font-size: 10px; font-weight: 700; color: var(--text); }
 .bp-fin-shell .bp-altchip strong { line-height: 1.15; }
 .bp-altchip-worth { font-size: 10px; line-height: 1.25; color: var(--text); }
-/* The saving chips are three lines where they were one; the rest of step 3
-   gives it back a few pixels at a time. */
+/* The saving chips take three lines; the rest of step 3 gives it back a few
+   pixels at a time. */
 .bp-fin-shell .bp-box-head { font-size: 12.5px; }
 .bp-fin-shell .bp-fiveyear .bp-box-head { font-size: 11px; }
 .bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { margin-bottom: 5px; }
@@ -4304,13 +4205,10 @@ button.esf-based {
 .bp-fin-shell .bp-costof { margin-bottom: 2px; }
 
 /* ═══ The emergency-fund box: an open question, not an answered one ═══════
-   (owner, 2026-09-27: "it looks like it's preselected and something will
-   happen, but nothing does.")
-
    One tinted button among three plain ones is the universal look of a CHOSEN
-   option, so the box read as answered and got walked past. The fix is not a
-   different highlight — it is no highlight at all, plus an instruction and a
-   box that visibly has something outstanding. */
+   option, so the box would read as answered and get walked past. No highlight
+   at all, then, plus an instruction and a box that visibly has something
+   outstanding. */
 .bp-esf-opt.strong,
 .bp-esf-ask .bp-esf-opt {
   border: 1px solid var(--info-border); background: var(--card);
@@ -4319,8 +4217,8 @@ button.esf-based {
 .bp-esf-ask .bp-esf-opt .bp-esf-opt-label { font-weight: 800; }
 .bp-esf-ask .bp-esf-opt:active { border-color: var(--accent); background: var(--accent-soft); }
 
-/* Unanswered: dashed edge and an accent spine, so it reads as a task. The
-   answered card keeps the solid border it already had. */
+/* Unanswered: a dashed edge, so it reads as a task. The answered card keeps
+   the solid border it already had. */
 .bp-esf-ask {
   border-style: dashed; border-width: 1px 1px 1px 4px;
   border-left-color: var(--accent); border-left-style: solid;
@@ -4336,7 +4234,7 @@ button.esf-based {
 .bp-esf-ask .bp-esf-opt-sub { font-size: 10px; }
 
 /* The eyebrow is the instruction, so it is centred and readable rather than a
-   9px label nobody notices (owner, 2026-09-27). */
+   9px label nobody notices. */
 .bp-esf-eyebrow {
   text-align: center; font-size: 12px; letter-spacing: .06em; margin-bottom: 6px;
 }
@@ -4350,10 +4248,10 @@ button.esf-based {
 .bp-stack { display: flex; flex-direction: column; gap: 7px; }
 .bp-lead { margin-bottom: 10px; }
 
-/* ═══ The fund box, second pass (owner, 2026-09-27) ═══════════════════════
-   The question holds ONE LINE, the accent spine is gone (no other box on the
-   landing has one, and it read as a stray highlight on a blue card), and the
-   options lost their sub-lines. The dashed edge alone carries "unanswered". */
+/* ═══ The fund box ════════════════════════════════════════════════════════
+   The question holds ONE LINE and the options have no sub-lines. No accent
+   spine: no other box on the landing has one, and on a blue card it reads as a
+   stray highlight. The dashed edge alone carries "unanswered". */
 .bp-esf-ask {
   border: 1px dashed var(--info-border);
   padding: 12px 12px 13px;
@@ -4363,21 +4261,16 @@ button.esf-based {
 }
 .bp-esf-ask .bp-esf-opt { min-height: 46px; }
 .bp-esf-ask .bp-esf-opt-label { font-size: 13px; }
-/* No plate behind the icon any more: the artwork carries its own. */
+/* No plate behind the icon: the artwork carries its own. */
 .bp-cat-icon {
   width: 36px; height: 36px; border-radius: 10px; background: none;
   object-fit: cover; display: block; flex: 0 0 auto;
 }
 
 /* ═══ Steps 2 and 3: room to breathe, one type scale ══════════════════════
-   (owner, 2026-09-27: "the whole screen looks too busy, too crowded… space
-   the three boxes out a bit more".)
-
-   Every trim in the last few rounds came out of the gaps, because the gaps are
-   what a screen gives up first — and the result was four blocks touching each
-   other. The gaps go back to 12px and the space comes instead out of type:
-   ONE SCALE on both screens, 11 / 12.5 / 14 / 20, instead of the 10, 10.5, 11,
-   11.5, 12, 12.5, 13 drift that accumulated a size at a time. */
+   The gaps are what a screen gives up first, and taking them leaves four
+   blocks touching each other. So the gaps stay at 12px and the space comes out
+   of type instead: ONE SCALE on both screens, 11 / 12.5 / 14 / 20. */
 .bp-cost-shell .bp-financed { margin-bottom: 0; }
 .bp-cost-shell .bp-costbox, .bp-cost-shell .bp-save { margin: 0; }
 .bp-cost-shell .bp-costbox { padding: 11px 13px; }
@@ -4410,8 +4303,8 @@ button.esf-based {
 .bp-cost-shell .bp-save-big { margin-bottom: 8px; }
 .bp-cost-shell .bp-save .button { min-height: 36px; }
 .bp-cost-shell .bp-ladder-row.bp-ladder-gap { margin-top: 8px; }
-/* The last 23px: taken from inside the boxes, never from the gaps between
-   them — the gaps are the thing the owner asked for. */
+/* Space is taken from inside the boxes, never from the gaps between them —
+   the gaps are the thing the owner asked for. */
 .bp-cost-shell .bp-costbox, .bp-cost-shell .bp-save { padding: 9px 13px; }
 .bp-cost-shell .bp-ladder { padding: 8px 13px 0; }
 .bp-cost-shell .bp-ladder-row { padding: 1px 0; }
@@ -4427,20 +4320,19 @@ button.esf-based {
 .bp-fin-shell .bp-price-inline, .bp-fin-shell .bp-price-fixed { font-size: 16px; }
 .bp-fin-shell .bp-altchip { padding: 3px 10px; }
 .bp-fin-shell .bp-fiveyear .bp-box-head { margin-bottom: 4px; }
-/* The two tallest rows in the financing box were never the ones being trimmed:
-   min-height does nothing when a child's own padding sets the height. */
+/* min-height does nothing when a child's own padding sets the height, so the
+   two tallest rows in the financing box are trimmed by their padding. */
 .bp-fin-shell .bp-seg { min-height: 0; padding: 2px; }
 .bp-fin-shell .bp-seg button { font-size: 13px; min-height: 0; }
 .bp-fin-shell .bp-price-inline, .bp-fin-shell .bp-price-fixed { padding: 3px 10px; min-height: 0; height: 30px; }
 
-/* ═══ Steps 2 and 3 fill the frame (owner, 2026-09-27) ════════════════════
-   "its all crowded towards the top with a lot of space at the bottom." The
-   boxes were packed to the top with a fixed gap, so a cheaper car — fewer
-   rows, smaller figures — left a dead band above the footer while the blocks
-   above it stayed jammed together.
+/* ═══ Steps 2 and 3 fill the frame ════════════════════════════════════════
+   Packed to the top with a fixed gap, a cheaper car — fewer rows, smaller
+   figures — leaves a dead band above the footer while the blocks above it stay
+   jammed together.
 
    `space-between` hands the leftover height to the gaps instead. The `gap` is
-   now a MINIMUM: when the content is tall the blocks sit at 11px apart and the
+   a MINIMUM: when the content is tall the blocks sit at 11px apart and the
    screen still fits, and when it is short the same blocks spread to fill.
    Safe with a scroll container because space-between packs from the top once
    there is no free space — unlike `center` or `end`, which would put the first
@@ -4451,16 +4343,16 @@ button.esf-based {
 }
 .bp-cost-shell .journal-body > *, .bp-fin-shell .journal-body > * { flex: 0 0 auto; }
 
-/* The last box was landing flush against the footer buttons (owner,
-   2026-09-27). A bottom inset lifts it clear, and because the body is
-   space-between that inset comes out of the gaps above rather than out of the
-   screen — the blocks stay spread, they just stop short of the menu. */
+/* A bottom inset lifts the last box clear of the footer buttons, and because
+   the body is space-between that inset comes out of the gaps above rather than
+   out of the screen — the blocks stay spread, they just stop short of the
+   menu. */
 .bp-cost-shell .journal-body, .bp-fin-shell .journal-body { padding-bottom: 12px; }
-/* `.journal-shell.onb-pinned .journal-body` is three classes and was winning
-   over the two-class rule above, so the inset never applied. Matched here. */
+/* `.journal-shell.onb-pinned .journal-body` is three classes and beats the
+   two-class rule above, so the inset is matched here. */
 .journal-shell.onb-pinned.bp-cost-shell .journal-body,
 .journal-shell.onb-pinned.bp-fin-shell .journal-body { padding-bottom: 12px; }
-/* Step 3 pays for its bottom inset from inside the boxes, as before. */
+/* Step 3 pays for its bottom inset from inside the boxes. */
 .bp-fin-shell .bp-fin-sumrow { font-size: 12px; }
 .bp-fin-shell .bp-altchip { min-height: 31px; }
 .bp-fin-shell .journal-body { gap: 8px; }
@@ -4468,33 +4360,28 @@ button.esf-based {
 .bp-fin-shell .bp-seg button { padding: 4px 10px; }
 .bp-fin-shell .bp-finbox, .bp-fin-shell .bp-costof { padding: 6px 13px; }
 
-/* ═══ Step 3: the last box comes up off the footer (owner, 2026-09-27) ════
-   "bring the spend less box up at least 2 lines… then space everything out."
-
+/* ═══ Step 3: the last box comes up off the footer ════════════════════════
    A fixed `padding-bottom` cannot do this: the tallest configuration has no
    spare height to give, so any inset big enough to be felt on a short screen
-   pushes a tall one into scrolling. This is a SHRINKABLE SPACER instead — a
-   flex item with `flex: 0 1 34px`, the only child allowed to shrink. On a
-   short screen it grows and the block above it rises clear of the menu; on a
-   tall one it collapses to nothing and the screen still fits.
+   pushes a tall one into scrolling. This is a SPACER instead — a flex item
+   that grows and shrinks (`flex: 1 1 0`). On a tall configuration it collapses
+   to nothing and the screen still fits.
 
-   It GROWS as well as shrinks, capped at 36px (about two lines), so surplus
-   height fills the bottom inset FIRST and the rest goes into the gaps. Without
-   grow, a tall browser window put every spare pixel between the boxes and left
-   a canyon above the footer, which is what the owner was looking at. Without
-   the cap, all of it would pool at the bottom instead. */
+   It is capped at 36px (about two lines), so surplus height fills the bottom
+   inset FIRST and the rest goes into the gaps. Without grow, a tall browser
+   window puts every spare pixel between the boxes and leaves a canyon above the
+   footer. Without the cap, all of it would pool at the bottom instead. */
 .journal-shell.onb-pinned.bp-fin-shell .journal-body { padding-bottom: 0; }
 .bp-fin-shell .journal-body::after {
   content: ""; display: block; flex: 1 1 0; min-height: 0; max-height: 36px;
 }
 
-/* The three loan settings read as values, not as shouting (owner,
-   2026-09-27: "unbold the loan option drop-downs"). The pill and its caret
-   already say it can be tapped; the weight was doing nothing except making
-   three rows compete with the figures they feed. */
+/* The three loan settings read as values, not as shouting. The pill and its
+   caret already say it can be tapped; bold would only make three rows compete
+   with the figures they feed. */
 .bp-fin-shell .bp-setrow-pill { font-weight: 500; }
 
-/* ═══ Big Purchase: the new front (owner, 2026-09-29) ═════════════════════
+/* ═══ Big Purchase: landing and car finder ════════════════════════════════
    Landing with Buddy and the purpose, then "Find your car" (bpFinder):
    know-it or quiz, three cars with a new and a used price each, and the car
    view: five lines, peers beside them, two ways to spend less. Prefixed bpf-
@@ -4502,15 +4389,15 @@ button.esf-based {
 
 /* Landing */
 .bp-land-shell .journal-head { padding-bottom: 10px; }
-/* The owner's banner (2026-09-29): Buddy and a car with a bow. Full width,
-   height capped so the categories still fit; cover crops the sky, not Buddy. */
+/* The banner: Buddy and a car with a bow. Full width, height capped so the
+   categories still fit; cover crops the sky, not Buddy. */
 .bp-land-banner { overflow: hidden; width: 100%; height: 104px; border-radius: 16px; }
 .bp-land-banner img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 60%; }
 .bp-land-title { margin: 8px 0 0; text-align: center; }
 .journal-shell .bp-land-title { font-size: 20px; white-space: nowrap; }
-/* Landing, 2026-10-01: three sections spread down the screen, the category
-   list (the primary action) at the bottom in thumb reach, every line of
-   reading copy centred. The gap is a minimum; spare height goes between. */
+/* Landing: three sections spread down the screen, the category list (the
+   primary action) at the bottom in thumb reach, every line of reading copy
+   centred. The gap is a minimum; spare height goes between. */
 .bp-land-shell .journal-body { display: flex; flex-direction: column; justify-content: space-between; gap: 16px; }
 .bp-land-shell .bp-lead,
 .bp-land-shell .bp-esf-q,
@@ -4524,7 +4411,7 @@ button.esf-based {
 .journal-shell.onb-pinned.bp-land-shell .journal-body { padding-bottom: 14px; }
 
 /* "I know what I want": Make, Model, New/Used, one button, in the thumb dock —
-   the car-site pattern (owner, 2026-10-01). */
+   the car-site pattern. */
 .bpf-know { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; }
 .bpf-know-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 800; color: var(--text); }
 /* A field that looks like a car-site dropdown and opens a bottom list. */
@@ -4537,7 +4424,7 @@ button.esf-based {
 .bpf-select-empty { color: var(--text); font-weight: 500; }
 .bpf-select:disabled { background: var(--soft); cursor: default; }
 .bpf-list .bp-opt { min-height: 48px; font-size: 15px; font-weight: 700; text-align: left; }
-/* New / Used: the price as big and bold as the car's name (owner, 2026-10-01). */
+/* New / Used: the price as big and bold as the car's name. */
 .bpf-conds { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .bpf-cond {
   display: flex; flex-direction: column; align-items: center; gap: 1px; min-height: 64px; padding: 8px 10px;
@@ -4555,8 +4442,8 @@ button.esf-based {
 /* On the finder's first view there is room, so the banner shows more of it. */
 .bpf-banner { height: auto; margin: 0 0 10px; }
 .bpf-banner img { height: auto; aspect-ratio: 2000 / 848; object-fit: contain; }
-/* Finder start (owner, 2026-10-01: "space out screen 2"): the lead at the top,
-   the two paths at the bottom in thumb reach, the space between them. */
+/* Finder start: the lead at the top, the two paths at the bottom in thumb
+   reach, the space between them. */
 .bpf-start-shell .journal-body { display: flex; flex-direction: column; justify-content: space-between; gap: 16px; }
 .bpf-start-shell .bp-lead { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; text-align: center; }
 .bpf-start-shell .bpf-banner { margin-bottom: 14px; }
@@ -4731,20 +4618,20 @@ button.esf-based {
    menu first (up to about two lines), then spreads into the gaps. */
 .bpf-car-shell .journal-body::after { content: ""; flex: 1 1 0; min-height: 0; max-height: 28px; }
 .bpf-answers .bp-ans-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* "I know what I want" sits right above the Make and Model fields (owner, 2026-10-03). */
+/* "I know what I want" sits right above the Make and Model fields. */
 .bpf-know-head { margin: 0; font-family: var(--font-display); font-size: 17px; font-weight: 800; color: var(--text-strong); }
-/* Fit at the tallest pick (owner: one screen, no scrolling): tighter dock gaps, and the
+/* Fit at the tallest pick (one screen, no scrolling): tighter dock gaps, and the
    known-for line on one line, taken from inside the boxes, not between them. */
 .bpf-start-shell .bpf-know { gap: 7px; }
 .bpf-start-shell .bpf-know-pick { padding: 8px 14px; }
 .bpf-start-shell .bpf-know-why { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ═══ Purchase flow, 2026-10-03 ═════════════════════════════════════════════════
+/* ═══ Purchase flow ═════════════════════════════════════════════════════════════
    GLOBAL (owner): (1) copy that describes something is centred; (2) body copy is
    dark and sturdy, never the gray --text. --text is #3D3A36 at weight 400, which
-   read as gray and thin on cream. Inside the purchase screens --text IS the
+   reads as gray and thin on cream. Inside the purchase screens --text IS the
    strong ink, and the base weight is 500. Set on the shells, so every rule that
-   already says var(--text) comes out dark without touching it. */
+   says var(--text) comes out dark without touching it. */
 :is(.bp-shell, .bpf-shell, .bp-land-shell, .bp-cost-shell, .bp-fin-shell, .bp-plan-shell) {
   --text: var(--ink-strong);
   font-weight: 500;
@@ -4833,7 +4720,7 @@ button.esf-based {
 .bpf-t-label { justify-content: center; }
 .bpf-t-h { align-self: end; }
 
-/* Compact cars (owner, 2026-10-03: "this takes up way too much space"). */
+/* Compact cars on the quiz screen. */
 .bpf-quiz-shell .bpf-car { padding: 6px 9px 7px; }
 .bpf-quiz-shell .bpf-car-top { gap: 7px; }
 .bpf-quiz-shell .bpf-logo, .bpf-quiz-shell .bpf-logo-img { width: 24px; height: 24px; font-size: 10.5px; }
@@ -4845,9 +4732,9 @@ button.esf-based {
 .bpf-logo-chip { background: #fff; border: 1px solid var(--line); }
 .bpf-logo-img { display: block; width: 78%; height: 78%; object-fit: contain; }
 
-/* Car cost screen, round 2 (owner, 2026-10-03: no descriptions in the table, year 1
-   and 5 years beside peers, and one type system in "Ways to spend less"). Inter
-   throughout both boxes; the numbers are the only thing that gets heavier. */
+/* Car cost screen: no descriptions in the table, year 1 and 5 years beside
+   peers, and one type system in "Ways to spend less". Inter throughout both
+   boxes; the numbers are the only thing that gets heavier. */
 .bpf-table, .bpf-table *, .bpf-save, .bpf-save * { font-family: var(--font-body); }
 .bpf-t-name { font-size: 14px; font-weight: 700; }
 .bpf-t-label.bpf-t-long .bpf-t-name { font-weight: 600; }
@@ -4870,16 +4757,16 @@ button.esf-based {
 .bpf-t-label.bpf-t-total .bpf-t-name { font-size: 14px; white-space: nowrap; }
 .bpf-car-shell .bpf-alt { padding: 3px 12px; }
 
-/* The question rows (owner, 2026-10-03): the one being asked is an open, outlined row
-   with its choices docked below; the ones still to come are locked. */
+/* The question rows: the one being asked is an open, outlined row with its
+   choices docked below; the ones still to come are locked. */
 .bp-ans-empty .bp-ans-val { font-weight: 600; }
 .bp-ans-locked { background: var(--soft); cursor: default; }
 .bp-ans-locked .bp-drop-caret { opacity: .45; }
 .bp-shell .bp-answers .bp-ans, .bpf-shell .bp-answers .bp-ans { min-height: 38px; }
 .bp-shell .bp-answers { gap: 5px; }
 
-/* Spread the quiz screen (owner, 2026-10-03: "way too much space after the cars"):
-   spare height goes into the gaps between the blocks, not into the boxes. */
+/* Spread the quiz screen: spare height goes into the gaps between the blocks,
+   not into the boxes or after the cars. */
 .bpf-quiz-shell .journal-body { justify-content: space-between; gap: 8px; }
 .bpf-quiz-shell .bpf-cars { gap: 10px; }
 
@@ -4891,10 +4778,9 @@ button.esf-based {
 .bpf-car-title { display: flex; align-items: center; justify-content: center; gap: 10px; }
 .bpf-car-title .bpf-logo { width: 34px; height: 34px; }
 
-/* ONE FONT, TWO WEIGHTS in the expense table and the options (owner, 2026-10-03:
-   "one font everywhere, only size or bold can change"). The face was already Inter;
-   what read as a mix was the weights 500, 600, 800 and 900 landing on different
-   cuts of the system font, and tabular figures. Regular and bold only. */
+/* ONE FONT, TWO WEIGHTS in the expense table and the options: only size or bold
+   can change. Weights 500, 600, 800 and 900 land on different cuts of the
+   system font and read as a mix of faces, so regular and bold only. */
 .bpf-shell .bpf-table, .bpf-shell .bpf-table *, .bpf-shell .bpf-save, .bpf-shell .bpf-save * {
   font-family: var(--font-body); font-variant-numeric: normal; font-weight: 400; font-style: normal;
 }
@@ -4913,7 +4799,7 @@ button.esf-based {
 }
 .bpf-shell .bpf-alt-text { flex: 1 1 auto; }
 
-/* Cost screen, round 3 (owner, 2026-10-03). */
+/* Cost screen: the peers column, the totals and the footnote. */
 .bpf-shell .bpf-t-peer { font-size: 13px; }
 .bpf-shell .bpf-t-h-peer { font-size: 10.5px; }
 .bpf-shell .bpf-t-peer.bpf-t-long { font-size: 13px; }
@@ -4932,12 +4818,12 @@ button.esf-based {
 .bpf-logo-peers { background: var(--soft); color: var(--text-strong); border: 1px solid var(--line); }
 .bpf-peer-cars { display: flex; flex-direction: column; gap: 10px; }
 
-/* The tier and its range sit under the type in the fit box (owner, 2026-10-03). */
+/* The tier and its range sit under the type in the fit box. */
 .bpf-quiz-shell .bpf-fit-tier { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-strong); }
 .bpf-quiz-shell .bpf-range-cars { white-space: normal; line-height: 1.3; text-align: left; }
 .bp-shell .bp-answers .bp-ans-locked, .bpf-shell .bp-answers .bp-ans-locked { min-height: 30px; }
 
-/* Cost screen, round 4 (owner, 2026-10-03). */
+/* Cost screen: the deal row, its cells divided by a rule. */
 .bpf-shell .bpf-deal-row { display: flex; justify-content: center; align-items: stretch; gap: 0; }
 .bpf-shell .bpf-deal-cell { flex: 0 1 auto; padding: 0 22px; text-align: center; display: flex; flex-direction: column; }
 .bpf-shell .bpf-deal-cell + .bpf-deal-cell { border-left: 1px solid var(--rail); }
@@ -4954,9 +4840,10 @@ button.esf-based {
 .bpf-shell .bpf-car-title span { min-width: 0; }
 .bpf-shell .bpf-deal-cell span { font-size: 12px; }
 
-/* Buddy and the car sit at the top of "Help me choose" while there is room (owner,
-   2026-10-03): the first view, and the result with its cars. Whole image, never cropped,
-   at 72% width so the result still fits one screen. Closed pickers need the room back. */
+/* Buddy and the car sit at the top of "Help me choose" while there is room:
+   the first view, and the result with its cars. Whole image, never cropped, at
+   72% width so the result still fits one screen. Closed pickers need the room
+   back. */
 .bpf-quiz-shell .bpf-banner-quiz { width: 72%; margin: 0 auto 6px; background: none; }
 .bpf-quiz-shell .journal-head { text-align: center; }
 
@@ -4968,8 +4855,8 @@ button.esf-based {
 .bpf-shell .bpf-deal-cell strong { font-size: 20px; }
 .bpf-shell .bpf-t-foot { white-space: nowrap; font-size: 11px; }
 
-/* "I know what I want": every box the same height, and the smaller size (owner,
-   2026-10-03). Make, Model, New, Used, the button and the Help me choose row are all 40px. */
+/* "I know what I want": every box the same height, at the smaller size. Make,
+   Model, New, Used, the button and the Help me choose row are all 40px. */
 .bpf-start-shell .bpf-select { min-height: 40px; font-size: 14.5px; }
 .bpf-start-shell .bpf-select-val .bpf-logo { width: 24px; height: 24px; }
 .bpf-start-shell .bpf-cond { flex-direction: row; justify-content: center; align-items: baseline; min-height: 40px; align-items: center; }
@@ -4982,7 +4869,7 @@ button.esf-based {
 .bpf-start-shell .bpf-cond-label { font-size: 12px; white-space: nowrap; }
 .bpf-start-shell .bpf-cond-price { font-size: 16px; white-space: nowrap; }
 
-/* Help me choose leads the dock, bigger, with an emoji for choosing (owner, 2026-10-03). */
+/* Help me choose leads the dock, bigger, with an emoji for choosing. */
 .bpf-start-shell .bpf-path-quiz {
   grid-template-columns: auto 1fr auto; grid-template-rows: auto; column-gap: 12px;
   min-height: 58px; padding: 0 16px; margin-bottom: 4px; border-width: 2px;
@@ -4993,8 +4880,8 @@ button.esf-based {
 .bpf-start-shell .bpf-path-quiz .bpf-path-title { grid-column: 2; grid-row: 1; }
 .bpf-start-shell .bpf-path-quiz .bpf-path-go { grid-column: 3; grid-row: 1; }
 
-/* Help me choose, friendlier (owner, 2026-10-03: "inviting, friendly, fun"): warm apricot
-   instead of the muted green, a sparkle in a white bubble, a soft lift, dark readable text. */
+/* Help me choose, friendlier: warm apricot rather than the muted green, a
+   sparkle in a white bubble, a soft lift, dark readable text. */
 .bpf-start-shell .bpf-path-quiz {
   border: 1px solid color-mix(in srgb, var(--apricot) 80%, var(--card));
   background: linear-gradient(135deg, color-mix(in srgb, var(--apricot) 38%, var(--card)), color-mix(in srgb, var(--apricot) 14%, var(--card)));
@@ -5009,7 +4896,7 @@ button.esf-based {
   display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%;
   background: var(--card); color: var(--text-strong); font-size: 22px; line-height: 1; padding-bottom: 2px;
 }
-/* Buddy's own face on Help me choose (owner, 2026-10-03), the same art as the Ask button. */
+/* Buddy's own face on Help me choose, the same art as the Ask button. */
 .bpf-start-shell .bpf-path-quiz .bpf-path-emoji { width: 44px; height: 44px; overflow: hidden; padding: 0; }
 .bpf-start-shell .bpf-path-face { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 
@@ -5024,7 +4911,7 @@ button.esf-based {
   background: var(--soft); border: 1px solid var(--rail); box-shadow: 0 1px 3px rgba(61, 58, 54, .14); cursor: pointer;
 }
 
-/* ═══ Your car: pay for it, plan for it (owner, 2026-10-03) ══════════════════════
+/* ═══ Your car: pay for it, plan for it ══════════════════════════════════════════
    Two sections that read as one flow: each a card under its own title band, the
    first answering "how do I pay", the second "how much do I save, by when". */
 .bp-yc-shell .journal-body { display: flex; flex-direction: column; }
@@ -5058,7 +4945,7 @@ button.esf-based {
 .bp-seg3 .bp-seg-off { opacity: .45; cursor: not-allowed; }
 .bp-seg.bp-seg3 { grid-template-columns: 1fr 1fr 1fr; }
 
-/* ═══ Your car, type clean-up (owner, 2026-10-03) ═══════════════════════════════
+/* ═══ Your car: type ════════════════════════════════════════════════════════════
    ONE face, ONE size (14px) in both sections, bold for what you read first and
    regular for the rest; 12px only for a caption. Every control reads as the same
    kind of control: the same dropdown pill, the same field, the same stepper. */
@@ -5099,7 +4986,7 @@ button.esf-based {
 .bp-yc-shell .bp-step { width: 34px; height: 34px; }
 .bp-yc-shell .bp-yc-when { margin: 6px 0 4px; }
 
-/* ═══ Planning for it: one question, then the sum (owner, 2026-10-03) ════════════ */
+/* ═══ Planning for it: one question, then the sum ════════════════════════════════ */
 .bp-yc-shell .bp-yc-q { font-weight: 700; text-align: left; }
 .bp-yc-shell .bp-yc-card .bp-seg { margin: 0 0 4px; }
 .bp-yc-shell .bp-math-need {
@@ -5137,9 +5024,8 @@ button.esf-based {
 .bp-yc-shell button.bp-yc-when { min-height: 28px; }
 .bp-yc-shell .bp-yc-card { padding: 3px 14px 5px; }
 
-/* ═══ Cost screen, round 5 (owner, 2026-10-03) ══════════════════════════════════
-   The expense table is the thing to look at, so it is tinted. Every box is a thick
-   (2px) bordered box so each reads as its own function. */
+/* ═══ Cost screen: boxes ════════════════════════════════════════════════════════
+   Every box is a thick (2px) bordered box so each reads as its own function. */
 .bpf-shell .bpf-save, .bpf-shell .bpf-car, .bpf-shell .bpf-fit, .bpf-shell .bpf-know-pick, .bp-yc-shell .bp-yc-sec { border-width: 2px; }
 .bpf-shell .bpf-save, .bpf-shell .bpf-know-pick, .bp-yc-shell .bp-yc-sec { border-color: var(--rail); }
 
@@ -5186,8 +5072,8 @@ button.esf-based {
 .bpf-shell .bpf-t-label { padding: 2px 0; }
 .bpf-shell .bpf-table { padding-bottom: 4px; }
 
-/* ═══ Round 6 (owner, 2026-10-03) ═══════════════════════════════════════════════
-   Quiz: an emoji on every question and answer, the answers all one soft colour. */
+/* ═══ Quiz answers ══════════════════════════════════════════════════════════════
+   An emoji on every question and answer, the answers all one soft colour. */
 .bpf-dock .bp-tile { background: var(--info-bg); border-color: var(--info-border); }
 .bpf-dock .bp-tile.on { background: var(--accent-soft); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .bp-emoji { font-style: normal; font-size: 18px; line-height: 1; margin-right: 8px; vertical-align: -2px; }
@@ -5216,8 +5102,9 @@ button.esf-based {
 .bpf-shell .bpf-t-label.bpf-t-total { padding-left: 13px; }
 .bpf-shell .bpf-t-peer.bpf-t-total { padding-right: 13px; }
 
-/* Round 7: "Saved" shares the line with the two column titles; the table sits a little lower and
-   the alternatives box is pushed down toward the buttons (spare height goes between them). */
+/* "Saved" shares the line with the two column titles; the table sits a little
+   lower and the alternatives box is pushed down toward the buttons (spare
+   height goes between them). */
 .bpf-shell .bpf-save-cols .bpf-save-saved { grid-column: 2; text-align: right; font-size: 10.5px; font-weight: 700; }
 .bpf-shell .bpf-save-cols span:nth-child(3) { grid-column: 3; }
 .bpf-shell .bpf-save-cols span:nth-child(4) { grid-column: 4; }
@@ -5225,7 +5112,7 @@ button.esf-based {
 .bpf-car-shell .journal-body { justify-content: flex-start; }
 .bpf-car-shell .bpf-table { margin-top: 8px; }
 
-/* Round 8 (owner, 2026-10-03). The alternatives box floats halfway between the table and the buttons. */
+/* The alternatives box floats halfway between the table and the buttons. */
 .bpf-car-shell .bpf-save { margin-top: auto; margin-bottom: auto; }
 
 /* Buttons look like buttons: a clear border on every foot button in the purchase flow. */
@@ -5243,15 +5130,16 @@ button.esf-based {
 .bp-yc-shell .bp-price-inline { text-align: right; }
 .bpf-car-shell .journal-body { padding-bottom: 8px; }
 
-/* Your car: the spare height is shared equally between the strip, the two cards and the goal
-   button (owner, 2026-10-03), so the gaps from the top to the buttons below are all the same. */
+/* Your car: the spare height is shared equally between the strip, the two
+   cards and the goal button, so the gaps from the top to the buttons below are
+   all the same. */
 .bp-yc-shell .journal-body { justify-content: space-between; }
 .bp-yc-shell .bp-yc-cta { padding: 0; }
 .bp-yc-shell .journal-body { padding-bottom: 4px; }
 .journal-shell.onb-pinned.bp-yc-shell .journal-body { padding-bottom: 0; }
 .bp-yc-shell .journal-body { gap: 3px; }
 
-/* Landing: every category option is a bordered box (owner, 2026-10-03). */
+/* Landing: every category option is a bordered box. */
 .bp-land-shell .bp-cat { border: 2px solid var(--rail); }
 .bp-land-shell .bp-cat:disabled { border-color: var(--rail); }
 
@@ -5264,9 +5152,9 @@ button.esf-based {
 .bpf-dock .bp-tile { padding-top: 5px; padding-bottom: 5px; }
 .bpf-dock .bp-ask { margin-bottom: 6px; }
 
-/* Quiz answers read as buttons (owner, 2026-10-03: "users are confused what to do"): a raised
-   white button with a firm border and a bottom edge, and a round arrow on the right that says
-   "tap me". Picking one presses it down. */
+/* Quiz answers read as buttons: a raised white button with a firm border and
+   a bottom edge, and a round arrow on the right that says "tap me". Picking one
+   presses it down. */
 .bpf-dock .bp-tiles.bp-tiles-list .bp-tile {
   position: relative; background: var(--card); border: 2px solid var(--info);
   box-shadow: 0 3px 0 var(--info-border); padding: 4px 44px 4px 12px; cursor: pointer;
@@ -5280,9 +5168,10 @@ button.esf-based {
 .bpf-dock .bp-tiles.bp-tiles-list .bp-tile:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--info-border); }
 .bpf-dock .bp-tiles.bp-tiles-list .bp-tile.on { background: var(--accent-soft); border-color: var(--accent); box-shadow: 0 3px 0 var(--accent-border); }
 
-/* ═══ Round 9 (owner, 2026-10-03) ═══════════════════════════════════════════════
-   Start: three sections with equal air between them: "Help me choose a car", "I know what I
-   want", and the buttons. The spare height is split into the gaps above each. */
+/* ═══ Finder start ══════════════════════════════════════════════════════════════
+   Three sections with equal air between them: "Help me choose a car", "I know
+   what I want", and the buttons. The spare height is split into the gaps above
+   each. */
 .journal-shell.onb-pinned.bpf-start-shell .journal-body { flex: 0 0 auto; padding-bottom: 6px; }
 .bpf-start-shell .bpf-help, .bpf-start-shell .bpf-know-sec { margin-top: auto; border-radius: 20px; border: 2px solid var(--rail); padding: 10px 14px 12px; }
 .bpf-start-shell .bpf-help { padding-bottom: 10px; }
