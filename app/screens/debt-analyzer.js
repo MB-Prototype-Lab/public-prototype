@@ -241,7 +241,7 @@ function _renderBalanceTimeline(analyses) {
   var lines = keys.map(function(k) {
     var r    = analyses[k];
     var meta = STRATEGY_META[k];
-    // Sample at most 120 points for performance (thin out long timelines)
+    // Thin long timelines to keep chart rendering inexpensive.
     var step = Math.max(1, Math.floor(r.timeline.length / 120));
     var pts  = [];
     for (var i = 0; i < r.timeline.length; i += step) {
