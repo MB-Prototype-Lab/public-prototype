@@ -41,7 +41,7 @@ global_for() {
     buddy-esf)         echo "BUDDY_ESF" ;;
     big-purchase)      echo "BIG_PURCHASE" ;;
     buddy-bp)          echo "BUDDY_BP" ;;
-    lessons)           echo "LESSONS_V3" ;;   # not LESSONS — v2's state.lessons still exists
+    lessons)           echo "FRAMED_LESSONS" ;;
     *)                 echo "" ;;
   esac
 }

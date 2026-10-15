@@ -2,8 +2,8 @@
 // one. Completion returns to the stack that launched the lesson.
 
 function lessonQuizStart() {
-  const lesson = lessonV3(state.lessonFraming ? state.lessonFraming.lessonId : null)
-              || lessonV3(state.currentLesson ? state.currentLesson.id : null);
+  const lesson = framedLesson(state.lessonFraming ? state.lessonFraming.lessonId : null)
+              || framedLesson(state.currentLesson ? state.currentLesson.id : null);
   if (!lesson) { navBack(); return; }
   state.lessonQuiz = {
     lessonId: lesson.id,
@@ -54,7 +54,7 @@ function renderLessonQuiz() {
         </div>
         ${q.picked != null ? `
           <p class="helper" style="margin-top:12px;">
-            That's the one. ${LESSONS_V3.badges.xpCorrectAnswer} XP.
+            That's the one. ${FRAMED_LESSONS.badges.xpCorrectAnswer} XP.
           </p>` : ""}
       </div>
 
@@ -135,7 +135,7 @@ const LESSON_SIM_RANGES = {
 /* Use one lookup for authored lesson simulations and catalog calculator
  * defaults so renderers do not need to know the source. */
 function lessonSimSpec(lessonId) {
-  const v3 = (typeof lessonV3 === "function") ? lessonV3(lessonId) : null;
+  const v3 = (typeof framedLesson === "function") ? framedLesson(lessonId) : null;
   if (v3 && v3.simulation) return v3.simulation;
   return LESSON_SIM_V2[lessonId] || null;
 }
@@ -146,7 +146,7 @@ function lessonSimAvailable(lessonId) {
 }
 
 function lessonSimStart() {
-  const lesson = lessonV3(state.lessonQuiz ? state.lessonQuiz.lessonId : null);
+  const lesson = framedLesson(state.lessonQuiz ? state.lessonQuiz.lessonId : null);
   if (!lesson) { navBack(); return; }
   lessonSimOpen(lesson.id, "v3");
 }
@@ -502,12 +502,12 @@ function renderSimSubs(s) {
 // ── Reward ───────────────────────────────────────────────────────────────────
 
 function lessonRewardStart() {
-  const lesson = lessonV3(state.lessonSim ? state.lessonSim.lessonId : null);
+  const lesson = framedLesson(state.lessonSim ? state.lessonSim.lessonId : null);
   if (!lesson) { navGoHome(); return; }
   const correct = state.lessonQuiz ? state.lessonQuiz.correct : 0;
   // Gates both the XP bonus and the task's own Charity Points line. Asked of
   // the task list rather than a hardcoded id, so a second lesson-routed daily
-  // task works without a code change (js/lessons-v3.js lessonIsActiveTask).
+  // task works without a code change (js/framed-lessons.js lessonIsActiveTask).
   const fromTask = lessonIsActiveTask(lesson.id);
 
   // Open the Charity Points ledger before any award so lesson and task
@@ -533,7 +533,7 @@ function renderLessonReward() {
   const r = state.lessonReward;
   if (!r) return lessonOutcomeNoSession("reward",
     "Finish a lesson and this is where the XP lands.");
-  const lesson = lessonV3(r.lessonId);
+  const lesson = framedLesson(r.lessonId);
 
   return `
     <div class="journal-shell">
@@ -546,7 +546,7 @@ function renderLessonReward() {
         <div class="card" style="text-align:center;">
           <p class="du-figure">${r.award.total} XP</p>
           <p class="helper" style="margin:4px 0 0;">
-            ${r.award.correctCount} right · ${LESSONS_V3.badges.xpLessonComplete} for finishing
+            ${r.award.correctCount} right · ${FRAMED_LESSONS.badges.xpLessonComplete} for finishing
             ${r.award.bonus ? " · " + r.award.bonus + " daily-task bonus" : ""}
           </p>
           <p class="helper" style="margin:8px 0 0;">🦴 ${r.kibble} bones</p>
@@ -644,9 +644,9 @@ function lessonOutcomeNoSession(what, line) {
       <div class="journal-body">
         <div class="card">
           <p class="task-title" style="margin:0 0 8px;">Lessons</p>
-          ${(LESSONS_V3.lessons || []).map(l => `
+          ${(FRAMED_LESSONS.lessons || []).map(l => `
             <button class="button secondary full" style="margin-bottom:6px;" type="button"
-                    onclick="lessonV3Start('${h(l.id)}')">${h(l.title)}</button>`).join("")}
+                    onclick="framedLessonStart('${h(l.id)}')">${h(l.title)}</button>`).join("")}
         </div>
       </div>
       <div class="journal-foot">

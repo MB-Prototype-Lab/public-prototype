@@ -13,8 +13,8 @@
 //    answer. apr_v5 stays reachable via `no_debt`, so it is harmless. Do not
 //    "fix" it by inventing a question.
 
-function lessonV3(id) {
-  return (LESSONS_V3.lessons || []).find(l => l.id === id) || null;
+function framedLesson(id) {
+  return (FRAMED_LESSONS.lessons || []).find(l => l.id === id) || null;
 }
 
 // ─── "Did today's task send me here?" ────────────────────────────────────────
@@ -67,7 +67,7 @@ function lessonNextId(question, option) {
 // ── Session ──────────────────────────────────────────────────────────────────
 
 function lessonFramingStart(lessonId) {
-  const lesson = lessonV3(lessonId);
+  const lesson = framedLesson(lessonId);
   if (!lesson) return null;
   const first = lessonFirstQuestion(lesson);
   state.lessonFraming = {
@@ -97,7 +97,7 @@ function lessonEffectiveOptions(f, q) {
 function lessonFramingAnswer(optionIndex) {
   const f = state.lessonFraming;
   if (!f) return;
-  const lesson = lessonV3(f.lessonId);
+  const lesson = framedLesson(f.lessonId);
   const q = lessonQuestion(lesson, f.questionId);
   if (!q) return;
   const opt = lessonEffectiveOptions(f, q)[optionIndex];
@@ -121,7 +121,7 @@ function lessonFramingAnswer(optionIndex) {
 function lessonFramingEnterNumber(value) {
   const f = state.lessonFraming;
   if (!f) return;
-  const lesson = lessonV3(f.lessonId);
+  const lesson = framedLesson(f.lessonId);
   const q = lessonQuestion(lesson, f.questionId);
   const num = Number(value);
   if (isFinite(num) && num > 0) f.inputs.enteredApr = num;
@@ -134,7 +134,7 @@ function lessonFramingEnterNumber(value) {
 // Terminal — infer the figure, pick the variant, store the session profile, play.
 function lessonFramingFinish() {
   const f = state.lessonFraming;
-  const lesson = lessonV3(f.lessonId);
+  const lesson = framedLesson(f.lessonId);
   f.questionId = null;
   const variant = lessonSelectVariant(lesson, f.tags, f.inputs);
   f.variantId = variant.id;
@@ -219,7 +219,7 @@ function lessonBucketFor(lesson, figure) {
 /**
  * Collect tags from all framing answers, score each variant by overlap, play
  * the highest. Ties break by declaration order. Zero matches plays the
- * fallback (LESSONS_V3.matching).
+ * fallback (FRAMED_LESSONS.matching).
  *
  * Unmatched tags are the DESIGN, not a gap: `unsure_apr`, `unknown_*` and all
  * of f3's confidence tags deliberately match no variant and fall through to the
@@ -314,7 +314,7 @@ function lessonCutStoryboard(vt, beats, lessonId, sentences) {
 function lessonBorrowedVisualPlan(lessonId) {
   if (typeof LP_BORROWED_VISUALS === "undefined" || typeof LP_SCRIPTS === "undefined") return null;
   const map = LP_BORROWED_VISUALS[lessonId];
-  const donor = map && lessonV3(map.from);
+  const donor = map && framedLesson(map.from);
   const sentences = LP_SCRIPTS[lessonId];
   if (!donor || !donor.visualTemplate || !sentences) return null;
   const storyboard = lessonCutStoryboard(donor.visualTemplate, map.beats, lessonId, sentences);
@@ -359,8 +359,8 @@ function lessonOpenPlayer(lesson, variantId) {
       id: lesson.id,
       title: lesson.title,
       description: (lesson.courses || []).join(" · "),
-      badges: lessonV3Badges(lesson),
-      xp: (LESSONS_V3.badges && LESSONS_V3.badges.xpLessonComplete) || 100,
+      badges: framedLessonBadges(lesson),
+      xp: (FRAMED_LESSONS.badges && FRAMED_LESSONS.badges.xpLessonComplete) || 100,
       // Drives the "⚡ Daily Bonus" line on the reward screen. Derived from the
       // task's route, never a hardcoded id — see lessonIsActiveTask.
       dailyTask: lessonIsActiveTask(lesson.id),
@@ -377,7 +377,7 @@ function lessonOpenPlayer(lesson, variantId) {
 function lessonSkipFraming() {
   const f = state.lessonFraming;
   if (!f) return;
-  const lesson = lessonV3(f.lessonId);
+  const lesson = framedLesson(f.lessonId);
   f.questionId = null;
   f.variantId = lessonSelectVariant(lesson, [], {}).id;
   lessonOpenPlayer(lesson, f.variantId);
@@ -400,15 +400,15 @@ function lessonProfileFigure(lessonId) {
  * questions again, even when this session already answered them: a tester who
  * once answered "no card" must still be able to see them.
  */
-function lessonV3Start(lessonId) {
-  if (!lessonV3(lessonId)) return;
+function framedLessonStart(lessonId) {
+  if (!framedLesson(lessonId)) return;
   lessonFramingStart(lessonId);
   go("lessonFraming");
 }
 
 // ─── Framed lessons in the Learn tab ─────────────────────────────────────────
-// Adapt LESSONS_V3 into state.lessons at boot so tasks and browsing use one
-// catalogue. isV3 branches only at entry; the player and reward path are shared.
+// Adapt FRAMED_LESSONS into state.lessons at boot so tasks and browsing use one
+// catalogue. isFramed branches only at entry; the player and reward path are shared.
 
 // Framed lessons use course slugs; the Learn tab groups by badge.
 const LESSON_V3_COURSE_BADGES = {
@@ -420,7 +420,7 @@ const LESSON_V3_COURSE_BADGES = {
   "spending":        "Emergency Fund"
 };
 
-function lessonV3Badges(lesson) {
+function framedLessonBadges(lesson) {
   const out = [];
   (lesson.courses || []).forEach(c => {
     const b = LESSON_V3_COURSE_BADGES[c];
@@ -430,18 +430,18 @@ function lessonV3Badges(lesson) {
 }
 
 /** A framed lesson in the shape Learn, topic and selectLesson expect. */
-function lessonV3LearnRow(lesson) {
+function framedLessonLearnRow(lesson) {
   return {
     id:          lesson.id,
     title:       lesson.title,
     description: "Built from your own answers, so the numbers are yours.",
     type:        "lesson",
-    badges:      lessonV3Badges(lesson),
-    xp:          (typeof LESSONS_V3 !== "undefined" && LESSONS_V3.badges &&
-                  LESSONS_V3.badges.xpLessonComplete) || 40,
+    badges:      framedLessonBadges(lesson),
+    xp:          (typeof FRAMED_LESSONS !== "undefined" && FRAMED_LESSONS.badges &&
+                  FRAMED_LESSONS.badges.xpLessonComplete) || 40,
     dailyTask:   false,
     status:      "not-started",
-    isV3:        true      // the one bit selectLesson branches on
+    isFramed:        true      // the one bit selectLesson branches on
   };
 }
 
@@ -453,7 +453,7 @@ function lessonV3LearnRow(lesson) {
  * framing answers, which the calculator seeds from. Re-opening a lesson asks
  * again all the same. Only resetUserData() drops them.
  */
-function lessonV3ClearSession() {
+function framedLessonClearSession() {
   state.lessonVariantId     = null;
   state.lessonVariantScript = null;
   state.lessonVisualPlan    = null;
@@ -463,10 +463,10 @@ function lessonV3ClearSession() {
 }
 
 /** Append framed lessons to the shared catalogue. Idempotent on re-boot. */
-function lessonV3MergeIntoCatalog() {
-  if (typeof LESSONS_V3 === "undefined" || !LESSONS_V3.lessons) return;
-  LESSONS_V3.lessons.forEach(l => {
+function framedLessonMergeIntoCatalog() {
+  if (typeof FRAMED_LESSONS === "undefined" || !FRAMED_LESSONS.lessons) return;
+  FRAMED_LESSONS.lessons.forEach(l => {
     if (state.lessons.some(x => x.id === l.id)) return;
-    state.lessons.push(lessonV3LearnRow(l));
+    state.lessons.push(framedLessonLearnRow(l));
   });
 }

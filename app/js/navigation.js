@@ -217,9 +217,9 @@ function selectLesson(id) {
   const lesson = state.lessons.find(l => l.id === id);
   if (!lesson) return;
   // Drop the previous lesson's script, video, quiz and calculator before this
-  // one starts, or it inherits them — see lessonV3ClearSession. A framed lesson
+  // one starts, or it inherits them — see framedLessonClearSession. A framed lesson
   // re-populates them a moment later in lessonOpenPlayer, which runs after this.
-  if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
+  if (typeof framedLessonClearSession === "function") framedLessonClearSession();
   state.currentLesson = lesson;
   // Mark in-progress only if not already completed — a revisit that gets
   // abandoned should not downgrade a completed lesson's status
@@ -239,7 +239,7 @@ function selectLesson(id) {
  */
 function startCurrentLesson() {
   const lesson = state.currentLesson;
-  if (lesson && lesson.isV3) { lessonV3Start(lesson.id); return; }
+  if (lesson && lesson.isFramed) { framedLessonStart(lesson.id); return; }
   // An older lesson may borrow the APR lesson's figure-free beats; without that
   // its stage is plain green (LP_BORROWED_VISUALS, screens/lesson.js).
   if (lesson && typeof lessonBorrowedVisualPlan === "function") {
@@ -382,7 +382,7 @@ function completeLesson() {
   state.activeQuizWrongChoices = [];
   state.currentLesson          = null;
   // Clear framing too — this is the one funnel every lesson exits through.
-  if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
+  if (typeof framedLessonClearSession === "function") framedLessonClearSession();
 
   // Reset the tab under the reward so Back lands on its front page, not the
   // finished player or topic.

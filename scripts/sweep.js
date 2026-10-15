@@ -1025,7 +1025,7 @@ var d = cmpRow("Dining out");
 chk(d.vsPlan !== d.vsPeer, "the two dining gaps stay distinct",
     "plan " + d.vsPlan + "% vs peers " + d.vsPeer + "%");
 var missingScripts = [];
-(LESSONS_V3.lessons || []).forEach(function (l) {
+(FRAMED_LESSONS.lessons || []).forEach(function (l) {
   (l.scriptVariants || []).forEach(function (v) { if (!lessonScriptFor(v.id)) missingScripts.push(v.id); });
 });
 chk(missingScripts.length === 0, "all 15 lesson variants have a script body", missingScripts.join(", "));
@@ -1985,8 +1985,8 @@ if (typeof kbdMarkup === "function" && typeof KBD_LAYERS === "object") {
 section("7k. APR lesson: questions every time, a picture with no card");
 
 // Begin must ask again; a run with no card APR needs a figure-free storyboard.
-if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "undefined") {
-  var aprL = LESSONS_V3.lessons.filter(function (l) { return l.id === "apr"; })[0];
+if (typeof lessonFigureFreeStoryboard === "function" && typeof FRAMED_LESSONS !== "undefined") {
+  var aprL = FRAMED_LESSONS.lessons.filter(function (l) { return l.id === "apr"; })[0];
   var ffMap = aprL && aprL.visualTemplate && aprL.visualTemplate.figureFree;
   var defScript = ffMap && lessonScriptFor(ffMap.script);
   var inRange = !!(ffMap && defScript) && ffMap.beats.every(function (e) {
@@ -2021,12 +2021,12 @@ if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "u
 
   // Re-open with stored answers: the questions come back.
   state.lessonFraming = null;
-  lessonV3Start("apr");
+  framedLessonStart("apr");
   chk(state.screen === "lessonFraming" && !!state.lessonFraming,
       "re-opening APR with answers already stored asks the questions again");
 
   state.screen = k7.screen; state.lessonProfile = k7.prof; state.lessonFraming = k7.fr;
-  if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
+  if (typeof framedLessonClearSession === "function") framedLessonClearSession();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2095,15 +2095,15 @@ if (typeof lessonBorrowedVisualPlan === "function" && typeof LP_BORROWED_VISUALS
   });
   var ibSaved = { cur: state.currentLesson, screen: state.screen };
   state.currentLesson = state.lessons.filter(function (l) { return l.id === "interest-builds"; })[0];
-  lessonV3ClearSession();
+  framedLessonClearSession();
   startCurrentLesson();
   var ibPlan = state.lessonVisualPlan;
   state.currentLesson = state.lessons.filter(function (l) { return l.id === "interest-refresher"; })[0];
-  lessonV3ClearSession();
+  framedLessonClearSession();
   startCurrentLesson();
   chk(!!ibPlan && hyperframesCanRender(ibPlan) && state.lessonVisualPlan === null,
       "Begin on How Interest Builds sets its stage; a lesson with no map still gets none");
-  lessonV3ClearSession();
+  framedLessonClearSession();
   state.currentLesson = ibSaved.cur; state.screen = ibSaved.screen;
 }
 

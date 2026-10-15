@@ -12,8 +12,8 @@
 // courses, so finishing it moves all three. That is the design, not
 // double-counting.
 
-function lrTiers() { return LESSONS_V3.badges.tiers || ["bronze"]; }
-function lrXpPerTier() { return LESSONS_V3.badges.xpPerTier || 500; }
+function lrTiers() { return FRAMED_LESSONS.badges.tiers || ["bronze"]; }
+function lrXpPerTier() { return FRAMED_LESSONS.badges.xpPerTier || 500; }
 
 /** Tier + level from raw XP. Caps at the final tier rather than overflowing. */
 function lrRank(xp) {
@@ -43,7 +43,7 @@ function lrCourseXp(courseId) {
  * panel during a test session.
  */
 function lrComputeAward(lesson, correctCount, fromDailyTask) {
-  const b = LESSONS_V3.badges;
+  const b = FRAMED_LESSONS.badges;
   const cfg = state.xpConfig || {};
   const perCorrect = b.xpCorrectAnswer || 50;
   const complete = b.xpLessonComplete || 100;

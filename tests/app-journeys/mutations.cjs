@@ -29,7 +29,7 @@ const SPECS = [
   {
     id: 'half-renamed-handler', expect: 'caught', journeys: ['lesson-framed'],
     why: 'a function renamed where it is defined but not where a button calls it',
-    edits: { 'js/lessons-v3.js': [['function lessonV3Start(lessonId) {', 'function lessonStartRenamed(lessonId) {']] },
+    edits: { 'js/framed-lessons.js': [['function framedLessonStart(lessonId) {', 'function lessonStartRenamed(lessonId) {']] },
   },
   {
     id: 'esf-rounding', expect: 'caught', journeys: ['esf-full'], profiles: true,

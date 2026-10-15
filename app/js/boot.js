@@ -111,8 +111,8 @@ function bootV3() {
   // it, so answering the prompt is a pop rather than a jump, and the top bar's
   // back arrow doubles as "skip".
   // Lessons join the one Learn catalog, so they are browsable rather than
-  // reachable only through their daily task (see lessons-v3.js).
-  lessonV3MergeIntoCatalog();
+  // reachable only through their daily task (see framed-lessons.js).
+  framedLessonMergeIntoCatalog();
 
   const entry = v3EntryScreen();
   state.nav.activeStack = "home";

@@ -23,7 +23,7 @@
 const LESSON_SCRIPTS = {
 
   // ── APR ────────────────────────────────────────────────────────────────────
-  // Bucketed by the inferred rate vs the market average (lessons-v3.js). The
+  // Bucketed by the inferred rate vs the market average (framed-lessons.js). The
   // AUDIO stays GENERAL — "well below", "a little above", never their exact
   // rate; the specific figure and the gap are shown in the staging visuals
   // (lessonVisualPlan), not spoken. No advice (D26/L20).

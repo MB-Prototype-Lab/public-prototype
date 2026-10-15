@@ -11,6 +11,7 @@
 //     that still matches a field in the app's state warns in the gate and fails
 //     --against and at the head of --series.
 module.exports = [
+  { key: 'isFramed', as: 'isV3' },
   { removed: 'xpConfig.discountedRate', why: 'the Learn Tools knob wrote it and nothing read it' },
   { removed: 'helpMeOut.target', why: 'always "budget" once the emergency fund hook was deleted' },
   { removed: 'esf.billAmounts', why: 'emergency fund bill overrides: nothing wrote them, and their one reader was deleted' },

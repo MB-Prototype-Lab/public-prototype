@@ -76,12 +76,8 @@ opening `index.html` depends on it having been run recently.
 | `PEER_BENCHMARKS` | `peer-benchmarks.json` |
 | `DAILY_SCRIPTS` | `daily-scripts.json` |
 | `BUDDY_RESPONSES` | `buddy-responses.json` |
-| `LESSONS_V3` | `lessons.json` |
+| `FRAMED_LESSONS` | `lessons.json` |
 | `ZIP_COST_OF_LIVING` | `zip-cost-of-living.json` |
-
-<!-- LESSONS_V3, not LESSONS — v2's state.lessons still exists and holds the
-     48-question quiz pool we're keeping (L9). Two different things; distinct
-     names, per the repo's "everything is global, keep names unique" rule. -->
 
 ### Repo integration
 
@@ -492,7 +488,7 @@ comparisons, not arithmetic on a balance. A calculator bolted onto them would be
 a calculator for its own sake.
 
 **`origin` has to be carried, not inferred.** The v3 reward
-(`lessonRewardStart`) reads `lessonV3()`, which has never heard of a v2 lesson —
+(`lessonRewardStart`) reads `framedLesson()`, which has never heard of a v2 lesson —
 one arriving there falls through to home and loses its badge XP. So
 `state.lessonSim.origin` decides where Finish goes: `completeLesson()` for v2,
 `lessonRewardStart()` for v3. `quizFinish()` (`screens/quiz.js`) is where the v2

@@ -177,14 +177,14 @@ check('handler identifiers skip members, keys, locals and strings', () => {
 });
 
 check('state digests leave out listed removed paths and nothing else, and report live ones', () => {
-  const aliases = [{ key: 'isV3', as: 'isNew' }, { removed: 'lifestyleWizard', why: 't' },
+  const aliases = [{ key: 'isFramed', as: 'isNew' }, { removed: 'lifestyleWizard', why: 't' },
     { removed: 'xpConfig.discountedRate', why: 't' }, { removed: 'goals.*.legacy', why: 't' }];
   const digest = s => JSON.stringify(snap.stableJson(s, x => x, aliases));
   const state = (extra = {}) => Object.assign({ isNew: true, xpConfig: { rate: 1, discount: 0 }, goals: [{ id: 1, legacyNote: 'a' }, { id: 2 }], legacy: 1 }, extra);
   const withFields = state({ lifestyleWizard: null, xpConfig: { rate: 1, discount: 0, discountedRate: 0.5 },
     goals: [{ id: 1, legacyNote: 'a', legacy: true }, { id: 2, legacy: false }] });
   assert.equal(digest(withFields), digest(state()));
-  assert.equal(digest(Object.assign(withFields, { isNew: undefined, isV3: true })), digest(state()));
+  assert.equal(digest(Object.assign(withFields, { isNew: undefined, isFramed: true })), digest(state()));
   assert.deepEqual(Object.keys(snap.flatten(snap.stableJson(withFields, x => x, aliases))).filter(k => /discountedRate|wizard|goals\/\d+\/legacy$/i.test(k)), []);
   // An unlisted difference, and siblings of listed paths, still show.
   assert.notEqual(digest(state({ xpConfig: { rate: 2, discount: 0 } })), digest(state()));

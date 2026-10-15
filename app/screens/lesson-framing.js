@@ -9,7 +9,7 @@
 
 function renderLessonFraming() {
   const f = state.lessonFraming;
-  const lesson = f ? lessonV3(f.lessonId) : null;
+  const lesson = f ? framedLesson(f.lessonId) : null;
   const q = lesson ? lessonQuestion(lesson, f.questionId) : null;
   // D19 — entered directly with no lesson chosen.
   if (!f || !lesson || !q) return lessonOutcomeNoSession("lesson",
@@ -18,7 +18,7 @@ function renderLessonFraming() {
   // The tree branches, so the path length varies (1–5). Show a soft, growing
   // indicator rather than a fixed total that would over-promise questions.
   const asked = f.path.length + 1;
-  const maxQ = LESSONS_V3.config.maxFramingQuestions || 5;
+  const maxQ = FRAMED_LESSONS.config.maxFramingQuestions || 5;
   const total = Math.min(maxQ, Math.max(2, asked));
   const isNumber = q.type === "fill_number";
 
@@ -68,7 +68,7 @@ function renderLessonFramingAdmin() {
   const f = state.lessonFraming;
   if (!f) return `<div class="admin-card"><p class="admin-card-title">Framing</p>
     <p class="helper">Not running.</p></div>`;
-  const lesson = lessonV3(f.lessonId);
+  const lesson = framedLesson(f.lessonId);
   const would = lessonSelectVariant(lesson, f.tags, f.inputs);
   const figure = lessonInferFigure(lesson, f.inputs);
   const avg = (typeof CARD_APR !== "undefined" && CARD_APR.marketAverage) || null;
