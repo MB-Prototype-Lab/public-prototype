@@ -1,25 +1,16 @@
 // --- Buddy (L22) -------------------------------------------------------------
 // Nothing here is generated. L22 allows OWNER-SUPPLIED static illustrations,
-// selected by buddy state; D10's prohibition is on Claude generating art and it
-// still holds.
+// selected by buddy state; D10 prohibits app or agent-generated art.
 //
 // -- THE IMAGE IS PREFERRED, THE DESCRIPTION IS THE FALLBACK ------------------
-// The labelled description below is NOT dead code now that art exists. Every
+// The labelled description below is a required fallback. Every
 // stage draws the one illustration whatever the appearance attributes say, and
 // D19 forbids a screen rendering empty — so an image that fails to load
 // degrades to the description rather than to a gap. Deleting it would turn a
 // missing file into a blank stage.
 //
-// -- STILL NO SHEETS ----------------------------------------------------------
-// Flat cream sheets, CSS background-position cropping, six fixed sheets and
-// the dropped eye/nose colours were all consequences of raster art being
-// unable to recolour. The owner's art is SEPARATE FILES chosen by state, not
-// one sheet addressed by offset, so there is still nothing to crop — DO NOT
-// build the cropping machinery.
-//
-// The pickers are also NOT reduced to match whatever the art covers: the
-// image varies along whichever stats the owner's plan names, and the
-// description carries the attributes it does not.
+// L22 allows separate image files, not sprite-sheet cropping. Appearance
+// dropdowns affect the description fallback, not the fixed illustration.
 
 // The six poses. Poses 1/3/4/5 are the ambient idle cycle; 2 and 6 are
 // event-driven (chat open, reward/streak).
@@ -36,11 +27,11 @@ const BUDDY_IDLE_POSES = BUDDY_POSES.filter(p => p.idle).map(p => p.id);
 
 // ─── Customization options (single source — Tools reads these) ──────────────
 // These drive the description and the Tools dropdowns, and they are the
-// vocabulary any image filename has to agree with (L22).
+// vocabulary of the missing-image fallback.
 // Values may carry underscores/spaces; the stage renders them with _ → space.
 // -- "prototype": the one attribute value backed by a real illustration -------
-// L22 allows owner-supplied art, and the first image to arrive is ONE fixed
-// illustration with its background baked in. It cannot vary by breed, coat,
+// The owner-supplied art is one fixed illustration with its background baked
+// in. It cannot vary by breed, coat,
 // eyes or size -- so it is not a breed: it names the picture, and every stage
 // draws that picture whatever value an attribute holds.
 //
@@ -88,7 +79,7 @@ const BUDDY_SIZES = [BUDDY_PROTOTYPE, "small", "medium", "large"];
 // Pronouns, asked on onboarding's buddy step. Stored as the id; the label is
 // what a tester reads. Ids stay one short word because they ride in the Useberry
 // value trail (js/value-trail.js, key "pro") -- a fixed list, never free text.
-// Nothing reads them yet: the buddy speaks in the first person everywhere.
+// Prose does not use them: the buddy speaks in the first person everywhere.
 const BUDDY_PRONOUNS = [
   { id: "he",   label: "He/Him" },
   { id: "she",  label: "She/Her" },
@@ -209,11 +200,8 @@ function buddyResetArt() {
 // Kept separate so the idle tick can repaint just this, rather than calling
 // render() every 4–6 seconds and blowing away focus across the whole screen.
 //
-// This is the swap architecture section 13 predicted: the image branch lives
-// HERE, inside the content, so the frame, the idle tick, the pickers and
-// state.buddy are all untouched by art arriving. Every stage draws the one
-// illustration whatever the appearance attributes say; the description is the
-// missing-image fallback (L22).
+// Keep the image/fallback choice inside the content so both paths share the
+// frame and idle tick (L22).
 function renderBuddyInner() {
   const b = state.buddy || {};
   if (!buddyImgBroken) return renderBuddyImage(b);
@@ -250,7 +238,7 @@ function renderBuddyAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">Buddy (L22)</p>
       <p class="helper" style="margin-bottom:10px;">
-        All attributes are live. The creator now asks only for a name and
+        All attributes are live. Onboarding asks only for a name and
         pronouns; every appearance attribute lives here.
         <strong>The appearance dropdowns do not change the picture</strong> —
         every stage draws the one illustration.

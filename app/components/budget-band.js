@@ -8,10 +8,8 @@
 //   the DOT           what you have actually spent (view), or what you are
 //                     setting (build, where the dot is the slider thumb)
 //
-// It replaces the three stacked Budget / Peers / You bars everywhere they were
-// rendered. Three bars state three numbers and leave the reader to do the
-// arithmetic; one track puts them in a spatial relationship, which is the
-// comparison the screen is actually for.
+// One track puts plan, peers and spend in a spatial relationship so the reader
+// need not compare three independent scales.
 //
 // ── HAND-ROLLED, IN CSS PERCENTAGES, NOT SVG ────────────────────────────────
 // L1 rules out chart libraries, so this is built by hand like every other
@@ -53,17 +51,12 @@ const BAND_HEADROOM = 1.1;
  * Peers are in that max, so every mark is always visible with a tenth of the
  * track as breathing room past the highest one.
  *
- * This was briefly the other way round, with peers excluded so that a band
- * sitting above everything else would run off the edge and be marked. Against
- * the seeded persona that fired on five of twelve categories -- LA prices
- * against a modest budget -- so the chart drew nothing at all on nearly half
- * its rows. "Peers spend far more than you planned" is better said by a band
- * sitting hard right of the budget mark than by an empty track and a rule.
+ * Keep peers visible even far above plan: the gap is clearer than an empty
+ * track with an overflow rule.
  *
  * ── WHY BUILD MODE STILL SUPPLIES ITS OWN ───────────────────────────────────
  * There the budget IS the value being dragged, so an edge computed from the
- * marks would move under the thumb -- the recoil that budgetSliderMax() was
- * written to kill (screens/budget-v3.js). Build passes that stable ceiling
+ * marks would move under the thumb. Build passes budgetSliderMax()'s stable ceiling
  * instead. It is always well clear of the peer band (budgetSliderMax is at
  * least 2.2x the peer figure, against a band top of 1.1x), so peers stay on
  * screen there too -- a slider also needs somewhere to drag TO, which an edge

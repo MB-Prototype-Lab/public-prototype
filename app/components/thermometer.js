@@ -1,11 +1,9 @@
 // ─── Thermometer Component ────────────────────────────────────────────────────
-// Unified comparison visual used throughout the app (My Progress, peer benchmarks, etc.)
-// Single source of truth: if the visual ever changes, edit only this file.
+// Two-value comparison; shared geometry keeps caller scales consistent.
 //
 // Scales to max(userVal, peerVal):
-//   - User > peer:  peer marker left, user at 100% (right edge), accent fill
-//   - User < peer:  user left of peer, peer at 100% (right edge), warn fill
-//   - Equal:        both at 100%, neutral color
+// The larger value sits at the right edge. higherIsBetter controls whether
+// the gap uses accent or attention colouring; equality is not a neutral state.
 
 function renderThermometer(userVal, peerVal, opts) {
   opts = opts || {};
