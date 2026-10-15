@@ -1,7 +1,7 @@
 // The Budget tab reviews the flat plan and spend comparison when the
 // paywall is disabled. Before the first save, offer the single builder (L6).
 
-function renderBudgetV3() {
+function renderBudgetTab() {
   // L27 overrides D31 for this tab. Retain the budget view behind the flag
   // so turning the paywall off restores the same review surface.
   if (typeof BUDGET_PAYWALL !== "undefined" && BUDGET_PAYWALL) return renderBudgetPaywall();
@@ -151,7 +151,7 @@ function budgetDoneContinue() {
   navGoTabRoot("aboutMe");
 }
 
-function renderBudgetV3Admin() {
+function renderBudgetTabAdmin() {
   return `
     <div class="admin-card">
       <p class="admin-card-title">Plan (12 categories)</p>

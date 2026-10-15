@@ -24,7 +24,7 @@ function renderBudgetCategory() {
     <div class="card">
       <div class="row" style="align-items:baseline;margin-bottom:2px;">
         <span class="budget-row-name">Your plan</span>
-        <!-- id is budgetSetPlan's live-drag target (budget-v3.js) — keep in step -->
+        <!-- id is budgetSetPlan's live-drag target (budget.js) — keep in step -->
         <span class="budget-row-amt" id="planAmt${idx}">${budgetFmt(r.plan)}</span>
       </div>
       ${renderBudgetBandSlider({

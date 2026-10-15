@@ -114,7 +114,7 @@ function renderScreen() {
   if (state.screen === "journalConfirm")    return renderJournalConfirm();
   if (state.screen === "journalDone")       return renderJournalDone();
   if (state.screen === "home")              return renderHome();
-  if (state.screen === "aboutMe")           return renderBudgetV3();
+  if (state.screen === "aboutMe")           return renderBudgetTab();
   if (state.screen === "profilePicker")     return renderProfilePicker();
   if (state.screen === "helpMeOut")         return renderHelpMeOut();
   if (state.screen === "budgetBuild")       return renderBudgetBuild();
@@ -182,7 +182,7 @@ function renderAdmin() {
   if (state.screen === "reward")        return renderRewardAdmin();
   if (state.screen === "aboutMe")       return (typeof BUDGET_PAYWALL !== "undefined" && BUDGET_PAYWALL)
                                                ? renderBudgetPaywallAdmin()
-                                               : renderBudgetV3Admin();
+                                               : renderBudgetTabAdmin();
   if (state.screen === "profilePicker")   return renderProfilePickerAdmin();
   if (state.screen === "helpMeOut")       return renderHelpMeOutAdmin();
   if (state.screen === "budgetBuild")     return renderBudgetBuildAdmin();

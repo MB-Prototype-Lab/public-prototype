@@ -1816,7 +1816,7 @@ section("7g. The Budget tab is walled");
 
 var _sc = state.screen, _ps = state.planStatus, _ta = state.trialAccepted;
 state.planStatus = "complete";          // the hardest case: a budget EXISTS
-var walled = renderBudgetV3();
+var walled = renderBudgetTab();
 
 // BOTH WAYS, because the flag's whole promise is that flipping it unwinds
 // nothing. Asserting it is on would make the escape hatch fail the build, which
