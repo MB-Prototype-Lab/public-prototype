@@ -75,7 +75,7 @@ function adminSubtitle() {
   if (state.screen === "bpLanding")       return "Big purchase — landing and the emergency fund check. Not numbered steps.";
   if (state.screen === "bpFinder")        return "Big purchase - find your car. Know-it or quiz, then the five lines, peers and ways to spend less.";
   if (state.screen === "bpYourCar")       return "Big purchase - your car. Pay for it and plan for it on one screen.";
-  if (state.screen === "budgetBuild")     return APP_VERSION + " builder — " + bbStep().title.toLowerCase() +
+  if (state.screen === "budgetBuild")     return "builder — " + bbStep().title.toLowerCase() +
                                                  " (step " + ((state.budgetBuild && state.budgetBuild.step || 0) + 1) +
                                                  " of " + BB_STEPS.length + "), Help me out per line.";
   if (state.screen === "budgetDone")     return "Budget saved through the seam.";

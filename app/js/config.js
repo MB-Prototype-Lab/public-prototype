@@ -1,9 +1,6 @@
 // ─── Build configuration ──────────────────────────────────────────────────────
 // Loads FIRST, before any data or app file. Nothing here depends on anything.
 
-// Version label for Tools subtitles.
-const APP_VERSION = "v4";
-
 // Frozen publication setting; local development is untracked. Participant URLs
 // cannot override it. useberryActive additionally restricts injection to HTTP(S).
 const USEBERRY_TRACKING = window.MB_RELEASE.tracking === true;
