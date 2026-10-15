@@ -5,13 +5,7 @@
 // Exception: esfCommit applies immediately and returns to Goals (owner-approved).
 //
 // Builders never write state.plan directly. That is the whole point of the
-// seam: v2 had two builders behind it, v3 has one (L6), and a third could be
-// added without touching anything downstream.
-//
-// PORTED IN PHASE 2 — v2's version converted an 8-amount payload into 5 nested
-// buckets via HOUSING_SPLIT / BILLS_SPLIT. Under the flat 12 there is
-// nothing to split: a baseline carries a monthly figure per category and the
-// conversion disappears.
+// seam (L6): a builder can be added without changing downstream readers.
 
 /**
  * Normalized baseline.
@@ -59,16 +53,12 @@ function applyBudgetBaseline(baseline) {
 
   // Mark any task that pointed at whatever built this baseline.
   //
-  // The standalone budget task is gone — the emergency fund runs first and
-  // seeds the budget, so "Saving for an emergency" is the task that completes
-  // when a baseline lands. budgetBuild stays matched because the builder is
-  // still admin-reachable and can still commit.
+  // Match both builders so off-path task cards also reflect a completed save.
   (state.tasks || []).forEach(t => {
     if (t.destination === "budgetBuild" || t.destination === "esfBuild") t.completed = true;
   });
   // Route through homeCompleteTask rather than setting the flag directly —
-  // doing it by hand marked the task done but skipped the Charity Points it
-  // pays, so building a budget silently earned nothing.
+  // it also credits the task's Charity Points.
   (state.dailyTasks || []).forEach(t => {
     if (t.route !== "budget" && t.route !== "emergency_fund") return;
     if (typeof homeCompleteTask === "function") homeCompleteTask(t.id);

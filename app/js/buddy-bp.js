@@ -6,9 +6,9 @@
 // It is a separate model rather than a second caller of js/buddy-esf.js on
 // purpose. That file's state lives on the ESF session and its entries resolve
 // against ESF rows; pointing it at a car would mean teaching it about two tools
-// at once. The ESF build stays byte-for-byte what it was.
+// at once.
 //
-// v1 is EXPLAIN-ONLY (§11): pick an entry, Buddy answers, back to the list. No
+// Explain-only entries (§11): pick an entry, Buddy answers, back to the list. No
 // lifestyle multipliers — miles a day is already an input, so the ESF's car
 // questions would double-count it. The fixed three-button menu row is kept, and
 // "Help me calculate this" is always disabled here: a missing button would

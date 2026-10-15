@@ -1,8 +1,4 @@
 // ─── Goals engine ────────────────────────────────────────────────────────────
-// Rebuilt to the v3 model. v2's Goals V2 module — frozen baselines, derived
-// sprints, a seeded cohort, medals — is not carried over; it stays in
-// versions/v2/ and remains testable from the gate.
-//
 // ── TWO TYPES WITH INVERTED MATH ─────────────────────────────────────────────
 // This is the thing to get right, because the same card UI shows both:
 //
@@ -67,7 +63,7 @@ function goalPace(goal) {
   return Math.round((progress / elapsed) * 100);
 }
 
-/** 0–1 through the goal's window. Falls back to the seeded pace when undatable. */
+/** 0–1 through the goal's window, or null when it cannot be dated. */
 function goalElapsedFraction(goal) {
   if (!goal.targetDate) return null;
   const end = new Date(goal.targetDate).getTime();

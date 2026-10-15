@@ -1,7 +1,7 @@
 // ─── Big Purchase Calculator — the engine ────────────────────────────────────
 // Spec: docs/big-purchase-spec.md §3. NO DOM, and CATEGORY-BLIND.
 //
-// This file knows about cost buckets, loans, depreciation as a number, savings
+// This file knows about cost buckets, loans, savings
 // growth and save-to-afford. It does not know what a car is. Everything
 // vehicle-shaped comes through the category interface (§3.1), which a config
 // file registers with bpRegisterCategory(). A future Home or Boat calculator is
@@ -15,11 +15,7 @@
 //   trueCost(N) = price + sum(upfront) + sum(monthly) x 12N
 //               + sum(yearly) x (N - 1) + interestPaid(N)
 //
-// NO RESALE CREDIT (owner, 2026-09-26): "I do not want resale value at all...
-// it should never be included." The price is counted ONCE, in full, and
-// nothing is credited back for what the thing might sell for later. That is
-// not the double count this section used to warn about: counting the price
-// AND depreciation would be, and depreciation is now absent entirely.
+// Count the full price once, with no resale credit or additional depreciation.
 
 function bpData() {
   return (typeof BIG_PURCHASE !== "undefined" && BIG_PURCHASE) || {};
@@ -218,12 +214,8 @@ function bpPayment(principal, apr, term) {
  */
 function bpAmortize(principal, apr, term, months) {
   const r = (Number(apr) || 0) / 100 / 12;
-  // THE SCHEDULE RUNS ON THE PAYMENT THE TESTER IS SHOWN (2026-09-27). It used
-  // to run on $1,389.23 while every screen printed $1,390, so a year of
-  // payments was $16,671 where the tester adding up what they had been shown
-  // got $16,680 — and the owner did exactly that arithmetic. Rounding once,
-  // here, means the payment, the interest and every total built on them are
-  // the same $1,390 the screens print.
+  // Run the schedule on the rounded payment shown to the tester so interest
+  // and totals agree with the amounts they can add up on screen.
   const pay = bpRound(bpPayment(principal, apr, term), 5);
   let bal = Math.max(0, Number(principal) || 0);
   let interest = 0;
@@ -308,12 +300,7 @@ function bpStack(card, years, opts) {
 }
 
 /**
- * THE FIVE FIGURES. One definition, read by every screen (owner, 2026-09-27:
- * "I need to be clear about the cost of the car… right now it's all of them at
- * once and really confusing").
- *
- * The confusion was never arithmetic, it was two different questions answered
- * in one column:
+ * Keep the cost breakdown separate from financing:
  *
  *   WHAT IT COSTS   price, taxes and fees, running costs, loan interest.
  *                   These add up to the five-year total. Money gone.
@@ -329,13 +316,8 @@ function bpStack(card, years, opts) {
  * The loan payment AS IT IS SHOWN — rounded once, here, and read from here by
  * every screen that prints it or adds it to something.
  *
- * Step 3's headline used to round the SUM of the raw payment and the running
- * cost, while step 2 rounded the payment on its own. $1,395 + $760 came to
- * $2,155 → "$2,150", beside a screen showing "$1,400" and "$760" (owner,
- * 2026-09-27: *"step 2 shows 2150 monthly, which doesn't match… $1,400 +
- * $760"*). Rounding the parts and rounding the total are different sums; a
- * figure the tester is invited to add up must be built from the parts they can
- * see.
+ * Rounding parts and rounding their sum can disagree. Build each total from
+ * the rounded parts the tester can see.
  */
 function bpMonthlyPayment(b) {
   return bpRound(b.pay.payment, 5);
@@ -372,8 +354,7 @@ function bpBreakdown(card, years) {
   // day — they arrive inside the payment. Paying cash, they are due at once.
   //
   // The registration RENEWAL is deliberately absent: it falls due each year
-  // AFTER the first. Counting it here is what made screen 2's summary disagree
-  // with its own table by exactly one renewal.
+  // AFTER the first, not at purchase.
   const atPurchase = st.mode === "loan" ? st.down + extras : st.price + taxesFees + extras;
   const yearOne = {
     atPurchase: atPurchase,

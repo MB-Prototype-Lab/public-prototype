@@ -10,8 +10,7 @@
 // Strings are used as object keys VERBATIM — note the space and lowercase in
 // "Dining out". Do not slugify; every data file keys on the display string.
 //
-// There is no Savings category. Saving is a goal, not a budget line — v2's
-// `savings` bucket has no equivalent here.
+// Saving is a goal, not a budget line; there is no Savings category.
 const CATEGORIES = [
   "Housing", "Groceries", "Dining out", "Transport",
   "Utilities", "Subscriptions", "Health", "Personal care",
@@ -53,8 +52,7 @@ function isCategory(c) {
 // lookup that silently returns undefined and contributes 1.0 or 0 — the exact
 // class of plausible-looking wrong number this taxonomy exists to prevent.
 //
-// So the owner's "change the name across all screens" is done where it was
-// asked: on the screens. Data keys never move.
+// Change display labels here without changing data keys.
 //
 // USE catLabel() ANYWHERE A CATEGORY IS SHOWN TO A TESTER. Use the bare string
 // for every lookup, every object key, and every comparison.

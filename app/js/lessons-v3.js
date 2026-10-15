@@ -1,10 +1,6 @@
 // ─── Lesson framing + variant matching (D38) ─────────────────────────────────
-// The two gaps v2's pipeline does not cover:
-//   1. the pre-lesson framing decision tree
-//   2. answer-driven script personalization
-//
-// v2's lesson player is NOT rewritten (D38). It keeps its audio, its cue map
-// and its subtitle rendering; the only hook is which sentence array it plays.
+// Framing selects a personalised script and visual plan for the shared player
+// (D38); audio, cue maps and subtitle rendering stay with the player.
 //
 // ── THREE STRUCTURAL TRAPS IN THE DATA (architecture §12b) ───────────────────
 // 1. The key is `tag`, SINGULAR — not `tags`. A `.tags` lookup collects
@@ -25,18 +21,11 @@ function lessonV3(id) {
 // Two things hang off the answer: the daily-task XP bonus, and whether the
 // reward screen itemises the task's Charity Points beside the lesson's own.
 //
-// It used to be the literal comparison `state.activeTaskId === "t_lesson_apr"`,
-// written in two files. One hardcoded id, so a second lesson-routed daily task
-// — an emergency-fund task, say — would silently pay no bonus and show no task
-// line on the reward screen, while the home card that sent the tester there
-// still promised bones. Nothing would error; the figures would just be wrong.
-//
 // The data already answers the question. A task carries a `route`, and the
 // route grammar is the one navRouteTask parses: "name" or "name:param", where
 // `lesson:apr` names a lesson. So ask the task list rather than a string.
 //
-// state.dailyTasks is the V3 array. state.tasks is v2's parked one and no v3
-// screen renders it — see the table in js/utils.js appStateSnapshot.
+// Read state.dailyTasks, not the off-path state.tasks array (js/utils.js).
 
 /** The lesson id a task route points at, or null if it points elsewhere. */
 function lessonRouteTarget(route) {
@@ -254,7 +243,7 @@ function lessonSelectVariant(lesson, tags, inputs) {
     return fallback;
   }
 
-  // Tag overlap — the other lessons, until they get the same rework.
+  // Lessons without a bucket dimension use tag overlap.
   let best = null, bestScore = 0;
   variants.forEach(v => {
     if (v.isFallback) return;
@@ -272,9 +261,8 @@ function lessonScriptFor(variantId) {
 /**
  * The APR animation with nothing personal in it, for a run with no card APR.
  *
- * Without this the stage was plain green: the full storyboard needs the
- * viewer's own rate, and the waveform that used to stand in was retired (L10).
- * The four education beats use no figures at all, so they play here, each
+ * The full storyboard needs the viewer's rate. These education beats use no
+ * personal figures, so they can play without it, each
  * spanning the no-card script's lines that tell the same thing
  * (visualTemplate.figureFree in lessons.json). Timed from THAT script's cues --
  * the same lpTimingFor call renderLesson makes -- so the picture and the voice
@@ -335,8 +323,7 @@ function lessonBorrowedVisualPlan(lessonId) {
 }
 
 /**
- * Hand off to v2's player. The ONLY thing v3 changes is which sentence array it
- * plays — everything else about the player is untouched (D38).
+ * Hand the selected script and visual plan to the shared player (D38).
  */
 function lessonOpenPlayer(lesson, variantId) {
   state.lessonVariantId = variantId;
@@ -359,19 +346,14 @@ function lessonOpenPlayer(lesson, variantId) {
     storyboard: lesson.visualTemplate
   } : null;
   // No figure to plot (no card, rather-not-say, Skip): play the figure-free cut
-  // instead of a blank stage. A card run is untouched -- same spine as before.
+  // instead of a blank stage. Card runs use the full spine.
   if (state.lessonVisualPlan && state.lessonVisualPlan.userFigure == null) {
     const cut = lessonFigureFreeStoryboard(lesson, state.lessonVariantScript);
     if (cut) state.lessonVisualPlan.storyboard = cut;
   }
 
-  // v2's player keys its content off state.currentLesson. The lesson is in the
-  // shared catalog now, so PREFER that row — it carries the real badge names.
-  // Overwriting it with `badges: lesson.courses` put course slugs
-  // ("interest-rates") where the reward screen expects badge names, so
-  // completeLesson() matched nothing and the reward landed with 0 gains and 0 XP.
-  // Fabricate a row only when the player was opened without selectLesson (an
-  // admin jump), and map courses → badges there too.
+  // Prefer the shared catalogue row: rewards match badge names, not course
+  // slugs. For a direct player entry, map courses to badges in the fallback too.
   if (!state.currentLesson || state.currentLesson.id !== lesson.id) {
     state.currentLesson = state.lessons.find(l => l.id === lesson.id) || {
       id: lesson.id,
@@ -424,15 +406,11 @@ function lessonV3Start(lessonId) {
   go("lessonFraming");
 }
 
-// ─── v3 lessons in the Learn tab ─────────────────────────────────────────────
-// v3 lessons lived in their own catalog (LESSONS_V3) that the Learn tab never
-// listed, so `apr` was reachable ONLY from its daily task — a lesson you could
-// not find by browsing, on a pipeline of its own. Daily tasks are contextual
-// bookmarks into the app, not a second front door, so the v3 lessons are
-// adapted into state.lessons at boot and Learn/topic/selectLesson see one
-// catalog. Only the ENTRY branches (on isV3); everything after is shared.
+// ─── Framed lessons in the Learn tab ─────────────────────────────────────────
+// Adapt LESSONS_V3 into state.lessons at boot so tasks and browsing use one
+// catalogue. isV3 branches only at entry; the player and reward path are shared.
 
-// v3 lessons tag themselves with course slugs; the Learn tab groups by badge.
+// Framed lessons use course slugs; the Learn tab groups by badge.
 const LESSON_V3_COURSE_BADGES = {
   "interest-rates":  "Credit Cards",
   "credit-cards":    "Credit Cards",
@@ -451,7 +429,7 @@ function lessonV3Badges(lesson) {
   return out.length ? out : ["Credit Cards"];
 }
 
-/** A v3 lesson in the shape the Learn tab, topic list and selectLesson expect. */
+/** A framed lesson in the shape Learn, topic and selectLesson expect. */
 function lessonV3LearnRow(lesson) {
   return {
     id:          lesson.id,
@@ -468,17 +446,8 @@ function lessonV3LearnRow(lesson) {
 }
 
 /**
- * Clear the per-run state a v3 lesson leaves behind.
- *
- * These fields had writers and no owner: `lessonOpenPlayer` sets the script,
- * the storyboard and the variant, the outcome screens set the quiz and the
- * calculator, and nothing on the shared path ever cleared them. Because
- * screens/lesson.js falls back through `state.lessonVariantScript ||
- * LP_SCRIPTS[id]` and gates its video on `state.lessonVisualPlan`, one APR run
- * left EVERY other lesson playing APR's narration over APR's video — and
- * `lessonLeaveForQuiz`'s branch on `lessonVariantId` sent them all into the v3
- * outcome chain, where a stale `lessonFraming.lessonId` handed them APR's quiz
- * and APR's calculator too.
+ * Clear per-run framing, script, visuals and outcomes so another lesson cannot
+ * inherit this run's narration, video, quiz or calculator.
  *
  * `state.lessonProfile` is deliberately NOT cleared: it holds the latest
  * framing answers, which the calculator seeds from. Re-opening a lesson asks
@@ -493,7 +462,7 @@ function lessonV3ClearSession() {
   state.lessonSim           = null;
 }
 
-/** Append the v3 catalog to state.lessons. Idempotent — safe on re-boot. */
+/** Append framed lessons to the shared catalogue. Idempotent on re-boot. */
 function lessonV3MergeIntoCatalog() {
   if (typeof LESSONS_V3 === "undefined" || !LESSONS_V3.lessons) return;
   LESSONS_V3.lessons.forEach(l => {

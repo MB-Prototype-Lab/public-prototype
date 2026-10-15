@@ -5,21 +5,8 @@
 // spend on petrol" — nobody knows that. "How far do you drive in a week", and
 // the arithmetic is ours.
 //
-// ── WHY THIS REPLACED THE FLAT SUM ──────────────────────────────────────────
-// The first version rode on the actuals estimator: a list of independent
-// options, each carrying a monthly figure, added up. Two things were wrong.
-//
-// 1. It multiplied by how far into the month we are. Correct for "what have you
-//    spent so far"; catastrophic for a budget. On the 4th of a 30-day month
-//    every answer came out at 13% of itself — "light local driving" became $10
-//    of transport, "a regular ongoing cost" became $20 of healthcare, and
-//    picking the MOST expensive option still lowered the category, because the
-//    peer default it replaced was eight times larger than anything the sum
-//    could produce.
-// 2. A sum of fixed options cannot express `miles x rate + insurance`. It has
-//    no variables. So Transport's biggest line by far — insurance, $126-153 a
-//    month before a wheel turns — simply was not in it, and no amount of
-//    retuning the options would have put it there.
+// Model a whole month, never month-to-date. Use variables and fixed costs:
+// miles × rate alone would omit insurance even for someone who barely drives.
 //
 // ── THE SPLIT ────────────────────────────────────────────────────────────────
 // FIGURES live in data/help-me-out.json, each with the source it came from.
@@ -154,9 +141,7 @@ function hmoColMultiplier(category) {
 }
 
 /**
- * The monthly figure. NEVER pro-rated — a budget is a month by definition, and
- * scaling one by how far into the month we are is the bug this file exists to
- * remove.
+ * The monthly figure. Never pro-rate a budget by the day of the month (L25).
  */
 function hmoCompute(category, answers) {
   const t = hmoTree(category);
@@ -234,9 +219,7 @@ function hmoBandIsConditioned(category, answers) {
 /**
  * Fold what the tree learned into state.lifestyle.
  *
- * Nothing in the v3.1 flow has written this since the six lifestyle questions
- * retired, so every peer band on every other screen has been running on the
- * persona's seeded answers. A tester who says they have no car should see
+ * A tester who says they have no car should see
  * Transport bands move everywhere, not just on the screen where they said it.
  */
 function hmoApplyLifestyle(category, answers) {
@@ -262,7 +245,7 @@ const HMO_MODELS = {
   // Insurance is the whole reason this model exists. At AAA's rates a light
   // local driver's fuel and maintenance is about $19 a month and their
   // insurance is about $130 — so a question set that asks only about driving
-  // captures under a fifth of the category, which is what produced $10.
+  // captures under a fifth of the category.
   transport: function (a, r, ctx) {
     if (a.car === "none") {
       return Number((r.transitMonthly || {})[a.transit]) || 0;
@@ -317,22 +300,14 @@ const HMO_MODELS = {
   // Consumption by home size at the NATIONAL electricity price, plus the fixed
   // services on top.
   //
-  // The national rate is deliberate and was a bug once. This model reached for
-  // state.utilitiesRatio directly to price local electricity — but
-  // benchColLocalModifier ALREADY returns exactly that ratio for Utilities, so
-  // hmoCompute's multiplier carries it. Applying it here too squared it: Los
-  // Angeles came out at 1.353 x 1.648 x 1.648, a 65% overstatement, with every
-  // figure still looking like a plausible power bill.
-  //
-  // Same shape as the trap the benchmark module warns about — anything that
-  // reaches past benchColMultipliers to price a place is double-counting
-  // something that chokepoint already did.
+  // Keep the base rate national. ctx.colMultiplier already includes the local
+  // electricity ratio; applying state.utilitiesRatio here too would square it.
   utilities: function (a, r, ctx) {
     // POWER is the only part that follows the local multiplier. Broadband and
     // a mobile plan are priced nationally — a carrier does not charge 2.2x in
     // Los Angeles — so applying the category multiplier to the whole figure
-    // (which is what col:"apply" would do) overstates it by more than the
-    // double-count did. Water sits with power: it is a local utility.
+    // (which is what col:"apply" would do) overstates it.
+    // Water sits with power: it is a local utility.
     const kwh = Number((r.kwhByHome || {})[a.home]) || 0;
     const power = (kwh * (Number(r.nationalCentsPerKwh) || 0)) / 100;
     const water = a.included === "all" ? 0 : Number((r.waterByHome || {})[a.home]) || 0;
@@ -345,7 +320,7 @@ const HMO_MODELS = {
 
   // The premium branch is the one that matters. Somebody buying their own cover
   // is a different order of magnitude from somebody whose employer takes it out
-  // of a paycheck, and the old three-bucket question could not express either.
+  // of a paycheck, so price that branch separately.
   medical: function (a, r, ctx) {
     const premium = a.premium === "self"
       ? (Number(r.marketplacePremium) || 0) * Math.min(ctx.householdSize, 2)
@@ -357,8 +332,7 @@ const HMO_MODELS = {
     return premium + (visits + scripts + dental) * people;
   },
 
-  // Per meal, frequency x price tier, so the arithmetic is inspectable. The old
-  // values were close; the month fraction was doing the damage.
+  // Per meal, frequency x price tier, so the arithmetic is inspectable.
   dining: function (a, r) {
     const coffee = (Number((r.coffeePerWeek || {})[a.coffee]) || 0) *
                    (Number((r.coffeePrice || {})[a.coffeeTier]) || 0) * HMO_WEEKS_PER_MONTH;
@@ -406,8 +380,7 @@ const HMO_MODELS = {
     return (clothes * people) + online + household;
   },
 
-  // Travel is lumpy rather than monthly, so it is trips a year over twelve —
-  // the same treatment the retired wizard gave it, kept because it was right.
+  // Travel is lumpy rather than monthly, so divide yearly trip costs by twelve.
   other: function (a, r) {
     const trips = (Number(a.trips) || 0) * (Number((r.tripCost || {})[a.tripStyle]) || 0) / 12;
     const gifts = Number((r.giftsMonthly || {})[a.gifts]) || 0;

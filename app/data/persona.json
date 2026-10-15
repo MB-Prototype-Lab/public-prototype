@@ -14,7 +14,7 @@
   },
 
   "lifestyle": {
-    "_note": "Set by the lifestyle wizard. These values are the persona default; the wizard overwrites them if the tester completes it.",
+    "_note": "Persona defaults. Help me out overwrites the lifestyle dimensions its questions cover.",
     "foodie": "moderate",
     "cooksAtHome": "sometimes",
     "hobbySpend": "low",

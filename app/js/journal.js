@@ -210,8 +210,7 @@ function journalSetFreeText(value) {
   state.journalSession.freeText = value;
 }
 
-// Attachment affordances are present and tappable and accept a file; nothing is
-// processed. Recording the name only so the UI can show it.
+// Attachment taps record kind and time only; no file is collected or processed.
 function journalAddAttachment(kind) {
   state.journalSession.attachments.push({ kind: kind, at: Date.now() });
   render();
@@ -305,11 +304,8 @@ function journalBuildEntries() {
         label: q.prompt,
         category: ans.category || "Other",
         amount: amt,
-        // Frozen ceiling for the confirm slider, exactly as the multi_select
-        // path does above. Without it, journal-confirm falls back to `amount` —
-        // the value the slider itself changes — so every release recomputed
-        // max = amount × 2.5 and snapped the thumb to 40% of a track that grew
-        // each time. A typed 350 would not stay where it was put.
+        // Freeze the slider ceiling as in multi_select. Deriving it from the
+        // edited amount would move the scale under the thumb on each release.
         baseAmount: amt,
         estimated: false,
         zeroReason: null
@@ -337,8 +333,7 @@ function journalAdjustEntry(entryId, amount) {
   debouncedRender();
 }
 
-// Phase 5 consumes this. Emitted now so the journal's submit path does not have
-// to be reopened months later.
+// Goals consumes these structured balance answers separately from spending.
 function journalEmitGoalEvent(evt) {
   state.goalEvents.push(Object.assign({ at: Date.now(), day: journalDayIndex() }, evt));
 }
@@ -394,11 +389,8 @@ function journalSubmit() {
 
   state.journalEntriesCount = (state.journalEntriesCount || 0) + 1;
 
-  // The daily task that sent us here is now done. Without this the Money
-  // Journal task never greyed out on Home and the "n of 3 done" counter never
-  // moved, because homeCompleteTask had exactly one caller in the whole app
-  // (the lesson tail). Keyed off activeTaskId rather than a hardcoded id, since
-  // both the money_journal task and the subscription_confirm deep link land here.
+  // Complete the task that sent us here, not a hardcoded journal id: both
+  // money_journal and subscription_confirm routes submit through this path.
   if (state.activeTaskId && typeof homeCompleteTask === "function") {
     homeCompleteTask(state.activeTaskId);
     state.activeTaskId = null;   // or the next screen still thinks it is in a task

@@ -3,9 +3,8 @@
 // answers, bonus XP when the lesson came from the daily task list. The badge is
 // vanity — it unlocks nothing. That's the point."
 //
-// L9 resolves the two incompatible models: lessons.json's five-tier
-// progression and XP values win, kept admin-tunable through v2's xpConfig
-// panel so the multipliers can be adjusted mid-test without a code edit.
+// L9: lessons.json supplies five-tier progression and XP values; xpConfig
+// keeps multipliers adjustable from Tools during a test.
 //
 // ── PROGRESS IS ON THE LESSON, NOT THE COURSE ────────────────────────────────
 // lessons.json's own note: "A lesson belongs to several courses. Progress is on
@@ -40,7 +39,7 @@ function lrCourseXp(courseId) {
 
 /**
  * XP for finishing a lesson. Base values come from lessons.json; the
- * multipliers stay on v2's xpConfig so they remain hot-editable from the admin
+ * multipliers stay on xpConfig so they remain hot-editable from the admin
  * panel during a test session.
  */
 function lrComputeAward(lesson, correctCount, fromDailyTask) {
@@ -51,7 +50,7 @@ function lrComputeAward(lesson, correctCount, fromDailyTask) {
   const bonus = fromDailyTask ? (b.xpBonusFromDailyTask || 50) : 0;
 
   const base = complete + perCorrect * (correctCount || 0);
-  // v2's bonusMultiplier is a testing knob layered on the flat bonus.
+  // bonusMultiplier is a testing knob layered on the flat bonus.
   const mult = fromDailyTask ? (Number(cfg.bonusMultiplier) || 1) : 1;
   const total = Math.round(base + bonus * mult);
 
@@ -90,14 +89,8 @@ function lrApplyAward(lesson, award) {
 }
 
 // ── The Charity Points ledger ────────────────────────────────────────────────
-// Finishing a lesson credited bones in two places — lrAwardKibble here, and
-// homeCompleteTask for the daily task that sent you — and the screen the tester
-// actually lands on showed neither. state.kibble simply went up, silently, by
-// roughly double what the home card had promised.
-//
-// Both awards stand: one is for finishing the lesson, one is for doing today's
-// task. They are different things. But they have to be VISIBLE and itemised, or
-// the total looks like a discrepancy against the card that promised 25.
+// Itemise the lesson and daily-task awards so the reward total can be reconciled
+// with the amount promised by the Home task card.
 //
 // The ledger is a per-completion record, opened by whichever reward path is
 // running and closed by completeLesson (the one funnel every lesson exits
@@ -128,8 +121,8 @@ function lrPointsClose() {
 
 /**
  * Diamonds are the subscriber tier (L16, buddy-responses: they "lean on your
- * plan tier"). They had a seeded balance and no accrual rule at all, so the
- * trial step at the end of onboarding decided nothing.
+ * plan tier"). Onboarding grants subscriber eligibility when it finishes;
+ * Tools can change state.trialAccepted for reward testing.
  *
  * One diamond per lesson while the trial is on. Off it, the reward screen still
  * shows the line — greyed, saying what the subscriber tier would have earned —
@@ -155,7 +148,7 @@ function lrAwardKibble(award) {
 }
 
 // ── Quiz ─────────────────────────────────────────────────────────────────────
-// lessons.json ships ONE question per lesson, which is thin for a quiz, so v2's
+// lessons.json ships ONE question per lesson, which is thin for a quiz, so the
 // 48-question pool tops it up to xpConfig.quizQuestionsRequired (L9). The
 // lesson's own question always comes first — it is the one written for it.
 
@@ -170,7 +163,7 @@ function lrQuizQuestions(lesson) {
   }));
   if (own.length >= want) return own.slice(0, want);
 
-  // Top up from v2's pool, preferring questions whose lesson shares a course.
+  // Top up from the shared pool in declaration order.
   const pool = (state.quizQuestions || []).map(q => ({
     id: q.id,
     prompt: q.question,
@@ -223,9 +216,8 @@ function lrSimBalance(v) {
 
   // PAYING IN FULL COSTS NOTHING. The grace period is the first thing the APR
   // lesson teaches -- "if the balance is cleared before the due date, on most
-  // cards none of it costs you anything" -- and the loop below contradicted it:
-  // it charged a month of interest first, so clearing a $1,000 balance showed
-  // two months and $22. The calculator has to agree with the lesson it ends.
+  // cards none of it costs you anything". Handle that before accruing interest
+  // so the calculator agrees with the lesson.
   if (bal > 0 && pay >= bal) return { monthsToPayoff: 1, totalInterest: 0 };
 
   if (pay <= bal * apr) return { monthsToPayoff: null, totalInterest: null };

@@ -1,9 +1,7 @@
 // ─── Big Purchase — the car finder's model ───────────────────────────────────
 // NO DOM. screens/bp-finder.js draws it.
 //
-// Owner, 2026-09-29: the tool used to start from a car the tester already had
-// in mind and hunt for a cheaper one. It now starts from the PERSON — how they
-// live, what they earn, what peers spend — and names a specific make and model.
+// A known-model path and a lifestyle quiz both lead to a specific make/model.
 //
 // ── ONE MONEY MODEL, STILL ───────────────────────────────────────────────────
 // Every figure here comes out of bpBreakdown(), called on a card built from a
@@ -13,9 +11,8 @@
 // applies, for the same reason.
 //
 // ── PEERS ARE INFORMATION, NEVER A LINE ─────────────────────────────────────
-// D26 and the owner (2026-09-28: "that rule cannot be broken. full stop"). The
-// peer figure is shown as what peers spend. Nothing here computes a limit, a
-// "too much", or a share of income anybody ought to stay under.
+// D26: the peer figure is a comparison, never a recommended spending limit.
+// bpfPeerPrice maps that payment to a price and tier, not an affordability rule.
 
 function bpfData() {
   return bpVData().finder || {};
@@ -55,10 +52,7 @@ function bpfName(m) {
 }
 
 /**
- * What the car is KNOWN for — its reputation, the line its marketing leads
- * with (owner, 2026-10-01: "what is the car known for? im sure it isn't known
- * for 5 seats and roomy back seats"). `why` (the spec line) stays in the data
- * as the fallback.
+ * Lead with the car's reputation, not its specifications. `why` is the fallback.
  */
 function bpfKnown(m) {
   return m ? (m.known || m.why || "") : "";
@@ -111,8 +105,7 @@ function bpfCard(m, cond, id) {
  */
 function bpfFigures(card, opts) {
   const b = bpBreakdown(card);
-  // Leasing (owner, 2026-10-03: also in "How we worked it out"): a new car on a
-  // lease swaps the loan figures for the lease estimate (js/bp-lease.js). Five years
+  // A new car on a lease uses the lease estimate (js/bp-lease.js). Five years
   // repeats the lease, and the peers' column opts out with {noLease: true}.
   if (!(opts && opts.noLease) && typeof bpLeasing === "function" && bpLeasing(card)) {
     const lf = bpLeaseFigures(card);

@@ -90,7 +90,7 @@ const PEER_BENCHMARKS =
   },
 
   "lifestyleModifiers": {
-    "_note": "Applied after cost-of-living. Set by the lifestyle wizard.",
+    "_note": "Applied after cost-of-living, using persona defaults and dimensions learned by Help me out.",
     "foodie": {
       "low":      { "Dining out": 0.72, "Groceries": 0.92 },
       "moderate": { "Dining out": 1.0, "Groceries": 1.0 },

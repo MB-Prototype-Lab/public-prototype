@@ -3,13 +3,7 @@
 // adjusted for where you live and how you live. NEVER real user data (D23).
 // When a user asks, say exactly that.
 //
-// ── The spec states the formula as a one-liner. It is wrong in all three terms ──
-//
-//   peerValue = base[category][incomeBand][householdSize]
-//             × colTier[zipPrefix][category]
-//             × lifestyleMod[category]
-//
-// Verified against the raw JSON, what it actually is:
+// ── Model formula ───────────────────────────────────────────────────────────
 //
 //   peerValue = base[cat][band][householdSize - 1]                  ARRAY INDEX
 //             × benchColMultipliers(zip)[cat]                       BEA, PER CATEGORY
@@ -17,14 +11,13 @@
 //             → round to nearest 5
 //
 // Every one of those three reads returns a plausible number when done wrong,
-// which is why the worked_example self-test at the bottom is not optional.
+// which is why the sweep independently checks the model's arithmetic.
 
 const BENCH_LIFESTYLE_DIMS = ["foodie", "cooksAtHome", "hobbySpend",
                               "paysRent", "commute", "travelFrequency"];
 
 /**
- * Annual income → band id (b1–b5). Onboarding collects a BAND, never a precise
- * figure, so this is mostly for the persona's $68,000.
+ * Annual income → band id (b1–b5), including onboarding's refined figure.
  */
 function benchIncomeBand(annualIncome) {
   const bands = PEER_BENCHMARKS.incomeBands;
@@ -74,15 +67,6 @@ function benchColTierName(zip) {
  *   2. The 3-digit prefix tier, if the ZIP is somehow absent. Coverage is 100%,
  *      so this is a guard, not a path anyone takes.
  *
- * ── WHY THIS REPLACED THE TIERS ─────────────────────────────────────────────
- * The prefix table mapped three digits to one of four hand-set tiers. So every
- * ZIP sharing a tier was IDENTICAL — Manhattan, Palo Alto, Santa Clara and Los
- * Angeles all resolved to the same figures — and `very_high` caps Housing at
- * 1.85, so nowhere in America could read higher. Santa Clara came out at 121%
- * of national against Rogers, Arkansas at 111%. BEA says 112.9 and 91.0, with
- * housing at 213.0 against 75.8: the real gap is twice as wide, both figures
- * were too high, and the housing difference was understated by a factor of two.
- *
  * ── LOCAL MODIFIERS ARE PER CATEGORY, FROM DIFFERENT SOURCES ────────────────
  * Housing moves with county rents; Utilities move with state electricity
  * prices; groceries do not track either. So each category takes its modifier
@@ -92,8 +76,8 @@ function benchColTierName(zip) {
  * everywhere: a streaming plan and a loan repayment cost the same in Palo Alto
  * as in Helena.
  *
- * Returns { source, multipliers, geo, county, tierName? }.
- * `source` is "county" | "prefix" | "fallback".
+ * Returns { source, multipliers, geo, county, state?, tierName? }.
+ * `source` is "county" | "prefixCounty" | "prefix" | "fallback".
  */
 function benchColMultipliers(zip) {
   const z = String(zip == null ? "" : zip).trim().slice(0, 5);
@@ -101,9 +85,7 @@ function benchColMultipliers(zip) {
 
   if (table && table.zips) {
     // Exact ZIP, then its 3-digit prefix. The prefix step catches PO-box-only
-    // and "unique" ZIPs that no county dataset lists — without it they drop to
-    // the tier table and read as exactly the national average, which is how
-    // Syracuse's 13201 came out at 100%.
+    // and "unique" ZIPs that no county dataset lists.
     let countyId = table.zips[z];
     let via = "county";
     if (countyId == null && table.prefixes) {
@@ -193,9 +175,8 @@ function benchColSupported(col) {
  *
  * Two things it deliberately is NOT:
  *
- *   · Not an unweighted mean of the twelve. That is what it used to be, and it
- *     made Housing — the only category that really swings — one twelfth of the
- *     headline, flattening every real difference toward 1.0.
+ *   · Not an unweighted mean of the twelve: that would flatten Housing's
+ *     contribution and real regional differences toward 1.0.
  *   · Not a recomputation from the weights either. BEA's real weights are
  *     place-specific (where housing is expensive, people spend a larger share
  *     of income on it), so one national weight set reproduces published
@@ -293,7 +274,7 @@ function benchColPlaceName(col) {
 }
 
 /**
- * TRAP 3a — the wizard's answer labels do not all match the data keys, and a
+ * TRAP 3a — lifestyle values do not all match the data keys, and a
  * missed key silently contributes 1.0 instead of the real multiplier.
  *   paysRent: DATA keys are the STRINGS "true" / "false" / "shared", not
  *             booleans. Option values map onto them: rent/mortgage → "true"

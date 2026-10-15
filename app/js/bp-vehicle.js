@@ -4,8 +4,7 @@
 // Implements exactly the category interface the engine calls and nothing else.
 // Every figure is read from data/big-purchase.json → vehicle, and two are
 // borrowed from the emergency fund ON PURPOSE (§7.5): the state insurance
-// average and the pump price / per-mile upkeep. Reusing them is what keeps the
-// two tools from ever disagreeing about the same car.
+// average and pump price. Vehicle-specific factors and floors apply below.
 
 function bpVData() {
   return bpData().vehicle || {};
@@ -39,7 +38,7 @@ function bpVCentsPerKwh() {
 }
 
 /**
- * Miles a day. THIS FEATURE NEVER ASKS (spec §6.1, owner's ruling): it reads
+ * Miles a day. This feature reads
  * whatever the shared profile already holds and otherwise assumes a default.
  *
  * "I don't drive" is floored at `milesFloor` HERE and only here. Zero is the
@@ -157,11 +156,8 @@ function bpVFees() {
 /**
  * Insurance a month, on a FULL-COVERAGE policy.
  *
- * The ESF's state figure is the average premium written in that state, and most
- * of those policies are liability-only on a car that is already paid off. Every
- * car here is being bought, usually on a loan that requires comprehensive and
- * collision, so the base is scaled up before the type, tier and age factors run
- * (owner, 2026-09-27: "insurance seems way too low").
+ * Start with the ESF full-coverage state average, then apply this tool's
+ * insuranceFullCoverage, type, tier and condition factors.
  */
 function bpVInsurance(inputs) {
   const base = (typeof esfInsuranceStateMonthly === "function" ? esfInsuranceStateMonthly() : 140) *
@@ -185,12 +181,8 @@ function bpVCostPerMile(inputs) {
 }
 
 /**
- * THIS TOOL'S OWN PUMP PRICE (owner, 2026-09-27: "gas price is higher than $4
- * too"). The emergency fund prices a bill being paid this month, where the EIA
- * national average is the right figure; this prices five years of fuel from
- * whenever the car is bought. A state already dearer than the owner's figure
- * keeps its own — California does not get cheaper because a floor was put
- * under everywhere else.
+ * Use this tool's pump-price floor for the purchase horizon. A higher state
+ * price still wins; the floor must never reduce a local estimate.
  */
 function bpVPerGallon(inputs) {
   const d = bpVData();
@@ -211,10 +203,8 @@ function bpVFuel(inputs) {
 /**
  * Upkeep — a TIME base plus a MILEAGE rate, not cents per mile alone.
  *
- * The flat per-mile model this replaces ran about a third of the real figure
- * for an ordinary driver, and collapsed to almost nothing at low mileage, which
- * is false: oil degrades by date, tires age out, batteries and fluids run on a
- * calendar. Both the condition and tier factors are centred on 1.00 at the
+ * Oil degrades by date, tires age out, batteries and fluids run on a calendar,
+ * so low mileage must not erase upkeep. Condition and tier factors centre on 1.00 at the
  * baseline the $400 + 6¢ describes — a NEW STANDARD car, averaged over five
  * years of ownership.
  *
@@ -289,10 +279,7 @@ const BP_VEHICLE_ROWS = [
         (inputs.condition === "used" ? "a " + bpVAgeLabel(inputs.age).replace(" yrs", " year") + " old " : "a new ") +
         bpVTierLabel(inputs.tier).toLowerCase() + " " + bpVTypeLabel(inputs.type).toLowerCase() + ".";
     } },
-  // NO SUBSCRIPTIONS ROW (owner, 2026-09-27): "that is an add-on that I
-  // wouldn't consider for a car alone." Satellite radio and the connected-car
-  // app are things a person opts into, not a cost of owning the car, and a
-  // screen that claims to price the car should not price them.
+  // Optional services such as satellite radio are not intrinsic ownership costs.
   { id: "other", label: "Parking, tolls, anything else", bucket: "monthly", scope: "about", typed: true, default: 0 },
 
   { id: "renewal", label: "Registration renewal", bucket: "yearly", scope: "car", estimate: bpVRenewal,
@@ -334,8 +321,7 @@ function bpVDescribe(inputs) {
 }
 
 // ── The setup rows (§6) ──────────────────────────────────────────────────────
-// What a priced car has answered. bpEnsureSetup() checks them without knowing
-// about cars.
+// Fields needed to price a car, exposed through the category interface.
 const BP_VEHICLE_SETUP = [
   { id: "type" },
   { id: "tier" },

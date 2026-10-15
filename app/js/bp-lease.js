@@ -1,8 +1,6 @@
-// ─── Big Purchase — leasing (owner, 2026-10-03) ───────────────────────────────
-// Lease is a third way to pay, on the LAST screen only ("Your car"): Loan, Cash
-// or Lease. It does not touch the loan/cash engine (bpStack) or any earlier
-// figure; the finder's cost table stays loan-based, and the flag `pay.leasing`
-// is the only thing that switches this screen to lease figures.
+// ─── Big Purchase — leasing ─────────────────────────────────────────────────
+// pay.leasing selects lease estimates for new cars without changing bpStack's
+// loan/cash arithmetic. bpfFigures opts peers out with noLease.
 //
 // The monthly is the standard lease formula, an ESTIMATE (`_prototype`):
 //   capitalised cost = price - what is paid at signing

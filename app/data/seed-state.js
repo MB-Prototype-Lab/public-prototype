@@ -8,7 +8,7 @@ const SEED_STATE =
   "_note": "Six days of fabricated history (D16). Loaded into memory on mount, discarded on refresh (D03). Day 6 is 'yesterday' relative to the session.",
 
   "budget": {
-    "_note": "The plan layer. Produced by the lifestyle wizard; these are the persona defaults.",
+    "_note": "Persona defaults for the plan layer. Budget-builder and emergency-fund saves replace the plan through the baseline seam.",
     "monthly": {
       "Housing": 2150,
       "Groceries": 420,
