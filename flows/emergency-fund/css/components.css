@@ -3057,10 +3057,8 @@
 .esf-optin-head { min-height: 29px; }
 
 /* ── ESF: readable descriptions, aligned controls ─────────────────────────────
-   Every explanatory line under a heading is FULL text colour, not .helper's
-   muted gray: that is right for incidental chrome and wrong for a sentence
-   explaining where somebody's money figure came from — that sentence is the
-   thing that earns an override. */
+   Explanatory text needs strong ink: understanding where a money figure came
+   from is what earns an override. */
 .esf-row-help, .esf-qualifier, .esf-based, .esf-field-unit {
   color: var(--text);
 }
@@ -4268,9 +4266,7 @@ button.esf-based {
 }
 
 /* ═══ Steps 2 and 3: room to breathe, one type scale ══════════════════════
-   The gaps are what a screen gives up first, and taking them leaves four
-   blocks touching each other. So the gaps stay at 12px and the space comes out
-   of type instead: ONE SCALE on both screens, 11 / 12.5 / 14 / 20. */
+   Gaps keep the blocks visually separate rather than touching each other. */
 .bp-cost-shell .bp-financed { margin-bottom: 0; }
 .bp-cost-shell .bp-costbox, .bp-cost-shell .bp-save { margin: 0; }
 .bp-cost-shell .bp-costbox { padding: 11px 13px; }
@@ -4331,9 +4327,8 @@ button.esf-based {
    figures — leaves a dead band above the footer while the blocks above it stay
    jammed together.
 
-   `space-between` hands the leftover height to the gaps instead. The `gap` is
-   a MINIMUM: when the content is tall the blocks sit at 11px apart and the
-   screen still fits, and when it is short the same blocks spread to fill.
+   `space-between` distributes surplus height into the gaps so shorter content
+   spreads to fill the frame.
    Safe with a scroll container because space-between packs from the top once
    there is no free space — unlike `center` or `end`, which would put the first
    block out of reach above the scroll origin. */
