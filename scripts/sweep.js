@@ -1,13 +1,5 @@
-// ─── Phase 6 correctness sweep ────────────────────────────────────────────────
-// Run:  bash scripts/sweep.sh
-//
-// Phase 6 means "verified by actually clicking through, not by
-// inspection". There is no browser here, so this automates everything that CAN
-// be checked mechanically and prints an explicit list of what cannot — rather
-// than letting the un-checkable items quietly pass.
-//
-// This is a committed script, not a throwaway harness, because Phase 6 is the
-// check you want to re-run whenever scope shifts.
+// Correctness sweep. Run: bash scripts/sweep.sh
+// Mechanical checks run without a browser; the final section lists manual checks.
 
 var FAIL = 0, WARN = 0, CHECKS = 0;
 function ok(label, extra)  { CHECKS++; print("  ok    " + label + (extra ? "  " + extra : "")); }
@@ -42,22 +34,15 @@ function hmoBaselineAnswers(category) {
  * Greedy, one question at a time. It exists because the inert-question gate
  * below has to test a question with its PRECONDITIONS OPEN: "what kind of
  * coffee" cannot move a figure when the answer above it is "I make it at
- * home", and every Debt question is behind "nothing right now". Testing
- * against a first-option baseline reported five perfectly good questions as
- * broken. Maximising opens every gate by construction, because an open gate is
- * what costs money.
+ * home", and every Debt question is behind "nothing right now".
+ * Maximising opens the gates before measuring each question.
  */
 function hmoMaxAnswers(category) {
   var t = hmoTree(category);
   var a = hmoSeedAnswers(category);
   if (!t) return a;
 
-  // SEED FROM THE LAST OPTION, not the first. Options are authored cheapest to
-  // priciest, so this opens every gate before anything is measured — and a
-  // gate has to be open for the greedy pass below to see what is behind it.
-  // Seeding from the first option deadlocked: "how often do you get coffee"
-  // looked inert because coffeeTier was unset, so every frequency multiplied
-  // by an undefined price and came out at zero.
+  // Seed priciest options to open preconditions before measuring each question.
   t.questions.forEach(function (q) {
     if (q.type === "choice" && q.options && q.options.length) {
       a[q.id] = q.options[q.options.length - 1].id;
@@ -120,10 +105,7 @@ state.settings.colorMode = THEME_DEFAULT;
 chk(renderFails.length === 0, SCREENS.length + " screens x " + THEMES.length + " themes",
     renderFails.slice(0, 6).join("\n          "));
 
-// An unknown id must resolve to the default rather than leaving .screen
-// unclassed. Both render Natural Light now that it is the default, so this
-// check is load-bearing in a way it was not before: it is what distinguishes a
-// resolved theme from no theme at all.
+// An unknown id must resolve to the default rather than leave .screen unclassed.
 chk(themeById("nonsense").id === THEME_DEFAULT, "unknown theme id falls back to " + THEME_DEFAULT);
 chk(state.settings.colorMode === "naturalLight", "Natural Light is the default theme (L21, revised)");
 
@@ -272,13 +254,8 @@ if (lowCleared.length) {
        lowCleared.map(function (k) { return k.slice(0, 3).join(" "); }).join(", "));
 }
 
-// ── The one NON-TEXT boundary that carries meaning ──────────────────────────
-// A budget slider's rail IS the scale — where the thumb sits along it is the
-// whole reading — so it has to be perceptible, and 4.5:1 is the wrong bar for a
-// hairline. It was drawn in --progress-bg, which is a FILL: 1.02-1.20:1 against
-// --card in every theme. Nothing rendered but a peer band and a thumb floating
-// in white space, and no check here would have caught it, because every text
-// pair was fine.
+// A budget slider's rail is its scale, so it must remain perceptible against
+// the card. A non-text boundary needs a different contrast bar from text.
 if (CSS[":root"]["--rail"]) {
 var railLow = [];
 THEMES.forEach(function (t) {
@@ -290,15 +267,9 @@ chk(railLow.length === 0, "the slider rail clears 2.0:1 against the card in all 
     railLow.join("\n          "));
 }
 
-// ── The one place CSS specificity is load-bearing ───────────────────────────
-// `.screen input` (0,1,1) sets background: var(--card) and a card radius, and
-// it beats a bare `.band-range` (0,1,0). Harmless for every other slider,
-// because they keep their native track and the element's own background is
-// never painted. .band-range is the only one with -webkit-appearance: none,
-// which strips that track — so the card background came through as a 44px
-// rounded box drawn straight over the rail, with the thumb floating in it.
-// Nothing else here could catch that: it renders, it validates, it just hides
-// the thing it is supposed to sit behind.
+// `.screen input` (0,1,1) outranks `.band-range` (0,1,0). With native
+// appearance removed, its card background would cover the rail unless the
+// slider rule also carries .screen. Rendering alone cannot detect this.
 if (typeof __COMPONENTS_CSS === "string") {
   var unscoped = [];
   __COMPONENTS_CSS.replace(/\/\*[\s\S]*?\*\//g, "")
@@ -321,10 +292,7 @@ if (typeof __COMPONENTS_CSS === "string") {
 // ─────────────────────────────────────────────────────────────────────────────
 if (typeof TEST_PROFILES !== "undefined") {
 section("1c. The nine starting profiles — every feature, every profile");
-// Everything the app computes is anchored on a ZIP and an income, and until now
-// there was exactly ONE of each to test against: the persona's Los Angeles and
-// $68,000. That is why "$10 of transport" had to be found by hand. Peer spend
-// across these nine runs from about $2,500 a month to about $12,000.
+// ZIP and income vary independently across these nine starting profiles.
 
 var __profileBefore = state.activeProfileId;
 var profiles = profileList();
@@ -344,7 +312,7 @@ chk(Math.min.apply(null, totalsByTier.below) < Math.min.apply(null, totalsByTier
     }).join(" · "));
 
 // Every screen, every profile. The §1 loop covers four themes on one profile;
-// this covers nine profiles on one theme, which is the axis that was untested.
+// this covers nine profiles on one theme.
 var profileFails = [], peerBad = [], treeBad = [], nanSeen = [], planBad = [];
 profiles.forEach(function (p) {
   profileApply(p.id);
@@ -370,8 +338,7 @@ profiles.forEach(function (p) {
     }
   });
 
-  // The builder has to complete from any starting point, not just LA.
-  // v3.1 only — v3 is the control and has the six-question wizard instead.
+  // The builder has to complete from any starting profile.
   if (typeof bbStart === "function" && typeof bbAdvanceStep === "function") {
     state.planStatus = "empty";
     state.budgetBuild = null;
@@ -660,13 +627,9 @@ var LEGIT_Q = (BUDDY_RESPONSES.responses || []).filter(function (r) { return r.b
 var overzealous = LEGIT_Q.filter(function (q) { return chatRoute(q).id === "advice_deflect"; });
 chk(overzealous.length === 0, LEGIT_Q.length + " real questions NOT wrongly deflected", overzealous.join(" | "));
 
-// Reset must restore the OPENING bubbles, not leave the last reply's follow-ups
-// behind. Two copies of chatResetConversation() once existed and the shadowing
-// one skipped the bubbles, so a reset left chips pointing at a deleted thread.
-// renderChat only falls back to openingBubbles when bubbles is EMPTY, so a
-// stale non-empty array is invisible without checking it directly.
-// Driven through chatRespond(), not chatSend(): chatSend reads a DOM input the
-// stub returns empty, which would make this pass without ever moving bubbles.
+// Reset must restore the opening bubbles. renderChat falls back to them only
+// when bubbles is empty, so a stale non-empty array needs a direct check.
+// Drive chatRespond: chatSend reads a DOM input that the stub returns empty.
 var opening = (BUDDY_RESPONSES.openingBubbles || []).join(",");
 var moved = false;
 (BUDDY_RESPONSES.responses || []).forEach(function (r) {
@@ -730,16 +693,14 @@ var noTab = SCREENS.filter(function (sc) {
 });
 chk(noTab.length === 0, "every screen maps to a real nav stack", noTab.join(", "));
 
-// The admin buttons are reachable only from onclick in index.html, so nothing
-// else here exercises them. copyAppState() in particular reads a dozen state
-// keys and used to name two that no longer exist.
+// The admin buttons are reached through onclick in index.html; exercise the
+// snapshot action directly because the screen walk does not click them.
 var adminActionErr = null;
 try { copyAppState(); } catch (e) { adminActionErr = String(e); }
 chk(adminActionErr === null, "copyAppState() runs without throwing", adminActionErr);
 
-// Assert on what appStateSnapshot() ACTUALLY emits. The first version of this
-// check built its own object from `state` and tested that — a tautology over
-// bootV3() that stayed green no matter what the snapshot contained.
+// Assert on appStateSnapshot() output; building a separate object from state
+// would not test the snapshot contract.
 var snap = {};
 try { snap = JSON.parse(JSON.stringify(appStateSnapshot())); } catch (e) { adminActionErr = String(e); }
 var WANT = ["plan","mtd","nav","theme","journal","journalEntries","observations",
@@ -750,23 +711,15 @@ var missing = WANT.filter(function (k) {
 chk(missing.length === 0, "snapshot carries the three layers, goals, tasks and nav",
     "missing/null: " + missing.join(", "));
 
-// The v2 names are parked and vestigial (boot.js). Reporting them as if they
-// were v3's is the defect this snapshot was rewritten to fix, and it shipped
-// once doing exactly that — so pin the spelling.
+// Parked goals/tasks belong under legacy, never among the active layers.
 chk(snap.goals === undefined && snap.tasks === undefined,
     "snapshot does not report v2's parked goals/tasks as v3's",
     "found top-level: " + ["goals","tasks"].filter(function (k) { return snap[k] !== undefined; }).join(", "));
 chk(!!(snap.legacy && "goals" in snap.legacy && "tasks" in snap.legacy),
     "v2's parked arrays are still captured, under legacy");
 
-// ── Slider handlers ─────────────────────────────────────────────────────────
-// These had zero coverage: the DOM stub's setTimeout used to discard its
-// callback, so debouncedRender() was a no-op and no test ever called them.
-// A misspelled debouncedRender would have passed the sweep and thrown in a
-// browser on the first pointer move.
-// Checked PER HANDLER, not in aggregate: an "any of them queued" assertion
-// stays green while three handlers debounce and the fourth calls render()
-// directly, which is precisely the regression worth catching.
+// Check each slider handler queues a render: an aggregate assertion could
+// hide one handler that renders immediately and destroys the dragged element.
 state.screen = "aboutMe";
 var SLIDERS = [
   ["budgetSetPlan",      function () { budgetSetPlan("Dining out", 250, true); }],
@@ -817,9 +770,7 @@ if (typeof BB_STEPS !== "undefined") {
       "the builder's " + BB_STEPS.length + " steps cover all 12 exactly once",
       (bbMissing.length ? "never asked: " + bbMissing.join(", ") + ". " : "") +
       (bbTwice.length ? "asked twice: " + bbTwice.join(", ") : ""));
-  // Every line is a slider — the steps group categories by how well a tester
-  // knows them, not by how the figure is entered. That was misread once and
-  // built as a number field on step 1.
+  // Every line is a slider; steps group categories by how well a tester knows them.
   state.budgetBuild = null;
   bbStart();
   var bbSliders = 0, bbFields = 0;
@@ -833,9 +784,7 @@ if (typeof BB_STEPS !== "undefined") {
       "all 12 lines render a slider, none a number field",
       bbSliders + " sliders, " + bbFields + " number fields");
 
-  // The thumb opens on the peer figure, so it starts dead centre of the band
-  // drawn behind it. Opening on the no-lifestyle national figure instead left
-  // it visibly off its own band.
+  // The thumb opens on its own peer figure, centred in the band behind it.
   state.budgetBuild = null;
   bbStart();
   var bbOffBand = CATEGORIES.filter(function (c) {
@@ -856,13 +805,7 @@ if (typeof BB_STEPS !== "undefined") {
       "the header total is cumulative (2 -> 7 -> 12)", bbCounts.join(" -> "));
   state.budgetBuild = null;
 
-// ── "Worth a look" surfaces OVER peers, never under ─────────────────────────
-// cmpWorthNoticing and cmpImpact both used Math.abs, so being far BELOW peers
-// scored identically to being far above — and the seeded persona is under peers
-// almost everywhere, so the section listed the biggest under-spends. Nothing
-// errored; the list was simply the wrong list. v3 still carries the Math.abs
-// version — it is the A/B control and does not get the fix — so this stays
-// inside the v3.1 guard with everything else.
+  // Flag over-peer spending only; under-spending must never qualify.
   var flagged = cmpAllRows().filter(cmpWorthNoticing)
                             .sort(function (a, b) { return cmpImpact(b) - cmpImpact(a); });
   var under = flagged.filter(function (r) { return r.user <= r.peer; });
@@ -878,11 +821,8 @@ if (typeof BB_STEPS !== "undefined") {
         return r.category + " +" + Math.round(r.user - r.peer);
       }).join(" · ") || "nothing flagged at all");
 
-  // ── Scroll identity ──────────────────────────────────────────────────────
-  // render() holds the scroll offset while scrollKey() is unchanged. Screens
-  // that are one id with several steps have to say so, or Continue lands the
-  // tester at the bottom of the next step — which is what happened when the
-  // key was just state.screen.
+  // render() holds the offset while scrollKey() is unchanged, so each builder
+  // step needs its own key to open at the top.
   state.budgetBuild = null; bbStart();
   var keys = BB_STEPS.map(function (_, i) { state.budgetBuild.step = i; return scrollKey(); });
   chk(keys[0] !== keys[1] && keys[1] !== keys[2],
@@ -915,13 +855,8 @@ if (typeof BB_STEPS !== "undefined") {
     var baseline = {};
     CATEGORIES.forEach(function (c) { baseline[c] = hmoCompute(c, hmoBaselineAnswers(c)); });
 
-    // A BUDGET IS A MONTH. The engine this replaced multiplied every figure by
-    // how far into the month we were, so on the 4th of a 30-day month "light
-    // local driving" came out at $10 of transport and picking the priciest
-    // option still LOWERED the category. Nothing in the model may read a clock,
-    // so every tree runs on the same answers with the clock pinned to the 4th
-    // and then the 28th. The cheapest and the priciest answers, because a
-    // question behind a closed gate never runs.
+    // A budget is monthly: no tree may prorate by the current date. Test both
+    // cheapest and priciest answers so closed preconditions cannot hide a rate.
     var clockAnswers = CATEGORIES.map(function (c) { return [hmoBaselineAnswers(c), hmoMaxAnswers(c)]; });
     function figuresOnDay(day) {
       var RealDate = Date, at = new RealDate(2026, 3, day, 12).getTime();
@@ -1000,11 +935,8 @@ if (typeof BB_STEPS !== "undefined") {
         wild.join(" · "));
   }
 
-  // ASSERT THE VALUE, NOT JUST THE ORDER. Once the filter keeps only over-peers
-  // rows, Math.abs(user - peer) equals user - peer for every row that survives,
-  // so an ordering check passes under the buggy implementation too and proves
-  // nothing. The two only diverge when a plan gap exceeds a peer gap — which
-  // the seeded persona happens not to produce. This catches it on any data.
+  // Check the signed gap directly: after filtering over-peer rows, Math.abs
+  // preserves ordering and could hide a wrongly included plan term.
   var impactWrong = cmpAllRows().filter(function (r) {
     if (r.peer == null) return cmpImpact(r) !== 0;
     return cmpImpact(r) !== (r.user - r.peer);
@@ -1029,32 +961,10 @@ if (typeof BB_STEPS !== "undefined") {
       "every renamed label points at a real taxonomy member",
       Object.keys(CATEGORY_LABELS).filter(function (k) { return !isCategory(k); }).join(", "));
 }
-// ─── Self-test (PEER_BENCHMARKS.worked_example) ──────────────────────────────
-// The data ships a worked example so the model can verify itself:
-// Dining out, b3, household 2, ZIP 90066, foodie moderate + cooks sometimes →
-// 275 × 1.34 × 1.0 = 370.
-//
-// ── WHY IT NO LONGER ASSERTS 370 ────────────────────────────────────────────
-// The 1.34 was the `very_high` tier's Dining-out multiplier, and that tier is
-// exactly what this model replaced: it gave Manhattan, Palo Alto, Santa Clara
-// and Los Angeles all the same figures. BEA prices restaurant meals inside
-// "Services: Other", which for Los Angeles is 107.1 — so the col factor is now
-// 1.071 and the peer value is 295.
-//
-// `worked_example.result` in peer-benchmarks.json still reads 370; the test
-// reports it beside the new figure but no longer asserts it.
-//
-// Worth knowing about the new figure: BEA's "Other services" bucket lumps
-// restaurants together with healthcare and insurance, which vary far less by
-// place, so 1.071 probably understates a Los Angeles restaurant bill. It is
-// still the best sourced number available — the alternative is inventing a
-// dining-out uplift, which is the class of plausible-looking fabrication this
-// whole model exists to remove.
-//
-// So the test checks the three factors SEPARATELY, and reports which one
-// failed. A single assertion could pass on several wrong readings: the persona
-// is household 2 with every lifestyle modifier at 1.0, so a wrong array index
-// or a broken lifestyle product both still produced 370.
+// Check base, lifestyle and BEA cost-of-living factors separately: neutral
+// lifestyle inputs can hide a broken multiplier in an end-to-end assertion.
+// The worked example's stored result is reported, not asserted; current BEA
+// category prices determine the cost-of-living factor.
 function benchSelfTest() {
   var w = PEER_BENCHMARKS.worked_example;
   var checks = [];
@@ -1067,8 +977,7 @@ function benchSelfTest() {
   var life = benchLifestyleMultiplier(w.category, PERSONA.lifestyle);
   checks.push({ name: "lifestyle multiplier", expected: w.lifestyleMultiplier, actual: life });
 
-  // 3. Cost of living — the factor this model replaced. Assert it against the
-  //    source that replaced it, so the check still has teeth.
+  // 3. Cost of living must match the BEA category source.
   var col = benchColMultipliers(PERSONA.identity.zip);
   var bucket = ((ZIP_COST_OF_LIVING.method || {}).categoryBucket || {})[w.category];
   var expectedCol = col.geo ? Number(col.geo[bucket]) / 100 : null;
@@ -1098,7 +1007,7 @@ function benchSelfTest() {
     pass: failed.length === 0,
     checks: checks,
     failed: failed,
-    // What the worked example says, and what the model says now.
+    // Stored worked-example result alongside the computed figure.
     specResult: w.result,
     actual: actual
   };
@@ -1124,20 +1033,13 @@ chk(missingScripts.length === 0, "all 15 lesson variants have a script body", mi
 // ─────────────────────────────────────────────────────────────────────────────
 section("7b. Unreferenced functions");
 
-// Every function in app/ must be reached. sweep.sh counts the four ways one is
-// (ordinary calls, onclick in screen templates and in index.html, bare names in
-// dispatch tables), ignoring comments. One that is not was orphaned by a
-// refactor — a handler left behind when its button moved, a cue dropped from a
-// dispatch table — or is dead code. Wire it back or delete it: Git keeps
-// history, so nothing is kept in case it comes back (docs/app-contracts.md).
+// Every function must be referenced by calls, inline handlers or dispatch
+// tables, ignoring comments. Unreferenced declarations must be wired or removed.
 chk(__UNREFERENCED.length === 0, "every function is referenced",
     __UNREFERENCED.map(function (d) { return d.name + "  " + d.file; }).join("\n          "));
 
-// Everything shares one global namespace, so a name declared in two files is
-// not an error — the later <script> wins and the earlier becomes unreachable.
-// This is invisible to the count above: a shadowed function is still
-// referenced, it just never runs. It is how chatResetConversation() sat dead in
-// chat-router.js while a second copy in screens/chat.js quietly did less.
+// Scripts share globals: duplicate declarations can shadow a referenced
+// function, which a reference count alone cannot detect.
 chk(__DUPLICATE_DECLS.length === 0, "no name declared twice",
     __DUPLICATE_DECLS.map(function (d) {
       return d.name + "  →  " + d.files.join(" , ") + "   (" + d.scope +
@@ -1146,11 +1048,8 @@ chk(__DUPLICATE_DECLS.length === 0, "no name declared twice",
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("7c. The rendered films agree with the app's clock");
-// The onboarding film is rendered SILENT and narrated live, so the film's
-// timeline and the app's caption clock are two independent computations of the
-// same per-segment durations. When they disagree the picture and the words come
-// apart and NOTHING else reports it — no error, no failed load, just a film that
-// feels wrong. This is the only guard.
+// The silent film and live caption clock compute per-segment durations
+// independently; disagreement separates the words from the picture.
 if (!__FILM_MANIFEST) {
   bad("the rendered films' manifest is present",
       "assets/video/onboarding/manifest.json is missing, so nothing below can compare the films" +
@@ -1182,11 +1081,8 @@ if (!__FILM_MANIFEST) {
       drift.slice(0, 4).join("\n          ") +
       (drift.length ? "\n          → re-run tools/film/build-films.mjs --render" : ""));
 
-  // Every look x script the app can ASK for, so the outstanding renders are
-  // known. A missing one plays another look's render until it is rendered.
-  // The FULL set the app can ask for, from the script data — not from what has
-  // already been rendered. Deriving it from the manifest made the coverage check
-  // vacuous: it could only ever compare the renders against themselves.
+  // Derive film coverage from authored scripts, not the manifest being checked.
+  // A missing look can play another render; a script with no render uses SVG.
   var scripts = [];
   try {
     scripts = ONBOARDING_SCRIPT.scripts.map(function (x) { return x.id; });
@@ -1232,11 +1128,8 @@ if (!__FILM_MANIFEST) {
   chk(listed.length === 0, "the app's film index matches what was rendered",
       "listed but absent: " + listed.slice(0, 6).join(", "));
 
-  // ── the film ends on its last frame, it does not replay ───────────────
-  // A film that runs out a few ms before the clock is `paused` AND `ended`,
-  // and play() on an ended element restarts it from 0 (HTML standard). A
-  // tester saw the intro replay itself at the finish. Driven for real: a stub
-  // element in exactly that state, and a control that still gets play().
+  // play() on an ended video restarts it. Exercise ended and merely paused
+  // elements separately so clock drift cannot replay the film at the finish.
   if (typeof onbFilmSync === "function") {
     var fsSaved = { video: state.onboarding.video, el: __e["onb-film"] };
     var fsCalls = 0;
@@ -1261,12 +1154,7 @@ if (!__FILM_MANIFEST) {
     if (fsSaved.el) __e["onb-film"] = fsSaved.el; else delete __e["onb-film"];
   }
 
-  // ── the stage is the picture's shape, and the picture's colour ────────────
-  // Both tiers draw at 100:72 and the stage used to be free to be taller, so up
-  // to 85px of it could only ever be accent green around a cream film.
-  // v4 only -- onbFilmGroundStyle is the marker. v3 and v3.1 still have the
-  // fixed-height stage this replaced, and it is correct for them: they never
-  // paint it, so a box taller than the picture is just accent green by design.
+  // Match the stage to both picture canvases so it cannot expose coloured bars.
   if (typeof onbFilmGroundStyle === "function" &&
       typeof __COMPONENTS_CSS === "string" && typeof __HF_VIEW === "object") {
     var stageRule = /\.onb-video-stage\s*\{([\s\S]*?)\n\}/.exec(__COMPONENTS_CSS);
@@ -1324,9 +1212,7 @@ if (!__FILM_MANIFEST) {
         "it draws in --on-dark and would be invisible on a light one\n          got: " +
         withoutFilm);
 
-    // AND THE MARKUP HAS TO CALL IT. Checking the helper alone missed a
-    // mutation that simply dropped it from the template -- a correct colour
-    // nobody interpolates is the same green stage with extra steps.
+    // Test the rendered markup too: a correct helper does nothing unless called.
     var _ob3 = state.onboarding;
     onbStart();
     state.onboarding.improveAreas = [];
@@ -1342,13 +1228,7 @@ if (!__FILM_MANIFEST) {
         stageHtml.slice(0, 160));
   }
 
-  // ── the render tool writes into the version being swept ───────────────────
-  // Six tools read MB_VERSION and this one was missed when v4 was created, so
-  // `--render` encoded four films into v3.1 -- the A/B CONTROL -- while v4's
-  // sweep kept reporting "1 of 10 rendered". Every log line said "rendered";
-  // they were simply in another version. Nothing else would ever have said so.
-  // Against the DEFAULT version, not the one being swept -- sweeping the control
-  // must not fail because the tool points at where work happens.
+  // The film tool must target the editable app, matching the tooling default.
   if (typeof __FILM_TOOL_VERSION === "string" && typeof __DEFAULT_VERSION === "string") {
     chk(__FILM_TOOL_VERSION === __DEFAULT_VERSION,
         "tools/film/build-films.mjs renders into the version work happens in",
@@ -1398,16 +1278,11 @@ if (!__FILM_MANIFEST) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — guarded so v3 and v3.1 skip the whole block.
 if (typeof screenSlug !== "undefined") {
 section("7d. One URL per screen — what a usability tracker can see");
 
-// A Useberry round recorded the gate, the first onboarding screen, and nothing
-// else: their tracker compares document.location.href on each DOM change, and
-// pushState(snapshot, '') never moves it. These gates exist so that cannot come
-// back silently — the failure mode is a study that runs, completes, and reports
-// one screen.
+// Trackers compare the page URL on DOM changes, so rendering a new view must
+// move its URL as well as compute a slug.
 
 // ── the slug is well-formed for every routed screen ────────────────────────
 var badSlug = [];
@@ -1418,10 +1293,7 @@ SCREENS.forEach(function (id) {
 chk(badSlug.length === 0, "every routed screen yields a URL-safe slug",
     badSlug.slice(0, 6).join(", "));
 
-// ── a stepped screen is several views, and they must not collide ───────────
-// This is the whole point: onboarding is ONE screen id and seven pages to a
-// tester. If these collapse, the flow report shows "onboarding" once and the
-// six steps after it vanish — which is exactly the reported defect, one level in.
+// Stepped screens need a distinct URL for every page a tester sees.
 var views = [], savedScreen = state.screen;
 state.screen = "onboarding";
 state.onboarding = state.onboarding || {};
@@ -1450,10 +1322,7 @@ chk(dupes.length === 0,
     "every step of a stepped screen is its own URL (" + views.length + " views)",
     "collapsed: " + dupes.join(", "));
 
-// ── render() actually writes it ────────────────────────────────────────────
-// The gates above test the module. THIS tests the wiring, and the wiring is
-// what broke: a module that computes a perfect slug nobody calls is the same
-// defect with extra steps.
+// Exercise render() as well as the slug helper to verify the URL is written.
 if (typeof URL !== "undefined") {
   var _loc = location, _hist = history, _painted = lastPaintedScreen, _scr = state.screen;
   var _href = "https://example.github.io/versions/v4/index.html?PROLIFIC_PID=abc123";
@@ -1535,8 +1404,6 @@ chk(window.MB_RELEASE.tracking === false && USEBERRY_TRACKING === false,
 chk(window.MB_RELEASE.selector === "../index.html", "local refresh returns to root");
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — Phase 2 of the tracking work.
 if (typeof ubActionName !== "undefined") {
 section("7e. What a tester clicked, and what they set");
 
@@ -1572,9 +1439,7 @@ var leaked = valueShapes.filter(function (h) { return /this[-.]?value|this[-.]?c
 chk(leaked.length === 0, "a tester's input never enters a control's name",
     leaked.map(function (h) { return h + " -> " + ubActionName(h); }).join("\n          "));
 
-// ── the stamping pass is actually wired into render() ───────────────────────
-// The parser above can be perfect and the reports still empty if nothing calls
-// it. That is the failure Phase 1 was, repeated one layer in.
+// A correct parser still needs render() to stamp the controls it paints.
 var stamped = 0, _origStamp = ubStampControls;
 try {
   ubStampControls = function () { stamped++; return 0; };
@@ -1643,8 +1508,7 @@ if (typeof ubTrailRecord === "function") {
 }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — the buddy step is one screen: art, greeting, name, pronouns.
+// The buddy step combines art, greeting, name and pronouns.
 if (typeof BUDDY_PRONOUNS !== "undefined" && typeof onbSetStep === "function") {
 section("7h. Meet your buddy — one screen");
 
@@ -1671,12 +1535,7 @@ chk(state.onboarding.step === buddyStep + 1,
     "the buddy step is one screen",
     "Continue from it landed on step " + (state.onboarding.step + 1));
 
-// ── the top bar, and the 52px it was sitting on ───────────────────────────
-// Onboarding has Back in its own footer and Skip in its own header, so the bare
-// bar's chevron was a third escape. Hiding it is half the fix; the other half is
-// that `.screen-scroll.journal-mode` re-reserved the bar's height, and both it
-// and `.no-topbar` are (0,2,0) so the later declaration won -- leaving a 52px
-// empty strip where the bar had been.
+// Onboarding supplies Back and Skip, so it needs no top bar or reserved strip.
 if (typeof TOPBAR_HIDDEN_SCREENS !== "undefined") {
   var _s0 = state.screen;
   state.screen = "onboarding";
@@ -1734,7 +1593,7 @@ chk(nameLbl !== -1 && proLbl !== -1 && nameLbl < nameAt && nameAt < proLbl && pr
     "\"Name\" labels the name box and \"Pronouns\" the dropdown, each above its field",
     "Name label " + nameLbl + ", Pronouns label " + proLbl);
 
-// Every step says Continue -- the buddy step included (owner's call).
+// Every step says Continue, including Buddy setup.
 var notContinue = [];
 ONB_STEPS.forEach(function (k, i) {
   var o = state.onboarding; o.step = i;
@@ -1767,9 +1626,7 @@ chk(!!sel && opts.length === 1 + BUDDY_PRONOUNS.length &&
 chk(/id="onbContinue"[^>]*disabled/.test(html7),
     "Continue is disabled until pronouns are picked");
 
-// ── "Buddy" is a placeholder on arrival, and a name on leaving ───────────
-// Arriving must NOT write it -- a real value in the box is what read as
-// pre-filled. Five ways in; every one must show the faded placeholder.
+// Arrival must leave the name blank so Buddy appears only as a placeholder.
 function arrive(how) {
   onbStart();
   var o = state.onboarding;
@@ -1879,11 +1736,8 @@ if (snap7 && typeof onbFinish === "function") {
   warn("the pronoun trail not checked — state would not snapshot");
 }
 
-// ── the boxes: the app's tokens, no native chrome ─────────────────────────
-// The owner saw these two boxes as harsher than the Name/ZIP boxes. Computed
-// colours were identical, so the difference is what the browser draws on its
-// own -- the native <select>. appearance:none removes it; the colours must stay
-// the shared tokens, never a hardcoded hex.
+// Native select chrome can differ despite identical computed colours. Disable
+// it while keeping the shared theme tokens.
 if (typeof __COMPONENTS_CSS === "string") {
   var fieldRules = __COMPONENTS_CSS.match(/[^{}]*\.onb-buddy-fields[^{}]*\{[^}]*\}/g) || [];
   var selRule = fieldRules.filter(function (r) { return /select\s*\{/.test(r); })
@@ -1899,10 +1753,8 @@ if (typeof __COMPONENTS_CSS === "string") {
       hex.length ? "hardcoded colour in: " + hex[0].trim().split("{")[0] : "");
 }
 
-// ── the OPEN pronoun list is centred too ──────────────────────────────────
-// Chrome's native popup ignores text-align on <option>, so the choices hugged
-// the left edge. base-select draws the list in the page where CSS reaches it;
-// it lives inside @supports so other browsers keep the native list untouched.
+// base-select lets CSS centre the popup; @supports preserves native lists
+// in browsers that cannot style it.
 if (typeof __COMPONENTS_CSS === "string") {
   var cssNoCmt = __COMPONENTS_CSS.replace(/\/\*[\s\S]*?\*\//g, "");
   var supM = /@supports\s*\(appearance:\s*base-select\)\s*\{([\s\S]*?)\n\}/.exec(cssNoCmt);
@@ -1947,13 +1799,10 @@ chk(/buddy-desc/.test(broken) && !/buddy-img/.test(broken),
 state.onboarding = _o7; state.buddy = _b7; state.screen = _s7;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — Home's task cards are two lines, so the third task peeks above the nav.
+// Home task cards use two lines so the third task can peek above the nav.
 if (typeof renderHomeTask === "function") {
 section("7i. Home shows a hint of the third task");
-// The bones line used to be its own row under the title AND the button, so a
-// card was three lines tall for two lines of content and the third task sat
-// wholly below the fold. It belongs in the title's column, before the button.
+// Keep the bones line in the title column, before the button.
 var taskHtml = renderHomeTask({ id: "t", label: "A task", kibble: 5, completed: false });
 var kibAt = taskHtml.indexOf("home-task-kibble"), openAt = taskHtml.indexOf(">Open<");
 chk(kibAt !== -1 && openAt !== -1 && kibAt < openAt,
@@ -1961,9 +1810,7 @@ chk(kibAt !== -1 && openAt !== -1 && kibAt < openAt,
     "kibble at " + kibAt + ", button at " + openAt);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — the Budget tab is a paywall (docs/decisions.md L27, overriding
-// D31).
+// The Budget tab paywall follows L27.
 if (typeof BUDGET_PAYWALL !== "undefined") {
 section("7g. The Budget tab is walled");
 
@@ -2000,10 +1847,8 @@ chk(leakedFigs.length === 0, "no planned figure reaches it either",
 chk(!BUDGET_PAYWALL || !/Planned|Left over|Built with/.test(walled),
     "and none of the plan-vs-actual readout");
 
-// ── the CTA records a tap and changes nothing ─────────────────────────────
-// Strict, by owner's call: there is no route through. So it must not quietly
-// become one -- state.trialAccepted still means diamonds and the reward
-// screen's subscriber tier, and this screen has no business touching it.
+// The paywall records taps only (L27); it must not navigate or change the
+// subscriber tier used by rewards.
 if (typeof budgetPaywallTap === "function") {
   var beforeTap = JSON.stringify([state.trialAccepted, state.screen, state.planStatus]);
   try { budgetPaywallTap("monthly"); budgetPaywallTap("annual"); } catch (e) {}
@@ -2049,11 +1894,8 @@ if (typeof BUDGET_PAYWALL_ANNUAL !== "undefined" && typeof renderBudgetPaywall =
   }
 }
 
-// ── no rendered copy still promises the opposite ──────────────────────────
-// D31's old line -- "Nothing is locked either way, this prototype has no paid
-// features" -- was copy a TESTER READS. Checked against rendered markup rather
-// than source, so a comment explaining why the line was removed does not trip
-// it.
+// Check rendered copy for promises that contradict the paywall; comments
+// explaining the contract must not trigger this check.
 var promises = [];
 destinations.forEach(function (d) {
   state.screen = d[0];
@@ -2079,12 +1921,9 @@ chk(!BUDGET_PAYWALL || /PAYWALL/i.test((function () {
 // ─────────────────────────────────────────────────────────────────────────────
 section("7j. A value with an apostrophe still clicks");
 
-// An inline handler's argument must be escaped for JS FIRST, then for HTML.
-// The other way round, h() turns ' into &#039;, the JS escape finds nothing,
-// and the browser decodes it straight back: onbToggleGoal('... don't use') is
-// a syntax error, so "Cancel what I don't use" could not be picked and the
-// keyboard's ' and \ keys did nothing. Decoded here exactly as a browser does,
-// then compiled and run.
+// Escape inline arguments for JS before HTML: the browser decodes entities
+// before compiling the handler. Compile and run the decoded apostrophe and
+// backslash cases to verify both syntax and the dispatched value.
 function attrDecode(s) {
   return String(s).replace(/&#0*39;/g, "'").replace(/&quot;/g, '"')
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
@@ -2145,10 +1984,7 @@ if (typeof kbdMarkup === "function" && typeof KBD_LAYERS === "object") {
 // ─────────────────────────────────────────────────────────────────────────────
 section("7k. APR lesson: questions every time, a picture with no card");
 
-// A tester who once answered "no card" re-opened APR from Learn: the stored
-// answers skipped the questions, and a run with no card APR drew a blank green
-// stage -- the storyboard needs their rate, and the waveform stand-in is gone
-// (L10). Now Begin always asks, and a no-figure run plays the figure-free cut.
+// Begin must ask again; a run with no card APR needs a figure-free storyboard.
 if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "undefined") {
   var aprL = LESSONS_V3.lessons.filter(function (l) { return l.id === "apr"; })[0];
   var ffMap = aprL && aprL.visualTemplate && aprL.visualTemplate.figureFree;
@@ -2196,10 +2032,8 @@ if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "u
 // ─────────────────────────────────────────────────────────────────────────────
 section("7l. A lost onend cannot freeze the narration");
 
-// The film held at the end of every sentence until the tester scrubbed: the
-// player waits for the voice's onend, and browsers lose it (a collected
-// utterance; Chrome's ~15s cut-off). narrationSpeak's watchdog delivers it once
-// the synth falls silent. Driven with a fake synth on the sweep's queued timers.
+// Browsers can lose speech onend events. Exercise the watchdog with a fake
+// synth and queued timers so narration cannot freeze after the voice stops.
 if (typeof NARRATION_POLL_MS !== "undefined" && typeof window === "object") {
   var nSaved = { synth: window.speechSynthesis, U: typeof SpeechSynthesisUtterance === "undefined" ? undefined : SpeechSynthesisUtterance };
   var nSynth = { speaking: false, pending: false, last: null,
@@ -2237,9 +2071,7 @@ if (typeof NARRATION_POLL_MS !== "undefined" && typeof window === "object") {
 // ─────────────────────────────────────────────────────────────────────────────
 section("7m. Older lessons that borrow the APR beats");
 
-// "How Interest Builds" -- the one the owner opened as "the APR lesson" -- had
-// no storyboard, so its stage was plain green. It now plays the APR lesson's
-// figure-free beats, cut to its own lines and timed to its measured narration.
+// Borrowed APR beats must cover this lesson's own lines and measured narration.
 if (typeof lessonBorrowedVisualPlan === "function" && typeof LP_BORROWED_VISUALS === "object") {
   Object.keys(LP_BORROWED_VISUALS).forEach(function (id) {
     var map = LP_BORROWED_VISUALS[id], lines = LP_SCRIPTS[id] || [];
@@ -2278,10 +2110,7 @@ if (typeof lessonBorrowedVisualPlan === "function" && typeof LP_BORROWED_VISUALS
 // ─────────────────────────────────────────────────────────────────────────────
 section("7n. A finished lesson's reward screen stays finished");
 
-// Finish a lesson, Return Home, tap Learn: the reward screen came back, because
-// a tab tap resumes the top of that tab's stack. And its back arrow reopened
-// the lesson player. The reward now sits alone on the Learn root, and a tab
-// never resumes onto it.
+// A finished reward cannot resume from a tab or reopen the player through Back.
 if (typeof NAV_NO_RESUME !== "undefined") {
   var rwSaved = JSON.stringify(state.nav), rwScreen = state.screen, rwLessons = JSON.stringify(state.lessons), rwBadges = JSON.stringify(state.badges);
   function rwFinish() {
