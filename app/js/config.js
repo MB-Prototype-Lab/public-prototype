@@ -1,14 +1,7 @@
 // ─── Build configuration ──────────────────────────────────────────────────────
 // Loads FIRST, before any data or app file. Nothing here depends on anything.
 
-// The version's own name, for admin-panel strings that would otherwise name a
-// folder they are no longer in.
-//
-// v4 was copied from v3.1, and the copy brought four admin subtitles reading
-// "v3.1 builder", "v3.1 step 1" and so on — accurate in the folder they were
-// written in, wrong the moment the folder was duplicated. Historical comments
-// in the source still say v3.1 on purpose (that IS where the design came from);
-// this is only for text a tester reads on screen.
+// Version label for Tools subtitles.
 const APP_VERSION = "v4";
 
 // Frozen publication setting; local development is untracked. Participant URLs
@@ -18,20 +11,15 @@ const USEBERRY_TRACKING = window.MB_RELEASE.tracking === true;
 // THE BUDGET TAB IS A PAYWALL.
 //
 // true  -> the Budget tab renders the Platinum wall (screens/budget-paywall.js)
-// false -> the real budget comes back, unchanged
+// false -> the Budget tab renders the category budget
 //
-// ⚠ THIS OVERRIDES A SPEC DECISION. D31 is "No ads and no paywalls appear",
-// and six places in v4 cited it. docs/decisions.md L27 records the override;
-// without that record the next reader finds D31, calls this a bug, and removes
-// it.
+// L27 overrides D31's no-paywalls rule for this tab only.
 //
 // A FLAG RATHER THAN A DELETION. It is a recorded product setting
 // (docs/decisions.md L27), and turning it off must bring the real tab back
-// without unwinding anything. The eight functions in screens/budget-v3.js are
-// that tab; deleting its call site would fail sweep.sh §7b (every function
-// must be referenced).
+// without unwinding anything. screens/budget-v3.js renders that tab.
 //
-// ⚠ IT GUARDS THE TAB, NOT THE BUDGET. Owner's call, and deliberately narrow
+// ⚠ IT GUARDS THE TAB, NOT THE BUDGET. Deliberately narrow
 // (L27): chat, the ☰ menu, budget-update-confirm's Rebuild and two deep links
 // all reach budget screens without rendering the tab; the paywall's Tools card
 // lists them (renderBudgetPaywallAdmin). Widening it is moving

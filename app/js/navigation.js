@@ -42,9 +42,8 @@ function restoreNavSnapshot(snap) {
 
 // ─── Per-stack navigation (L5, architecture §7) ───────────────────────────────
 // Every screen change goes through go() / navGoTab() / navBack() / navAdminJump().
-// Assigning state.screen directly bypasses the stack AND the nav log — that was
-// already v2's rule and it matters more now, because the stack is what decides
-// where back lands.
+// Assigning state.screen directly bypasses the stack AND the nav log, so Back
+// can no longer reliably return to the caller.
 
 function navStack()   { return state.nav.stacks[state.nav.activeStack]; }
 function navDepth()   { return navStack().length; }
@@ -84,10 +83,10 @@ function navGoTab(key) {
 
 // Return to Home itself, resetting the stack — "this flow is over".
 //
-// NOT the same as navGoHome(). A tab tap RESUMES that stack's top, which
+// NOT the same as navGoTab("home"). A tab tap RESUMES that stack's top, which
 // is right for tabs: leave Budget three screens deep, come back, pick up where
 // you were. It is wrong for ending a flow, because the thing you just finished
-// is still on top — calling navGoHome() after the share flow returns you
+// is still on top — calling navGoTab("home") after the share flow returns you
 // to the share screen.
 //
 // Every "Done" at the end of a flow wants this one.
@@ -103,9 +102,8 @@ function navGoHome() {
 // navGoTab() commits navCurrent(), i.e. the TOP of that stack. That is right for
 // a tab tap (resume where you left off) and wrong for ending a flow, because the
 // screen you just finished is still on top. Finish the budget builder and the
-// aboutMe stack ends as ["aboutMe","budgetBuild","budgetDone"] — so
-// "See my budget" called navGoTab('aboutMe') and committed budgetDone, the
-// screen it was already on. The button did nothing.
+// aboutMe stack ends as ["aboutMe","budgetBuild","budgetDone"]. Resetting it
+// is necessary for "See my budget" to reach the tab's front page.
 function navGoTabRoot(key) {
   if (!state.nav.stacks[key]) return;
   state.nav.activeStack = key;
@@ -219,7 +217,7 @@ function selectLesson(id) {
   const lesson = state.lessons.find(l => l.id === id);
   if (!lesson) return;
   // Drop the previous lesson's script, video, quiz and calculator before this
-  // one starts, or it inherits them — see lessonV3ClearSession. A v3 lesson
+  // one starts, or it inherits them — see lessonV3ClearSession. A framed lesson
   // re-populates them a moment later in lessonOpenPlayer, which runs after this.
   if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
   state.currentLesson = lesson;
@@ -236,9 +234,8 @@ function selectLesson(id) {
 /**
  * Leave the preview and start the lesson itself.
  *
- * v3 lessons ask their framing questions first — that is what personalises the
- * script and the video figures — then open the player. v2 lessons go straight
- * to it. Both land on the same `lesson` screen and the same tail.
+ * Framed lessons ask questions to personalise the script and video figures.
+ * Unframed lessons open the player directly; both share the same reward path.
  */
 function startCurrentLesson() {
   const lesson = state.currentLesson;
@@ -345,16 +342,7 @@ function completeLesson() {
   // a merged larger number.
   const xpBase  = lesson.xp;
 
-  // The daily-task bonus applies when the lesson was opened from TODAY'S task.
-  // `lesson.dailyTask` is a static flag on the v2 catalog row — v2's
-  // approximation of the same idea, from before tasks carried routes — so it is
-  // permanently true for one lesson and permanently false for the rest. A v3
-  // lesson opened from a daily task that isn't the seeded APR one therefore
-  // earned nothing, because selectLesson prefers the v2 row and never reaches
-  // the shim in lessonOpenPlayer that derives it.
-  //
-  // Ask the task list, and keep the seed flag as an OR so nothing v2 already
-  // does regresses.
+  // Reward today's task as well as lessons with a seeded dailyTask bonus flag.
   const fromDailyTask = (typeof lessonIsActiveTask === "function" &&
                          lessonIsActiveTask(lesson.id)) || !!lesson.dailyTask;
   const xpBonus = fromDailyTask ? lesson.xp * (state.xpConfig.bonusMultiplier - 1) : 0;
@@ -372,8 +360,8 @@ function completeLesson() {
     };
   }).filter(Boolean);
 
-  // Charity Points. The v3 path (lessonRewardStart) has already opened the
-  // ledger and credited both the lesson and the daily task; a v2 lesson arrives
+  // Charity Points. lessonRewardStart has already opened the
+  // ledger and credited both the lesson and the daily task; an unframed lesson arrives
   // here with nothing open, so it earns its bones on the same rule rather than
   // showing an empty section. Closing it means a later task completion cannot
   // append to a reward that has already been rendered.
@@ -393,55 +381,20 @@ function completeLesson() {
   state.activeQuizChoice       = null;
   state.activeQuizWrongChoices = [];
   state.currentLesson          = null;
-  // Same for the v3 side — this is the one funnel every lesson exits through.
+  // Clear framing too — this is the one funnel every lesson exits through.
   if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
 
-  // The lesson is over, so nothing it showed is somewhere to go back to. A plain
-  // go() left [..., "lesson", "reward"] on the stack: the back arrow reopened
-  // the player. Reset the tab to its root under the reward, so back lands on
-  // the tab's front page (owner's call: Learn's front page, not the topic).
+  // Reset the tab under the reward so Back lands on its front page, not the
+  // finished player or topic.
   const tab = state.nav.activeStack;
   state.nav.stacks[tab] = [tab, "reward"];
   navCommit("reward");
 }
 
-// ─── Navigation contract ──────────────────────────────────────────────────────
-// All screen changes MUST go through go() or taskGo(). Direct state.screen
-// assignment bypasses history tracking and the nav log.
-//
-// Tab → screens mapping (activeTabFor() in utils.js):
-//   home        → home
-//   aboutMe     → aboutMe, myDebts, debtAnalyzer,
-//                 lifestyle, lifestyleChain, accountBalances, debtBalances, goals
-//   myProgress  → myProgress
-//   learn       → learn, topic, reward-preview, lesson, quiz, simulation
-//   marketplace → marketplace, marketplaceDetail
-//
-// Post-result flow (no tab active, no nav bar):
-//   budget save / lifestyle save / monthly update complete
-//     → postResult → nextAction → commit → finish → myProgress
-//   "Adjust it" path: nextAction → Budget tab (mid-loop exit)
-//   "Compare more" path: nextAction → myProgress (mid-loop exit)
-//   "Make a goal" path: nextAction → commitment → finish → myProgress
-//   "Accept" / "Review later": nextAction → finish → myProgress (or flowOrigin)
-//
-// Screens with no nav bar (intentionally excluded from NAV_VISIBLE_SCREENS):
-//   lesson        — full-height audiobook player; full-bleed, no tab context
-//   quiz          — full-screen question flow; no tab context needed mid-quiz
-//   reward-preview — pre-lesson interstitial; no nav keeps focus on the preview
-//   reward        — post-quiz celebration overlay; nav bar would break the moment
-//   lifestyleChain — full-screen question flow; no tab context needed mid-chain
-//   postResult     — post-input reaction prompt; keep focus on the prompt
-//   nextAction     — next action selection; keep focus on the choice
-//   commitment     — commitment creation; keep focus on the input
-//   finish         — completion moment; keep focus on the confirmation
-//
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 // navigation.js loads last in the script order (after render.js), so render()
 // is guaranteed to be defined before this call fires.
-// replaceState seeds the initial history entry (screen: "home") so that
-// pressing back from the second screen cleanly returns to Home.
-// Seed state from the v3 data files before anything renders (js/boot.js).
+// Seed state before the first history entry and render (js/boot.js).
 bootV3();
 
 // A per-task start URL, applied after the seed and before the first history
@@ -489,14 +442,6 @@ window.addEventListener('popstate', function(e) {
 // 2. A FLOW launched from Home — money_journal and subscription_confirm open a
 //    journal entry, which is not a tab and has nowhere else to belong. taskGo is
 //    right for those: reset the home stack, push, and back out to Home.
-//
-// These used to go through taskGo indiscriminately, which pushed the string
-// "learn" onto the HOME stack and left activeStack as "home". The lesson opened,
-// but renderNav highlights by activeStack (components/nav.js) — so the HOME tab
-// stayed lit while a Learn screen was on display, Back went to Home instead of
-// Learn, and the Learn tab's own stack still held whatever was there before. The
-// reward screen then exited with go('learn'), pushing a second "learn" on top of
-// the mess, so Back replayed the reward you had just finished.
 //
 // `subscription_confirm` is NOT a screen (L12) — it deep-links into a journal
 // entry focused on q_watched, which is where the engagement signal driving the

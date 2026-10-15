@@ -116,12 +116,12 @@ window.onunhandledrejection = function(e) {
      buddy-responses.json: that is the keyword matcher's response library and
      this is a tapped tree. Two shapes, two files. -->
 <script src="data/buddy-esf.js"></script>
-<!-- v3.1c: the Big Purchase Calculator's figures (every one sourced or flagged
+<!-- The Big Purchase Calculator's figures (every one sourced or flagged
      _prototype) and Buddy's copy for it. docs/big-purchase-spec.md §13 / §11. -->
 <script src="data/big-purchase.js"></script>
 <script src="data/buddy-bp.js"></script>
 <script src="data/lessons.js"></script>
-<!-- AUTHORED in 5c — lessons.json ships no script bodies -->
+<!-- Authored script bodies, separate from the lessons.json catalogue -->
 <script src="data/lesson-scripts.js"></script>
 
 <!-- 2. Data -->
@@ -147,7 +147,7 @@ window.onunhandledrejection = function(e) {
 <script src="js/budget-baseline.js"></script>
 <!-- Reads the trees above plus the peer model; screens/help-me-out.js renders it -->
 <script src="js/help-me-out.js"></script>
-<!-- Emergency fund model: six survival categories as a VIEW over the taxonomy,
+<!-- Emergency fund model: survival expenses as a VIEW over the taxonomy,
      opening on the same peer figures the budget builder uses. Commits through
      the baseline seam above, so it seeds the budget. -->
 <script src="js/esf.js"></script>
@@ -193,8 +193,7 @@ window.onunhandledrejection = function(e) {
 <script src="screens/budget-build.js"></script>
 <!-- The estimation trees, asked one category at a time -->
 <script src="screens/help-me-out.js"></script>
-<!-- Emergency fund: four capture steps, then the number and the plan. Reads the
-     model in js/esf.js and hands single lines to the trees above. -->
+<!-- Emergency fund capture, then the number and the plan; reads js/esf.js. -->
 <script src="screens/esf-build.js"></script>
 <script src="screens/esf-plan.js"></script>
 <!-- Renders the pill and the overlay for both ESF screens above. -->
@@ -248,15 +247,14 @@ window.onunhandledrejection = function(e) {
      prototype at all, plus the per-task start URLs that rest on it. Loads
      before render.js, which calls into it. -->
 <script src="js/screen-url.js"></script>
-<!-- Phase 2 of the same work: data-ub names on every control so a click report
+<!-- data-ub names on every control so a click report
      says what was pressed, and the value trail that carries what a tester set
-     out of an unmoderated session without a backend. Both are inert unless a
-     tracker is reading the page. -->
+     out of an unmoderated session without a backend. -->
 <script src="js/ub-names.js"></script>
 <script src="js/value-trail.js"></script>
 <!-- Usability tracking. Injects nothing unless the snapshot was prepared with
      tracking on (publish.py prepare --tracking, frozen in release-config.js;
-     docs/useberry.md) — the one sanctioned exception to D02. -->
+     app/docs/useberry.md) — the one sanctioned exception to D02. -->
 <script src="js/useberry.js"></script>
 <script src="js/render.js"></script>
 <script src="js/navigation.js"></script>

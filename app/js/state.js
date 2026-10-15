@@ -1,6 +1,6 @@
 // ─── App State ────────────────────────────────────────────────────────────────
 // Owns the entire app state object. All seed data resets on page refresh —
-// this is intentional for a prototype; no persistence layer exists yet.
+// this is intentional for a prototype; participant data is never persisted.
 //
 // Key sections in the state object:
 //   screen          — active screen key; always changed via go() in navigation.js
@@ -54,10 +54,8 @@ const destinations = [
   ["marketplace",    "Marketplace"],
   ["reward",         "Reward"],
 
-  // L14 — the v2 screens v3 never specified stay reachable HERE and nowhere
-  // else: nothing in the five tabs or the daily tasks routes to them. The
-  // Phase 6 sweep checks this list against every routable screen, so a screen
-  // that drops out is a visible warning rather than a quiet orphan.
+  // L14 — Tools keeps off-path screens reachable. The sweep checks this
+  // registry against every routable screen to catch quiet orphans.
   ["comparison",     "Where it's going"],
   ["budgetCategory", "Budget — one category"],
   ["spendEstimator", "Spend estimator"],
@@ -123,7 +121,7 @@ const state = {
   onboarding: null,
   trialAccepted: null,
 
-  // ── Daily update (Phase 4) ────────────────────────────────────────────────
+  // ── Daily update ──────────────────────────────────────────────────────────
   // One audio file per segment, so `index` IS the position — no playhead maths.
   du: { scriptId: null, index: 0, playing: false, timer: null, finished: false },
 
@@ -157,7 +155,7 @@ const state = {
   //                   what makes a second same-day entry ask DIFFERENT questions
   // journalRecurring: pattern follow-up answers. TRI-STATE values —
   //                   true | "weekdays" | false — never truthiness-checked
-  // goalEvents:       emitted by q_balance, consumed by Phase 5's goals
+  // goalEvents:       emitted by q_balance, consumed by goals
   journalSession: null,
   journalAsked: {},
 
@@ -185,12 +183,10 @@ const state = {
   selectedCategory: null,
 
   // ── Plan (12-category budget) ─────────────────────────────────────────────
-  // "empty" until a builder saves through the seam. v2's state.budget is
-  // vestigial and read only by my-progress until Phase 2b moves it.
   planStatus: "complete",
   planBuiltWith: null,
   planBuiltDate: null,
-  // v3.1 budget builder — three steps, per-line "Help me out". Holds the
+  // Budget builder — three steps, per-line "Help me out". Holds the
   // figures until bbSubmit() puts them through the baseline seam (L6).
   budgetBuild: null,
   // The Help-me-out run for ONE category: its answers, its stage, and the
@@ -215,7 +211,7 @@ const state = {
   // answered, so the task is not put to them again.
   esfSelfReported: null,
 
-  // ── Big purchase calculator (v3.1c) ───────────────────────────────────────
+  // ── Big purchase calculator ──────────────────────────────────────────────
   // bp           the in-flight run: setup answers, financing, per-card overrides,
   //              the selected card, sheets, Buddy. Cleared by bpStart()
   // bigPurchase  the SAVED plan bpCommit() writes: the chosen card, its rows,
@@ -230,16 +226,8 @@ const state = {
   // The picker session — tier, then income level.
   profilePick: null,
 
-  // Admin panel collapse — persists across screens.
-  //
-  // Starts CLOSED. On a phone the panel is gone entirely (css/layout.css hides
-  // both it and its expand tab under 768px), so a desktop that opened with dev
-  // chrome beside the frame was the odd one out — and the demo link is opened
-  // by people who are not developing. The expand tab is still there at any
-  // width that has room for it, which is the difference from mobile: hidden,
-  // not removed.
-  //
-  // State is in-memory (D03), so every refresh returns here. That is the point.
+  // Tools starts closed so demo visitors see the product, not instrumentation.
+  // The expand tab is available only at desktop widths (css/layout.css).
   adminCollapsed: true,
 
   // Lesson player stage style — toggled from admin panel.
@@ -281,8 +269,7 @@ const state = {
 
   // Theme — picked from the admin panel, resets on page refresh (D03: no
   // persistence). Valid ids live in THEMES (js/theme.js). Default is Natural
-  // Light — L21 as revised; it originally shipped Dark so the D36 cream had to
-  // be chosen rather than defaulted into, and that call has been reversed.
+  // Light (L21).
   settings: { colorMode: "naturalLight" },
 
   // UI interaction state
@@ -322,7 +309,7 @@ const state = {
 
   // badges: persistent mastery objects per finance topic.
   // tier + level + progress drive the ring display.
-  // Whether a badge has bonus content is now derived from lessons[].dailyTask,
+  // Whether a badge has bonus content is derived from lessons[].dailyTask,
   // not stored as a static flag — keeping the two in sync automatically.
   badges: [
     { name: "Emergency Fund",   tier: "Copper", level: 4, progress: 36 },
@@ -877,10 +864,8 @@ const state = {
   rewardXp: 0,             // total XP across all badges (base + bonus combined)
   rewardLessonTitle: "",   // lesson title shown in reward screen header
 
-  // Charity Points earned by this completion, itemised. Two awards can land —
-  // the lesson's own bones and the daily task's — and before this they both
-  // went silently into state.kibble, so the reward screen showed neither and
-  // the total came to roughly double what the home card had promised.
+  // Itemise the lesson's and daily task's Charity Points separately so the
+  // reward screen can explain the total credited to state.kibble.
   // Opened by lessonRewardStart / completeLesson, written through lrPointsRecord.
   rewardPoints: null,
 
@@ -891,12 +876,9 @@ const state = {
   selectedDebt: null,
   debtAnalyzerExtraPayment: 200,
   debtAnalyzerIncluded: {},
-  // ── v2 debt data (L14) ────────────────────────────────────────────────────
-  // v3 never specified debts, so the v2 debt screens are kept off the main
-  // paths and still need their instruments. Everything else that lived on
-  // state.budget — 5 nested category buckets, fixedOverhead, the peer-average
-  // profile — was retired in 2b along with the screens that read it. The v3
-  // budget is state.plan (12 flat categories).
+  // ── Debt data (L14) ───────────────────────────────────────────────────────
+  // Off-path debt screens need these instruments. The category budget lives
+  // separately in state.plan (12 flat categories).
   budget: {
     fixedOverhead: [
       { name: "Debt Minimum Payments", amount: 150 }
@@ -953,13 +935,11 @@ const state = {
   // Set by submitBudgetBaseline() when a builder saves over an EXISTING budget:
   // the baseline parks here while the shared update-confirm screen shows the
   // old → new comparison. Applied and cleared on confirm; cleared on discard.
-  // A new budget from either builder is a pure override — the old "re-apply
-  // lifestyle answers?" re-run prompt was removed with this seam.
   pendingBaseline: null,
 
 };
 
-// The state as the page loads it, before bootV3 seeds the v3 data. Taken here,
+// The state as the page loads it, before bootV3 seeds the data. Taken here,
 // straight after the literal, so nothing has written to it yet.
 const STATE_AT_LOAD = JSON.parse(JSON.stringify(state));
 
@@ -985,7 +965,7 @@ function resetUserData() {
   RESET_KEEPS.forEach(k => { kept[k] = state[k]; });
   Object.keys(state).forEach(k => { delete state[k]; });
   Object.assign(state, JSON.parse(JSON.stringify(STATE_AT_LOAD)), kept);
-  // Re-seed from the v3 data files and reopen onboarding, as the first boot does.
+  // Re-seed from the data files and reopen onboarding, as the first boot does.
   bootV3();
   render();
 }

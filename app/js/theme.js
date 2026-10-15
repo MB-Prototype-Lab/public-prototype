@@ -1,12 +1,6 @@
 // ─── Theme selection (L21) ───────────────────────────────────────────────────
-// Four themes, picked from the Admin Tools panel. Two reproduce v2's palette,
-// two are the D36 repaint; each pair has a light and a dark. Natural Light is
-// the default (L21).
-//
-// This list is the SINGLE SOURCE OF TRUTH. Before it existed, the two-way
-// assumption was hardcoded in four places (state's default, render's class
-// toggle, the admin button's label, and the sweep), and a third theme would
-// have had to be added to all four. Add a theme here and everything follows.
+// Tools offers cool and Natural palettes, each in light and dark. Natural
+// Light is the default (L21). Add themes here so the picker and classes agree.
 //
 // The class goes on `.screen` only. It must never reach the page, the bezel or
 // the admin panel — those are chrome and hold still while the app repaints
@@ -22,24 +16,13 @@ const THEMES = [
 // Natural Light is the empty string: it IS :root, so it applies no class.
 const THEME_CLASSES = THEMES.map(t => t.cls).filter(Boolean);
 
-// Natural Light. L21 originally made this Dark, deliberately — so a tester's
-// first screen was not the D36 cream and the repaint had to be chosen rather
-// than defaulted into. That trade has been called the other way now: the cream
-// IS the design (D36), and defaulting to a v2 palette meant most testers never
-// saw it.
-//
-// ONE THING THIS COSTS, worth knowing before debugging a theme problem:
-// Natural Light's class is the EMPTY STRING — it is :root, so it applies no
-// class at all. Now that it is also the default, "themeApply never ran" and
-// "the theme is correct" look identical on screen. The comment below used to
-// warn that an unclassed .screen would silently render as Natural Light and
-// look deliberate; that failure is now genuinely invisible, so the sweep's
-// theme checks are the only thing standing between it and a silent regression.
+// An unclassed .screen looks like the default even if themeApply never ran;
+// the sweep must verify theme switching, not just the initial appearance.
 const THEME_DEFAULT = "naturalLight";
 
 /**
  * Resolve an id to a theme. An unknown id (stale state, a hand-edited value)
- * falls back to the default rather than leaving .screen unclassed. Both now
+ * falls back to the default rather than leaving .screen unclassed. Both
  * render Natural Light, but they are not the same thing: one is a resolved
  * theme, the other is no theme at all, and only the first survives a switch
  * away and back.

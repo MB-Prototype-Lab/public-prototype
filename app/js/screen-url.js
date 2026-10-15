@@ -1,27 +1,7 @@
 // ─── One URL per screen ───────────────────────────────────────────────────────
-// v4 only. The reason this file exists, stated once so nobody removes it as
-// dead weight:
-//
-// A Useberry round on the hosted prototype recorded the passcode gate, the
-// first onboarding screen, and then nothing at all. Their tracker watches the
-// page with a MutationObserver and, on every DOM change, compares
-// `document.location.href` against the value it stored last time. Changed → it
-// reports a new screen. Unchanged → silence. It does NOT hook history.pushState.
-//
-// js/navigation.js calls `history.pushState(snapshot, '')`, and that empty
-// second argument means "same URL". So the two entries that registered were
-// real page loads (gate → version) and all ~47 screens after them shared one
-// URL and were invisible.
-//
-// This does not change how the app navigates. It changes what the address bar
-// says while it does, which is the only thing a third-party tracker can see.
-//
-// ── WHAT IT UNLOCKS, beyond the reported defect ─────────────────────────────
-// Useberry's Single Task block takes Path / URL / Trigger as a success
-// criterion. URL is the robust one and was unusable while every screen shared
-// an address. Per-task start URLs (below) are the other half: without them,
-// every task makes the tester replay onboarding before reaching the thing
-// being tested.
+// Useberry detects screens by URL changes, not history.pushState calls with no
+// URL. Sync the address after each new view so reports and URL-based task
+// criteria can identify it. Start links let studies enter without replaying setup.
 
 // ─── Where a URL is safe to write ────────────────────────────────────────────
 // Chrome throws SecurityError for replaceState WITH A URL ARGUMENT on file://,
@@ -29,10 +9,8 @@
 // rewritten" check compares origins. pushState(state, '') — no URL — is fine,
 // which is exactly why the existing call never tripped it.
 //
-// So: http/https only. On file:// this whole module no-ops and the app behaves
-// precisely as it did before, rather than throwing on every screen change and
-// filling the dev error-catcher (index.html's catcher would surface ~47 of them
-// in a single session).
+// So: http/https only. On file:// this module no-ops to avoid SecurityError
+// on every screen change.
 function screenUrlEnabled() {
   try {
     return location.protocol === "http:" || location.protocol === "https:";
@@ -82,7 +60,7 @@ function screenLabel(screenId) {
  * The <title>, which Useberry sends alongside the URL in its NAVIGATION
  * message — so this is what a researcher reads in the report, not just a slug.
  *
- * Steps are rendered 1-based because "step 4 of 7" is what a human means; the
+ * Steps are rendered 1-based for readers; the
  * SLUG stays 0-based and mechanical, matching state, so the two can never
  * disagree about which step is which.
  */

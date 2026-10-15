@@ -1,6 +1,6 @@
 // ─── Usability tracking (Useberry) ───────────────────────────────────────────
 // Off in development. A snapshot's tracking is chosen when it is prepared
-// (`publish.py prepare --tracking`, docs/useberry.md) and frozen in
+// (`publish.py prepare --tracking`, app/docs/useberry.md) and frozen in
 // release-config.js, which js/config.js reads into USEBERRY_TRACKING. It is the
 // one sanctioned exception to D02, and it has to stay narrow.
 //

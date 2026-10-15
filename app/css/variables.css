@@ -13,11 +13,11 @@
    red for the error log: "no red" governs app surfaces, not instrumentation.
 
    ── FOUR THEMES (L21) ───────────────────────────────────────────────────────
-   The admin panel offers four, so a tester can compare the D36 repaint against
-   the v2 look it replaced. Natural Light is the default.
+   Tools offers cool and Natural palettes for comparison. Natural Light is
+   the default.
 
-     Light          .theme-light          v2's crisp blue-on-white
-     Dark           .theme-dark           v2's cool dark
+     Light          .theme-light          crisp blue-on-white
+     Dark           .theme-dark           cool dark
      Natural Light  (no class — :root)    D36 cream + sage        ← DEFAULT
      Natural Dark   .theme-natural-dark   D36 dimmed, warm
 
@@ -28,9 +28,8 @@
    asserts the three sets match, so a token added here must be added to all
    three or the sweep fails.
 
-   Light and Dark reproduce v2 faithfully, INCLUDING its real alarm reds. D36's
-   "no red" governs the product design, which is what the Natural pair is; the
-   v2 pair exists to be compared against and is not held to it.
+   Light and Dark use alarm reds. D36's "no red" governs the Natural pair,
+   not the cool palettes offered for comparison.
 
    WHAT A THEME MUST NEVER TOUCH: --chrome-*, --bg, --phone. Those style the
    admin panel, the page and the bezel — all of which live OUTSIDE .screen,
@@ -90,14 +89,11 @@
   --warn-pill-strong-bg:   #F2D9D1;
   --warn-pill-strong-text: #7C4438;
 
-  /* There is no alarm red in the app. --danger resolves to --warn so any
-     inherited v2 styling lands on the right side of D36 rather than shouting. */
+   /* Natural themes use attention colours, not alarm red (D36). */
   --danger:        var(--warn);
   --danger-bg:     var(--warn-bg);
 
-  /* Informational — sky, deepened to clear 4.5:1 on --info-bg like --accent and
-     --good are. It shipped at #4E7F98 (3.92:1) and the contrast gate added with
-     the four themes caught it; the other two deepenings were done by eye. */
+   /* Informational — sky, deepened to clear 4.5:1 on --info-bg. */
   --info:        #456F86;
   --info-bg:     #EDF4F7;
   --info-border: #C3DBE6;
@@ -114,8 +110,7 @@
 
      --accent is DARK in the light themes and LIGHT in the dark ones, so the
      cream that reads on it in Natural Light is unreadable on Natural Dark's
-     pale sage. Before these existed those rules hardcoded --ink and --on-dark
-     and the pairing was implicit, which is how that went unnoticed. */
+      pale sage. Keep text and fill paired explicitly. */
   --on-accent: #FBF7F0;
 
   --tier-copper: #B87333;
@@ -140,7 +135,7 @@
                   Roboto, "Helvetica Neue", sans-serif;
 
   /* ── Chrome: phone bezel + admin panel. NOT the product. ─────────────────── */
-  --phone:         #2B2723;   /* warm bezel rather than v2's blue-black */
+  --phone:         #2B2723;   /* warm bezel */
   --bg:            #EDE8E0;   /* the page behind the phone */
   --chrome-card:   #FFFFFF;
   --chrome-text:   #172033;
@@ -160,10 +155,7 @@
 }
 
 /* ─── Chrome heights ─────────────────────────────────────────────────────────
-   Stated ONCE. v2 duplicated the 78px nav reservation in three places — the
-   CSS default, the per-mode override classes, and an inline JS fallback — and
-   v3 adds a top bar, which would have doubled that. Everything references
-   these; nothing hardcodes a pixel offset. */
+   Shared reservations keep CSS mode offsets aligned with the bars. */
 :root {
   --topbar-h: 52px;
   --nav-h:    78px;
@@ -223,16 +215,13 @@
   --scroll-thumb: rgba(239, 233, 224, .22);
 }
 
-/* ─── Light — v2's palette, restored ──────────────────────────────────────────
-   Crisp blue-on-white. This is the look D36 replaced, kept switchable so the
-   repaint can be judged against it rather than from memory. Values are v2's
-   own; the tokens v2 never had (--sage, --sky, --apricot, --ink*, --info*,
-   --on-accent, --accent-fill*) are derived into the same cool
-   register — NOT left to inherit, which would leak cream into a blue theme. */
+/* ─── Light ──────────────────────────────────────────────────────────────────
+   All palette tokens use the cool register; inheriting Natural tokens would
+   leak cream into a blue theme. */
 .theme-light {
   --cream:     #F8FAFC;
   --screen:    var(--cream);
-  --card:      #FFFFFF;      /* v2 did use pure white — that is the contrast */
+  --card:      #FFFFFF;
   --soft:      #F2F4F7;
   --ink:       #172033;
   --ink-soft:  #667085;
@@ -280,12 +269,9 @@
   --scroll-thumb: rgba(16, 24, 40, .28);
 }
 
-/* ─── Dark — v2's dark, restored ──────────────────────────────────────────────
-   Two deliberate deviations from v2's exact values, both for legibility:
-     --accent      lightened #4F76FC → #7DA0FF. v2's blue on its own dark card
-                   is ~3.2:1, under the 4.5 floor for the link text it carries.
-     --accent-fill deepened  #4F76FC → #3A5BD9, so white on it clears 4.5:1.
-   v2 got away with both because it had no contrast gate. This build does. */
+/* ─── Dark ───────────────────────────────────────────────────────────────────
+   --accent is light for readable links; --accent-fill is dark enough for white
+   button text. A single blue cannot meet both contrast requirements. */
 .theme-dark {
   --cream:     #1E2128;
   --screen:    var(--cream);

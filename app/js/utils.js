@@ -27,9 +27,7 @@ function h(value) {
  * Enable or disable a button by id, WITHOUT rendering.
  *
  * The house rule is `onchange`, not `oninput`, because a full render() mid-
- * keystroke replaces the focused element and the caret goes with it. But that
- * left every "Continue" gated on a field disabled until the tester clicked
- * away — you typed your name and the button stayed grey.
+ * keystroke replaces the focused element and the caret goes with it.
  *
  * The way out is not oninput + render(). It is oninput + an imperative patch:
  * state updates on every keystroke, and only the one control that depends on it
@@ -70,7 +68,6 @@ function uiSetValue(id, value) {
  * ONE screen with an internal position — the budget builder is three steps of
  * `budgetBuild`, the journal is four questions of `journalEntry` — and moving
  * between those is a new page to a tester even though state.screen never moved.
- * Scrolled to the bottom of step 2, Continue landed them at the bottom of step 3.
  *
  * The inverse case is why this is not simply "always reset": a slider drag, a
  * toggle, and a question revealing below the one just answered are all repaints
@@ -81,7 +78,7 @@ function uiSetValue(id, value) {
  * derived from the whole of `state` — answers change constantly within a step
  * and must not count as a new view.
  *
- * ⚠ IT HAS TWO CONSUMERS NOW, and they must not be split apart.
+ * ⚠ Its two consumers must not be split apart.
  * render() uses it to decide whether to hold the scroll offset, and
  * js/screen-url.js turns it into the URL and <title> a usability tracker
  * records. Both are asking the identical question — "is this a new page to a
@@ -147,7 +144,6 @@ function debouncedRenderCancel() {
   _debouncedRenderTimer = null;
 }
 
-// Map a screen name to its active bottom-tab identifier
 /** @returns {string} Today's date as YYYY-MM-DD */
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -158,20 +154,14 @@ function todayISO() {
  * the sweep can assert on what actually gets emitted — a check that rebuilds
  * its own object from `state` proves nothing about this function.
  *
- * ── READ boot.js §"parked v2 names" BEFORE ADDING A KEY ──────────────────────
- * v2's names survive alongside v3's and several are vestigial. The obvious
- * spelling is usually the dead one:
+ * Report the product's live keys, not the similarly named off-path arrays:
  *
- *     v3 (live)                        v2 (parked, do NOT report)
+ *     Product                          Off-path views (reported in legacy)
  *     state.dailyTasks                 state.tasks
  *     state.strategicGoal              state.goals
  *     state.tacticalGoals
  *     state.journal / .journalEntries  —
  *
- * This shipped once reading `state.goals` and `state.tasks`, which are the v2
- * arrays no v3 screen renders. That is the same defect it was written to fix —
- * a snapshot naming keys that look authoritative and describe nothing on
- * screen — so it is worth the noise of spelling the trap out here.
  */
 function appStateSnapshot() {
   var s = {
@@ -192,7 +182,7 @@ function appStateSnapshot() {
     // observation fired, the figures say what it fired on, and "the dining
     // number looks wrong" is the report this exists to answer.
     observations: state.observations,
-    // v3 goals + tasks. NOT state.goals / state.tasks — see the table above.
+    // Product goals + tasks. NOT state.goals / state.tasks — see above.
     strategicGoal: state.strategicGoal,
     tacticalGoals: state.tacticalGoals,
     dailyTasks: state.dailyTasks,
@@ -201,7 +191,7 @@ function appStateSnapshot() {
     streak: state.streak,
     courseXp: state.courseXp,
     theme: state.settings && state.settings.colorMode,
-    // Inherited v2 surfaces still reachable from the admin jump (L14)
+    // Off-path surfaces still reachable from the admin jump (L14)
     legacy: { debts: state.budget.debts, fixedOverhead: state.budget.fixedOverhead,
               goals: state.goals, tasks: state.tasks,
               selectedBadge: state.selectedBadge, selectedDebt: state.selectedDebt,
@@ -236,7 +226,7 @@ function activeTabFor(screen) {
   if (screen === "onboarding")        return "home";
   if (["journalEntry","journalConfirm","journalDone"].includes(screen)) return "home";   // splash → no nav, but keep mapping defined
   // Budget sub-screens
-  if (screen === "goals")             return "goals";    // v3: Goals is its own tab (D34)
+  if (screen === "goals")             return "goals";    // Goals is its own tab (D34)
   if (["profilePicker"].includes(screen)) return "home";
   if (["budgetBuild", "helpMeOut", "budgetDone"].includes(screen)) return "aboutMe";
   // The emergency fund lives under Goals — it ends in one, even though it seeds
@@ -265,4 +255,3 @@ function activeTabFor(screen) {
   // not exist — navAdminJump would otherwise have nowhere to reset.
   return state.nav && state.nav.stacks[screen] ? screen : "home";
 }
-

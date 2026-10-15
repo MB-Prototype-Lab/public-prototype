@@ -1,11 +1,11 @@
 // ─── Onboarding (D06) ────────────────────────────────────────────────────────
 // TAB: None | NAV BAR: Hidden — full-bleed flow
 //
-// Seven steps.
+// Ten steps.
 //
 //   1 name   2 improvement areas (multi-select)
-//   3 ZIP   4 household   5 income band
-//   6 meet your buddy   7 intro video (how it works)
+//   3 ZIP   4 household   5 place   6 income band
+//   7 coverage   8 miles   9 meet your buddy   10 intro video (how it works)
 //
 // WHAT FINISHING WRITES (onbFinish): the name, ZIP, household and income
 // override the persona (D09), and the place, coverage, miles, goal areas and

@@ -241,9 +241,8 @@ function render() {
   // two things at once: it zeroes BOTH the top-bar and nav offsets in the CSS,
   // and it opts the screen out of the standard padding.
   //
-  // journal-mode is toggled several times below rather than once, because the
-  // screens that want it were added in different phases and each block reads as
-  // its own feature. The `|| contains("journal-mode")` on the later calls is
+  // journal-mode is toggled in several feature blocks. The
+  // `|| contains("journal-mode")` on the later calls is
   // load-bearing: toggle() with an explicit false REMOVES the class, so without
   // it each block would undo the one before and only the last list would win.
   // Any new full-bleed screen should join an existing list, not add a call.
@@ -265,11 +264,8 @@ function render() {
   // latch defers the close, and this is where the close actually happens.
   if (typeof kbdSyncAfterRender === "function") kbdSyncAfterRender();
 
-  // The intro film's storyboard is CSS animations, and a CSS animation starts
-  // the moment it is inserted. So the stage played itself the instant step 8
-  // rendered — silently, because the narration is on the clock and the clock
-  // was still paused. Sync them to the (paused, zeroed) player state on mount,
-  // the same way lpMountHook re-arms the lesson player above.
+  // CSS storyboard animations start on insertion. Sync them to the player's
+  // paused clock on mount so the picture cannot run ahead of narration.
   if (typeof onbVideoSyncFrames === "function") {
     const onb = state.onboarding;
     if (state.screen === "onboarding" && onb &&
@@ -312,8 +308,7 @@ function render() {
   const hasNav = !!navRoot.innerHTML;
   const hasTopbar = !!topbarRoot.innerHTML;
   // Offsets are driven by classes only — no inline px. The heights live in
-  // --topbar-h / --nav-h (css/variables.css) so the reservation is stated once
-  // instead of the three places v2 kept it in.
+  // --topbar-h / --nav-h (css/variables.css) so the reservation is stated once.
   navRoot.style.display = hasNav ? "" : "none";
   screenRoot.classList.toggle("no-nav", !hasNav);
   screenRoot.classList.toggle("no-topbar", !hasTopbar);
@@ -359,14 +354,8 @@ function render() {
   }
 
   // ── Hold the scroll position across a re-render of the SAME screen ─────────
-  // render() replaces .screen's innerHTML, which zeroes scrollTop, and every
-  // state change routes through here. Two things broke on that:
-  //
-  //   · flipping a "Help me out" toggle on a row below the fold threw the
-  //     tester back to the top of the step
-  //   · debouncedRender() also lands here, so DRAGGING any slider below the
-  //     fold snapped the page to the top every 400ms, mid-gesture
-  //
+  // Replacing innerHTML zeroes scrollTop; restore it for repaints so a toggle
+  // or slider below the fold cannot throw the tester back to the top.
   // Scrolling to the top is right when the VIEW actually changes — a new one
   // should start at its beginning. It is never right when the same view simply
   // repaints. The identity is scrollKey(), not state.screen: several flows are

@@ -1,23 +1,16 @@
-// ─── Boot: seed state from the v3 data files ─────────────────────────────────
+// ─── Boot: seed state from the data files ────────────────────────────────────
 // Runs once, from js/navigation.js, before the first render().
 //
-// The seven data globals (PERSONA, SEED_STATE, …) are READ-ONLY source data —
+// The data globals (PERSONA, SEED_STATE, …) are READ-ONLY source data —
 // nothing may mutate them. Everything copied into `state` is deep-cloned so a
-// later edit can never write back into the loaded spec.
+// later edit can never write back into the source data.
 //
 // In-memory only (D03). No localStorage, no backend. A refresh returns to the
 // gate (or, with Pin on refresh, reloads this page), which re-boots this from
 // scratch — that IS the reset.
 //
-// ── Slots that collide with live v2 code ─────────────────────────────────────
-// Three v2 slot names are still owned by running v2 code, so the v3 data is
-// parked under distinct names and the phase that rewires the consumer swaps it:
-//
-//   v2 state.budget (5 buckets)  → v3 seeds `state.plan` (12 categories) below.
-//                                  Phase 2 retires the v2 budget screens.
-//   v2 state.tasks  (task cards) → v3 parks `state.dailyTasks`. Phase 3.
-//   v2 state.goals  (flat array) → v3 parks `state.strategicGoal` +
-//                                  `state.tacticalGoals`. Phase 5.
+// Keep category budgets, daily tasks and tactical/strategic goals under their
+// own keys; state.budget, state.tasks and state.goals also serve off-path views.
 
 function v3Clone(o) {
   return o == null ? o : JSON.parse(JSON.stringify(o));
@@ -25,8 +18,8 @@ function v3Clone(o) {
 
 function bootV3() {
   // ── Identity ───────────────────────────────────────────────────────────────
-  // Persona backs everything (D08). Onboarding overrides ONLY zip, household
-  // size and income band (D09) — Phase 3 applies those on top of this.
+  // Persona seeds the profile (D08). Onboarding applies answers over the
+  // starting profile; skipped fields retain its values (D09, L26).
   state.profile = v3Clone(PERSONA.identity);
   state.lifestyle = v3Clone(PERSONA.lifestyle);
   state.buddy = v3Clone(PERSONA.buddy);
@@ -43,27 +36,21 @@ function bootV3() {
   // now). Buddy level is a shown number with no progression rule.
   state.kibble = PERSONA.state.kibbleBalance;
   state.charityDiamonds = PERSONA.state.diamondBalance || 0;
-  // Cleared on every boot. It was write-only until diamonds got an accrual rule
-  // (lrDiamondsForLesson), so nothing noticed it surviving a reset — now a stale
-  // `true` would credit a subscriber reward on a run that never saw the trial.
+  // Reset subscriber eligibility so a fresh run cannot inherit reward access.
   state.trialAccepted = null;
   state.buddyLevel = PERSONA.state.buddyLevel;
 
-  // D06 — the app starts at onboarding, which lands on a one-day streak.
+  // D06 — onboarding completes with a one-day streak.
   state.streak = PERSONA.state.streakDaysIfOnboarded;
 
   // ── The three spend layers (architecture §5) ───────────────────────────────
-  // Plan layer, keyed by the 12-category taxonomy. This is v3's budget — it is
-  // NOT v2's state.budget (5 nested buckets), which still backs the v2 budget
-  // screens until Phase 2 replaces them. Two models coexist deliberately.
+  // Category budget, separate from state.budget's debt instruments.
   state.plan = {};
   CATEGORIES.forEach(c => { state.plan[c] = catValue(SEED_STATE.budget.monthly, c); });
   state.planTotal = catTotal(state.plan);
-  // Seeded only. Onboarding overwrites this with incomeAnnual / 12 — there is
-  // no take-home estimate any more, the app uses the figure the tester gave.
-  // The JSON key is still `monthlyIncomeNet` because the seeded persona's 4390
-  // genuinely was a post-tax figure; the state field is not, hence the rename.
-  // (Unrelated to state.userProfile.monthlyIncome, a v2 form field.)
+  // Onboarding overwrites this with incomeAnnual / 12, not a take-home estimate.
+  // The seed key monthlyIncomeNet describes the persona's post-tax figure,
+  // not the meaning of subsequent tester-entered income.
   state.monthlyIncome = SEED_STATE.budget.monthlyIncomeNet;
 
   // Self-reported = monthToDateActuals, NOT the sum of journalHistory. Six days
@@ -77,15 +64,13 @@ function bootV3() {
   state.subs = v3Clone(PERSONA.subscriptions.known);
   state.tipBanner = SEED_STATE.tipBanner.today;
 
-  // ── Goals, v3 shape (Phase 5 wires the screens) ────────────────────────────
+  // ── Goals ────────────────────────────────────────────────────────────────
   // One strategic goal, several tactical. Two tactical TYPES with inverted
   // math: a savings goal accumulates toward a target (>100% is good); a
   // spend-limit goal is a monthly ceiling (>100% is bad). The seed uses two
   // different status words for exactly that reason — "behind" vs "over".
   state.strategicGoal = v3Clone(PERSONA.goals.strategic);
-  // The seeded "Build a $3,000 emergency fund" is dropped: the ESF tool owns
-  // that goal now, and a pre-existing one is a fund the tester never created,
-  // sitting next to the one they did with a different target.
+  // The ESF tool owns fund goals; omit the seed to avoid a duplicate target.
   state.tacticalGoals = v3Clone(PERSONA.goals.tactical)
     .filter(g => !/emergency\s*(savings\s*)?fund/i.test(String((g && g.label) || "")));
   // Shape the seed in state, as the L11 observation reframe does. A spend-limit
@@ -102,7 +87,7 @@ function bootV3() {
     }
   });
 
-  // ── Daily tasks, v3 shape (Phase 3 wires home) ─────────────────────────────
+  // ── Daily tasks ──────────────────────────────────────────────────────────
   // Precomputed order. Routes use their own vocabulary — see the route map
   // in architecture §9; `lesson:apr` shows they can carry a parameter.
   state.dailyTasks = v3Clone(SEED_STATE.dailyTasks.today);
@@ -125,10 +110,7 @@ function bootV3() {
   // tab-escape lands. A pre-home entry screen (onboarding) is PUSHED on top of
   // it, so answering the prompt is a pop rather than a jump, and the top bar's
   // back arrow doubles as "skip".
-  //
-  // Seeding the root as the entry screen instead made login the permanent root,
-  // and navGoHome() returned to login forever.
-  // v3 lessons join the one Learn catalog, so they are browsable rather than
+  // Lessons join the one Learn catalog, so they are browsable rather than
   // reachable only through their daily task (see lessons-v3.js).
   lessonV3MergeIntoCatalog();
 
