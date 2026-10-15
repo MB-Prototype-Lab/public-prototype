@@ -1,26 +1,5 @@
-// ─── Settings ─────────────────────────────────────────────────────────────────
-// TAB: None (no bottom nav tab) | NAV BAR: Visible
-//
-// PURPOSE
-// App preferences and account configuration.
-//
-// NAVIGATION
-//   Entry: Settings button on Home screen header
-//   Exit:  ← Back → home
-//
-// STATES
-//   Coming Soon placeholder — no functional settings implemented yet.
-//
-// PRODUCTION NOTES
-//   Intended for: notification preferences, theme picker (currently dev-only in
-//   the admin panel), linked accounts, data export, profile editing.
-//   The theme lives in state.settings.colorMode and the four options in THEMES
-//   (js/theme.js, L21) — the mechanism exists; it just needs a surface here
-//   instead of the admin panel. A user-facing version would likely expose only
-//   Natural Light / Natural Dark: the v2 pair is a comparison tool for testing,
-//   not a product choice.
-//   Note it survives Reset User Data on purpose — a viewing preference is not
-//   user data, and having the screen repaint on reset would be a jarring tell.
+// Settings is a placeholder. Theme controls live in Tools (L21); the viewing
+// preference survives Reset User Data because it is not participant data.
 
 function renderSettings() {
   return `

@@ -1,34 +1,7 @@
-// ─── Money Journal — confirmation (D14) ──────────────────────────────────────
-// TAB: None | NAV BAR: Hidden
-//
-// "Everything structured converts here. For each detected event: category, an
-// estimated cost from the persona profile, and a slider to move the estimate
-// toward the real number. Then confirm and submit."
-//
-// Derives ENTIRELY from structured answers. The free-text box contributes
-// nothing and is never shown here (D12).
-//
-// -- WHY THIS SCREEN EXISTS AT ALL --------------------------------------------
-// The journal never asks for a figure. It asks what you did -- "coffee out",
-// "picked something up on the way home" -- and turns each answer into an
-// estimate from the persona profile. Estimates are a guess, so nothing is
-// written until the tester has seen the numbers and had a chance to move them.
-// This is the confirm step that makes that guess honest.
-//
-// -- THREE KINDS OF ROW, AND THE MIDDLE ONE IS THE INTERESTING ONE ------------
-//   SPEND   -- an amount and a slider. The number is editable, and the label
-//              says whether it is still an estimate or has been adjusted.
-//   NO COST -- things that happened but cost nothing THIS entry. Toast from a
-//              loaf you already bought is not a new expense; the money left
-//              when the groceries were paid for (D15, cash flow). Showing them
-//              as $0 rather than hiding them is what makes that rule visible
-//              instead of looking like a missed question.
-//   NOTED   -- signal-only answers with no money attached. They shape later
-//              questions (journalProfile) rather than the ledger.
-//
-// Submitting writes into month-to-date, which is what moves the comparison, the
-// daily update and My Progress (L17) -- so Confirm is the moment the
-// prototype's whole input-to-observation loop closes.
+// Confirmation lets the tester correct persona estimates before submission
+// (D14). Free text contributes nothing (D12). Show already-purchased food as
+// $0 to make the cash-flow rule visible (D15); signal-only answers shape
+// questions without entering the ledger. Submission updates month-to-date (L17).
 
 function renderJournalConfirm() {
   const s = state.journalSession;
@@ -122,19 +95,8 @@ function renderJournalConfirm() {
   `;
 }
 
-// ─── Post-submit ─────────────────────────────────────────────────────────────
-// D13 — one prompted entry per day PLUS a visible entry point for additional
-// entries the same day. Like filling out several pages of a physical journal.
-// The second entry asks DIFFERENT questions, because submitting set cooldowns.
-
-// -- THE PAYOFF SCREEN --------------------------------------------------------
-// It shows observations recomputed from what was just submitted, which is the
-// point of the whole loop: you told it something, and the figures moved. The
-// observations are DERIVED at render time, never stored, so they always reflect
-// the entry that just landed rather than a snapshot from before it.
-//
-// Capped at two. Every observation the engine produces is true, but a wall of
-// them reads as nagging rather than as a read on the day.
+// Allow extra entries after the daily prompt (D13); cooldowns vary questions.
+// Show up to two current observations so the payoff stays brief.
 
 function renderJournalDone() {
   // Two families, deduped: how the plan is going, and how the month is going.

@@ -1,19 +1,9 @@
-// ─── Streak Splash (screen) ───────────────────────────────────────────────────
-// TAB: none | NAV BAR: hidden (omitted from NAV_VISIBLE_SCREENS)
-//
-// Reached only from the Tools jump list: state.screen seeds to "streak" in
-// js/state.js, but bootV3 opens onboarding, or a study link (?screen=,
-// js/screen-url.js) opens its own screen, before anything renders. A
-// full-bleed branded sunburst that hosts the reusable streak counter
-// component, an encouraging line, and the "Let's go!" CTA into Home.
-// Static + non-persistent: nothing here is stored or computed. Independent of
-// home.js by design, so either screen can be iterated without touching the other.
-// Full-height is handled by render.js + the .streak-mode CSS class (no nav).
+// Tools-only splash: boot and study links select their screen before render.
+// The streak counter is static display content. render.js applies full-height
+// .streak-mode layout without the nav.
 
 function renderStreak() {
-  // Vertical layout via flex-grow spacers (proportional to height): the count sits
-  // upper-center, the week row drops into the lower-middle, footer pins to the
-  // bottom. Tune the spacer flex ratios (2.4 / 1.6) to nudge the week row up/down.
+  // Proportional flex spacers position the counter and week row across heights.
   return '<div style="height:100%;display:flex;flex-direction:column;align-items:center;'
        +   'padding:14% 26px 30px;text-align:center;color:var(--streak-text);'
        +   'background:repeating-conic-gradient(from 0deg at 50% 34%, var(--streak-burst) 0deg 7deg, var(--streak-bg) 7deg 14deg);">'

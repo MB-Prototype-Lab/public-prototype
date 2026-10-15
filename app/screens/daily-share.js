@@ -1,28 +1,10 @@
-// ─── Share ───────────────────────────────────────────────────────────────────
-// TAB: None | NAV BAR: Hidden
-//
-// "A sheet offering copy link, and platform buttons that don't connect to
-// anything real. Anonymization is on by default.
-//
-// The part worth building properly is the expansion view: a preview showing
-// exactly what would be posted, with every financial figure anonymized. That
-// transparency is the trust mechanic, and it's testable in a way the platform
-// integrations aren't."
-//
-// So: the platform buttons are deliberately inert, and the toggle + preview are
-// deliberately real. The preview shows the EXACT string that would be posted —
-// not a description of it, not a sample. If the two could drift, the preview
-// would be theatre, which is the one thing this screen must not be.
+// Platform buttons are inert. The anonymization toggle and preview are real:
+// show the exact clipboard payload so the tester can inspect what it reveals.
 
 const SHARE_PLATFORMS = ["Instagram", "X", "Threads", "WhatsApp", "Messages"];
 
-/**
- * Strip every absolute currency figure, leaving relative language intact.
- *
- * That split is the point. "$470 on dining out" leaks roughly what someone
- * earns; "34% over my plan" says the same thing about their month without
- * revealing the scale of their life. Percentages stay, dollars go.
- */
+// Redact currency while retaining percentages so sharing conveys relative
+// progress without revealing financial scale.
 function shareAnonymize(text) {
   return String(text)
     // $1,234.56 / $1234 / $18.99  →  a redaction of the same shape

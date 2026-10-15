@@ -1,31 +1,7 @@
-// ─── Chat with Buddy ──────────────────────────────────────────────────────────
-// TAB: None (no bottom nav tab) | NAV BAR: Hidden
-//
-// PURPOSE
-// A mock conversational surface that routes the user to the right place in the
-// app. Demonstrates, for user testing, whether people reach for chat to find
-// things — it is NOT a real assistant. All matching lives in js/chat-router.js;
-// this file only renders. See that file's header before changing behavior.
-//
-// NAVIGATION
-//   Entry: "Chat with <buddy>" button on the Home stage
-//   Exit:  Back (top right) → Home
-//          Reply links (chatFollowAction, js/chat-router.js) → a journal entry,
-//          the Budget tab, "Where it's going" (comparison), Goals or My Progress
-//          (links are always tapped by the user — chat never auto-navigates)
-//
-// STATES
-//   The greeting (CHAT_GREETING) always renders first and is not stored.
-//   state.chat.messages holds the transcript for the session: it survives
-//   navigating away and back, and clears on refresh or admin Reset User Data.
-//   Chips and typed input both call chatRespond(), so they behave identically.
-//
-// PRODUCTION NOTES
-//   Replacing this with a real assistant means replacing chatRoute() — the
-//   rendering here (bubbles, chips, link buttons) stays usable as-is.
-
-// Always the first message in the thread. Deliberately not stored in state:
-// it can never be lost, and Reset only has to clear the real transcript.
+// Matching and navigation live in js/chat-router.js (D25). Both chips and
+// typed input use chatRespond; links navigate only when tapped.
+// Keep the greeting outside state so Reset can clear the transcript without
+// losing the opening message.
 const CHAT_GREETING = {
   from: "buddy",
   text: "Hey — I'm Buddy. Ask me what you're trying to do and I'll take you to the " +
@@ -117,11 +93,8 @@ function chatMountHook() {
   if (thread) thread.scrollTop = thread.scrollHeight;
 }
 
-// chatResetConversation() lives in js/chat-router.js — it owns the bubble
-// lifecycle, so it also restores the opening bubbles. A second copy here used
-// to shadow it (this file loads later, and everything shares one global
-// namespace), which cleared the transcript but left the previous reply's
-// follow-up chips pointing at a conversation that no longer existed.
+// chatResetConversation lives in js/chat-router.js, which owns transcript
+// and bubble lifecycle. Do not shadow it in this shared global namespace.
 
 function renderChatAdmin() {
   return `

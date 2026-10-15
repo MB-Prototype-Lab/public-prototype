@@ -1,11 +1,5 @@
-// ─── Daily update — completion summary ───────────────────────────────────────
-// TAB: None | NAV BAR: Hidden
-//
-// "A summary screen: the observations, stacked, in plain language."
-//
-// The share sheet and its anonymization preview are Phase 4b. The streak
-// registers at the END of that flow, not here: it lands "after a completed
-// journal entry, at the end of the share flow".
+// The streak registers at the end of sharing, so replaying the summary
+// does not count another completion.
 
 function renderDailySummary() {
   const obs = state.observations || [];

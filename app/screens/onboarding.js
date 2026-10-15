@@ -1,35 +1,12 @@
-// ─── Onboarding (D06) ────────────────────────────────────────────────────────
-// TAB: None | NAV BAR: Hidden — full-bleed flow
-//
-// Ten steps.
-//
-//   1 name   2 improvement areas (multi-select)
-//   3 ZIP   4 household   5 place   6 income band
-//   7 coverage   8 miles   9 meet your buddy   10 intro video (how it works)
-//
-// WHAT FINISHING WRITES (onbFinish): the name, ZIP, household and income
-// override the persona (D09), and the place, coverage, miles, goal areas and
-// buddy are written too. A skipped name, ZIP, household or income keeps the
-// starting profile's value — the default profile unless one is already applied
-// (L26); the other skipped answers stay unset, and lifestyle stays as the
-// persona seeded it. NEVER block progress to collect data.
-//
-// ── v3.1: WHY THE GOAL QUESTION IS SECOND ────────────────────────────────────
-// It used to be sixth, which asked for a ZIP, a household size and an income
-// band before the tester had any stake in the app. Asking what they want to
-// improve first gives them a reason to answer the other three. It also means
-// onbPrimaryGoal() — which picks one of five intro-film scripts — is settled
-// five steps before the film plays, rather than one.
-//
-// Full-product setup. Contained setup sequences belong to standalone Flows.
+// Onboarding (D06): skipped financial answers keep the selected profile's
+// values, or the default profile (D09, L26). Other skipped answers stay unset.
+// Never block progress to collect data. Goal selection comes early to give
+// the remaining questions a purpose and select the intro film.
+// Contained setup sequences belong to standalone Flows.
 const ONB_STEPS = ["name", "goal", "zip", "household", "place", "income",
                    "coverage", "miles", "buddy", "video"];
 
-// ── Who lives with you ───────────────────────────────────────────────────────
-// Adults are asked by AGE RANGE, not typed ages: the owner's rule for this flow
-// is ranges everywhere, and the marketplace-premium estimate only needs an age
-// close enough to land on the right step of the ACA age curve. `age` is the
-// figure a range stands for when a model needs one number.
+// Adult age ranges supply representative ages for the premium model.
 const ONB_ADULT_AGES = [
   { id: "18-25", label: "18–25", age: 23 },
   { id: "26-34", label: "26–34", age: 30 },
@@ -40,26 +17,17 @@ const ONB_ADULT_AGES = [
 ];
 const ONB_MAX_ADULTS = 4;
 
-// Kids by the three buckets the ESF spec names. The buckets are chosen by what
-// they change: 13 is when a kid gets their own phone line, 18 is when a
-// "kid" starts costing like an adult at the grocery store.
-// No 18+ bucket: someone over 18 living at home is an adult, and the adult
-// count above already has them. Counting them twice would inflate household
-// size, and with it groceries, utilities and the premium estimate.
+// Kids under 13 and teens have different phone and grocery costs.
+// Count anyone 18 or older as an adult to avoid inflating household estimates.
 const ONB_KID_BUCKETS = [
   { id: "under13", label: "Kids 0–12" },
   { id: "teen",    label: "Kids 13–17" }
 ];
 const ONB_MAX_KIDS_PER_BUCKET = 6;
 
-// ── Your place ───────────────────────────────────────────────────────────────
-// Type only — rent or own is read off the two housing fields on the fund's first
-// screen, which can say "both" where a question here could not. `hoa` is the
-// branch the HOA estimate takes; `home` is the help-me-out utilities key.
-// `short` is for prose, where the tile label is too long to sit in a sentence:
-// "Based on apartment · studio or 1 bedroom in 37203 with 1 person." wrapped to
-// two lines and put the ESF's utilities step 6px over the no-scroll budget.
-// The tiles keep the full label — there it is a heading with room around it.
+// Rent and ownership come from the fund's housing fields, which allow both.
+// `hoa` selects the HOA model; `home` selects the utilities model.
+// Use `short` in prose to keep the utilities step compact; tiles use full labels.
 const ONB_PLACE_TYPES = [
   { id: "aptSmall",   label: "Apartment · studio or 1 bedroom", short: "a small apartment", hoa: "none",  home: "apt1" },
   { id: "aptLarge",   label: "Apartment · 2 or more bedrooms",  short: "a 2-bed apartment",           hoa: "none",  home: "apt2" },
@@ -91,18 +59,10 @@ const ONB_MILES = [
   { id: "30plus", label: "More than 30 miles", miles: 40 }
 ];
 
-// Intro "video" narration — one caption per segment. Narration text is data
-// (data/onboarding-script.json) so the build-time TTS pipeline can read it; see
-// scripts/gen-audio.sh. The literals below are the fallback for a failed load.
-//
-// The film branches on the tester's PRIMARY goal — the first thing they picked
-// at step 6. Segments s1, s2, s5 and s6 are identical across all five scripts;
-// only s3 and s4 change. Four goals with up to three picks is sixteen
-// combinations, which is not authorable, so secondary picks change nothing.
-//
-// These are functions, not constants, because the goal is not known until step
-// 6 and the film is step 8. A const evaluated at load time would always be the
-// default.
+// Narration text lives in data/onboarding-script.json for the audio build.
+// These literals cover a failed data load. The first selected goal chooses the
+// film; secondary picks do not multiply script variants. Read at runtime so
+// selection reflects the answers rather than a load-time default.
 const ONB_VIDEO_DEFAULT_SCRIPT = "onboarding_intro";
 
 const ONB_VIDEO_FALLBACK = [
@@ -152,30 +112,10 @@ function onbVideoSegments() {
 // so the admin state inspector never tries to serialise a media element.
 let onbAudioEl = null;
 
-// Five bands, presented as ranges. `annual` is the seed the slider opens on,
-// and it is a representative figure inside the band so
-// benchIncomeBand() maps it back to the same band without a second code path.
-//
-// min/max mirror PEER_BENCHMARKS.incomeBands, which is the peer model's actual
-// lookup key. The slider refines the FIGURE inside a band; it does not add
-// bands.
-//
-// THESE IDS ARE UI-LOCAL. They look like the peer model's b1–b5 and are not
-// the same thing: benchIncomeBand() derives the lookup band from the FIGURE,
-// never from this id, so splitting "Over $140,000" into two display bands
-// costs the peer model nothing — both still resolve to its b5. Nothing reads
-// `o.incomeBand` except this screen and the admin panel.
-//
-// The top band is open. Its data max is 999999999, which a slider cannot
-// express without leaving two usable pixels of track, so it stops at a figure
-// the track can draw and reads as open above it.
-//
-// `step` is PER BAND, so the grid is fine where the money is and coarse where
-// dragging $1,000 at a time would be absurd. Every seed below is the band's
-// own midpoint snapped to its own step — see onbIncomeSeed(). A seed that is
-// not a valid stop makes the browser snap the thumb the instant it is touched,
-// so the figure shown before the drag is unreachable after it. Deriving it
-// removes that whole class of bug rather than asking each row to get it right.
+// Income-band IDs are local to this UI. The peer model derives its band from
+// the annual figure, so multiple UI bands can resolve to one peer band.
+// Keep each seed on its slider's step grid to prevent the thumb snapping on
+// first touch. The open top uses a finite slider maximum for a usable track.
 const ONB_INCOME_BANDS = [
   { id: "b1", label: "Under $35,000",        min: 0,      max: 35000,   step: 1000 },
   { id: "b2", label: "$35,000 – $60,000",    min: 35000,  max: 60000,   step: 1000 },
@@ -199,13 +139,8 @@ function onbIncomeSeed(band) {
   return Math.round(mid / band.step) * band.step;
 }
 
-// "If you could improve one thing about your money…" — multi-select, max 3,
-// presets only. Folds into the single state.strategicGoal the app expects.
-// The first four are the ones data/onboarding-script.json writes a film variant
-// for (matched on `_goal`). Everything after them falls through to the default
-// script -- which is the designed fallback, not a bug, but it does mean a tester
-// picking one of the newer goals gets the generic film. Adding a variant is a
-// content job; adding a goal is this list.
+// The first four goals have film scripts matched on `_goal`; other goals
+// use the generic film. Additional goal-specific films require content.
 const ONB_GOALS = [
   "Stop living paycheck to paycheck",
   "Build up some savings",
@@ -217,14 +152,9 @@ const ONB_GOALS = [
 ];
 const ONB_GOALS_MAX = 3;
 
-// The name a buddy gets when the tester leaves the box blank. It is shown as the
-// box's faded PLACEHOLDER while they are on the step -- a suggestion, cleared by
-// clicking -- and only becomes the name when they LEAVE the step forward
-// (Continue or Skip, via onbSetStep). Never written on arrival: a real value
-// in the box is exactly what read as pre-filled rather than suggested. Never in
-// onbStart() either: js/profiles.js only fills in a profile's buddy name when
-// the name is empty, so seeding it there would silently stop Skip all ->
-// profile picker from naming the buddy. Only fills a blank name.
+// Default a blank buddy name only on leaving the buddy step forward.
+// Keep the field empty on arrival so the placeholder remains a suggestion,
+// and profileApply can supply a profile's buddy name when setup is skipped.
 const ONB_BUDDY_DEFAULT_NAME = "Buddy";
 
 function onbBuddyNameDefault(o) {
@@ -234,14 +164,8 @@ function onbBuddyNameDefault(o) {
   if (state.buddy) state.buddy.name = ONB_BUDDY_DEFAULT_NAME;
 }
 
-/**
- * Move onboarding to step `i`, and run what moving between steps needs.
- *
- * EVERY step change goes through here -- Continue, Back, Skip, the deep link
- * and the admin jump -- so a step-transition rule lives in one place. Today
- * there is one: leaving the buddy step FORWARD with a blank name makes the
- * buddy "Buddy". Back does not, so returning still shows the faded placeholder.
- */
+// All step changes use this seam so transition rules stay consistent.
+// Leaving the buddy step forward defaults a blank name; Back preserves it.
 function onbSetStep(o, i) {
   if (!o) return;
   const from = o.step;
@@ -281,18 +205,13 @@ function onbStart() {
       size:       BUDDY_PROTOTYPE
     })
   };
-  // Cosmetic name has no persona fallback (D09 override): an untouched or
-  // skipped buddy shows as "Buddy", never "Biscuit". Appearance fields still
-  // carry over from the persona; the new pattern attribute gets a default so the
-  // stage is never blank.
+  // An untouched buddy name has no persona fallback (D09). Default the
+  // appearance pattern so the stage always has a value.
   state.onboarding.buddy.name = "";
   // Required on the buddy step and deliberately without a default.
   state.onboarding.buddy.pronouns = "";
   state.onboarding.buddy.furPattern = state.onboarding.buddy.furPattern || "solid";
-  // Mirror onto state.buddy, which is what the stage actually renders from
-  // (renderBuddyInner). Without this the draft says prototype while the stage
-  // above it still describes a golden retriever, and the default only takes
-  // effect once the tester taps something.
+  // Mirror the draft onto state.buddy because renderBuddyInner reads it.
   state.buddy = Object.assign({}, state.onboarding.buddy);
   return state.onboarding;
 }
@@ -349,16 +268,11 @@ function onbBack() {
   const o = state.onboarding;
   if (ONB_STEPS[o.step] === "video") onbVideoStop();
   if (o.step > 0) { onbSetStep(o, o.step - 1); render(); return; }
-  // On the FIRST step there is nowhere back to, and a chevron that does
-  // nothing reads as a broken control — the tester presses it, the screen
-  // holds still, and there is no way to tell that from a hang. So it clears
-  // the step instead: start over, which is the only backwards move left.
+  // On the first step, Back clears the answer: there is no earlier step.
   onbResetStep();
 }
 
-// Wipe whatever the current step collected, leaving the tester on it. Only the
-// first step's chevron uses this today; it is written per-step rather than as
-// "clear the ZIP" so the next step to need it does not have to special-case.
+// Clear the current answer without changing steps.
 function onbResetStep() {
   const o = state.onboarding;
   const key = ONB_STEPS[o.step];
@@ -378,8 +292,7 @@ function onbSkip() {
   onbFinish();
 }
 
-// "Just this screen" from the name-skip prompt — leave o.name blank (→ "Buddy")
-// and move on to ZIP.
+// Skip only the name answer and advance to the goal question.
 function onbSkipName() {
   const o = state.onboarding;
   o.skipPrompt = false;
@@ -409,15 +322,8 @@ function onbToggleGoal(label) {
   render();
 }
 
-/**
- * Every free-text field in onboarding writes through here.
- *
- * It never calls render(): a full repaint mid-keystroke replaces the input the
- * caret is in, and the tester loses their place at the third character. Instead
- * it patches the only two things that depend on the value — the Continue
- * button's disabled state and, for ZIP, the cost-of-living chart. `commit` is
- * passed by onchange where a real repaint IS wanted once the field is done.
- */
+// Patch live text dependencies instead of rendering: replacing the focused
+// input would lose the caret. `commit` allows an onchange repaint after editing.
 function onbLiveInput(field, value, commit) {
   const o = state.onboarding;
   if (!o) return;
@@ -434,14 +340,9 @@ function onbLiveInput(field, value, commit) {
   uiSetEnabled("onbContinue", onbAnswered(ONB_STEPS[o.step], o));
   if (field === "zip") {
     uiPatchHTML("onbColChart", onbColChart(value));
-    // A ZIP is exactly five digits, so the field knows it is finished before
-    // the tester does. Put the keypad away rather than making them dismiss it
-    // to reach a Continue button it is sitting on top of.
-    //
-    // kbdCommit() rather than kbdClose(): close alone leaves the field focused
-    // and fires no `change`, so the value is committed only by this `input`
-    // pass and the field still looks active under a keyboard that has gone.
-    // Commit blurs and dispatches change, which is what a real Done does.
+    // Dismiss the keypad once five digits are entered so Continue is reachable.
+    // Use kbdCommit to blur and dispatch change; kbdClose alone leaves focus and
+    // does not commit the field.
     if (String(value).replace(/\D/g, "").length >= 5 &&
         typeof kbdCommit === "function" && state.kbd && state.kbd.open) {
       kbdCommit();
@@ -449,12 +350,7 @@ function onbLiveInput(field, value, commit) {
   }
 }
 
-// ── Income: a band, then a slider inside it ──────────────────────────────────
-// "Over $140,000" covered a software director and a surgeon with one figure.
-// The five bands stay — they are PEER_BENCHMARKS.incomeBands, the peer model's
-// lookup key. The slider refines the figure WITHIN the picked band, so the band
-// lookup is untouched and the budget's monthly figure stops being the same
-// number for everyone above 140k.
+// The slider refines annual income; the peer model derives its band from it.
 
 function onbIncomeBand(id) {
   return ONB_INCOME_BANDS.find(b => b.id === id) || null;
@@ -478,11 +374,8 @@ function onbSetIncomeBand(id) {
   render();
 }
 
-/**
- * Slider. Snaps to the band's own step and patches the label only — a render()
- * here would replace the <input> the pointer is captured on and the thumb
- * would stop tracking mid-drag.
- */
+// Patch the label only during a drag: rendering would replace the input
+// that holds pointer capture.
 function onbSetIncomeExact(value) {
   const o = state.onboarding;
   const band = onbIncomeBand(o.incomeBand);
@@ -498,16 +391,8 @@ function onbIncomeTypedText(v) {
   return v == null ? "" : Number(v).toLocaleString("en-US");
 }
 
-/**
- * Typed figure. Deliberately NOT snapped to the band's step: someone who types
- * 83,400 means 83,400, and rounding it to the nearest 2,500 would overwrite an
- * exact answer with a worse one. The slider is the thing with a grid.
- *
- * It does move the band when the figure belongs to a different one, rather than
- * clamping — typing 250,000 under "Under $35,000" is a picked band that is
- * simply wrong, and silently storing 35,000 would be the screen lying about
- * what it was told.
- */
+// Typed income stays exact rather than snapping to the slider grid.
+// Move to the matching band instead of silently clamping an out-of-band answer.
 function onbSetIncomeTyped(value) {
   const o = state.onboarding;
   const n = Math.max(0, Math.round(Number(String(value).replace(/[^0-9.]/g, "")) || 0));
@@ -570,33 +455,20 @@ function onbJoinAreas(areas) {
 function onbFinish() {
   const o = state.onboarding;
 
-  // ── What a SKIPPED field falls back to ─────────────────────────────────────
-  // Every write below is guarded, which is correct — a field the tester left
-  // alone must not clobber one they answered. What was wrong is what sat behind
-  // the guard: the persona, so skipping quietly made you Sam from Los Angeles
-  // on $68,000 and nothing said so. The default profile is an explicit,
-  // documented starting point instead.
-  //
-  // And the name was its own bug: `o.name || "Buddy"` made the TESTER "Buddy",
-  // the same as the dog. The person is "Me"; only the dog is Buddy.
+  // Apply the default profile only when none is selected. Guarded writes keep
+  // answered fields; skipped fields retain that explicit starting point (L26).
   const fallback = (typeof profileDefault === "function" && profileDefault()) || null;
   if (fallback && !state.activeProfileId) profileApply(fallback.id);
 
   state.profile.name = o.name || (fallback ? fallback.name : "Me");
   if (o.zip) state.profile.zip = o.zip;
-  // "Maybe share later" is an ANSWER, not a skip: it asks for national
-  // figures. The default profile applied above carries its own ZIP, so the
-  // request has to be honoured explicitly or it is silently ignored — and an
-  // empty ZIP is exactly what benchColMultipliers() reads as "no local
-  // adjustment".
+  // A declined ZIP requests national figures. Clear the profile's ZIP
+  // explicitly so its default does not override that choice.
   if (o.zipDeclined) state.profile.zip = "";
   if (o.householdSize) state.profile.householdSize = o.householdSize;
 
-  // ── What the emergency fund reads ─────────────────────────────────────────
-  // Guarded like everything else here: an unanswered question must not
-  // overwrite a profile's value with nothing. The fund's models fall back to
-  // household size when these are absent, so a skipped tester still gets
-  // figures (D19).
+  // Unanswered household details must not overwrite profile values.
+  // The fund models fall back to household size when details are absent (D19).
   if (o.adultCount) {
     state.profile.adults = (o.adultAges || []).map(id => {
       const band = ONB_ADULT_AGES.find(a => a.id === id);
@@ -611,10 +483,7 @@ function onbFinish() {
     state.profile.milesRange = o.miles;
     state.profile.milesPerDay = m ? m.miles : null;
   }
-  // The slider's figure if they moved it, else the band's seed. This also
-  // drives the budget's monthly figure — which until now was frozen at the
-  // seeded persona's $4,390 no matter which band you picked, so "Under $35,000"
-  // and "Over $140,000" produced an identical budget.
+  // Use the refined income or band seed for both annual and monthly figures.
   const income = onbIncomeValue(o);
   if (income != null) {
     state.profile.incomeAnnual = income;
@@ -623,12 +492,8 @@ function onbFinish() {
 
   state.lifestyle = Object.assign({}, o.lifestyle);
   state.buddy = Object.assign({}, o.buddy);
-  // Name it here rather than leaving it blank for the screens to paper over.
-  // An unnamed buddy is currently "Buddy" on Home and in Chat but "Your buddy"
-  // in the character frame — three fallbacks for one empty string, which is two
-  // too many and one of them says something different. Setting it once means
-  // every surface agrees, and profileApply's earlier write survives this
-  // assign rather than being clobbered by o.buddy's empty name.
+  // Set one buddy-name fallback so all screens agree, preserving the name
+  // from profileApply when the draft's name is empty.
   if (!state.buddy.name) {
     state.buddy.name = (fallback && fallback.buddyName) || "Buddy";
   }
@@ -643,17 +508,11 @@ function onbFinish() {
     setDuringOnboarding: true
   };
 
-  // Onboarding has no trial step, so nobody answers it — and
-  // state.trialAccepted gates diamonds (lrDiamondsForLesson) and the
-  // subscriber section of the reward screen. Left null those would be
-  // unreachable. D31 said nothing is gated either way, so everyone gets the
-  // subscriber tier.
+  // D31 keeps lesson rewards ungated. With no trial question in onboarding,
+  // default to the subscriber tier so its diamonds and reward section are reachable.
   if (state.trialAccepted == null) state.trialAccepted = true;
 
-  // The budget is NOT built here. "empty" is what every reader takes as "no
-  // budget yet": comparison, My Progress, and the Budget tab's start card
-  // (renderBudgetEmpty) when the tab is not the paywall. A save through the
-  // baseline seam sets it to "complete".
+  // Setup leaves the budget empty; saving through the baseline seam completes it.
   state.planStatus = "empty";
 
   if (typeof ubTrailRecord === "function") {
@@ -663,8 +522,7 @@ function onbFinish() {
     ubTrailRecord("goal", areas.length ? areas[0] : "");
     // The buddy's SPECIES, not the name the tester typed for it.
     ubTrailRecord("buddy", (state.buddy && state.buddy.animal) || "");
-    // One of three fixed ids (BUDDY_PRONOUNS), never typed -- so it may ride
-    // in the URL. Blank when the buddy step was skipped, and then not recorded.
+    // Only fixed BUDDY_PRONOUNS IDs enter the URL; an unanswered step adds none.
     ubTrailRecord("pro", (state.buddy && state.buddy.pronouns) || "");
     ubTrailCheckpoint("setup");
   }
@@ -685,20 +543,12 @@ function renderOnboarding() {
   const key = ONB_STEPS[o.step];
   const total = ONB_STEPS.length;
 
-  // EVERY step pins Back/Continue and scrolls its content between the header
-  // and the footer. This used to be `o.step >= 5`, an index picked when the
-  // goal question sat sixth — it is second now, and it is still the step that
-  // overflows hardest at ten options, so the old test selected exactly the
-  // wrong ones. An index into a list that gets reordered is a trap; there is no
-  // version of it that stays correct.
-  //
-  // Applying it everywhere costs nothing: a short step simply does not scroll,
-  // and its footer sits at the bottom of the screen either way.
+  // Pin the footer on every step and scroll content between it and the header.
+  // Do not select this layout by step index: reordering steps would break it.
   const pinned = " onb-pinned";
 
-  // The film step is the one body that has to be a flex COLUMN: .onb-video
-  // sizes itself against it, and a plain block gave it nothing to size against.
-  // Scoped to this step, because the other eight want a normal block flow.
+  // The video body needs a flex column for .onb-video to size against.
+  // Other steps keep block flow.
   const bodyCls = key === "video" ? " onb-body-video" : "";
 
   return `
@@ -727,8 +577,7 @@ function renderOnboarding() {
 
 // The footer button's words.
 function onbContinueLabel(key, o) {
-  // The one-screen buddy step reads "Continue" like every other step (owner's
-  // call). Kept as the single place a step could word its button differently.
+
   return "Continue";
 }
 
@@ -780,26 +629,17 @@ function onbAnswered(key, o) {
   return true;
 }
 
-// Cost-of-living comparison shown on the ZIP step, once all five digits are in.
-// Nation is the 100% baseline; the ZIP's index sits next to it. Descriptive
-// only, never prescriptive (D26); "peers", never "average users" (D23).
+// Confirm the ZIP's place only once all five digits are present.
+// Keep peer language descriptive (D23, D26).
 function onbColChart(zip) {
   const digits = String(zip == null ? "" : zip).replace(/\D/g, "");
 
-  // Wait for the whole ZIP. It used to draw at three digits, which was the old
-  // prefix model showing through — three digits named a tier. A ZIP now
-  // resolves to its county, and four digits of a five-digit code identify
-  // nothing, so a partial result would name somewhere else.
-  //
-  // Nothing at all until then: "How this helps" is rendered by the step body
-  // now and stands on its own, so this slot no longer has to fill the gap.
+  // Wait for the complete ZIP so the county lookup cannot name a partial match.
   if (digits.length < 5) return "";
 
   const col = benchColIndex(zip);
 
-  // Every US ZIP is modeled, so this is a guard rather than a path — but a ZIP
-  // that is genuinely nonsense should say so plainly rather than draw a chart
-  // that implies we looked something up.
+  // An unsupported ZIP must say that national figures are being used.
   if (!col.supported) {
     return `
     <div class="note" style="margin-top:16px;">
@@ -809,30 +649,14 @@ function onbColChart(zip) {
 
   const where = col.place ? h(col.place) : "your area";
 
-  // Two lines, and they sit directly under the field rather than below the
-  // card. This slot has now been three different things: a two-bar
-  // cost-of-living chart, then a paragraph explaining the peer method. Both
-  // answered a question the tester had not asked at the moment they finished
-  // typing five digits. What they want to know then is "did that work, and
-  // what happens next" — so it confirms the place and says more is coming.
-  //
-  // The chart markup and the method paragraph are gone rather than commented
-  // out; the reasoning is what is worth keeping and it belongs in prose.
-  // `onb-col-chart`, `onb-col-row`, `onb-col-head`, `onb-col-baseline` and
-  // `onb-col-axis` stay in components.css — v3 renders the same chart from its
-  // own copy of this file.
+  // Confirm the place directly under the field so the result answers
+  // whether the ZIP worked and what happens next.
   return `
     <p class="task-desc onb-zip-result">We'll use people like you in ${where}.</p>`;
 }
 
-// The declared way out of the ZIP step. The top-bar Skip already leaves the
-// field empty, but it is a generic control that says nothing about what
-// happens next — so a tester who is simply unsure about handing over a ZIP has
-// only an unlabelled escape hatch. This one names the consequence and says the
-// door stays open, which is the honest version of the same action.
-//
-// Hidden once a full ZIP is in: at that point the answer is on screen and an
-// offer to withhold it is noise.
+// Name the national-average consequence of withholding a ZIP.
+// Hide the offer once a full ZIP is present.
 function onbZipLater(o) {
   const digits = String(o.zip == null ? "" : o.zip).replace(/\D/g, "");
   if (digits.length >= 5) return "";
@@ -857,15 +681,9 @@ function onbZipDecline() {
   onbNext();
 }
 
-// Before there is anything to chart. The step was a bare input with no reason
-// to fill it in; this says what typing it buys.
+// Explain what providing a ZIP adds to the peer comparison.
 function onbColTeaser(typed) {
-  // A half-typed ZIP used to get a "2 more digits" nudge, which is a progress
-  // bar for a three-second task — and it REPLACED the card explaining why the
-  // field is there, so the reason vanished on the first keystroke and came
-  // back if you deleted a digit. The card now holds until there is a real
-  // answer to show. `typed` is kept in the signature; the caller has it and a
-  // later state may want it.
+
   return `
     <div class="note onb-col-teaser-card">
       <p class="task-title" style="margin:0 0 6px;font-size:13px;">How this helps</p>
@@ -893,11 +711,7 @@ function onbTileStep(o, field, options, title, help) {
     ${tiles}`;
 }
 
-/**
- * Who lives with you: how many adults, each adult's age range, and kids by
- * age group. Adults are tiles, ages are dropdowns, kids are counters — each
- * control matched to the kind of answer, and nothing here is typed.
- */
+// Use age-range selectors and counters so household details need no typing.
 function onbHouseholdBody(o) {
   const kids = o.kids || {};
   const adultLabel = n => n === 1 ? "Just me" : n + " adults";
@@ -1015,9 +829,7 @@ function onbStepBody(key, o) {
 
   if (key === "goal") {
     const atMax = o.improveAreas.length >= ONB_GOALS_MAX;
-    // Second step now, so it opens with the name they just typed. Deliberately
-    // NOT "nice to meet you" — step 1 says that, and hearing it twice in a row
-    // reads as the app having lost its place.
+    // Acknowledge the name without repeating the preceding step's greeting.
     return `
     <p class="helper" style="margin:0 0 4px;">
       ${o.name ? `Good to meet you, ${h(o.name)}.` : "Good to meet you."}
@@ -1063,9 +875,7 @@ const ONB_BUDDY_COPY = ["Meet your buddy!",
                         "Buddy is here to help answer questions and join you on your financial journey! " +
                         "Let's give your buddy a name!"];
 
-// The greeting heads it, then the portrait, the line asking for a name, and
-// the name and pronouns centred under that. Continue unlocks once a pronoun is
-// picked (onbAnswered).
+
 function onbBuddyStep(o) {
   const b = o.buddy || {};
   return `
@@ -1077,15 +887,8 @@ function onbBuddyStep(o) {
     </div>`;
 }
 
-/**
- * The name box and the pronouns dropdown, each under its own label.
- *
- * "Buddy" is the name box's PLACEHOLDER, not its value: faded, and gone the
- * moment the box is clicked (CSS, .onb-buddy-fields input:focus::placeholder)
- * so the tester can type straight in. Left blank, the buddy becomes "Buddy"
- * when they move on (onbSetStep). The dropdown's blank option has value "", so
- * nothing is chosen for the tester and Continue stays locked until they choose.
- */
+// Keep Buddy as a placeholder until the tester moves forward. Pronouns
+// have no default, so Continue waits for an explicit choice.
 function onbBuddyNameFields(b) {
   const pronouns = (typeof BUDDY_PRONOUNS !== "undefined") ? BUDDY_PRONOUNS : [];
   return `
@@ -1109,20 +912,9 @@ function onbBuddyNameFields(b) {
     </div>`;
 }
 
-// ─── Intro video ─────────────────────────────────────────────────────────────
-// REBUILT to the lesson player's model (screens/lesson.js) so step 8 and a
-// lesson behave the same way: an elapsed-time clock against a per-segment CUE
-// map, with skip / scrub / speed acting on that clock and a Next that unlocks
-// on completion.
-//
-// It used to be event-driven — each segment's audio `onended` advanced to the
-// next — which gave the captions nothing to seek against. There was no clock to
-// scrub, no position to skip to and no rate to change, which is why the controls
-// were Restart and Play and nothing else.
-//
-// Cue times come from onbVideoSegMs(), i.e. word count at DU_WPM, the same pace
-// the build-time TTS renders at. The clock stays authoritative and the audio
-// rides along beside it, exactly as lpSpeakCurrent documents for the lesson.
+// The intro shares the lesson player's elapsed clock and segment cues.
+// Cue estimates use DU_WPM; speech caps the clock while a voice is playing.
+// Seek, speed and completion controls follow that same clock.
 
 const ONB_VIDEO_TICK_MS = 100;
 const ONB_VIDEO_SPEEDS  = [1, 1.5, 2];
@@ -1165,14 +957,8 @@ function onbVideoIndexFor(elapsed, cues) {
   return idx;
 }
 
-// ── The stage ────────────────────────────────────────────────────────────────
-// Was renderBuddyStage(): a text card describing the buddy, which never moved
-// while the film narrated over it for forty seconds. Now it runs the same
-// hyperframes engine the lesson player uses.
-//
-// Beat boundaries come from the player's OWN cue map rather than being declared
-// as fractions the way lessons.json does. Beat N spans segment N, so rewriting a
-// line re-cuts the beats automatically — the cues and the beats read one source.
+// Derive beat boundaries from the player's cue map so editing narration
+// keeps the storyboard synchronized without separate timing edits.
 
 /** The storyboard for this run, as a hyperframes spine with real fractions. */
 function onbStoryboard(v) {
@@ -1201,27 +987,13 @@ function onbStoryboard(v) {
   return { kind: sb.kind, requiresFigures: false, spine: spine };
 }
 
-// ── The rendered film (v3.1) ─────────────────────────────────────────────────
-// tools/film renders this piece properly, in HeyGen HyperFrames, once per
-// script x theme. The .mp4 is a committed asset exactly like the daily update's
-// .wav files — a build-time artifact, no runtime dependency, and it plays from
-// file:// as a plain <video>.
-//
-// It is rendered SILENT on purpose. The narration is still live browser speech,
-// so the film is pure picture and onbFilmSync drives it from the same clock the
-// captions use — the identical job the CSS animations were doing, on one node.
-//
-// THREE TIERS, and the lower two are not sentiment (D19 forbids an empty
-// screen, and file:// video playback is the one thing no headless check here
-// can settle):
-//   1  the rendered .mp4
-//   2  the hand-rolled hyperframes SVG, if that file is missing or will not play
-//   3  the buddy card, if there is no storyboard at all
+// The committed film is silent: narration and captions share a separate
+// clock, and onbFilmSync drives the picture from it. Playback falls back from
+// MP4 to hyperframes SVG to the buddy card, keeping the stage filled (D19).
 const ONB_FILM_DIR = "assets/video/onboarding";
 
-// Module-level, so it survives a render but NOT a reboot — reset in bootV3 the
-// same way buddyImgBroken is. Without that, one missing file would keep the
-// film on tier 2 for the rest of the session.
+// Keep failure state outside state, across repaints; reset it on boot
+// so a missing film does not disable playback in a fresh session.
 let onbFilmBroken = false;
 function onbFilmResetArt() { onbFilmBroken = false; }
 
@@ -1230,18 +1002,8 @@ function onbFilmTheme() {
   return (typeof themeCurrent === "function" && themeCurrent().id) || "naturalLight";
 }
 
-/**
- * The render that serves this tester's theme, or null.
- *
- * The film has TWO looks, dark and light, and each serves two themes — a
- * broadcast palette only reads as broadcast if it commits, so it is not
- * repainted per theme. data/onboarding-films.js is generated by the render and
- * carries both the mapping and what exists.
- *
- * Asking it beats pointing a <video> at a maybe-path and relying on an `error`
- * event to fall back — that event is the one thing no headless check here can
- * confirm, and D19 forbids the blank stage that would follow if it never fired.
- */
+// Use the generated film index to choose an existing script and look
+// before loading media, avoiding a blank stage while waiting for an error (D19).
 function onbFilmEntry() {
   if (onbFilmBroken) return null;
   if (typeof ONBOARDING_FILMS === "undefined") return null;
@@ -1260,28 +1022,10 @@ function onbFilmEntryHas(entry, script) {
   return entry.scripts.indexOf(script) !== -1;
 }
 
-// ONE RENDER SERVES EVERY THEME until the other looks are rendered.
-//
-// The film has two looks and only `light` is rendered. Without this the two
-// dark themes would drop to the SVG engine: the same onboarding step showing
-// two different pieces of work depending on a colour setting the tester picked
-// for unrelated reasons. Owner's call is to play the render that exists on all
-// four themes.
-//
-// It is a FALLBACK, not a remapping — a theme with its own render still gets
-// it (onbFilmEntry checks that first). Render the dark look and the dark themes
-// stop falling through on their own.
-//
-// Known trade, accepted: the picture does not repaint per theme by design (a
-// broadcast palette only reads as broadcast if it commits), so on a dark theme
-// this is a light-palette film in a dark frame.
+// Prefer the theme's own render; otherwise borrow any available look.
+// The film keeps its broadcast palette even inside a different theme's frame.
 
-/**
- * Any rendered look carrying this script, or null.
- *
- * Sorted so the choice is deterministic — Object.keys order is stable for
- * string keys in practice, but the film a tester sees should not rest on that.
- */
+// Sort available looks so the fallback film choice is deterministic.
 function onbFilmAnyLook(script) {
   const themes = Object.keys(ONBOARDING_FILMS).sort();
   for (let i = 0; i < themes.length; i++) {
@@ -1300,25 +1044,9 @@ function onbFilmSrc() {
   return ONB_FILM_DIR + "/" + entry.look + "/" + onbVideoScriptId() + ".mp4";
 }
 
-/**
- * Paint the stage the film's own ground, so it stops framing the picture.
- *
- * The stage is 100:72 and so is the film, but a squeezed viewport still
- * letterboxes -- and before this those bars were `--accent`, a green edge round
- * a cream film. Matching them makes the leftover invisible, which is also what
- * lets the stage shrink on a short screen without looking wrong.
- *
- * ⚠ ONLY WHEN A FILM IS PLAYING. The SVG fallback (tier 2) draws entirely in
- * `--on-dark` -- the only colour token in components/hyperframes.js -- and
- * paints no ground of its own, so it relies on `.lp-stage`'s accent. Painting
- * the stage cream underneath it would be light ink on near-white: invisible,
- * and only on the themes with no render, where it would read as the animation
- * being broken rather than as a colour choice.
- *
- * Keyed on the LOOK that is playing, not the tester's theme. A dark theme with
- * no dark render borrows the light film (onbFilmAnyLook), and the stage has
- * to follow the film rather than the theme or it reintroduces the mismatch.
- */
+// Match letterbox space to the playing film's ground, keyed by look rather
+// than theme because a theme can borrow another look. Apply only to films:
+// the SVG draws in --on-dark and needs the stage's accent ground for contrast.
 function onbFilmGroundStyle() {
   const entry = onbFilmEntry();
   if (!entry || typeof ONBOARDING_FILM_GROUNDS === "undefined") return "";
@@ -1365,32 +1093,15 @@ function onbVideoStage(v) {
     </div>`;
 }
 
-/**
- * Is the clock pinned at the speech cap, waiting for a line that is running
- * longer than its word-count estimate?
- *
- * This has to be asked of the PICTURE too, not just the bar. onbVideoTick
- * freezes `elapsed` at the cap, but the hyperframes are native CSS animations
- * on wall clock -- they kept going. So every 100ms tick found them further on
- * than the frozen clock, and hyperframesSync's drift check yanked currentTime
- * backwards: roughly eight 120ms rewinds a second, for as long as the overrun
- * lasted. That is the flicker, and it fires on any segment the narrator takes
- * longer over than 165 wpm predicts -- a two- or three-sentence line, because
- * sentence-final pauses are not in the estimate.
- */
+// Pause the picture while speech holds the elapsed clock at its segment
+// cap. Letting CSS animations continue would trigger repeated drift rewinds.
 function onbVideoHeld(v) {
   return !!(v && v.speechDriven && v.elapsed >= onbSpeechCap(v) - 0.001);
 }
 
-/** Drive the animation clock from the player's clock. */
-/**
- * Point the rendered film at the player's clock.
- *
- * Same contract as hyperframesSync, on one element instead of twenty
- * animations: hold exactly while the voice is finishing a line, glide a small
- * correction rather than jump-cutting it, snap a real seek. The constants are
- * the shared ones, so retuning the drift behaviour moves both surfaces.
- */
+
+// Hold the film while speech finishes, glide small drift and snap seeks.
+// Share the hyperframes constants so both pictures follow the same contract.
 function onbFilmSync() {
   const el = document.getElementById("onb-film");
   if (!el) return false;
@@ -1410,10 +1121,8 @@ function onbFilmSync() {
     } else if (el.playbackRate !== rate) {
       el.playbackRate = rate;
     }
-    // `!el.ended`: a film that ran out a few ms before the clock is also
-    // `paused`, and play() on an ENDED element restarts it from 0 (HTML
-    // standard) -- the film replayed itself at the finish. Its last frame is
-    // the right picture; a real seek above clears `ended` and play resumes.
+    // Do not play an ended film: play() would restart it from zero.
+    // Hold its last frame; a real seek clears ended and allows playback.
     if (playing && el.paused && !el.ended) { const p = el.play(); if (p && p.catch) p.catch(function () {}); }
     if (!playing && !el.paused) el.pause();
   } catch (e) { /* a detached element mid-repaint — the next tick catches up */ }
@@ -1428,9 +1137,7 @@ function onbVideoSyncFrames() {
   const root = document.getElementById("onb-video-frames");
   if (!root) return;
   const v = onbVideo();
-  // Held → hand hyperframesSync `playing: false`, which pauses each animation
-  // and pins it to the cap. The picture holds its last frame while the narrator
-  // finishes, which is what capping the clock always meant.
+  // Pause hyperframes while the speech cap holds, preserving the last frame.
   hyperframesSync(root, {
     elapsedSec: v.elapsed,
     playing: v.playing && !onbVideoHeld(v),
@@ -1542,19 +1249,14 @@ function onbVideoClearTimer() {
 // Cancel any narration and the ticker — on pause or on leaving the step.
 function onbVideoStop() {
   const o = state.onboarding;
-  // Was THIS surface using the shared narration seam? render() calls this on
-  // every render that is not the onboarding video step, and the lesson player
-  // starts its own speech a few lines EARLIER in that same render — so
-  // cancelling unconditionally killed the lesson's voice before it could speak.
+  // Cancel shared narration only if this surface is playing. render() also
+  // calls this after starting lesson speech, which must remain audible.
   const wasNarrating = !!(o && o.video && o.video.playing);
   if (o && o.video) {
     o.video.playing = false;
-    o.video.speechDriven = false;   // no voice, so the estimate is the clock again
-    // A media `ended`/`error` handler can still be queued when we stop. If a
-    // restart re-arms `playing` in the same synchronous turn, that stale
-    // callback lands afterwards and starts a second voice over the same
-    // segments. Bumping the generation invalidates anything already in flight —
-    // belt and braces alongside detaching the handlers in onbVideoReleaseAudio.
+    o.video.speechDriven = false;   // no voice: use the estimated clock
+    // A queued media callback can arrive after a synchronous restart. Bump the
+    // generation as well as detaching handlers to invalidate stale work.
     o.video.gen = (o.video.gen || 0) + 1;
   }
   onbVideoClearTimer();
@@ -1568,32 +1270,18 @@ function onbVideoAudioSrc(index) {
   return "assets/audio/onboarding/" + onbVideoScriptId() + "/" + segId + ".wav";
 }
 
-/**
- * Give the current segment a voice. Does NOT drive advancement — the clock is
- * authoritative, so a seek lands the caption and the voice in the same place.
- *
- * Under L10, Web Speech is a BUILD-TIME generator and never a runtime player —
- * runtime plays the .wav that scripts/gen-audio.sh produced, exactly like the
- * daily update and the lesson player. That .wav is absent until gen-audio.sh has
- * been run, so a load or autoplay failure falls back to runtime speech, and a
- * browser with no voice falls back to silence. Captions move either way.
- */
+// L10 narration order: generated WAV, runtime browser speech, silent word
+// clock. A playing voice advances segments on its end event and caps the
+// clock meanwhile; without a voice, elapsed-time estimates advance captions.
 function onbVideoSpeak() {
   const o = state.onboarding;
   if (!o || !o.video || !o.video.playing) return;
   const seg = onbVideoSegments()[o.video.index];
   if (!seg) return;
 
-  // ── THE SYNC CONTRACT (architecture §10) ───────────────────────────────────
-  // No .wav has ever been generated for the onboarding intro on this machine
-  // (gen-audio.sh needs macOS `say`), so this path is what actually runs — and
-  // it ran a 165 wpm word-count clock against a browser voice reading at its
-  // own pace. Caption, voice and scrub bar all disagreed within a few segments.
-  //
-  // When live speech is driving, SPEECH is the clock: the segment index is
-  // pinned on `onStart` and only advances on `onEnd`, and onbVideoTick's bar is
-  // capped inside the current segment (onbSpeechCap). Identical to the lesson
-  // player's lpSpeakCurrent — same contract, same reasons.
+  // Live speech owns segment advancement: pin onStart and advance onEnd.
+  // Cap the progress clock inside that segment so estimates cannot outrun speech.
+  // This matches the lesson player's lpSpeakCurrent contract.
   const idx = o.video.index;
   const speakFallback = function () {
     const started = narrationSpeak(seg, {
@@ -1602,13 +1290,8 @@ function onbVideoSpeak() {
         const v = onbVideo();
         if (!v || v.index !== idx) return;      // superseded by a seek
         v.speechDriven = true;
-        // FORWARDS ONLY. onbSpeechCap lets the tick run to just short of the
-        // NEXT cue, so elapsed is normally ahead of this segment's start --
-        // snapping to it unconditionally jumps the clock BACKWARDS, and
-        // onbVideoSyncFrames faithfully rewinds every hyperframes animation to
-        // match. That rewind is the flicker seen at each segment boundary.
-        // Taking the cue only when the clock is behind the voice keeps the
-        // correction that matters and drops the one that was visible.
+        // Move elapsed time forwards only. The tick may already be near the next
+        // cue; snapping back to this cue would rewind the picture at each boundary.
         v.elapsed = Math.max(v.elapsed, v.cues[idx] || 0);
         v.lastTick = Date.now();
         onbVideoPaintProgress();
@@ -1642,16 +1325,14 @@ function onbVideoSpeak() {
     const a = new Audio(onbVideoAudioSrc(o.video.index));
     onbAudioEl = a;
     a.playbackRate = o.video.speed || 1;
-    a.onerror = speakFallback;                 // not generated yet → speak it live
-    // A generated .wav has the same job as live speech here: it is the voice,
-    // so it is the clock. The clip's real length is not the word-count estimate
-    // either, so leaving the bar on the estimate would drift the same way.
+    a.onerror = speakFallback;                 // missing or unavailable WAV: use runtime speech
+    // Recorded audio also owns advancement: its real duration can differ from the
+    // word-count estimate, so cap the clock until the clip ends.
     a.onplay = function () {
       const v = onbVideo();
       if (!v || v.index !== idx) return;
       v.speechDriven = true;
-      // Forwards only, exactly as in the live-speech path above: snapping down
-      // to this segment's start rewinds the hyperframes and shows as a flicker.
+      // Move forwards only, as in the live-speech path, to avoid picture rewinds.
       v.elapsed = Math.max(v.elapsed, v.cues[idx] || 0);
       v.lastTick = Date.now();
       onbVideoPaintProgress();
@@ -1743,9 +1424,7 @@ function onbVideoRestart() {
   onbVideoPlay();
 }
 
-// ±10 seconds — same control as the lesson player (lpSeekBy). It used to jump
-// ±1 segment behind "◀ Back" / "Next ▶", which reads as stepping through the
-// onboarding rather than seeking inside the film.
+// Seek by seconds, matching the lesson player's controls.
 const ONB_VIDEO_SEEK_SEC = 10;
 
 function onbVideoSeekBy(seconds) {
@@ -1785,10 +1464,8 @@ function onbVideoApplyElapsed(sec) {
   if (v.playing) v.lastTick = Date.now();
 }
 
-// ── Scrubbing ────────────────────────────────────────────────────────────────
-// Geometry for the drag in progress, measured once at pointerdown. Reading it
-// per pointermove forces a synchronous layout every frame, right after the bar's
-// width was written — the classic read-after-write thrash.
+// Measure drag geometry once at pointerdown. Reading after each width
+// write would force synchronous layout on every pointermove.
 let onbScrubRect = null;
 let onbScrubWasPlaying = false;
 
@@ -1840,13 +1517,9 @@ function onbVideoScrubKey(e) {
   if (e.key === "ArrowLeft"  || e.key === "ArrowDown") { e.preventDefault(); onbVideoApplyElapsed(onbVideo().elapsed - step); }
 }
 
-// Tools "Restart onboarding": a blank run with the chosen profile and the last
-// run's household answers forgotten too, so a skip lands on the default profile
-// the way it does for a new tester (onbFinish applies it only when none is
-// chosen). The profile goes back to the persona seed, as at boot; left alone,
-// a skipped place, coverage, miles or household would keep the last run's.
-// The trial answer goes back to unanswered, as at boot, so onbFinish gives the
-// next run the subscriber tier a new tester gets (it gates diamonds).
+// Restart clears profile and household answers so skipped fields cannot
+// reuse a previous tester's data. Reset the trial answer too so finishing
+// setup grants the same subscriber tier as a fresh run.
 function onbRestart() {
   state.activeProfileId = null;
   state.profilePick = null;
