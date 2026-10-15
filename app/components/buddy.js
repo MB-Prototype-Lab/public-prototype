@@ -108,7 +108,7 @@ function buddySetPose(id) {
  */
 function buddyStartIdle() {
   buddyStopIdle();
-  if (v3PrefersReducedMotion()) return;
+  if (prefersReducedMotion()) return;
   const step = () => {
     const others = BUDDY_IDLE_POSES.filter(id => id !== state.buddyPose);
     state.buddyPose = others[Math.floor(Math.random() * others.length)];
@@ -125,7 +125,7 @@ function buddyStopIdle() {
   if (state.buddyIdleTimer) { clearTimeout(state.buddyIdleTimer); state.buddyIdleTimer = null; }
 }
 
-function v3PrefersReducedMotion() {
+function prefersReducedMotion() {
   try {
     return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   } catch (e) { return false; }
@@ -281,7 +281,7 @@ function renderBuddyAdmin() {
       </div>
       <p class="helper" style="font-size:10px;">
         Idle cycles poses ${BUDDY_IDLE_POSES.join(", ")} every 4–6s.
-        Reduced motion: ${v3PrefersReducedMotion() ? "ON — idle stopped" : "off"}.
+        Reduced motion: ${prefersReducedMotion() ? "ON — idle stopped" : "off"}.
       </p>
     </div>
   `;

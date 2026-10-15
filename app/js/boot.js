@@ -12,7 +12,7 @@
 // Keep category budgets, daily tasks and tactical/strategic goals under their
 // own keys; state.budget, state.tasks and state.goals also serve off-path views.
 
-function v3Clone(o) {
+function deepClone(o) {
   return o == null ? o : JSON.parse(JSON.stringify(o));
 }
 
@@ -20,9 +20,9 @@ function bootApp() {
   // ── Identity ───────────────────────────────────────────────────────────────
   // Persona seeds the profile (D08). Onboarding applies answers over the
   // starting profile; skipped fields retain its values (D09, L26).
-  state.profile = v3Clone(PERSONA.identity);
-  state.lifestyle = v3Clone(PERSONA.lifestyle);
-  state.buddy = v3Clone(PERSONA.buddy);
+  state.profile = deepClone(PERSONA.identity);
+  state.lifestyle = deepClone(PERSONA.lifestyle);
+  state.buddy = deepClone(PERSONA.buddy);
   // The buddy illustration's broken-asset latch lives in components/buddy.js,
   // not in `state`, so a reset has to clear it explicitly or a missing file from
   // a previous session keeps suppressing art that is now there.
@@ -56,12 +56,12 @@ function bootApp() {
   // Self-reported = monthToDateActuals, NOT the sum of journalHistory. Six days
   // of journal detail (~$168 dining) sits inside fabricated month-to-date totals
   // ($429 dining) per D19. Getting this backwards breaks every observation.
-  state.mtd = v3Clone(SEED_STATE.monthToDateActuals);
-  state.journal = v3Clone(SEED_STATE.journalHistory);
+  state.mtd = deepClone(SEED_STATE.monthToDateActuals);
+  state.journal = deepClone(SEED_STATE.journalHistory);
 
   // ── Review surfaces ────────────────────────────────────────────────────────
-  state.bills = v3Clone(PERSONA.bills.upcoming);
-  state.subs = v3Clone(PERSONA.subscriptions.known);
+  state.bills = deepClone(PERSONA.bills.upcoming);
+  state.subs = deepClone(PERSONA.subscriptions.known);
   state.tipBanner = SEED_STATE.tipBanner.today;
 
   // ── Goals ────────────────────────────────────────────────────────────────
@@ -69,9 +69,9 @@ function bootApp() {
   // math: a savings goal accumulates toward a target (>100% is good); a
   // spend-limit goal is a monthly ceiling (>100% is bad). The seed uses two
   // different status words for exactly that reason — "behind" vs "over".
-  state.strategicGoal = v3Clone(PERSONA.goals.strategic);
+  state.strategicGoal = deepClone(PERSONA.goals.strategic);
   // The ESF tool owns fund goals; omit the seed to avoid a duplicate target.
-  state.tacticalGoals = v3Clone(PERSONA.goals.tactical)
+  state.tacticalGoals = deepClone(PERSONA.goals.tactical)
     .filter(g => !/emergency\s*(savings\s*)?fund/i.test(String((g && g.label) || "")));
   // Shape the seed in state, as the L11 observation reframe does. A spend-limit
   // goal needs its category to track month-to-date live, and a savings goal
@@ -90,11 +90,11 @@ function bootApp() {
   // ── Daily tasks ──────────────────────────────────────────────────────────
   // Precomputed order. Routes use their own vocabulary — see the route map
   // in architecture §9; `lesson:apr` shows they can carry a parameter.
-  state.dailyTasks = v3Clone(SEED_STATE.dailyTasks.today);
+  state.dailyTasks = deepClone(SEED_STATE.dailyTasks.today);
 
   // ── Observations ───────────────────────────────────────────────────────────
-  state.observations = v3Clone(SEED_STATE.observations.seeded);
-  v3ReframeDiningObservation();
+  state.observations = deepClone(SEED_STATE.observations.seeded);
+  reframeDiningObservation();
   observationsRecompute();   // derive figures from live state, never the baked strings
 
   // Journal entries the tester submits append here and feed month-to-date
@@ -134,7 +134,7 @@ function appEntryScreen() {
 // peer-benchmarks.json flags the discrepancy itself in `_note_gap`.
 //
 // So the numbers are right and the headline is wrong. Reframed here at boot.
-function v3ReframeDiningObservation() {
+function reframeDiningObservation() {
   const o = (state.observations || []).find(x => x.id === "obs_dining_over_peers");
   if (!o) return;
   o.type = "plan_gap";

@@ -110,7 +110,7 @@ function renderBudgetEmpty() {
 const BUDGET_DONE_MS = 2000;
 
 function renderBudgetDone() {
-  const still = v3PrefersReducedMotion();
+  const still = prefersReducedMotion();
   // Auto-advance so the beat is a transition rather than a screen to dismiss.
   // The tap target below is the escape hatch — it can never strand anyone.
   budgetDoneArm(still ? 0 : BUDGET_DONE_MS);

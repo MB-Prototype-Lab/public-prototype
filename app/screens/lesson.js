@@ -338,7 +338,7 @@ function lpHyperframesMarkup() {
   const plan = state.lessonVisualPlan;
   if (typeof hyperframesCanRender !== "function" || !hyperframesCanRender(plan)) return "";
   return hyperframesMarkup(plan.storyboard, plan, state.lessonPlayback.total,
-                           { staticFrame: v3PrefersReducedMotion() });
+                           { staticFrame: prefersReducedMotion() });
 }
 
 function lpSyncHyperframes() {

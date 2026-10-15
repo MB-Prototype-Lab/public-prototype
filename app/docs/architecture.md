@@ -609,7 +609,7 @@ boot and after each journal submit (L17).
 
 <!-- L11 applies here: obs_dining_over_peers ships typed `peer_gap` with the
      PLAN numbers (429 vs 320). Boot reframes it to a plan comparison headlined
-     "than you planned" (`v3ReframeDiningObservation`). -->
+     "than you planned" (`reframeDiningObservation`). -->
 
 ---
 

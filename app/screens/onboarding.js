@@ -1523,7 +1523,7 @@ function onbVideoScrubKey(e) {
 function onbRestart() {
   state.activeProfileId = null;
   state.profilePick = null;
-  state.profile = v3Clone(PERSONA.identity);
+  state.profile = deepClone(PERSONA.identity);
   state.trialAccepted = null;
   onbStart();
   go("onboarding");
