@@ -1,20 +1,10 @@
-// ─── Big Purchase — in-frame sheets ──────────────────────────────────────────
-// Spec §1 principle 9 and §9. Every chooser and info panel in this tool opens
-// INSIDE the phone frame. Never alert(), confirm() or a native <select>: all
-// three are drawn by the operating system, ignore the frame, and spill out of
-// the bottom of the phone (the ESF's lesson — see screens/buddy-panel.js).
-//
-// Painted into #buddyRoot with the Buddy panel, for the same reason the panel
-// lives there: the simulated keypad's 250px reflow cannot move it.
-
-// ── Typed fields and the tap that blurs them ─────────────────────────────────
-// A typed field commits on `change`, which fires on blur — and the blur happens
-// on pointerdown of whatever is tapped next. If that is Continue and the change
-// handler calls render(), the button is replaced before the finger lifts, and
-// no click is ever dispatched on it. The keypad's press latch holds the LAYOUT
-// still; it cannot hold the NODE. So when a press is in flight the field only
-// queues its repaint, and the button's own handler renders (render() cancels
-// the queued one). Tapping somewhere inert still repaints, 400ms later.
+// Keep choosers and information panels inside the phone frame: native
+// alerts, confirmations and select popups are OS-drawn and can escape it.
+// Use #buddyRoot so simulated-keypad reflow cannot shift the overlay.
+// Typed fields commit on blur, which can occur during a button press. Defer
+// the repaint while pressed so the click target survives until release.
+// The keypad latch holds layout, not the node; the button's render cancels
+// the queued repaint. An inert tap still repaints after the debounce.
 let bpPressInFlight = false;
 document.addEventListener("pointerdown", function (e) {
   const t = e.target;

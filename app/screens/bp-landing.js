@@ -1,13 +1,5 @@
-// ─── Big Purchase — landing (with the emergency fund question) ───────────────
-// TAB: Goals (sub-screen) | NAV BAR: Hidden — full-bleed
-// Spec §4 and §5, as revised by the owner (2026-09-22): the fund question is
-// NOT its own screen. It is a highlighted box at the bottom of the landing,
-// answered in place, so picking what to buy is never held up behind it.
-//
-// Also home to the Goals-tab surfaces the tool leaves behind: the entry card
-// and "Back to your car" after an ESF detour.
-
-// ── Entry ────────────────────────────────────────────────────────────────────
+// Answer the emergency-fund question in place before choosing a purchase.
+// The Goals tab retains entry and ESF-return cards for this tool.
 
 /** Open the tool fresh. Every door into it comes through here. */
 function bpOpen() {
@@ -15,7 +7,7 @@ function bpOpen() {
   go("bpLanding");
 }
 
-/** Already answered the fund question, one way or the other? (§5) */
+/* Has the tester already created or reported an emergency fund? */
 function bpEsfAnswered() {
   if (state.esfSelfReported) return true;
   if (state.esfGoal) return true;
@@ -43,13 +35,8 @@ function bpPickCategory(id) {
   bpfOpen();
 }
 
-/**
- * The fund box's three answers.
- *
- * "Start One Now" hands over to the ESF and parks a flag, so when the fund
- * is committed the Goals tab offers "Back to your car" (renderBpGoalsCards).
- * The other two answer in place and leave the tester on the landing.
- */
+/* Start One Now opens ESF and records a return flag for Back to your car.
+ * The other answers remain on the landing. */
 function bpEsfCheck(choice) {
   const s = bpSession();
   bpEsfBoxShown();
@@ -95,23 +82,8 @@ function bpLandingBack() {
   navBack();
 }
 
-// ── Render ───────────────────────────────────────────────────────────────────
-
-// ── Category icons ───────────────────────────────────────────────────────────
-// THE OWNER'S OWN ARTWORK (2026-09-27), not drawn here. Three rounds of hand-
-// built icons were rejected — emoji ("janky and old"), flat line icons, then
-// two-tone SVG silhouettes ("the icons continue to look like shit") — and the
-// owner ended the argument by supplying the set they wanted: "use the ones
-// here". These five files are that image, sliced into its tiles, and that is
-// the whole story. Do not redraw them.
-//
-// Each file carries its own coloured plate and rounded corners, so the row
-// renders the image and nothing else; the CSS plate that backed the SVGs is
-// gone. A coming-soon row still dims the whole thing with opacity.
-//
-// `assets/` is new for these. Everything else the app ships lives under
-// `assets/img`, `audio` or `video`; these sit at the top of it because they
-// belong to a screen rather than to the buddy or a lesson.
+// Use the supplied category tiles without redrawing them. Each includes
+// its colored plate and corners; coming-soon rows dim the whole image.
 const BP_CATEGORY_ICONS = {
   vehicle: "assets/cat-vehicle.png",
   boatRv:  "assets/cat-boatrv.png",
@@ -134,27 +106,16 @@ const BP_LANDING_ROWS = [
   { id: "other",   label: "Something else", soon: true }
 ];
 
-// THREE SIDE-BY-SIDE BUTTONS, equal columns. "Start One Now" is the one drawn
-// as a primary — owner's call to highlight it. That is a visual weight, not a
-// recommendation: the copy still asks a question and all three answers are one
-// tap from here.
+// Give all three answers equal weight so none reads as preselected.
 const BP_ESF_CHOICES = [
-  // No sub-lines (owner, 2026-09-27). Three labels, nothing under them: the
-  // options do not need explaining and the box has to hold one line for its
-  // question.
+  // Keep labels without sub-lines to leave room for the question.
   { id: "have",       label: "Yes" },
   { id: "startFirst", label: "Start One Now" },
   { id: "after",      label: "Ask me later" }
 ];
 
-/**
- * The fund box. AT THE TOP of the landing (owner, 2026-09-27) — it is the
- * decision worth making before picking anything, and at the bottom it was
- * something you scrolled past on the way out.
- *
- * Answering does NOT navigate: the card collapses to a one-line confirmation
- * and the tester still picks a category themselves.
- */
+/* Put the fund question before purchase selection. Yes and Ask me later
+ * collapse it in place; Start One Now opens the fund journey. */
 function renderBpEsfBox() {
   if (!bpEsfBoxShown()) return "";
   const s = bpSession();
@@ -169,32 +130,11 @@ function renderBpEsfBox() {
         <button class="bp-link" type="button" onclick="bpEsfCheck(null)">Change</button>
       </div>`;
   }
-  // ── WHY THIS LOOKS THE WAY IT DOES (owner, 2026-09-27) ───────────────────
-  // "This doesn't indicate a user should make a selection. It looks like it's
-  // preselected and something will happen, but nothing does… having the start
-  // one now selected in green isn't working."
-  //
-  // Exactly right, and it was my doing: one tinted button among three plain
-  // ones is the universal look of a CHOSEN option, so the box read as answered
-  // and the tester walked past it into the car. Three things changed:
-  //
-  //   1. NO HIGHLIGHTED ANSWER. All three are identical, so none of them can
-  //      be mistaken for a selection already made. (The `strong` flag is gone
-  //      from the data, not just from the CSS.)
-  //   2. AN INSTRUCTION, NOT A HINT. A small "TAP ONE TO CONTINUE" eyebrow
-  //      above the question says what to do in four words.
-  //   3. THE BOX LOOKS UNFINISHED. A dashed border and an accent spine down
-  //      the left read as something outstanding; the answered state is solid,
-  //      with a tick. The tester can see the state change they make.
+  // A dashed border and accent spine signal an unanswered question.
+  // A solid confirmation with a tick makes the tester's choice visible.
   return `
     <div class="bp-esf-box bp-esf-ask">
-      ${/* WHY IT IS HERE, FIRST (owner, 2026-10-01: "the ESF needs to explain
-            why its here. it just kinda pops up out of nowhere"). The eyebrow
-            ties it to the purchase, the first sentence says what a purchase
-            does to the month, the second is the owner's own line, verbatim,
-            and only then the question, with its answers last, in thumb
-            reach. "Tap one to continue" gave way to "Before you buy": the
-            dashed, spined box still reads as unanswered on its own. */ ""}
+      ${/* Explain why the fund question relates to the purchase before asking it. */ ""}
       <p class="bp-esf-eyebrow">Before you buy</p>
       <p class="bp-esf-why">A big purchase adds a new monthly bill, so it may help to have an
          Emergency Savings Fund first.</p>
@@ -214,29 +154,16 @@ function renderBpLanding() {
   return `
     <div class="journal-shell onb-pinned bp-land-shell">
       <div class="journal-head">
-        ${/* THE PURPOSE, FIRST (owner, 2026-09-28): "the big purchase
-              calculator and each screen aren't very clear what the purpose
-              is... The main page should have an image of Buddy considering a
-              big purchase with a message like let's help find the right
-              choice for you." The art is the existing Buddy pose, not new art
-              (D10: never generate buddy art); a dedicated "considering a
-              purchase" image is the owner's to supply and drops in here.
-              SUPPLIED 2026-09-29: Buddy beside a car with a bow on it,
-              assets/img/buddy-car.jpg, as a full-width banner. */ ""}
-        ${/* The banner moved to the finder's first view (owner, 2026-10-01),
-              under "Find the right car for you". This screen is the tool's
-              value in one line and two: evaluate the purchase, see the real
-              cost, find what fits. */ ""}
+        ${ ""}
+        ${ ""}
         <h1 class="title esf-title bp-land-title">Thinking about a big purchase?</h1>
       </div>
 
       <div class="journal-body">
         <p class="bp-lead">We'll show you what it really costs to own, and help you find the one that fits your life.</p>
         ${renderBpEsfBox()}
-        ${/* THREE SECTIONS, SPREAD (owner, 2026-10-01: "too crowded… more
-              space between the three sections… primary action buttons towards
-              the bottom"). The category list is one block so the body's
-              space-between pins it to the bottom, in thumb reach. */ ""}
+        ${/* Keep the category list as one block so space-between places it within
+         * thumb reach at the bottom. */ ""}
         <div class="bp-land-pick">
         <p class="bp-q-label">What are you thinking about buying?</p>
         <div class="bp-stack">

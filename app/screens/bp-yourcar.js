@@ -1,21 +1,6 @@
-// ─── Big Purchase — Your car: pay for it, plan for it (one screen) ────────────
-// TAB: Goals (sub-screen) | NAV BAR: Hidden — full-bleed
-//
-// Owner, 2026-10-03: once a car is chosen, ONE screen does the rest:
-// the car's name at the top, a single "Change your mind?" button that opens the
-// other options, "Paying for it" (just price, loan or cash, down payment, loan
-// length, credit score, amount financed) and "Planning for it" (the down payment,
-// what is already saved, what is still to save, by when, and the goal). A sentence
-// at the top says what the screen is doing.
-//
-// Nothing here has its own arithmetic: the pieces are the shared controls in
-// screens/bp-controls.js (bpFinRow/bpFinChoose, bpSetSaved, bpCommit) and the
-// engine's figures (bpStack, bpBreakdown, bpSaveToAfford), so a figure here is
-// the figure the finder printed.
-//
-// "Choose a different car" opens the same options the finder offered
-// (bpfOrigin and renderBpfSave), and trying one changes the car, the price and
-// every figure on this screen at once.
+// Share financing controls and engine figures with the finder so the same
+// car has the same costs here. Changing car through the options sheet updates
+// price and costs together.
 
 function bpYcOpenAlts() {
   bpOpenSheet("bpYcAlts");
@@ -66,8 +51,7 @@ function renderBpYcPaying(card, st, b, loan) {
                  value="${h(bpMoney(s.setup.price))}" aria-label="Price, dollars"
                  onchange="bpSetPrice(this.value)">
         </div>
-        ${/* Loan, Cash or Lease (owner, 2026-10-03: leasing on this screen only).
-              Lease is for a new car; for a used one it is shown but off. */ ""}
+        ${/* Lease is available only for new cars; show it unavailable for used cars. */ ""}
         <div class="bp-seg bp-seg3" role="group" aria-label="Loan, cash or lease">
           <button type="button" class="${!leasing && loan ? "on" : ""}" aria-pressed="${!leasing && loan}" onclick="bpYcSetMode('loan')">Loan</button>
           <button type="button" class="${!leasing && !loan ? "on" : ""}" aria-pressed="${!leasing && !loan}" onclick="bpYcSetMode('cash')">Cash</button>
@@ -119,14 +103,9 @@ function bpYcNeeds() {
   return bpSession().plan.needSave !== false;
 }
 
-/**
- * Planning for it (owner, 2026-10-03). One question first: do you need to save for
- * the down payment? Yes opens the three lines (down payment, minus what is already
- * saved, equals what is needed, highlighted), then the month as a dropdown with the
- * monthly amount under it. No leaves the box shut and sets no goal. A lease reads
- * "due at signing" in place of "down payment". The same figures as before
- * (bpSaveToAfford / bpLeaseAfford); only the order and the controls changed.
- */
+/* Ask whether a savings goal is needed before showing the arithmetic and
+ * target month. No keeps the goal out. Lease planning uses signing costs;
+ * loan and cash use bpSaveToAfford, keeping the engine as the single source. */
 function renderBpYcPlanning(a, loan) {
   const s = bpSession();
   const st = a.stack;

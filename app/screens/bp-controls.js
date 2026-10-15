@@ -1,10 +1,5 @@
-// ─── Big Purchase — shared controls ──────────────────────────────────────────
-// No screen of its own. The choice tiles, the financing rows and the plan
-// handlers that Your car (screens/bp-yourcar.js), the finder, the in-frame
-// sheets and lease mode (js/bp-lease.js) all call. Handlers write the session
-// through bpSession() and re-render.
-
-// ── Choice tiles ─────────────────────────────────────────────────────────────
+// Shared tiles, financing rows and plan handlers keep finder, Your car,
+// sheets and lease mode on one session model.
 
 /** A row of tiles. */
 function bpTiles(opts, current, onPick, cls) {
@@ -19,21 +14,9 @@ function bpTiles(opts, current, onPick, cls) {
     </div>`;
 }
 
-/**
- * How one question's choices are laid out.
- *
- * NEVER a wrapping cluster. A centred flex-wrap gave "2 + 2 + 1" with three
- * different left edges and a last row floating under a gap — not a pattern
- * anybody would ship. Every layout here is a full-width grid with equal cells,
- * so the edges line up whatever the option count:
- *
- *   2 short       → two across        4 short → two by two
- *   3 short       → three across      anything else, or options carrying
- *                                     example text → one per line
- *
- * "Short" is measured, not guessed: a long label in a narrow cell wraps, and a
- * wrapped label is the same raggedness by another route.
- */
+/* Use full-width equal-cell grids rather than a wrapping cluster so edges
+ * stay aligned. Two choices use two columns; three or four short labels use
+ * compact grids; longer labels and examples use one per line. */
 const BP_DOCK_SHORT = 11;
 
 function bpDockLayout(opts, hasExamples) {
@@ -45,11 +28,8 @@ function bpDockLayout(opts, hasExamples) {
   return "bp-tiles-col";
 }
 
-/**
- * D19 — no screen renders empty. Your car reached by the admin jump, with
- * nothing answered, opens on the spec's own example car rather than on
- * "undefined · $0".
- */
+/* D19: incomplete setup uses a plausible example car instead of undefined
+ * labels and zero figures. */
 function bpEnsureSetup() {
   const s = bpSession();
   const cat = bpCategory();
@@ -95,11 +75,8 @@ function bpSetTypedRate(raw) {
   bpFieldCommitted();
 }
 
-/**
- * The price, adjusted at the end. It applies to the card in hand — and if that
- * is an alternative, the alternatives are re-derived from the pick, so the
- * figure edited here is the pick's price either way.
- */
+/* Price edits update the selected pick. Clear per-car row overrides when
+ * it changes because those figures describe the previous price. */
 function bpSetPrice(raw) {
   const s = bpSession();
   const n = Math.round(Number(String(raw || "").replace(/[^0-9.]/g, "")) || 0);
@@ -132,11 +109,7 @@ function bpFinChoose(field, value) {
   }
 }
 
-/**
- * One financing setting. The value sits in a pill with a caret so the row reads
- * as something you can change — as a plain right-aligned figure it read as a
- * statement of fact and nobody tapped it (owner, 2026-09-27).
- */
+/* Use a pill and caret to signal that a financing figure is editable. */
 function bpFinRow(field, label, value) {
   return `
     <button class="bp-setrow" type="button" onclick="bpOpenFin('${field}')">
@@ -186,10 +159,8 @@ function bpSetSaved(raw) {
   bpFieldCommitted();
 }
 
-/**
- * Commit (§10). Saves the session and creates at most ONE goal. A new commit replaces the old goal rather than adding a second —
- * two savings goals for the same car is a tester wondering which is theirs.
- */
+/* Replace the previous purchase goal when saving so there is at most one
+ * savings goal for this plan. */
 function bpCommit(opts) {
   const s = bpSession();
   const card = bpSelectedCard();
@@ -200,8 +171,7 @@ function bpCommit(opts) {
   const cat = bpCategory();
   const date = bpPlanDateISO(s.plan.monthsOut);
   const noun = bpCardNoun(card);
-  // The goal names the car itself when it came from the finder (owner, 2026-10-03):
-  // "Save for the BMW X3 (new)", not "a used Premium SUV".
+  // Use the finder's exact make/model in goal labels when available.
   const fsel = typeof bpfSelected === "function" ? bpfSelected() : null;
   const goalLabel = fsel
     ? "Save for the " + bpfName(fsel.model) + " (" + (fsel.cond === "used" ? "used" : "new") + ")"
