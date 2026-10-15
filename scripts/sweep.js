@@ -171,14 +171,12 @@ var THEME_FREE = ["--on-dark","--tier-copper","--radius-card","--radius-button",
   "--shadow-soft","--ease","--dur","--font-display","--font-body","--phone","--bg",
   "--chrome-card","--chrome-text","--chrome-muted","--chrome-line","--chrome-accent","--chrome-danger",
   "--streak-bg","--streak-burst","--streak-pill","--streak-text","--streak-accent","--streak-on","--streak-off",
-  "--space-xs","--space-sm","--space-md","--space-lg","--space-xl","--topbar-h","--nav-h"];
+  "--topbar-h","--nav-h"];
 
 var CONTRACT = Object.keys(CSS[":root"]).filter(function (k) { return THEME_FREE.indexOf(k) === -1; });
-// --rail is v3.1 only (the band chart needs a rail edge; v3 has no band), so
-// the expected count differs by side. Stated rather than loosened to ">= 40" —
-// the point of this check is that a token cannot be added or dropped without
-// somebody noticing.
-var EXPECTED_TOKENS = 43; // Includes ESF strong-ink/text tokens in every theme.
+// Stated exactly rather than loosened to a minimum — the point of this check
+// is that a token cannot be added or dropped without somebody noticing.
+var EXPECTED_TOKENS = 41; // Includes ESF strong-ink/text tokens in every theme.
 chk(CONTRACT.length === EXPECTED_TOKENS,
     "contract is " + EXPECTED_TOKENS + " colour tokens", "got " + CONTRACT.length);
 

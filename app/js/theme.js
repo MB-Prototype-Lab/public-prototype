@@ -13,10 +13,10 @@
 // (variables.css explains the contract; scripts/sweep.sh enforces it).
 
 const THEMES = [
-  { id: "light",        label: "Light",         cls: "theme-light",        family: "v2"      },
-  { id: "dark",         label: "Dark",          cls: "theme-dark",         family: "v2"      },
-  { id: "naturalLight", label: "Natural Light", cls: "",                   family: "natural" },
-  { id: "naturalDark",  label: "Natural Dark",  cls: "theme-natural-dark", family: "natural" }
+  { id: "light",        label: "Light",         cls: "theme-light"        },
+  { id: "dark",         label: "Dark",          cls: "theme-dark"         },
+  { id: "naturalLight", label: "Natural Light", cls: ""                   },
+  { id: "naturalDark",  label: "Natural Dark",  cls: "theme-natural-dark" }
 ];
 
 // Natural Light is the empty string: it IS :root, so it applies no class.

@@ -1236,11 +1236,11 @@ what catch that.
 `themeApply()`, which puts exactly one class on `.screen`. To add a theme, add
 an entry there and a class in `variables.css` — nothing else reads the list.
 
-### The 40-token contract
+### The colour-token contract
 
 `:root` holds the complete Natural Light set, so every token always resolves.
-Each of the three classes must then define **all 40 colour tokens, no more and
-no fewer.**
+Each of the three classes must then define **every colour token `:root`
+defines (`EXPECTED_TOKENS` in the sweep), no more and no fewer.**
 
 This is enforced (`scripts/sweep.sh` §1b) rather than trusted, because the
 failure mode is invisible: a theme that omits a token inherits `:root`'s
