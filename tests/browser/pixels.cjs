@@ -3,7 +3,7 @@
 // library is needed. A pixel differs when any channel moves by more than
 // CHANNEL_TOLERANCE; the result includes a highlighted diff image.
 
-// Identical copies give byte-equal phone pictures; Tools pictures differ only at anti-aliased rounded edges, in at most 0.014% of pixels.
+// Compare every RGBA channel exactly; picture-level allowance is set by the runner.
 const CHANNEL_TOLERANCE = 0;
 
 async function openComparer(browser) {

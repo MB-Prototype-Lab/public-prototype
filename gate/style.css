@@ -1,8 +1,5 @@
-/* ─── Version Gate styling ───────────────────────────────────────────────────
-   Self-contained on purpose — not coupled to any version's css/variables.css,
-   since each version's theme is independent and will drift over time. Mobile-
-   first: this page is meant to be opened standalone on a phone from a shared
-   link, not inside the desktop .phone frame the app itself uses. */
+/* Selector styling stays independent of app themes. This standalone page
+   opens from shared links on phones, so it does not use the app's .phone frame. */
 
 :root {
   --gate-bg: #eef1f7;

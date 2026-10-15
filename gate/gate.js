@@ -1,13 +1,7 @@
-// ─── Version Gate (passcode + selector) ───────────────────────────────────────
-// Standalone script for the repo-root landing page. Deliberately NOT part of
-// any version's app — the versions under versions/*/ each load their own set
-// of <script> tags into one shared global namespace (state, render(), go(),
-// etc. per the root CLAUDE.md's Architecture conventions), so this page must never load
-// two versions' scripts together. Picking a version is a real page navigation
-// (location.href), so each version boots fresh in its own document.
-//
-// The passcode is a speed bump against a shared link getting forwarded
-// thoughtlessly — not real security. It's plaintext on purpose.
+// Selector gate: passcode and app/Flow navigation.
+// Keep app scripts out of this document: their shared globals would collide.
+// Navigation opens each choice in its own document so it boots fresh.
+// The plaintext passcode discourages casual forwarding; it is not security.
 
 var GATE_PASSCODE = "1337";
 var GATE_SESSION_KEY = "mb_gate_unlocked";
@@ -18,11 +12,8 @@ function gateShowSelector() {
   document.getElementById("passcodeScreen").style.display = "none";
   var selector = document.getElementById("selectorScreen");
   selector.style.display = "flex";
-  // Two views, one document: the passcode and this list toggle `display`, so
-  // they shared a URL and a tracker recorded them as one screen — the same
-  // defect the versions had, one level up. Same fix, same reasoning: change the
-  // address so the step is visible. replaceState because unlocking is not
-  // somewhere Back should return to.
+  // Give the selector its own tracking URL. Replace it because Back should
+  // not return to the passcode after unlocking.
   gateMarkUrl("version-select");
   // Without tabs the markup still shows the Prototype panel, so a failure here
   // costs the toggle, never access.
@@ -109,7 +100,7 @@ function gateTabsBind() {
  *
  * http/https only — Chrome throws SecurityError for replaceState with a URL
  * argument on file://, where the document's origin is opaque. Locally this
- * no-ops and the gate behaves exactly as it always has.
+ * leaves the URL unchanged.
  */
 function gateMarkUrl(view) {
   try {

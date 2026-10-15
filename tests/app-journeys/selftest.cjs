@@ -116,10 +116,10 @@ check('rename detection accepts consistent renames only', () => {
     Object.assign({ wiring: ['a@0'] }, nothing));
   // A switch to a function that existed but no journey had tapped, or a new
   // name while the old function stays: not renames. A real one still is.
-  const remind = [{ a: ['button onclick=bpToggleRemind()'] }, { a: ['button onclick=bpLeaseAfford()'] }];
-  assert.deepEqual(judge(...remind, ['bpToggleRemind', 'bpLeaseAfford'], ['bpToggleRemind', 'bpLeaseAfford']), Object.assign({ wiring: ['a@0'] }, nothing));
-  assert.deepEqual(judge(...remind, ['bpToggleRemind'], ['bpToggleRemind', 'bpLeaseAfford']), Object.assign({ wiring: ['a@0'] }, nothing));
-  assert.deepEqual(judge(...remind, ['bpToggleRemind'], ['bpLeaseAfford']), { renames: { 'bpToggleRemind→bpLeaseAfford': 1 }, useberry: {}, wiring: [] });
+  const remind = [{ a: ['button onclick=testOldHandler()'] }, { a: ['button onclick=bpLeaseAfford()'] }];
+  assert.deepEqual(judge(...remind, ['testOldHandler', 'bpLeaseAfford'], ['testOldHandler', 'bpLeaseAfford']), Object.assign({ wiring: ['a@0'] }, nothing));
+  assert.deepEqual(judge(...remind, ['testOldHandler'], ['testOldHandler', 'bpLeaseAfford']), Object.assign({ wiring: ['a@0'] }, nothing));
+  assert.deepEqual(judge(...remind, ['testOldHandler'], ['bpLeaseAfford']), { renames: { 'testOldHandler→bpLeaseAfford': 1 }, useberry: {}, wiring: [] });
   // A click-tracking name that changed with no handler rename behind it.
   assert.deepEqual(judge({ a: ['button onclick=fooA()\nbutton data-ub=home/fooA'] }, { a: ['button onclick=fooA()\nbutton data-ub=home/fooZ'] }),
     { renames: {}, useberry: { 'home/fooA→home/fooZ': 1 }, wiring: [] });

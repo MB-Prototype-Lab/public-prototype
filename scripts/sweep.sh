@@ -1,17 +1,9 @@
 #!/usr/bin/env bash
 if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
-# Phase 6 correctness sweep — run from the repo root.
-#
-#   bash scripts/sweep.sh
-#
-# Concatenates the DOM stub, every <script> in app/index.html in load
-# order, and scripts/sweep.js into one file, then runs it under node or jsc —
-# whichever this machine has (see check-syntax.sh; the Mac has jsc and no node,
-# the Linux/WSL box the reverse). One script rather than separate evaluations,
-# because separately-evaluated scripts do not share top-level `const` bindings
-# but a browser's <script> tags do.
-#
-# Exits non-zero if any check fails, or if the sweep stops before its last line.
+# Correctness sweep — run from the repo root: bash scripts/sweep.sh
+# Concatenate the DOM stub, ordered app scripts and sweep.js for node or jsc.
+# One bundle preserves shared top-level const bindings like browser scripts.
+# Exit non-zero on a failed check or a run that stops before its last line.
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
@@ -34,10 +26,8 @@ TMP="$(mktemp "${TMPDIR:-/tmp}/mb-sweep.XXXXXX")" || exit 1
 OUT="$TMP.js"
 trap 'rm -f "$TMP" "$OUT" "$OUT.log"' EXIT
 
-# ── The screen inventory, read from the app being swept ─────────────────────
-# Every id render.js knows about. That is the router, so it cannot go stale: add a screen and the sweep finds it; retire one and it stops looking.
-# The "not in destinations[]" check keeps its teeth, because a screen routed but
-# never added to the jump list still shows up here.
+# Read the router so adding or retiring a screen updates the inventory.
+# A routed screen missing from destinations[] still needs its Tools wiring check.
 ROUTED=$(grep -ohE 'state\.screen === "[^"]+"' "$APP/js/render.js" \
          | sed 's/.*"\(.*\)"/\1/' | sort -u | sed 's/^/"/;s/$/"/' | paste -sd, -)
 
@@ -46,13 +36,8 @@ cat > "$OUT" <<STUB
 var ROUTED_SCREENS = [$ROUTED];
 STUB
 cat >> "$OUT" <<'STUB'
-// print() is a jsc builtin and does not exist in node. sweep.js calls it ~21
-// times, so shim it here rather than rewriting every call site.
-//
-// It must write to stdout DIRECTLY: the stub below deliberately silences
-// `console` so app-code logging stays out of the sweep output, and a shim built
-// on console.log would inherit that silence — the whole report would vanish
-// while still exiting 0, which looks exactly like a clean run.
+// Shim jsc's print() in node. Write directly to stdout because the stub
+// silences console to keep app logging out of the sweep report.
 if (typeof print === "undefined") {
   var print = function () {
     var line = Array.prototype.join.call(arguments, " ") + "\n";
@@ -85,10 +70,7 @@ var sessionStorage={getItem:function(){return null;},setItem:function(){}};
 var localStorage=sessionStorage;
 var location={href:"",replace:function(){}};
 var alert=function(){},prompt=function(){},confirm=function(){return true;};
-// setTimeout QUEUES rather than discarding, so debounced work can be flushed.
-// It used to be `function(){return 0;}` — which made debouncedRender() a silent
-// no-op and left every slider handler untested: misspell the call and the sweep
-// still passed 54/54 while a browser threw on the first pointer move.
+// Queue timers so debounced work can be exercised and flushed explicitly.
 var __timers=[],__timerId=0;
 var setTimeout=function(fn,ms){__timers.push({id:++__timerId,fn:fn,ms:ms||0});return __timerId;};
 var clearTimeout=function(id){__timers=__timers.filter(function(t){return t.id!==id;});};
@@ -112,9 +94,8 @@ done < <(grep -o 'src="[^"]*\.js"' "$APP/index.html" | sed 's/src="//;s/"//')
 FILM_DEFAULT="$(sed -n 's/^const APP = path.join(REPO, "\(.*\)");/\1/p' tools/film/build-films.mjs)"
 printf '\nvar __FILM_TOOL_VERSION = "%s";\nvar __DEFAULT_VERSION = "app";\n' "$FILM_DEFAULT" >> "$OUT"
 
-# The hyperframes viewBox, so §7c can check it against the CSS aspect-ratio and
-# the film canvas. Three declarations of the same 100:72 shape; if they drift the
-# stage frames the picture in accent colour, which is the bug this replaced.
+# Compare the viewBox, CSS aspect ratio and film canvas so the stage cannot
+# expose coloured bars around a differently shaped picture.
 HF_W="$(sed -n 's/^const HF_VIEW_W = \([0-9]*\);/\1/p' "$APP/components/hyperframes.js")"
 HF_H="$(sed -n 's/^const HF_VIEW_H = \([0-9]*\);/\1/p' "$APP/components/hyperframes.js")"
 printf '\nvar __HF_VIEW = { w: %s, h: %s };\n' "${HF_W:-0}" "${HF_H:-0}" >> "$OUT"
@@ -125,7 +106,7 @@ printf '\nvar __HF_VIEW = { w: %s, h: %s };\n' "${HF_W:-0}" "${HF_H:-0}" >> "$OU
 printf '\nvar __RENDER_JS = ' >> "$OUT"
 python3 -c "import json,sys;print(json.dumps(open(sys.argv[1],encoding='utf-8').read())+';')" "$APP/js/render.js" >> "$OUT"
 
-# The paywall's source, v4 only. §7g checks the discount figures are COMPUTED
+# The paywall's source. §7g checks the discount figures are COMPUTED
 # from the prices: a "was" price typed into the file would be an invented
 # discount the day the monthly price moves.
 printf '\nvar __PAYWALL_JS = ' >> "$OUT"
@@ -267,10 +248,8 @@ for rel in order:
     s = open(p, encoding='utf-8').read()
     for m in re.finditer(r'^(?:function\s+([A-Za-z_]\w*)|(?:const|let|var)\s+([A-Za-z_]\w*)\s*=)', s, re.M):
         seen[m.group(1) or m.group(2)].append(rel)
-# Report DISTINCT files. Appending per-occurrence made a name declared twice in
-# one file print as "x.js , x.js — last one wins", which reads as a cross-file
-# shadow and is a false positive on a check whose whole worth is being trusted.
-# Both are still worth flagging, so `scope` says which it is.
+# Report distinct files, and use scope to distinguish a repeated declaration
+# in one file from shadowing across scripts.
 out = []
 for k, v in sorted(seen.items()):
     if len(v) < 2: continue

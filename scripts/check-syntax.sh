@@ -1,23 +1,13 @@
 #!/usr/bin/env bash
 if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
-# JS syntax checker — the automated gate for this repo.
-#
-# WHY THIS EXISTS: this repo gets worked on from more than one machine, and the
-# two do not agree on which JS engine exists. The Mac has no node but ships
-# JavaScriptCore (`jsc`, which exposes checkSyntax()); the Linux/WSL box has node
-# (often only under ~/.nvm, off PATH for non-interactive shells) and no jsc.
-# Hardcoding either one makes the repo's only automated gate fail outright on the
-# other machine, which is exactly what happened. So: use whichever is present.
-# Both were verified with a positive and a negative control — each correctly
-# rejects `function broken( {` and correctly accepts valid source.
-#
-# NOTE: jsc's checkSyntax() takes a FILE PATH, not source text. Passing source
-# makes it fail with "Could not open file", which looks like a syntax error and
-# isn't.
+# JS syntax checker for classic browser scripts.
+# Use node or macOS jsc so the check works on machines with either engine.
+# nvm installations may be outside a non-interactive shell's PATH.
+# jsc checkSyntax() takes a file path, not source text.
 #
 #   bash scripts/check-syntax.sh                 # all JS under app + gate
 #   bash scripts/check-syntax.sh path/to/file.js # specific files
-#   bash scripts/check-syntax.sh app     # everything under a directory
+#   bash scripts/check-syntax.sh app             # directory
 #
 # Exits non-zero if anything fails to parse.
 
