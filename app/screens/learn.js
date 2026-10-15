@@ -1,38 +1,9 @@
-// ─── Learn Tab ────────────────────────────────────────────────────────────────
-// TAB: Education | NAV BAR: Visible
-//
-// The Education tab. Three bands, top to bottom:
-//
-//   1. SEARCH        — filters badges and lessons, and takes over the screen
-//                      while it has a query
-//   2. SUGGESTED     — at most two rows: a badge with a bonus lesson available,
-//                      and the last badge the tester actually opened
-//   3. BADGE BOARD   — every topic, always unlocked (L16/D31: nothing gates
-//      HERE. D31 is overridden for the Budget tab only — L27 — and lessons
-//      stay open; L16 is untouched.)
-//
-// ── WHERE THE CONTENT COMES FROM ─────────────────────────────────────────────
-// This screen renders the V2 catalog — `state.badges` and `state.lessons` — not
-// LESSONS_V3. The two coexist deliberately (L9/L14): v3's three authored
-// lessons live in LESSONS_V3 and are reachable through the same rows, because
-// selectLesson looks up state.lessons and lessonOpenPlayer swaps in the v3
-// script. So a tester sees one catalog and never learns there are two.
-//
-// ── THIS TAB IS NOT THE GUIDED PATH ──────────────────────────────────────────
-// Daily tasks are. A task is a contextual bookmark that opens the same lesson
-// from Home (architecture §9), and it carries the Charity Points and the XP
-// bonus. This tab is for browsing on purpose rather than being pointed.
-
-// ── Search ───────────────────────────────────────────────────────────────────
-// Search is the one place on this screen that does NOT go through render().
-//
-// The app's whole model is "mutate state, call render(), replace the screen's
-// innerHTML". That is fatal for a text input: the element being typed into is
-// destroyed mid-keystroke and focus and cursor position go with it. So search
-// writes state and then patches ONE element (#searchResults) by hand.
-//
-// The debounce is a second, smaller concern — it stops a fast typist rebuilding
-// the result list on every character.
+// Lessons and topics remain unlocked (D31); L27 guards only the Budget tab.
+// Render one catalog from state.lessons/state.badges. lessonOpenPlayer selects
+// a framed script when available, keeping that distinction out of the UI.
+// Daily tasks provide the guided path and bonus; this tab supports browsing.
+// Search patches results and hides the board without rendering the focused
+// input. Debounce result work so rapid typing does not rebuild it each key.
 let _searchDebounce = null;
 function onSearchInput(val) {
   state.searchQuery = val;
@@ -221,14 +192,8 @@ function renderLearn() {
   `;
 }
 
-// ─── Learn Admin Panel ────────────────────────────────────────────────────────
-// XP tuning levers, lesson status overrides and badge progress, so a test
-// session can be steered without a code edit or a reload.
-//
-// This is the surface state.xpConfig exists for (L9): lessons.json fixes the
-// five-tier progression and the XP values, and xpConfig keeps the multipliers
-// hot-editable. Change bonusMultiplier here and the next lesson completion uses
-// it — see completeLesson in js/navigation.js.
+// Tools exposes XP tuning and lesson/badge overrides for testing.
+// Read xpConfig at completion so edits affect the next award (L9).
 
 function renderLearnAdmin() {
   return `

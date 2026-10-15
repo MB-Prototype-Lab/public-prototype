@@ -1,22 +1,5 @@
-// ─── Simulation ───────────────────────────────────────────────────────────────
-// TAB: Learn (sub-screen) | NAV BAR: Visible — Learn tab highlighted
-//
-// PURPOSE
-// Interactive scenario practice — applies a lesson concept to a concrete
-// financial decision (e.g. compare two loan structures) before returning to topic.
-//
-// NAVIGATION
-//   Entry: Topic screen for simulation-type lessons
-//   Exit:  "Done" button → topic screen
-//
-// STATES
-//   Currently a single hardcoded example (loan tradeoff comparison).
-//   No state dependencies — fully static.
-//
-// PRODUCTION NOTES
-//   Content should be keyed by lessonId, matching the LP_SCRIPTS pattern in
-//   lesson.js. Each simulation-type lesson provides its own scenario config.
-//   The current hardcoded example is a placeholder to show the screen shape.
+// Tools-reachable placeholder for scenario practice; no simulation is
+// implemented on this screen.
 
 function renderSimulation() {
   return `

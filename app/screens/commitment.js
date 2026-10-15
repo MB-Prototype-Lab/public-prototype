@@ -1,21 +1,5 @@
-// ─── Commitment Creation ───────────────────────────────────────────────────────
-// TAB: None | NAV BAR: Hidden — full focus on commitment
-//
-// PURPOSE
-// Third (optional) screen in the post-result loop. Triggered when user chooses
-// "Make a goal" in nextAction. Lets the user create a goal + optional milestone
-// + optional commitment text. V1: lightweight form, no complex priority flow.
-//
-// NAVIGATION
-//   Entry: nextAction → "Make a goal"
-//   Exit:  Save → finish screen; Skip → finish screen
-//
-// PRODUCTION NOTES
-//   Goal is appended to state.goals[]. Optional commitment text appended to
-//   state.commitments[] with a link to the new goal's ID.
-//   V1: milestone is optional. Commitment text is a single sentence.
-//   Goal prioritization (ordering against existing goals) is a simple confirm
-//   step before saving — V1 just prepends the new goal to the list.
+// The post-result Make a goal path saves an inherited goal with optional
+// milestone and linked commitment. Prepend the goal so it has first priority.
 
 function renderCommitment() {
   const goals = state.goals || [];

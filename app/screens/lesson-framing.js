@@ -1,38 +1,11 @@
-// ─── Lesson framing questions (D38) ──────────────────────────────────────────
-// TAB: Education (sub-screen) | NAV BAR: Hidden — full-bleed
-//
-// "Three to five, decision-tree branching. 'Do you know your card's APR?' Yes
-// branches one way, no another. 'I don't know' is a first-class answer, not a
-// failure."
-//
-// So there is no wrong answer here and nothing is scored. The tree decides
-// which pre-written script plays; an "I don't know" path lands on the fallback,
-// which exists for exactly that.
-//
-// -- THIS IS WHERE PERSONALIZATION ACTUALLY HAPPENS ---------------------------
-// The lesson player looks personalized. It is not: the narration is written
-// general on purpose, and the specific figures live in the storyboard's tokens.
-// What varies is WHICH of the pre-written variants plays, and that is decided
-// here, from these answers. Three moving parts:
-//
-//   1. ANSWERS become inputs -- issuer, then card, or a rate typed in, or
-//      nothing at all.
-//   2. lessonInferFigure turns those into ONE number (js/lessons-v3.js). For
-//      APR that is a CARD_APR lookup; the market average when nothing was
-//      given.
-//   3. lessonBucketFor compares that number to the market average and picks a
-//      bucket -- deeply_below through deeply_above -- and the bucket names the
-//      script variant AND the storyboard's bucket beat.
-//
-// Two traps worth knowing before editing this file, both in architecture 12b:
-//   * options key on `tag`, SINGULAR. A `.tags` lookup collects nothing and
-//     silently plays the fallback every time.
-//   * unmatched tags falling through to the fallback is the DESIGN. Do not add
-//     variants to "cover" them.
-//
-// The result is kept per lesson for the session (state.lessonProfile), but a
-// re-open asks again: a tester who once answered "no card" must still see the
-// questions.
+// Answers select prewritten lesson content (D38); they are not scored.
+// Infer a figure from card/rate inputs or the market fallback, then use its
+// bucket to select script and storyboard. General narration leaves personal
+// figures to storyboard tokens.
+// Options use singular `tag`; reading `tags` would silently select fallback.
+// Unmatched tags intentionally use fallback rather than requiring a variant.
+// Keep the result for the session but ask again on reopening so a previous
+// answer cannot prevent a tester from changing it.
 
 function renderLessonFraming() {
   const f = state.lessonFraming;

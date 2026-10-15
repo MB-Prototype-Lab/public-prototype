@@ -1,19 +1,5 @@
-// ─── Finish Screen ─────────────────────────────────────────────────────────────
-// TAB: None | NAV BAR: Hidden — completion moment
-//
-// PURPOSE
-// Endpoint for any completed Budget input flow. Confirms the action, then
-// offers two exits: "See My Progress" (impact landing) and "Back to [origin]".
-//
-// NAVIGATION
-//   Entry: Post-result loop (accept, review-later, make-goal paths)
-//   Exit:  Primary → My Progress (impact landing per context)
-//          Secondary → state.flowOrigin (Home / Budget / My Progress)
-//
-// PRODUCTION NOTES
-//   Impact landing: monthlyUpdate → My Progress (Budget Results at top).
-//   goal → My Progress (Goals section).
-//   state.flowOrigin and state.postResultContext cleared after use.
+// End the inherited post-result journey. Clear its context before moving to
+// My Progress or the saved flowOrigin so the next journey cannot reuse it.
 
 function renderFinish() {
   const action    = state.nextAction || null;

@@ -1,16 +1,6 @@
-// ─── Quiz Screen ──────────────────────────────────────────────────────────────
-// Presents questions for the current lesson (state.currentLesson).
-// Question pool is filtered by lessonId — not a free-floating bank.
-//
-// Answer behavior (deliberate UX, per spec):
-//   - Wrong answer: goes red + permanently disabled for the rest of that question.
-//     state.activeQuizWrongChoices tracks ALL wrong attempts — not just the last one.
-//     This means picking wrong twice leaves BOTH options red. Users can never
-//     accidentally reselect an answer they already know is wrong.
-//   - Correct answer: goes green + reveals Next/Submit button.
-//   - User cannot proceed until the correct answer is chosen or they exit.
-//
-// This is a learning reinforcement tool, not a pass/fail gate.
+// Filter questions by current lesson. Wrong choices stay red and disabled
+// for that question, including multiple wrong attempts. Correct answers reveal
+// Next/Submit; the tester must answer correctly or exit.
 
 function renderQuiz() {
   const lesson = state.currentLesson;
@@ -36,7 +26,7 @@ function renderQuiz() {
   const isLast       = state.activeQuizIndex >= questions.length - 1;
 
   if (!current) {
-    // Edge case: no questions seeded for this lesson — auto-complete
+    // If no questions exist, offer explicit lesson completion.
     return `
       <div class="card">
         <h1 class="title">Quiz</h1>
@@ -61,10 +51,7 @@ function renderQuiz() {
         <div style="display:flex;align-items:center;gap:10px;">
           <!-- Progress indicator: question N of total required -->
           <span class="helper">Question ${state.activeQuizIndex + 1} of ${questions.length}</span>
-          <!-- The one exit, now that the footer's duplicate is gone. Routed
-               through the reset path rather than a bare navigation, so the quiz
-               position and both answer sets clear — the footer button did that
-               and this one silently did not. -->
+          <!-- Use exitQuiz so leaving clears the question position and answers. -->
           <button class="button secondary small" type="button"
                   onclick="exitQuiz()" title="Exit quiz">✕ Exit</button>
         </div>
@@ -126,10 +113,7 @@ function renderQuiz() {
     ` : ""}
 
     <div class="flow-footer">
-      <!-- No exit control down here. The footer has no justify-content, so
-           its children pack together on the left — which put it immediately
-           beside Next, one mis-tap apart. The one in the header above is now
-           the single way out, matching the v3 quiz. -->
+      <!-- Keep Exit in the header, away from Next. -->
 
       <!-- Next / Submit only appears after the correct answer is chosen -->
       ${isCorrect ? `
@@ -142,18 +126,8 @@ function renderQuiz() {
   `;
 }
 
-/**
- * End of the quiz. Detours through the calculator when the lesson has one.
- *
- * The v2 catalog went question, question, question, reward — eighteen lessons
- * that never let you put a number in, while v3's three did. LESSON_SIM_V2
- * (screens/lesson-outcome.js) gives the ones a calculator genuinely helps a
- * spec of their own, and this is where they pick it up. Lessons without one are
- * unchanged.
- *
- * The calculator's own "Finish lesson" calls completeLesson for a v2 origin, so
- * the XP and badge path is identical either way — this only inserts a step.
- */
+/* Open the lesson's calculator when available, carrying the catalog origin
+ * so Finish awards the usual badge XP. Other lessons complete directly. */
 function quizFinish() {
   const lesson = state.currentLesson;
   if (lesson && typeof lessonSimOpen === "function" && lessonSimAvailable(lesson.id)) {

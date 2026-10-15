@@ -1,16 +1,5 @@
-// ─── Lesson quiz · simulation · reward ───────────────────────────────────────
-// TAB: Education (sub-screens) | NAV BAR: Hidden
-//
-// The tail of a lesson: quiz → simulation → reward. It biases toward the
-// simulation — "a sandbox a user can push numbers through beats a
-// multiple-choice question about what a rate means" — so the quiz is short and
-// the simulation is the part with something to do.
-//
-// RETURN ROUTING: came from home, return to home; came from Education, return
-// to Education. The per-stack nav already encodes that, so the reward screen
-// just pops rather than guessing a destination.
-
-// ── Quiz ─────────────────────────────────────────────────────────────────────
+// Keep the quiz brief and provide a calculator where the concept supports
+// one. Completion returns to the stack that launched the lesson.
 
 function lessonQuizStart() {
   const lesson = lessonV3(state.lessonFraming ? state.lessonFraming.lessonId : null)
@@ -29,8 +18,7 @@ function lessonQuizStart() {
 
 function renderLessonQuiz() {
   const q = state.lessonQuiz;
-  // D19 — entered directly (admin jump, or a stale link) with no session.
-  // Returning "" here rendered a genuinely blank screen.
+  // D19: direct entry with no quiz session needs context and a way onward.
   if (!q) return lessonOutcomeNoSession("quiz",
     "A quiz belongs to a lesson. Pick one and it'll turn up at the end.");
   const item = q.questions[q.index];
@@ -41,9 +29,7 @@ function renderLessonQuiz() {
       <div class="journal-head">
         <div class="row" style="align-items:flex-start;gap:10px;">
           <p class="helper" style="margin:0 0 4px;">Question ${q.index + 1} of ${q.questions.length}</p>
-          <!-- Leaving lives top right, away from where the primary action
-               lands. The skip control used to sit bottom right, which is
-               exactly where Next appears once you answer. -->
+          <!-- Keep Exit away from the primary Next action. -->
           <button class="button secondary small" type="button"
                   onclick="lessonQuizExit()" title="Leave the quiz">✕ Exit</button>
         </div>
@@ -84,12 +70,8 @@ function renderLessonQuiz() {
   `;
 }
 
-// A wrong pick goes red and stays disabled; the question stays open until the
-// right one is found. There is no skip — a question you can click past teaches
-// nothing, and the button that did it sat where "Next" appears.
-//
-// Not being able to LEAVE is a different problem, and the top-right ✕ solves it:
-// nav is hidden on this screen, so without an exit the tester would be trapped.
+// Keep wrong choices disabled until the correct answer is found. Put the
+// exit away from Next so the tester can leave without an accidental skip.
 function lessonQuizAnswer(i) {
   const q = state.lessonQuiz;
   const item = q.questions[q.index];
@@ -100,8 +82,7 @@ function lessonQuizAnswer(i) {
 
 function lessonQuizNext() {
   const q = state.lessonQuiz;
-  // Guard, not just an absent button: this is the only advance path, and it
-  // used to be reachable with nothing answered.
+  // Guard advancement as well as hiding its button until an answer is correct.
   if (q.picked == null) return;
   if (q.index >= q.questions.length - 1) { lessonSimStart(); return; }
   q.index++; q.picked = null; q.wrong = [];
@@ -115,18 +96,9 @@ function lessonQuizExit() {
   go("learn");
 }
 
-// ── Simulation ───────────────────────────────────────────────────────────────
-
-// ── Simulation specs and slider ranges ───────────────────────────────────────
-//
-// The calculator was reachable from v3's three lessons only. The other eighteen
-// — the whole v2 catalog — went question, question, question, reward, and never
-// got to put a number in. LESSON_SIM_V2 gives the ones a calculator genuinely
-// helps a spec of their own, using the same three engines.
-//
-// Deliberately NOT all eighteen. "Loan vs lease" and "deductible vs premium"
-// are comparisons, not arithmetic on a balance; bolting a payoff slider onto
-// them would be a calculator for its own sake.
+// Offer catalog calculators only where balance, savings or subscription
+// arithmetic supports the lesson. Comparison-only lessons need no forced
+// payoff calculator.
 const LESSON_SIM_V2 = {
   // What a balance actually costs to clear.
   "interest-builds":         { type: "balance_calculator", defaults: { balance: 1000, apr: 24, monthlyPayment: 40 } },
@@ -145,33 +117,23 @@ const LESSON_SIM_V2 = {
   "risk-and-time-horizon":   { type: "savings_pace_calculator", defaults: { target: 10000, current: 1500, monthlyContribution: 200 } }
 };
 
-// Slider bounds, in ONE place. They used to be literals inside each renderer,
-// which was fine until anything else set them: a value outside the range leaves the
-// thumb pinned at an end while the readout shows a value it cannot reach. Now
-// the renderers read these and every programmatic set clamps to them.
+// Share bounds between rendering and programmatic edits so a readout
+// cannot show a value beyond its slider's track.
 const LESSON_SIM_RANGES = {
   balance:             { min: 100, max: 10000, step: 100 },
-  // step 0.5, not 1: the slider is seeded from the tester's own card and real
-  // card rates land on halves (25.5, 23.4 rounds to 23.5, 22.5). At step 1 the
-  // seed snapped to a whole number, so the calculator opened on a rate their
-  // card does not charge.
+  // Half-point APR steps keep inferred card rates close to their source.
   apr:                 { min: 0,   max: 36,    step: 0.5 },
-  // step 5, not 10: a minimum payment is often an odd figure (2% of a balance),
-  // and a 10-600 range has room for the finer grid.
+  // Use five-dollar payment steps to represent small minimum payments.
   monthlyPayment:      { min: 10,  max: 600,   step: 5 },
   target:              { min: 500, max: 10000, step: 100 },
-  // step 10, not 50: lessons.json ships `current: 620` as the emergency-fund
-  // default, which a 50 grid cannot represent — the thumb would snap away from
-  // the figure on the first touch.
+  // Ten-dollar savings steps can represent the seeded 620 without snapping
+  // the thumb away from its displayed value on first touch.
   current:             { min: 0,   max: 10000, step: 10 },
   monthlyContribution: { min: 0,   max: 1000,  step: 10 }
 };
 
-/**
- * The simulation spec for ANY lesson — v3's from its data file, v2's from the
- * map above. One lookup so nothing downstream has to know which catalog a
- * lesson came from.
- */
+/* Use one lookup for authored lesson simulations and catalog calculator
+ * defaults so renderers do not need to know the source. */
 function lessonSimSpec(lessonId) {
   const v3 = (typeof lessonV3 === "function") ? lessonV3(lessonId) : null;
   if (v3 && v3.simulation) return v3.simulation;
@@ -189,28 +151,16 @@ function lessonSimStart() {
   lessonSimOpen(lesson.id, "v3");
 }
 
-/**
- * Open the calculator for a lesson from either catalog.
- *
- * `origin` decides where "Finish" goes, and it has to be carried rather than
- * inferred: the v3 reward reads lessonV3(), which knows nothing about the v2
- * catalog, so a v2 lesson arriving there falls through to home and loses its
- * badge XP.
- */
+/* Carry origin through the calculator: framed rewards and catalog badge
+ * rewards use different completion paths, and choosing the wrong one loses XP. */
 function lessonSimOpen(lessonId, origin) {
   const spec = lessonSimSpec(lessonId);
   if (!spec) return false;
   const values = lrSimDefaults({ simulation: spec });
 
-  // Seed the rate from THEIR card. Framing already inferred it (an issuer +
-  // card lookup in CARD_APR, or a rate they typed), so opening the calculator
-  // on a generic 24% asks them to dial in a number the app already knows.
-  //
-  // This is a deliberate exception to the sandbox rule stated in lrSimDefaults
-  // and lessons.json -- "never the user's real figures". It holds for the
-  // BALANCE, which is the figure that would make the sandbox feel like a
-  // judgement on them. A rate is not that: it is the subject of the lesson, it
-  // is public information about a product, and it stays draggable.
+  // Use the inferred card rate as the deliberate exception to sandbox inputs:
+  // the balance stays made up, while the lesson's subject remains recognizable
+  // and editable.
   if (values.apr != null && typeof lessonProfileFigure === "function") {
     const rate = lessonProfileFigure(lessonId);
     if (rate != null) values.apr = lessonSimClamp("apr", rate);
@@ -225,20 +175,9 @@ function lessonSimOpen(lessonId, origin) {
   return true;
 }
 
-/**
- * The live range for a slider.
- *
- * Everything is static except the monthly payment, whose ceiling has to reach
- * the BALANCE. It was a flat $600 while balances go to $10,000, so "paid in
- * full" — the healthy outcome, and the thing the lesson actually teaches — was
- * unreachable for any balance above $600: the scenario clamped to 600 and the
- * box then reported two months and interest.
- *
- * Derived from the balance, never from the payment itself. A slider whose max
- * comes from its own value moves under the thumb and recoils on release; this
- * one only changes when the OTHER slider does. The floor keeps a small balance
- * from collapsing the track to nothing.
- */
+/* The payment ceiling must reach the balance so paid-in-full is representable.
+ * Derive it from the other slider, never the payment itself, to prevent recoil;
+ * keep a floor so small balances still have a usable track. */
 const LESSON_SIM_PAYMENT_FLOOR_MAX = 600;
 
 function lessonSimRange(key, values) {
@@ -310,9 +249,7 @@ function renderLessonSimulation() {
       </div>
       <div class="journal-foot">
         <span></span>
-        <!-- Where "Finish" goes depends on which catalog the lesson came from:
-             the v3 reward reads lessonV3(), which has never heard of a v2
-             lesson and would drop it on home without its badge XP. -->
+        <!-- Carry the catalog origin so Finish uses the correct XP award path. -->
         <button class="button" type="button"
                 onclick="${s.origin === "v2" ? "completeLesson()" : "lessonRewardStart()"}">
           Finish lesson
@@ -322,14 +259,7 @@ function renderLessonSimulation() {
   `;
 }
 
-/**
- * The shortcuts. A calculator that opens on one arbitrary set of numbers asks
- * the reader to invent a situation before they can learn anything; these are
- * the situations people actually turn up with, one tap away.
- *
- * Each is a case, never an instruction (D26) — "Minimum payments only" is a
- * thing that happens to people, not advice about what to do.
- */
+
 
 // Bounds come from LESSON_SIM_RANGES, not from the call site — scenarios clamp
 // against the same table, so a shortcut can never land outside its own slider.
@@ -347,26 +277,9 @@ function simSlider(label, key, value, fmt) {
     </div>`;
 }
 
-// ── Three scenarios, from ordinary arithmetic ────────────────────────────────
-// A calculator that opens on one set of numbers gives you nothing to judge them
-// against. These three run the SAME engine the sliders drive, so a box can
-// never disagree with the calculator below it.
-//
-// The labels describe the ARITHMETIC, not a choice. "About the minimum payment"
-// is a fact about a ratio; "you should pay more than the minimum" would be
-// advice (D26). Each box names its own ratio and lets the computed outcome
-// speak. Nothing is marked as the one to pick.
-//
-// Ratios are the common ones, not invented: card minimums are typically around
-// 2% of the balance, and emergency-fund targets are usually talked about in
-// months of outgoings.
-// Ordered HEALTHY, COMMON, BAD -- left to right. Reading order carries meaning:
-// the first box is where the arithmetic is kindest, and the eye travels toward
-// the one that costs most. The reverse order read as a warning first.
-//
-// APR IS NEVER IN A SCENARIO. It is the one figure the tester supplied, so it
-// stays wherever they left it and all three outcomes are computed against it.
-// That is what makes the boxes comparable: one variable moves, not two.
+// Scenarios share the slider engine and describe arithmetic, not advice (D26).
+// Order healthy, common, bad consistently. Preserve APR across payment
+// scenarios so outcomes vary one input rather than two.
 const LESSON_SIM_SCENARIOS = {
   balance_calculator: {
     _note: "The three things people actually do with a card balance, not three arbitrary fractions. Healthy is clearing the statement in full, which on most cards costs nothing at all — that is the lesson's own point, not a target we invented. Bad is the published minimum: interest plus about 1% of principal, floored near $25, which is how issuers actually compute it. Balance and APR stay put; only the payment moves.",
@@ -394,25 +307,15 @@ const LESSON_SIM_SCENARIOS = {
   }
 };
 
-/** Monthly outgoings, for the savings scenarios. Falls back to the peer plan. */
+/* Monthly outgoings for scenarios: use the current plan total or 3000. */
 function lessonSimMonthlyOutgoings() {
   const total = (typeof catTotal === "function" && state.plan) ? catTotal(state.plan) : 0;
   return total > 0 ? total : 3000;
 }
 
-/**
- * The monthly payment a balance scenario describes.
- *
- *   in_full  the whole statement. On most cards that costs nothing at all --
- *            the grace period -- which is exactly what the lesson teaches, so
- *            the calculator has to agree with it (see lrSimBalance).
- *   share    a flat fraction of the balance. A fifth clears a card in about
- *            five months, which is what "paying it down" usually looks like.
- *   minimum  how issuers actually compute it: the month's interest plus about
- *            1% of principal, floored near $25. NOT a flat 2% -- that ignores
- *            the rate, and on a high-rate card it produces a payment that never
- *            clears anything, which is a different (and wrong) lesson.
- */
+/* In-full pays the whole balance; share pays a fixed fraction. Minimum uses
+ * monthly interest plus a principal share with a dollar floor, rather than a
+ * flat percentage that could fail to cover interest at high rates. */
 const LESSON_SIM_MIN_PAYMENT_FLOOR = 25;
 const LESSON_SIM_MIN_PRINCIPAL_SHARE = 0.01;
 
@@ -427,18 +330,8 @@ function lessonSimPaymentFor(row, values) {
   return Math.max(10, Math.round(balance * (row.share || 0.1)));
 }
 
-/**
- * The VALUES a scenario implies, given where the sliders currently sit.
- *
- * Split out from the outcome so a scenario can be applied as well as displayed
- * -- the box shows what these figures produce, and clicking it moves the
- * sliders to exactly them. One source, so a box can never advertise an outcome
- * the sliders then fail to reproduce.
- *
- * Everything not named by the scenario is carried through untouched. For the
- * balance calculator that includes APR, deliberately: it is the tester's own
- * rate and all three outcomes are computed against it.
- */
+/* Share scenario values between preview and application so the clicked
+ * outcome is reproducible. Preserve unnamed inputs, including the card rate. */
 function lessonSimScenarioValues(type, row, values) {
   if (type === "balance_calculator") {
     return Object.assign({}, values, {
@@ -617,11 +510,8 @@ function lessonRewardStart() {
   // task works without a code change (js/lessons-v3.js lessonIsActiveTask).
   const fromTask = lessonIsActiveTask(lesson.id);
 
-  // v3 progression still accrues — course XP and Charity Points are v3's own
-  // ledgers and nothing else writes them.
-  // Open the Charity Points ledger BEFORE anything credits, so both the
-  // lesson's own bones and the daily task's are itemised on the reward screen
-  // instead of landing silently in state.kibble.
+  // Open the Charity Points ledger before any award so lesson and task
+  // bones appear as separate earned entries. Course XP uses its own ledger.
   lrPointsReset();
 
   const award = lrComputeAward(lesson, correct, fromTask);
@@ -633,10 +523,8 @@ function lessonRewardStart() {
   };
   if (fromTask) homeCompleteTask(state.activeTaskId);
 
-  // …but the screen the user lands on is the shared reward screen, not a v3-only
-  // one (owner's call). completeLesson() reads state.currentLesson — which every
-  // lesson now has, v3 included, since they share one catalog — applies badge XP,
-  // writes the reward display state and navigates there itself.
+  // Use completeLesson for the shared badge reward when currentLesson exists;
+  // it awards badge XP and navigates. Keep the direct reward fallback for Tools.
   if (state.currentLesson) { completeLesson(); return; }
   go("lessonReward");   // reached only by an admin jump with no lesson selected
 }
@@ -692,11 +580,8 @@ function renderLessonReward() {
   `;
 }
 
-/**
- * "Came from home, return to home; came from Education, return to Education."
- * The per-stack nav already knows which — the lesson was pushed onto whichever
- * stack launched it — so this pops rather than guessing.
- */
+/* Return to the launching tab's root, clearing lesson and task context
+ * so Back cannot replay a completed journey. */
 function lessonReturnFromLesson() {
   state.lessonFraming = null;
   state.lessonQuiz = null;

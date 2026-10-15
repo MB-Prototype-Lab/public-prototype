@@ -1,19 +1,5 @@
-// ─── Post-Result Reaction Prompt ──────────────────────────────────────────────
-// TAB: None | NAV BAR: Hidden — full focus on reaction
-//
-// PURPOSE
-// First screen of the post-input loop. After the monthly update or a new goal,
-// shows a context summary, then asks
-// "How does this feel?" with a 4-notch slider before the user decides next steps.
-//
-// NAVIGATION
-//   Entry: Triggered after the monthly update or a goal commitment
-//   Exit:  Reaction selected → nextAction screen
-//
-// PRODUCTION NOTES
-//   state.postResultContext: "monthlyUpdate" | "goal"
-//   state.postResultReaction: "worried" | "ok" | "good" | "excited" (or null)
-//   state.flowOrigin: set before entering this screen; preserved through finish
+// Ask for a reaction after the monthly-update result. Context selects the
+// summary heading; preserve flowOrigin through the next-action/finish journey.
 
 function renderPostResult() {
   const context = state.postResultContext;

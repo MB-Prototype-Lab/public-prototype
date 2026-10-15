@@ -1,21 +1,5 @@
-// ─── Next Action Prompt ────────────────────────────────────────────────────────
-// TAB: None | NAV BAR: Hidden — full focus on decision
-//
-// PURPOSE
-// Second screen of the post-result loop. After reacting ("How does this feel?"),
-// asks "What do you want to do?" to capture the user's intended next step.
-//
-// NAVIGATION
-//   Entry: Post-result screen after reaction is selected
-//   Exit:  Accept / Review later → finish screen
-//          Adjust it → Budget tab
-//          Compare more → myProgress (Comparisons section)
-//          Make a goal → commitment screen
-//
-// PRODUCTION NOTES
-//   state.postResultReaction is set by the previous screen.
-//   state.flowOrigin is preserved throughout the loop and used on the finish
-//   screen to return the user to their starting point.
+// Preserve flowOrigin through the inherited reaction/next-action/finish
+// journey so its completion can return to the starting screen.
 
 function renderNextAction() {
   const actions = [

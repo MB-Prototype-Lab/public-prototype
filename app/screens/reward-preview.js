@@ -1,23 +1,7 @@
-// --- Reward Preview Screen ---------------------------------------------------
-// TAB: Education (sub-screen) | NAV BAR: Visible
-//
-// What finishing this lesson pays, shown BEFORE it starts: XP, the daily-task
-// bonus if one applies, and which other badges it moves.
-//
-// -- WHY SHOW THE REWARD FIRST --------------------------------------------------
-// A lesson costs a few minutes and the badges unlock nothing (L16), so the
-// honest pitch is the progress itself. Naming it up front is also what makes
-// the reward screen checkable: the tester saw a figure going in and can hold
-// the payout against it.
-//
-// The cross-badge line is the part people do not expect -- a lesson belongs to
-// several courses and finishing it moves all of them (lessons.json). Disclosing
-// that here is why three rings moving at the end reads as designed rather than
-// as a bug.
-//
-// Every lesson opens here first: selectLesson (js/navigation.js), the one door
-// from the Learn tab, a topic page and a Home task, lands on this screen, and
-// Begin Lesson goes on to framing and the player.
+// Show rewards before the lesson so the tester can compare promise and
+// payout. Badges unlock nothing (D31); progress is the incentive. Disclose
+// cross-badge credit so multiple rings moving later is understandable.
+// selectLesson routes here before framing and playback.
 
 function renderRewardPreview() {
   const lesson = state.currentLesson;
