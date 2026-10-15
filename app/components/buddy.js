@@ -188,7 +188,7 @@ function buddyImageFailed(el) {
 }
 
 /**
- * Clear the broken-asset latch. Called by bootV3, because the flag is
+ * Clear the broken-asset latch. Called by bootApp, because the flag is
  * module-level and a reset would otherwise leave a previous session's missing
  * file suppressing art that is now present -- the stage would show the
  * description forever with nothing in `state` to explain why.

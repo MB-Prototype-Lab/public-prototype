@@ -10,7 +10,7 @@
 //   userProfile     — user-entered name, income, housing (cleared by resetUserData)
 //
 // resetUserData() (Tools "Reset User Data") leaves exactly the state a fresh
-// load has: this object as the page loaded it (STATE_AT_LOAD), then bootV3's
+// load has: this object as the page loaded it (STATE_AT_LOAD), then bootApp's
 // seed, which reopens onboarding. Only the reviewer's Tools settings carry over
 // (RESET_KEEPS): the theme, whether Tools is open, the lesson stage style and
 // the XP knobs.
@@ -75,7 +75,7 @@ const destinations = [
 ];
 
 const state = {
-  // Navigation — bootV3 replaces this with onboarding before the first render
+  // Navigation — bootApp replaces this with onboarding before the first render
   // (D06), so the streak splash is reached only from Tools.
   screen: "streak",
 
@@ -939,7 +939,7 @@ const state = {
 
 };
 
-// The state as the page loads it, before bootV3 seeds the data. Taken here,
+// The state as the page loads it, before bootApp seeds the data. Taken here,
 // straight after the literal, so nothing has written to it yet.
 const STATE_AT_LOAD = JSON.parse(JSON.stringify(state));
 
@@ -966,6 +966,6 @@ function resetUserData() {
   Object.keys(state).forEach(k => { delete state[k]; });
   Object.assign(state, JSON.parse(JSON.stringify(STATE_AT_LOAD)), kept);
   // Re-seed from the data files and reopen onboarding, as the first boot does.
-  bootV3();
+  bootApp();
   render();
 }

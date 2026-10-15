@@ -395,7 +395,7 @@ function completeLesson() {
 // navigation.js loads last in the script order (after render.js), so render()
 // is guaranteed to be defined before this call fires.
 // Seed state before the first history entry and render (js/boot.js).
-bootV3();
+bootApp();
 
 // A per-task start URL, applied after the seed and before the first history
 // entry so the entry describes where the tester actually landed. No-ops on

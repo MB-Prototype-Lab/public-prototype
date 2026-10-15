@@ -24,7 +24,7 @@ class FlowsTest(unittest.TestCase):
         self.write('app/release-config.js', '')
         self.write('app/js/refresh-pin.js', '')
         self.write('app/js/config.js', '')
-        self.write('app/js/navigation.js', 'bootV3();')
+        self.write('app/js/navigation.js', 'bootApp();')
         # Only the destinations registry declares screens; other arrays in state.js do not.
         self.write('app/js/state.js', 'const destinations = [\n  ["onboarding", "Onboarding"],\n  ["goals", "Goals"]\n];\nconst quizAnswers = [["Retirement", "Saving for later"]];\n')
         self.write('app/css/keyboard.css', '')
@@ -167,7 +167,7 @@ class FlowsTest(unittest.TestCase):
         self.assertEqual(flows.scope(self.root, 'flow', 'main'), ('main', main))
         with self.assertRaisesRegex(ValueError, "--against 'missing' is not a commit"):
             flows.scope(self.root, 'flow', 'missing')
-        self.write('app/js/navigation.js', 'bootV3(); // task edit')
+        self.write('app/js/navigation.js', 'bootApp(); // task edit')
         self.git('commit', '-am', 'own app edit')
         with self.assertRaisesRegex(ValueError, r'merge base of main and HEAD\): app/js/navigation\.js\. '):
             flows.scope(self.root, 'flow', 'main')
@@ -293,7 +293,7 @@ class FlowShellParityTest(unittest.TestCase):
             starter = Path(temporary)
             (starter / 'js').mkdir()
             (starter / 'index.html').write_text((self.ROOT / 'app/index.html').read_text())
-            (starter / 'js/navigation.js').write_text('bootV3();')
+            (starter / 'js/navigation.js').write_text('bootApp();')
             flows.adapt_starter(starter)
             expected = self.shell((starter / 'index.html').read_text())
         self.assertEqual(expected[1].count('>Exit Flow<'), 1)

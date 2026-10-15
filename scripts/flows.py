@@ -257,7 +257,7 @@ function mbFlowSeed() {
 }
 function mbFlowRestart() { refreshPinRestart(); }
 function mbFlowExit() { location.assign(window.MB_RELEASE.selector); }
-v3EntryScreen = function () { return window.MB_FLOW.entry; };
+appEntryScreen = function () { return window.MB_FLOW.entry; };
 function mbFlowInstall() {
   try { var profile = new URL(location.href).searchParams.get("profile"); if (profile) profileApply(profile); } catch (e) {}
   state.adminCollapsed = true;
@@ -308,7 +308,7 @@ def adapt_starter(directory):
         topbar.write_text(topbar.read_text() + '\nrenderTopBar = function () { return ""; };\n')
     (directory / 'index.html').write_text(html)
     nav = directory / 'js/navigation.js'
-    nav.write_text(nav.read_text().replace('bootV3();', 'bootV3();\nmbFlowInstall();', 1))
+    nav.write_text(nav.read_text().replace('bootApp();', 'bootApp();\nmbFlowInstall();', 1))
     (directory / 'js/flow.js').write_text(GENERIC_RUNTIME)
     (directory / 'release-config.js').write_text('window.MB_RELEASE = Object.freeze({tracking: false, selector: "../../index.html"});\n')
 

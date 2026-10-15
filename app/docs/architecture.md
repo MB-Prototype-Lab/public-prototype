@@ -1156,7 +1156,7 @@ sides; the dog is centred and survives.
 a name, and a bare picture would mean typing a name and watching nothing change — which
 is precisely the feedback the stage exists to give.
 
-**`buddyImgBroken` is a module-level latch, cleared by `bootV3`** via
+**`buddyImgBroken` is a module-level latch, cleared by `bootApp`** via
 `buddyResetArt()`. It is not in `state`, so a reset would otherwise leave a
 previous session's missing file suppressing art that is now present, with
 nothing in the state inspector to explain why.

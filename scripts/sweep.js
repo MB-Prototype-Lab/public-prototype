@@ -387,7 +387,7 @@ chk(d && d.name === "Me" && d.buddyName === "Buddy",
 
 state.activeProfileId = __profileBefore;
 state.planStatus = "complete";
-bootV3();
+bootApp();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -406,7 +406,7 @@ var STATES = {
 var MIN_CHARS = 40;
 
 Object.keys(STATES).forEach(function (name) {
-  bootV3();                       // fresh seed
+  bootApp();                       // fresh seed
   STATES[name]();
   var thin = [];
   SCREENS.forEach(function (sc) {
@@ -418,7 +418,7 @@ Object.keys(STATES).forEach(function (name) {
   });
   chk(thin.length === 0, "state: " + name, thin.slice(0, 5).join("\n          "));
 });
-bootV3();
+bootApp();
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("3. D18 — every observation renders on >= 2 screens");

@@ -186,7 +186,7 @@ All verified against the raw JSON on 2026-08-07.
 - **A skipped onboarding field falls back to a PROFILE, never to the persona.**
   Every write in `onbFinish()` is guarded (`if (o.zip) …`), which is correct — an
   unanswered field must not clobber an answered one. What was wrong was what sat
-  behind the guard: `bootV3`'s persona seed, so skipping quietly made the tester
+  behind the guard: `bootApp`'s persona seed, so skipping quietly made the tester
   Sam from Los Angeles on $68,000 and nothing on screen said so. Every figure
   downstream was anchored on a profile nobody chose. `profileDefault()` is the
   fallback now. Related: `o.name || "Buddy"` made the **tester** "Buddy", the

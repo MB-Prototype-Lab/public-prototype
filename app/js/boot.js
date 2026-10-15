@@ -16,7 +16,7 @@ function v3Clone(o) {
   return o == null ? o : JSON.parse(JSON.stringify(o));
 }
 
-function bootV3() {
+function bootApp() {
   // ── Identity ───────────────────────────────────────────────────────────────
   // Persona seeds the profile (D08). Onboarding applies answers over the
   // starting profile; skipped fields retain its values (D09, L26).
@@ -114,7 +114,7 @@ function bootV3() {
   // reachable only through their daily task (see framed-lessons.js).
   framedLessonMergeIntoCatalog();
 
-  const entry = v3EntryScreen();
+  const entry = appEntryScreen();
   state.nav.activeStack = "home";
   state.nav.stacks.home = entry === "home" ? ["home"] : ["home", entry];
   state.screen = entry;
@@ -123,7 +123,7 @@ function bootV3() {
 // A session starts at onboarding (D06) unless a study link names another screen
 // (?screen=, applied after this by js/screen-url.js). A Flow's generated
 // starter replaces this to enter elsewhere (scripts/flows.py).
-function v3EntryScreen() {
+function appEntryScreen() {
   return "onboarding";
 }
 

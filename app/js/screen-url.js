@@ -192,7 +192,7 @@ function screenLinkParam(name) {
 
 /**
  * Apply ?profile= and ?screen= at boot. Called from js/navigation.js between
- * bootV3() and the seeding replaceState, so the profile is committed before
+ * bootApp() and the seeding replaceState, so the profile is committed before
  * the screen opens and the screen has complete figures behind it.
  *
  *   ?profile=at_at
