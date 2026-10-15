@@ -135,7 +135,7 @@ function renderScreen() {
   if (state.screen === "nextAction")        return renderNextAction();
   if (state.screen === "commitment")        return renderCommitment();
   if (state.screen === "finish")            return renderFinish();
-  if (state.screen === "goals")             return renderGoalsV3();
+  if (state.screen === "goals")             return renderGoals();
   if (state.screen === "learn")             return renderLearn();
   if (state.screen === "topic")             return renderTopic();
   if (state.screen === "reward-preview")    return renderRewardPreview();
@@ -168,7 +168,7 @@ function renderAdmin() {
   if (state.screen === "journalConfirm") return renderJournalConfirmAdmin();
   if (state.screen === "journalDone")   return renderJournalDoneAdmin();
   if (state.screen === "home")          return renderHomeAdmin();
-  if (state.screen === "goals")         return renderGoalsV3Admin();
+  if (state.screen === "goals")         return renderGoalsAdmin();
   if (state.screen === "learn")         return renderLearnAdmin();
   if (state.screen === "topic")         return renderTopicAdmin();
   if (state.screen === "myProgress")    return renderMyProgressAdmin();

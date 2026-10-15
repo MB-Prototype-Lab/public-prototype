@@ -49,7 +49,7 @@ const SPECS = [
   {
     id: 'bubbling', expect: 'caught', journeys: ['esf-full'],
     why: 'Remove on a goal card also opening the card underneath',
-    edits: { 'screens/goals-v3.js': [['onclick="event.stopPropagation();goalsRemove(', 'onclick="goalsRemove(']] },
+    edits: { 'screens/goals.js': [['onclick="event.stopPropagation();goalsRemove(', 'onclick="goalsRemove(']] },
     extraSteps: true,
   },
   {

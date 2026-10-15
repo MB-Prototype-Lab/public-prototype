@@ -8,7 +8,7 @@
 // Pace is the headline, not the raw figure: "$620 of $3,000 means little; 41%
 // of the pace you set means something."
 
-function renderGoalsV3() {
+function renderGoals() {
   const strat = state.strategicGoal;
   const tactical = state.tacticalGoals || [];
   const applied = goalsConsumeEvents();      // fold in anything the journal emitted
@@ -172,7 +172,7 @@ function goalsAddSuggestedAt(i) {
   if (s) goalsAddSuggested(s);
 }
 
-function renderGoalsV3Admin() {
+function renderGoalsAdmin() {
   const t = state.tacticalGoals || [];
   return `
     <div class="admin-card">

@@ -499,7 +499,7 @@ function onbFinish() {
   }
 
   // The multi-select folds into the single strategic goal the app renders as
-  // "What you're here for" (goals-v3.js). Keep the raw picks on `areas`.
+  // "What you're here for" (goals.js). Keep the raw picks on `areas`.
   const areas = (o.improveAreas || []);
   state.strategicGoal = {
     id: "g_strategic_1",

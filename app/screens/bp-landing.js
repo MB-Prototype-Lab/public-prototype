@@ -192,7 +192,7 @@ function renderBpLandingAdmin() {
 
 // ── Goals-tab surfaces ───────────────────────────────────────────────────────
 
-/** Rendered by renderGoalsV3 above the tracked goals. */
+/** Rendered by renderGoals above the tracked goals. */
 function renderBpGoalsCards() {
   const out = [];
   const s = state.bp;
