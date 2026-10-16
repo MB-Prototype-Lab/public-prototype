@@ -3,10 +3,8 @@
 Shipping integrates reviewed task work into main. Publishing is an explicit, separately
 requested release of the selector and its retained snapshots. Ordinary main pushes
 and catalog merges do not deploy. The sole deployment trigger is a new
-`publish/<unique-id>` tag. The organization rollout currently permits branch pushes,
-PR creation and CI verification only. Tag creation/push, merge, settings changes and
-deployment require separate authorization. Repository cutover is complete; preserve
-historical identities, fallback `demo` and PM/HoffDemo branches.
+`publish/<unique-id>` tag. Remote actions follow the
+[authorization boundary](../CLAUDE.md#collaboration).
 
 ## Source and catalog
 
@@ -43,7 +41,7 @@ already-loaded browser copies.
 ## Current setup
 
 This is the recorded setup; re-inspect current saved settings and refs before a
-release or settings change. Settings changes require separate authorization.
+release or settings change.
 
 - The catalog migration baseline and immutable `snapshot/v1`, `snapshot/v2`,
   `snapshot/v3`, `snapshot/v3.1` and `snapshot/v4` source identity is
@@ -56,8 +54,7 @@ release or settings change. Settings changes require separate authorization.
   binding it to its committed catalog. Failed retrieval (including 404) or invalid
   contents stop deployment. Do not restore `BOOTSTRAP_PUBLICATION_REF` or substitute
   blue's publication history. The recorded `VERIFIED_MIGRATION_BASELINE` variable
-  matches the catalog; deployment no longer uses it. Leave settings untouched
-  without separate authorization.
+  matches the catalog; deployment no longer uses it.
 - Recorded Pages hosting uses [the site](https://mb-prototype-lab.github.io/public-prototype/)
   over HTTPS and [the publication workflow](https://github.com/MB-Prototype-Lab/public-prototype/actions/workflows/publish.yml).
   The `github-pages` environment permits `publish/*` tags; the workflow requires

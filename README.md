@@ -4,8 +4,7 @@ This repository is the shared workspace for the MoneyBuddy prototype. An
 operator can work with an agent from Claude Desktop on Windows or from a
 terminal. The editable app is in `app/`; the repository root opens a selector
 with a **Prototype** tab (the full app and a link to historical builds) and a
-**Flows** tab (standalone Flows). The repository cutover
-is complete; historical snapshots, `demo` and PM branches remain preserved.
+**Flows** tab (standalone Flows). Remote actions follow the [authorization boundary](CLAUDE.md#collaboration).
 
 ## 1. Confirm GitHub access
 
@@ -133,8 +132,8 @@ your request; the agent reads its instructions and the linked project guides.
 | Compare local variants | [compare-local](.claude/skills/compare-local/SKILL.md) | Creates independent previews of the app or one Flow, keeps a chosen variant, and cleans up only selected work. |
 | Make or change a focused journey (a Flow) | [create-flow](.claude/skills/create-flow/SKILL.md) | Turns “only show…”, “skip onboarding…” or “start at…” into a contained Flow on the selector's Flows tab; the full app stays unchanged. |
 | Bring in changes from `main` | [sync](.claude/skills/sync/SKILL.md) | Fetches and merges current `main` into your task branch, then checks affected work. |
-| Get tested work into a pull request | [ship](.claude/skills/ship/SKILL.md) | Reviews changes, runs checks, prepares the PR, and records your testing. A merge needs separate authorization. |
-| Update the live selector or add a snapshot | [publish](.claude/skills/publish/SKILL.md) | Follows the release procedure after an explicit publication request. Publication needs separate authorization. |
+| Get tested work into a pull request | [ship](.claude/skills/ship/SKILL.md) | Reviews changes, runs checks, prepares the PR, and records your testing. |
+| Update the live selector or add a snapshot | [publish](.claude/skills/publish/SKILL.md) | Follows the release procedure after an explicit publication request. |
 
 For example, say “Use `start-work` for this change” or “Use `ship` to prepare a
 PR.” You check the affected app flow and record your result in the PR; the agent
@@ -143,8 +142,7 @@ handles routine code changes and automated checks. See
 [Publishing](docs/publishing.md) for the full procedures. To run every automated
 check, ask your agent to “run all the checks”: it runs `bash scripts/check-all.sh`,
 and each line says PASS, FAIL or BLOCKED. BLOCKED means this computer cannot run
-that check; it is not a pass. Merging code does not update the live site. A GitHub login does not itself authorize a merge,
-repository settings change, or publication.
+that check; it is not a pass. Merging code does not update the live site.
 
 ## Compare variants locally
 
@@ -173,4 +171,4 @@ selection, package setup and checks; you review it from the selector's Flows tab
 its standalone file link. Such requests never become switches in the full app. `app/` stays the approved
 product. Merging a Flow shares the proposal; adopting it means selectively integrating
 the chosen behavior into the full app, then verifying that app before the PR opens.
-Publication requires a separate explicit request. See [Working with Flows](docs/flows.md).
+See [Working with Flows](docs/flows.md).

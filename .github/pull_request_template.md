@@ -38,4 +38,6 @@ Wiring: none
 
 ## PM checklist
 
-<!-- What to check in the browser; record who checked it, where, and the result. -->
+[Applicable PM checks](../docs/testing.md#pm-checklist)
+
+<!-- Record who checked each applicable item, the commit, platform and result. -->

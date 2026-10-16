@@ -202,7 +202,7 @@ fallback remains. Verify selected images, audio, films and generated URLs at run
    material changes. Then follow [ship](../.claude/skills/ship/SKILL.md).
 
 Routine PM Flow work does not require subagents. Remote actions follow the
-authorization boundary in [CLAUDE.md](../CLAUDE.md); report each outcome separately.
+[authorization boundary](../CLAUDE.md#collaboration); report each outcome separately.
 
 ## Publish a specific revision
 

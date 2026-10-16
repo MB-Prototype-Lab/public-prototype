@@ -80,6 +80,8 @@ the name from the user's WSL terminal or `wsl --list --quiet` in Windows and run
 `python3 scripts/local-variants.py url --wsl-distro <name>` as a one-time fallback.
 The PM pastes the address into Brave or another browser, then enters `1337`.
 
+Remote actions follow the [authorization boundary](../CLAUDE.md#collaboration).
+
 ## Agent procedure
 
 Read the compare-local skill. Run commands below from the primary checkout using
@@ -183,3 +185,46 @@ verify no operation is running before removing the empty
 `.local-preview/operation.lock` directory. Retry the recorded operation; merge conflicts
 must be resolved or safely aborted first. Moving the primary checkout invalidates its
 recorded paths: preserve the records and repair them deliberately before refreshing.
+
+## Verification
+
+Local comparison tests use disposable repositories to check selective checkpointing,
+common starting commits, original-branch advancement, merge conflicts, interrupted
+creation, path/branch collisions, and preservation during cleanup. They also cover
+Flow targets: Flow links, refusal of unusable Flows before any commit, sessions
+without a target, and refusal to keep a Flow variant that changed files outside its
+Flow (including renames). The Node selector test covers missing/invalid manifests and
+targets, safe row rendering, placement on the target's tab with its count and
+suggested tab, the Flow baseline, pane assignments and swaps, count changes, retained
+iframe identity, tools toggles, restart isolation, layout records per target, and
+exit to the right tab. The tab test covers suggested versus remembered tabs.
+Publication tests assert local controls and metadata never appear in output.
+
+For comparison changes, manually check file:// in separate tabs/windows, independent
+app state, and refresh from each app through its root selector to the primary
+selector. For a Flow comparison, also check from a variant Flow, standalone and in a
+pane: Exit Flow and an unpinned refresh return to the primary selector on the Flows
+tab, a pinned refresh restarts the variant, and in a pane Exit and the pin are
+disabled. Check the selector's variant rows at phone width and in dark mode. Check
+checkout paths with spaces on Windows and macOS. Automated DOM and Git tests do not
+substitute for these browser/platform checks; record unavailable checks explicitly.
+
+For the side-by-side workspace, browser-check file embedding early on Windows/WSL
+and macOS, including paths with spaces. Verify laptop and ultrawide layouts, all
+four app themes, keyboard scrolling and controls, input focus, independent progress,
+A+B → A+C → A+B, swaps, pane counts, tools widths, isolated restart, new tabs, refresh,
+and Back to versions. With the toolbar's Pin on refresh checked, refresh must reopen
+the same pane count, assignments and tools widths with fresh panes; Back to versions
+keeps the pin. Inside a pane, Tools' pin and Exit are disabled with a note, and
+reloading one pane restarts it in place. Hidden previews retain state and keep running audio; pause
+playback before hiding them. A frame load event alone does not prove the app loaded.
+
+For preview sizing, check 1366×768, 1440×900, and 3440×1440 with two and four panes.
+Each iframe should match the browser viewport height within rounding tolerance;
+compare the phone against the standalone app at the same viewport height (720px at
+768px, capped at 820px). Verify page scrolling reaches every preview bottom and
+the stage has no vertical scroll range. Check horizontal scrolling by trackpad,
+scrollbar, and keyboard, long descriptions, all four themes, and Show tools.
+Resizing, swaps, pane-count changes, and tools toggles must preserve input progress.
+Record Windows/WSL and macOS results separately; Linux browser checks do not verify
+compatibility with either platform.

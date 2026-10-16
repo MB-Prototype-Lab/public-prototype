@@ -86,9 +86,9 @@ also run on 31 May 2026, 15 February 2026 and 29 February 2028, at the same time
 of day, to catch month-end and leap-day dates; those runs are named like
 `bp-car@may31` and are part of this check only, not the browser check.
 
-Node or macOS JavaScriptCore is needed for JS checks; Python 3.11+ for publication
-checks; Playwright with Chromium for the browser checks. CI explicitly installs all
-of them. A missing engine is a blocked check, never a pass.
+Node 22 is required for JavaScript checks; Python 3.11+ for Python checks;
+Playwright with Chromium for browser checks. CI installs these prerequisites.
+A missing prerequisite is a blocked check, never a pass.
 
 ## Browser check: does the phone look the same?
 
@@ -172,81 +172,16 @@ counts as Phone. "0 pictures changed" therefore proves nothing about a change to
 rules, to animations and transitions, to the caret, or to how a video looks;
 check those by hand and say so in the PR.
 
-PM checklist: open root index.html on file://, enter 1337, open Local Prototype, exercise
-the changed flow, check narrow layout and all four themes, input focus and sliders,
-and audio when affected. Unpinned refresh from Local Prototype or a Flow must return to
-the selector. With **Pin on refresh** checked in Tools, refresh must restart the same app
-or Flow fresh, and the pin must show as on in the other places in that tab (a new tab
-starts unpinned). Restart Flow always restarts in place; Exit Prototype and Exit Flow
-return to the selector and keep the pin. For publication test
-HTTP(S) screen/deep links with participant parameters; tracking follows the snapshot
-setting and never injects on file://. Check the Prototype/Flows toggle (hidden when
-no Flow snapshot is listed), archive expansion, hidden direct links, and retirement
-notices. Record results in PR text. The automated browser checks supplement
-PM testing; they do not replace it. Re-run affected checks after material changes.
-
 The local Catalog policy check uses the merge base of HEAD with `origin/main`,
 falling back to `main`. Without a merge base it is BLOCKED. It verifies retained
 rows, immutable identities, study resolution before demotion or retirement, and
 committed snapshot digests.
 
 Publication tests use disposable Git repositories and do not push. Historical exports
-are compared byte-for-byte against their immutable identities. Repository cutover
-is complete; these checks preserve the established migration baseline.
+are compared byte-for-byte against their immutable identities.
 
-Local comparison tests use disposable repositories to check selective checkpointing,
-common starting commits, original-branch advancement, merge conflicts, interrupted
-creation, path/branch collisions, and preservation during cleanup. They also cover
-Flow targets: Flow links, refusal of unusable Flows before any commit, sessions
-without a target, and refusal to keep a Flow variant that changed files outside its
-Flow (including renames). The Node selector test covers missing/invalid manifests and
-targets, safe row rendering, placement on the target's tab with its count and
-suggested tab, the Flow baseline, pane assignments and swaps, count changes, retained
-iframe identity, tools toggles, restart isolation, layout records per target, and
-exit to the right tab. The tab test covers suggested versus remembered tabs.
-Publication tests assert local controls and metadata never appear in output.
-
-For comparison changes, manually check file:// in separate tabs/windows, independent
-app state, and refresh from each app through its root selector to the primary
-selector. For a Flow comparison, also check from a variant Flow, standalone and in a
-pane: Exit Flow and an unpinned refresh return to the primary selector on the Flows
-tab, a pinned refresh restarts the variant, and in a pane Exit and the pin are
-disabled. Check the selector's variant rows at phone width and in dark mode. Check
-checkout paths with spaces on Windows and macOS. Automated DOM and Git tests do not
-substitute for these browser/platform checks; record unavailable checks explicitly.
-
-For the side-by-side workspace, browser-check file embedding early on Windows/WSL
-and macOS, including paths with spaces. Verify laptop and ultrawide layouts, all
-four app themes, keyboard scrolling and controls, input focus, independent progress,
-A+B → A+C → A+B, swaps, pane counts, tools widths, isolated restart, new tabs, refresh,
-and Back to versions. With the toolbar's Pin on refresh checked, refresh must reopen
-the same pane count, assignments and tools widths with fresh panes; Back to versions
-keeps the pin. Inside a pane, Tools' pin and Exit are disabled with a note, and
-reloading one pane restarts it in place. Hidden previews retain state and keep running audio; pause
-playback before hiding them. A frame load event alone does not prove the app loaded.
-
-For preview sizing, check 1366×768, 1440×900, and 3440×1440 with two and four panes.
-Each iframe should match the browser viewport height within rounding tolerance;
-compare the phone against the standalone app at the same viewport height (720px at
-768px, capped at 820px). Verify page scrolling reaches every preview bottom and
-the stage has no vertical scroll range. Check horizontal scrolling by trackpad,
-scrollbar, and keyboard, long descriptions, all four themes, and Show tools.
-Resizing, swaps, pane-count changes, and tools toggles must preserve input progress.
-Record Windows/WSL and macOS results separately; Linux browser checks do not verify
-compatibility with either platform.
-
-The combined-app sweep also exercises full onboarding through Home, Buddy setup,
-ESF task entry/reopening/repeat saves, immediate budget replacement without
-confirmation, shared-payment guidance, disclosure undo and double-count prevention,
-and Buddy estimates applied to bands. Incoming blue checks cover paywall prices
-and placeholders, repeated lesson framing, no-card visuals, narration recovery,
-finished rewards and film replay. Python app-structure checks require matching
-JSON wrappers, dependency ordering and no editable legacy directories.
-
-For this integration, PM acceptance must also cover ESF and Buddy on narrow
-layouts, all four themes, and affected onboarding/lesson audio and video. The
-source ESF spec records small tap targets, car/coverage assumptions and prototype
-estimates; record acceptance or remaining concerns in the integration PR.
+The app sweep covers onboarding, ESF/Buddy behavior, the paywall, lessons,
+narration recovery and film replay; app-structure checks cover wrappers and load order.
 
 ## Flow verification
 
@@ -266,6 +201,36 @@ checks validate directory prefixes rather than every computed suffix; exercise
 selected generated media URLs. Generated onboarding narration is optional in the
 source and retains its documented speech/silence fallback.
 
+Flow browser checks (check-all and CI): `tests/flows-browser.cjs` exercises package
+journeys, outside-phone Tools and the actual creation adapter on file URLs with
+spaces and HTTP. `tests/browser/snapshot-smoke.sh` exports two Flow snapshots in a
+throwaway clone and runs `tests/flows-snapshot-browser.cjs` on the offline build,
+over HTTP and from a file path with spaces; the snapshot test blocks all external
+requests. The shared `tests/flows-tools-browser.cjs` helper compares normal/hover
+button styles against the full app in all four themes, compares phone, **›** and
+panel positions with the full app at 1440, 1000, 900, 390 and 320px (collapsed and
+open; no Tools at phone widths), and checks Enter/Space, hidden-while-open behavior
+and Close focus. They need the Playwright setup above. Record these results
+separately from PM and platform acceptance.
+
+## PM checklist
+
+Use the items relevant to the change. Record who checked them, the commit, browser,
+platform and result in PR text; name unavailable checks. Repeat affected checks after
+material changes. Automated checks supplement PM testing.
+
+Open root index.html on file://, enter 1337, open Local Prototype, exercise
+the changed flow, check narrow layout and all four themes, input focus and sliders,
+and audio when affected. Unpinned refresh from Local Prototype or a Flow must return to
+the selector. With **Pin on refresh** checked in Tools, refresh must restart the same app
+or Flow fresh, and the pin must show as on in the other places in that tab (a new tab
+starts unpinned). Restart Flow always restarts in place; Exit Prototype and Exit Flow
+return to the selector and keep the pin. For publication test
+HTTP(S) screen/deep links with participant parameters; tracking follows the snapshot
+setting and never injects on file://. Check the Prototype/Flows toggle (hidden when
+no Flow snapshot is listed), archive expansion, hidden direct links, and retirement
+notices.
+
 PM acceptance for Emergency Fund: full and skipped setup; expense help/Buddy;
 planning, save/reopen/repeat save; exactly one fund goal and immediate correct budget
 replacement. Big Purchase: setup Back/Skip; known-model/new/used selection and quiz,
@@ -281,15 +246,4 @@ Rehearse HTTP publication twice with a previous manifest and verify participant
 links and frozen tracking. No Windows/WSL or macOS browser acceptance is implied by
 this guide; absent platform evidence remains pending and must be named in the PR.
 
-
-Flow browser checks (check-all and CI): `tests/flows-browser.cjs` exercises package
-journeys, outside-phone Tools and the actual creation adapter on file URLs with
-spaces and HTTP. `tests/browser/snapshot-smoke.sh` exports two Flow snapshots in a
-throwaway clone and runs `tests/flows-snapshot-browser.cjs` on the offline build,
-over HTTP and from a file path with spaces; the snapshot test blocks all external
-requests. The shared `tests/flows-tools-browser.cjs` helper compares normal/hover
-button styles against the full app in all four themes, compares phone, **›** and
-panel positions with the full app at 1440, 1000, 900, 390 and 320px (collapsed and
-open; no Tools at phone widths), and checks Enter/Space, hidden-while-open behavior
-and Close focus. They need the Playwright setup above. Record these results
-separately from PM and platform acceptance.
+For local comparison changes, also use [comparison verification](local-variants.md#verification).
