@@ -20,7 +20,7 @@ and paste (`work/full-code-review`), with no date or random suffix. Check local 
 remote names first; on a collision, choose a more specific name. Dirty or unrelated work stays intact: finish on its branch,
 or ask the operator how to separate it. Never silently stash, discard, or
 combine it.
-Concurrent operators use distinct task branches. For alternatives within one task,
+Concurrent operators use distinct task branches. For variants within one task,
 use [compare-local](../.claude/skills/compare-local/SKILL.md) and the
 [local comparison procedure](local-variants.md). Comparisons start from the current
 feature branch checkpoint, not a new main-based task.

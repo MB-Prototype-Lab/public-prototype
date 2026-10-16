@@ -347,7 +347,7 @@ def run(root, args):
             raise RuntimeError('Select registered variant IDs explicitly')
         if args.command == 'adopt':
             if len(selected) != 1 or state['status'] not in ('active', 'merging', 'verification'):
-                raise RuntimeError('Adopt one alternative from an active comparison')
+                raise RuntimeError('Adopt one variant from an active comparison')
             variant = selected[0]
             if not valid(root, variant):
                 raise RuntimeError('Chosen worktree is missing')
@@ -357,7 +357,7 @@ def run(root, args):
             if state.get('winner') and state['winner'] != variant['id']:
                 raise RuntimeError('Resume the recorded adoption before choosing another winner')
             clean(root)
-            checkpoint(path, args.file, 'Complete local alternative for adoption')
+            checkpoint(path, args.file, 'Complete local variant for adoption')
             clean(path)
             adopt_scope(root, state, variant)
             if args.verified:

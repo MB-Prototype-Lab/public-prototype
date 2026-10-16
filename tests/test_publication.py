@@ -175,11 +175,11 @@ class PublicationTests(unittest.TestCase):
 
     def test_published_selector_has_no_local_comparison(self):
         page = self.build()['index.html'].decode()
-        for local_text in ('localPreview', 'localAlternatives', '.local-preview/',
+        for local_text in ('localPreview', 'localVariants', '.local-preview/',
                            'local-variants.js', 'local-compare.css', 'localCompare', 'Compare side by side', '.worktrees/', 'Current local app',
                            'Live historical builds', 'LOCAL PREVIEW', 'LOCAL SCRIPTS', 'localFlows', 'Local Prototype',
                            'Historical versions', 'flows/catalog.js', 'gate/flows.js', 'mb-prototype-lab.github.io',
-                           'CATALOG -->', 'localFlowVariantsSlot', 'localAlternativesTitle', 'Prototype variants',
+                           'CATALOG -->', 'localFlowVariantsSlot', 'localVariantsTitle', 'Prototype variants',
                            'local-tab-count', 'data-default-tab'):
             with self.subTest(local_text=local_text):
                 self.assertNotIn(local_text, page)

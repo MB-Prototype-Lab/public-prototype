@@ -129,7 +129,7 @@ For an exact address to paste into your browser, ask your agent:
 The agent runs `python3 scripts/local-variants.py url`. It detects WSL and prints a
 Windows browser URL using your actual distro name, or a native file URL when working
 directly in Windows/macOS/Linux. Spaces and special characters are handled for you.
-No `.env` file or manual distro-name lookup is needed. Creating alternatives also
+No `.env` file or manual distro-name lookup is needed. Creating variants also
 prints the selector URL and each option's URL.
 
 ## 4. Ask your agent to use the project skills

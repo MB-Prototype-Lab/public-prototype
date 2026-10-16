@@ -325,16 +325,16 @@ a.gate-btn { display: block; text-decoration: none; }
   .gate-older > summary::before { transition: none; }
 }
 
-/* ─── Local alternatives (local selector only) ───────────────────────────── */
+/* ─── Local variants (local selector only) ───────────────────────────── */
 
-.local-alternatives {
+.local-variants {
   border-top: 1px solid var(--gate-line);
   margin-top: 8px;
   padding-top: 12px;
   text-align: left;
 }
 
-.local-alternatives h2 { font-size: 16px; margin: 0 0 12px; }
+.local-variants h2 { font-size: 16px; margin: 0 0 12px; }
 
 /* Mobile-style scroll indicators (thin rounded thumb, no track/arrows) */
 ::-webkit-scrollbar { width: 5px; height: 5px; }

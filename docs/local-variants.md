@@ -108,7 +108,7 @@ Omit `--file` when task work is already committed. Repeat it for each reviewed t
 file (including deletions/new files); directories and pathspec patterns are not
 accepted. Checkpoint commits include the selected working contents. Unrelated staged,
 unstaged, and untracked files remain in the primary checkout and are not copied.
-Every alternative starts at the same recorded checkpoint. Output supplies IDs,
+Every variant starts at the same recorded checkpoint. Output supplies IDs,
 branches, labels, and the primary root. Worktree URLs use `.worktrees/variant-A/`,
 `.worktrees/variant-B/`, and so on (after Z comes AA). If names are already occupied
 by retained branches or worktrees, the whole new comparison gets a matching suffix,
@@ -178,7 +178,7 @@ Creation saves its intent before worktree operations. After an interruption, ins
 Unexpected branches, paths, or advanced partial branches are refused; inspect and
 preserve them before repairing registration. Missing registered worktrees may need a
 Git worktree repair before resuming. Close can end a partial comparison while retaining
-its surviving alternatives. Do not delete session records to bypass an error.
+its surviving variants. Do not delete session records to bypass an error.
 
 An operation lock prevents concurrent tool mutations. If the process was killed,
 verify no operation is running before removing the empty

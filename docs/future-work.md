@@ -1,6 +1,6 @@
 # Future work (not implemented)
 
-Agent-managed local alternatives are implemented in [local comparisons](local-variants.md).
+Agent-managed local variants are implemented in [local comparisons](local-variants.md).
 Historical detached snapshot comparisons remain future work.
 
 The pinned blue main (`b9e0332`) and HoffDemo-Chat (`ddee54e`, including HoffDemo
