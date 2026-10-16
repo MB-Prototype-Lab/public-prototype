@@ -5,7 +5,7 @@
 // server, so the data ships as a script-loadable assignment (L13).
 const BIG_PURCHASE =
 {
-  "_note": "Big Purchase Calculator (docs/big-purchase-spec.md Â§13). Every figure is sourced or flagged _prototype. FIGURES are data, ARITHMETIC is code: js/bp-engine.js and js/bp-vehicle.js read every number from here. If you edit this file, re-run: bash scripts/wrap-data.sh",
+  "_note": "Big Purchase Calculator (docs/big-purchase-spec.md §13). Every figure is sourced or flagged _prototype. FIGURES are data, ARITHMETIC is code: js/bp-engine.js and js/bp-vehicle.js read every number from here. If you edit this file, re-run: bash scripts/wrap-data.sh",
 
   "credit": {
     "defaultTier": "600-660",
