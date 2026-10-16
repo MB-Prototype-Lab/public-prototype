@@ -20,7 +20,7 @@ When a decision changes, edit its line to state the rule as it now stands.
 
 - **D06** — Full onboarding is part of the prototype, and finishing it lands on a one-day streak.
 - **D08** — One fixed persona backs all seeded data.
-- **D09** — Onboarding's name, ZIP, household size and income override the persona; the rest of the persona stays as seeded.
+- **D09** — Onboarding applies answered identity, household, housing, coverage and driving fields over the selected or default starting profile; it also saves Buddy details and the chosen goal. Unanswered fields keep their starting values.
 - **D16** — The seed holds six days of fabricated history.
 - **D17** — The persona's finances are slightly behind: room to improve, neither dramatic nor comfortable.
 - **D18** — All four seeded observations are visible (overspending in a category, an unused subscription, a savings goal behind pace, an unbudgeted bill due soon), and each is reachable from at least two screens.
