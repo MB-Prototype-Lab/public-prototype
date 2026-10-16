@@ -152,7 +152,14 @@ run "Flow script syntax"               node   bash scripts/check-syntax.sh flows
 run "Journey harness self-checks"      node   "$NODE" tests/app-journeys.cjs --selftest
 run "Journeys (every flow, twice)"     node   "$NODE" tests/app-journeys.cjs
 run "Python tests"                     python "$PYTHON" -m unittest discover -s tests
-run "Catalog policy"                   python "$PYTHON" scripts/publish.py check
+CATALOG_BASE="$(git merge-base HEAD origin/main 2>/dev/null || git merge-base HEAD main 2>/dev/null || true)"
+if [ -n "$CATALOG_BASE" ]; then
+  run "Catalog policy" python "$PYTHON" scripts/publish.py check --base "$CATALOG_BASE"
+else
+  n=$((n + 1))
+  BLOCKED=$((BLOCKED + 1))
+  printf 'BLOCKED  Catalog policy  (needs a merge base with origin/main or main)\n'
+fi
 run "Publication rehearsal"            python publication_rehearsal
 run "Browser journeys (one tree)"      browser "$NODE" tests/browser/app-journeys-browser.cjs
 run "Flow browser tests (file + HTTP)" browser flow_browser_tests

@@ -28,7 +28,7 @@ bash scripts/check-syntax.sh flows
 node tests/app-journeys.cjs --selftest
 node tests/app-journeys.cjs
 python3 -m unittest discover -s tests -v
-python3 scripts/publish.py check
+python3 scripts/publish.py check --base <merge base of HEAD with origin/main, or main>
 python3 scripts/publish.py build --offline --output <temporary folder>
 node tests/browser/app-journeys-browser.cjs
 MB_FLOW_BASE_URL=http://127.0.0.1:<port>/ node tests/flows-browser.cjs   # with python3 -m http.server <port> on the repository root
@@ -184,6 +184,11 @@ setting and never injects on file://. Check the Prototype/Flows toggle (hidden w
 no Flow snapshot is listed), archive expansion, hidden direct links, and retirement
 notices. Record results in PR text. The automated browser checks supplement
 PM testing; they do not replace it. Re-run affected checks after material changes.
+
+The local Catalog policy check uses the merge base of HEAD with `origin/main`,
+falling back to `main`. Without a merge base it is BLOCKED. It verifies retained
+rows, immutable identities, study resolution before demotion or retirement, and
+committed snapshot digests.
 
 Publication tests use disposable Git repositories and do not push. Historical exports
 are compared byte-for-byte against their immutable identities. Repository cutover

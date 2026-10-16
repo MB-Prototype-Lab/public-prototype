@@ -347,14 +347,8 @@ def main():
                 require(git('rev-parse', args.base+'^{commit}').decode().strip() == catalog['migration_baseline'], 'base catalog unavailable')
             else:
                 transition(catalog, base)
-        migration = read_json((ROOT/'publication/migration.json').read_bytes())
-        require(migration['baseline'] == catalog['migration_baseline'], 'migration baseline mismatch')
-        require(set(migration['snapshots']) == {'v1', 'v2', 'v3', 'v3.1', 'v4'}, 'incomplete migration inventory')
         for row in catalog['snapshots']:
             require(digest(package(row, require_tags=False)) == row['digest'], 'snapshot digest mismatch')
-        for snapshot_id, record in migration['snapshots'].items():
-            row = next((r for r in catalog['snapshots'] if r['id'] == snapshot_id), None)
-            require(row and row['digest'] == record['digest'] and row['source_tag'] == record['source_tag'] and row['format'] == 'legacy-v1', 'required migration snapshot missing or changed')
         print('Catalog policy and committed snapshot digests verified (missing tags allowed offline).')
     else:
         revision = git('rev-parse', args.revision+'^{commit}').decode().strip()

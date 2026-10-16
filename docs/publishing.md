@@ -48,7 +48,7 @@ site's main and demo refs and last successful Pages build used
 `6666b1a7cd27a1c63a2ee51bd5728a6fe9356791`. That is the catalog's migration
 baseline, and green `demo` remains there as a fallback. Before consolidation,
 every original file from v1, v2, v3, v3.1 and v4 was exported and compared with
-that commit. The digests and source identities remain in `publication/migration.json`.
+that commit. The digests and source identities remain in `publication/catalog.json`.
 The immutable `snapshot/v1`, `snapshot/v2`, `snapshot/v3`, `snapshot/v3.1`, and
 `snapshot/v4` tags all point to the baseline commit.
 
@@ -154,6 +154,12 @@ retrieval or validation fails, stop and investigate—do not substitute offline 
 bootstrap flags. A failed build never uploads a partially validated artifact.
 
 ## Packaging and validation
+
+`bash scripts/check-all.sh` checks catalog policy against the merge base of HEAD
+with `origin/main`, falling back to `main`; no merge base is BLOCKED. It rejects
+removed rows, changed immutable identities and unresolved studies before demotion
+or retirement, and verifies every committed snapshot digest. To name a base
+explicitly, run `python3 scripts/publish.py check --base REF`.
 
 `legacy-v1` exports every committed file beneath the original source directory,
 without injection or regeneration. `static-v1` exports static app extensions, excludes
