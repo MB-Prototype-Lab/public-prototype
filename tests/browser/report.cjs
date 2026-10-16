@@ -95,7 +95,7 @@ body.only-changes .step.same, body.only-changes .journey.all-same { display: non
   </div>
   <p class="note">${single
     ? 'Each journey ran in Chromium, tapping the same buttons in the same order, with the clock fixed. A picture is taken at the start and after every step. "Broke" means a journey stopped before its last step, or the page raised an error.'
-    : 'Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken at the start and after every step, and each step\'s pictures are compared. At desktop width the phone and the Tools panel are pictured apart, and a phone picture counts as a phone change there too; with Tools closed the whole page is pictured as well and counts as the phone. The passcode and selector pages count as the selector. "Changed" means more than 0.05% of its pixels differ, by any amount, and the difference repeated on a second run. "Only before" or "Only after" means only one version has that picture (it stopped early, or Tools was closed, on the other); it counts as changed. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.'}</p>
+    : 'Each journey ran in Chromium on both versions, tapping the same buttons in the same order, with the clock fixed. A picture is taken at the start and after every step, and each step\'s pictures are compared. At desktop width the phone and the Tools panel are pictured apart, and a phone picture counts as a phone change there too; with Tools closed the whole page is pictured as well and counts as the phone. The passcode and selector pages count as the selector. "Changed" means the picture size or normal phone geometry differs, or more than 0.05% of its pixels differ by any amount, and the difference repeated on a second run. Normal phone geometry records the frame, screen viewport, content size and scrolling position before the phone grows to show its content; its changes count as Phone even when the tall pictures match. "Only before" or "Only after" means only one version has that picture (it stopped early, or Tools was closed, on the other); it counts as changed. "Broke" means a journey stopped before its last step on either version, or the new version raised a page error.'}</p>
   <div class="tabs" role="tablist">${tabs}</div>
   <label class="only"><input type="checkbox" id="only"${focus ? ' checked' : ''}> ${single ? 'Show only journeys that broke' : 'Show only changes'}</label>
   ${panels}
@@ -144,6 +144,7 @@ function journeyBlock(r, single) {
     </div>` : `
     <div class="step ${it.status}">
       <h3>${esc(title(it))} <span class="badge ${it.status}">${esc(STATUS_TEXT[it.status] || it.status)}</span></h3>
+      ${it.geometry && !it.geometry.same ? '<p class="note">Normal phone layout: ' + esc(it.geometry.changes.join('; ')) + '</p>' : ''}
       <div class="pics">
         <figure><figcaption>Before</figcaption>${it.base ? picture(it.base, 'Before: ' + title(it)) : '<p class="note">None</p>'}</figure>
         <figure><figcaption>After</figcaption>${it.head ? picture(it.head, 'After: ' + title(it)) : '<p class="note">None</p>'}</figure>

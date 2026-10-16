@@ -42,6 +42,7 @@ const { REPO, DEFAULT_CLOCK } = require('../lib/app-vm.cjs');
 const { mediaDurations, shimSource } = require('./media-shim.cjs');
 const { openComparer } = require('./pixels.cjs');
 const { writeReport, STATUS_TEXT, countsAsChange } = require('./report.cjs');
+const { measurePhoneGeometry, compareGeometry } = require('./geometry.cjs');
 const journeysApi = require('../app-journeys.cjs');
 const { declaresChange, readAs } = require('../lib/pr-declarations.cjs');
 
@@ -74,7 +75,8 @@ async function growPhone(page) {
   return page.evaluate(() => {
     const sr = document.getElementById('screenRoot'), ph = document.querySelector('main.phone');
     if (!sr || !ph) return null;
-    const before = ph.getAttribute('style');
+    const before = { style: ph.getAttribute('style'), scrollLeft: sr.scrollLeft, scrollTop: sr.scrollTop,
+      pageX: window.scrollX, pageY: window.scrollY };
     const extra = Math.max(0, sr.scrollHeight - sr.clientHeight);
     ph.style.maxHeight = 'none';
     ph.style.height = (ph.getBoundingClientRect().height + extra) + 'px';
@@ -82,7 +84,14 @@ async function growPhone(page) {
   }).catch(() => null);
 }
 async function restorePhone(page, before) {
-  await page.evaluate(b => { const ph = document.querySelector('main.phone'); if (!ph) return; if (b === null) ph.removeAttribute('style'); else ph.setAttribute('style', b); }, before).catch(() => {});
+  await page.evaluate(b => {
+    const ph = document.querySelector('main.phone'), sr = document.getElementById('screenRoot');
+    if (!ph || !b) return;
+    if (b.style === null) ph.removeAttribute('style'); else ph.setAttribute('style', b.style);
+    // Growing removes overflow and can clamp the scroll position to zero.
+    if (sr) { sr.scrollLeft = b.scrollLeft; sr.scrollTop = b.scrollTop; }
+    window.scrollTo(b.pageX, b.pageY);
+  }, before).catch(() => {});
 }
 
 // A mistyped option must not shrink the run to nothing and still pass.
@@ -377,6 +386,7 @@ async function runOne(browser, tree, variant, journey, outDir) {
       if (part === 'tools' && !(await target.isVisible())) continue;
       if (!dir) { shots.push({ label, step, part }); continue; }
       const file = path.join(dir, step + '-' + part + '.png');
+      const geometry = part === 'phone' ? await page.evaluate(measurePhoneGeometry) : undefined;
       const before = part === 'phone' ? await growPhone(page) : null;
       // A video's frames arrive on real time: mask the video, and hide it under
       // the mask, so the mask's anti-aliased edge never blends with a frame
@@ -384,10 +394,13 @@ async function runOne(browser, tree, variant, journey, outDir) {
       const mask = [page.locator('video')];
       // The › tab floats over the page; it is pictured as Tools.
       if (part === 'page') mask.push(page.locator('#adminExpandTab'));
-      await target.screenshot({ path: file, animations: 'disabled', caret: 'hide', mask,
-        style: 'video { visibility: hidden !important; }' });
-      if (part === 'phone') await restorePhone(page, before);
-      shots.push({ label, step, part, file });
+      try {
+        await target.screenshot({ path: file, animations: 'disabled', caret: 'hide', mask,
+          style: 'video { visibility: hidden !important; }' });
+      } finally {
+        if (part === 'phone') await restorePhone(page, before);
+      }
+      shots.push({ label, step, part, file, geometry });
     }
   };
   let failure = null;
@@ -441,7 +454,9 @@ async function runTree(browser, tree, plan, outDir) {
 
 function git(args) { return execFileSync('git', args, { cwd: REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim(); }
 
-async function main() {
+async function main(runtime = {}) {
+  const { launch: launchBrowser = launch, runTree: captureTree = runTree, runOne: captureOne = runOne,
+    openComparer: comparePictures = openComparer } = runtime;
   const args = parseArgs(process.argv.slice(2));
   const comparing = !!(args.base || args.compare);
   if (!comparing && args.allowDeclared) throw new UsageError('--allow-declared needs --base DIR or --compare REF');
@@ -476,13 +491,13 @@ async function main() {
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(out, { recursive: true });
 
-  const browser = await launch();
+  const browser = await launchBrowser();
   let ok = true;
   try {
     const t0 = Date.now();
-    const baseRes = await runTree(browser, base, plan, path.join(out, 'shots', 'base'));
-    const headRes = await runTree(browser, head, plan, path.join(out, 'shots', 'head'));
-    const comparer = await openComparer(browser);
+    const baseRes = await captureTree(browser, base, plan, path.join(out, 'shots', 'base'));
+    const headRes = await captureTree(browser, head, plan, path.join(out, 'shots', 'head'));
+    const comparer = await comparePictures(browser);
     const rows = [];
     for (const h of headRes) {
       const b = baseRes.find(r => r.id === h.id && r.variant === h.variant);
@@ -493,7 +508,8 @@ async function main() {
         else if (!bs) item.status = 'onlyAfter';
         else {
           const r = await comparer.compare(fs.readFileSync(bs.file), fs.readFileSync(hs.file));
-          const changed = !r.sameSize || r.diffPixels / r.totalPixels > FAIL_RATIO;
+          if (part === 'phone') item.geometry = { before: bs.geometry, after: hs.geometry, ...compareGeometry(bs.geometry, hs.geometry) };
+          const changed = !r.sameSize || r.diffPixels / r.totalPixels > FAIL_RATIO || (item.geometry && !item.geometry.same);
           item.status = changed ? 'changed' : 'same';
           item.diffPixels = r.diffPixels; item.size = [r.sizeA, r.sizeB];
           if (r.diffPng && changed) {
@@ -505,7 +521,9 @@ async function main() {
         }
         items.push(item);
       }
-      rows.push({ id: h.id, variant: h.variant, items, baseFailure: b.failure, headFailure: h.failure,
+      rows.push({ id: h.id, variant: h.variant, items,
+        baseFailure: b.failure || (items.some(i => i.geometry && !i.geometry.validBefore) ? 'Normal phone geometry missing before the change' : null),
+        headFailure: h.failure || (items.some(i => i.geometry && !i.geometry.validAfter) ? 'Normal phone geometry missing after the change' : null),
         pageErrors: h.pageErrors.filter(e => !b.pageErrors.includes(e)) });
     }
     // A difference must reproduce: re-run both sides of each changed journey
@@ -516,14 +534,15 @@ async function main() {
       for (const row of recheck.filter(r => r.variant === variant.id)) {
         const journey = row.id === 'gate' ? GATE_JOURNEY : all.find(j => j.id === row.id);
         const tmp = path.join(out, 'recheck');
-        const b2 = await runOne(browser, base, variant, journey, path.join(tmp, 'base'));
-        const h2 = await runOne(browser, head, variant, journey, path.join(tmp, 'head'));
+        const b2 = await captureOne(browser, base, variant, journey, path.join(tmp, 'base'));
+        const h2 = await captureOne(browser, head, variant, journey, path.join(tmp, 'head'));
         const again = new Map(pairShots(b2.shots, h2.shots).map(p => [p.key, p]));
         for (const item of row.items) {
           const p = item.status === 'changed' && again.get(item.key);
           if (!p || !p.b || !p.h) continue;
           const r = await comparer.compare(fs.readFileSync(p.b.file), fs.readFileSync(p.h.file));
-          if (r.sameSize && r.diffPixels / r.totalPixels <= FAIL_RATIO) item.status = 'flaky';
+          const geometry = item.part === 'phone' ? compareGeometry(p.b.geometry, p.h.geometry) : null;
+          if (r.sameSize && r.diffPixels / r.totalPixels <= FAIL_RATIO && (!geometry || geometry.same)) item.status = 'flaky';
         }
       }
     }));
@@ -553,7 +572,7 @@ async function main() {
       const bad = row.items.filter(i => i.status !== 'same');
       if (!bad.length && !row.broken) continue;
       const showPart = row.items.some(i => i.part !== 'phone');
-      console.log('  ' + row.variant + ' / ' + row.id + ':' + (row.broken ? ' BROKEN' : '') + (bad.length ? ' ' + bad.map(i => STATUS_TEXT[i.status].toLowerCase() + ' @ ' + i.label + (showPart ? ' (' + i.part + ')' : '')).join('; ') : '') +
+      console.log('  ' + row.variant + ' / ' + row.id + ':' + (row.broken ? ' BROKEN' : '') + (bad.length ? ' ' + bad.map(i => STATUS_TEXT[i.status].toLowerCase() + ' @ ' + i.label + (showPart ? ' (' + i.part + ')' : '') + (i.geometry && !i.geometry.same ? ' [' + i.geometry.changes.join('; ') + ']' : '')).join('; ') : '') +
         (row.baseFailure || row.headFailure ? ' [before: ' + (row.baseFailure || 'finished') + ' | after: ' + (row.headFailure || 'finished') + ']' : '') +
         (row.pageErrors.length ? ' [new page errors: ' + row.pageErrors.join(' | ') + ']' : ''));
     }
@@ -626,7 +645,9 @@ function describeTree(dir) {
   catch (e) { return dir; }
 }
 
-main().then(ok => process.exit(ok ? 0 : 1), err => {
+module.exports = { main, launch, newPage, settle, growPhone, restorePhone, VARIANTS };
+
+if (require.main === module) main().then(ok => process.exit(ok ? 0 : 1), err => {
   console.error(err instanceof UsageError ? 'app-journeys-browser: ' + err.message : err && err.stack || err);
   process.exit(2);
 });

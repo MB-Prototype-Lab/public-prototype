@@ -282,6 +282,10 @@ check('the harness pins en-US and UTC whatever the machine locale and time zone'
   assert.match(fake.stderr, /journey harness needs TZ=UTC/);
 });
 
+check('browser comparisons preserve normal phone geometry independently of tall pictures and Tools declarations', async () => {
+  await require('../browser/selftest.cjs').run();
+});
+
 async function run() {
   let failed = 0;
   for (const c of checks) {

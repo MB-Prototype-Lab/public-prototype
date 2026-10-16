@@ -115,15 +115,23 @@ during the Tools tour. After a merge, main is compared with the previous main in
 report mode (`--report`): changed pictures, which the PR declared, are reported
 but do not fail; a journey that breaks or a new page error still fails.
 
+Phone pictures grow to show all scrolling content. Before growing the phone,
+the check also records its normal rectangle, the screen's viewport and content
+sizes, and its scrolling position. A repeated change to any of those counts as
+a phone change, even with identical tall pictures or declared Tools changes.
+The report shows those measurements beside the pictures. Measurements retain
+Chromium's 1/64 CSS-pixel layout precision; they do not hide a one-pixel move.
+This geometry check does not replace reviewing normal viewport appearance.
+
 To see the pictures for a PR, open its **Checks** tab, choose the **Browser
 journeys** job, open the run's summary and download the
 `browser-journey-pictures` artifact. Unzip it and open `index.html`: each step
 shows Before, After and the Difference, with a tab per theme and one for desktop
 with Tools.
 
-- **Changed**: the picture differs from main, and differed again when the robot
-  repeated the journey. **Only before** or **Only after** means only one version
-  has that picture (the journey stopped early, or Tools was closed, on the
+- **Changed**: the picture or normal phone geometry differs from main, and
+  differed again when the robot repeated the journey. **Only before** or **Only
+  after** means only one version has that picture (the journey stopped early, or Tools was closed, on the
   other); it counts as a change.
 - **Flaky**: it differed once but not on the repeat, so it is not counted.
 - **Broke**: the journey stopped before its last step (a button it needed was
@@ -144,6 +152,7 @@ then, from the repository root:
 ```sh
 node tests/browser/app-journeys-browser.cjs                    # every journey must finish; no pictures
 node tests/browser/app-journeys-browser.cjs --compare main --out DIR   # pictures and report against main
+node tests/browser/geometry-check.cjs DIR                    # short identical/height/scroll regression
 ```
 
 The comparison takes a few minutes and prints a link to the report. Without the
