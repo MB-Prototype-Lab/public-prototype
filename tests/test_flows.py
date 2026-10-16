@@ -318,6 +318,59 @@ class FlowsTest(unittest.TestCase):
 
 
 class GeneratedFlowRuntimeTest(unittest.TestCase):
+    def test_non_executable_anchors_fail_before_install(self):
+        repo = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory(prefix='unsupported flow runtime ') as temporary:
+            root = Path(temporary)
+            archive = flows.git(repo, 'archive', '--format=tar', 'HEAD', 'app')
+            subprocess.run(['tar', '-xf', '-', '-C', str(root)], input=archive, check=True)
+            def git(*args):
+                return flows.git(root, *args).decode().strip()
+            git('init', '-b', 'main')
+            git('config', 'user.email', 'test@example.com')
+            git('config', 'user.name', 'Test')
+            nav, boot = root / 'app/js/navigation.js', root / 'app/js/boot.js'
+            navigation, boot_source = nav.read_text(), boot.read_text()
+            flows.catalog(root)
+            before = {name: (root / 'flows' / name).read_bytes() for name in ('catalog.js', 'catalog.json')}
+            fake_calls = ['/*\nbootApp();\n*/\nbootApp.call(null);',
+                          'var note = `\nbootApp();\n`;\nbootApp.call(null);',
+                          'var note = "bootApp();";\nbootApp.call(null);',
+                          'function unusedBoot() {\nbootApp();\n}\nbootApp.call(null);',
+                          'if (false) {\nbootApp();\n}\nbootApp.call(null);',
+                          'if (false)\nbootApp();\nelse window["bootApp"].call(null);']
+            fixtures = [(navigation.replace('\nbootApp();\n', '\n' + fake + '\n'), boot_source)
+                        for fake in fake_calls]
+            for name in ('bootApp', 'appEntryScreen'):
+                declaration = 'function ' + name + '() {'
+                fixtures.append((navigation, boot_source.replace(declaration,
+                    '/* ' + declaration + '} */\nvar ' + name + ' = function () {')))
+                fixtures.append((navigation, boot_source.replace(declaration,
+                    'var ' + name + ' = ' + declaration)))
+            for navigation_fixture, boot_fixture in fixtures:
+                with self.subTest(navigation=navigation_fixture[-100:], boot=boot_fixture[:100]):
+                    nav.write_text(navigation_fixture)
+                    boot.write_text(boot_fixture)
+                    git('add', 'app')
+                    git('commit', '-m', 'unsupported executable anchor shape')
+                    # Each source still boots successfully. Reject it rather
+                    # than silently generate a package with unrestricted go().
+                    result = subprocess.run(['node', '-e', r'''
+const assert = require('node:assert/strict');
+const {loadApp} = require(process.argv[1]);
+const app = loadApp({folder: process.argv[2]});
+assert.equal(app.run('state.screen'), 'onboarding');
+app.run('go("home")');
+assert.equal(app.run('state.screen'), 'home');
+assert.deepEqual(app.log.errors, []);
+''', str(repo / 'tests/lib/app-vm.cjs'), str(root / 'app')], capture_output=True, text=True)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    with self.assertRaisesRegex(ValueError, '^unsupported source boot/entry anchors:'):
+                        flows.create(root, 'unsupported', git('rev-parse', 'HEAD'), 'Unsupported', 'Fake anchors')
+                    self.assertFalse((root / 'flows/unsupported').exists())
+                    self.assertFalse(list((root / 'flows').glob('.creating-*')))
+                    self.assertEqual(before, {name: (root / 'flows' / name).read_bytes() for name in before})
+
     def test_current_and_historical_sources_boot_with_containment(self):
         repo = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory(prefix='generated flow runtime ') as temporary:

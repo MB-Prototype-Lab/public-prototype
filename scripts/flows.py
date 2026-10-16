@@ -285,6 +285,90 @@ function mbFlowInstall() {
 '''
 
 
+def starter_tokens(source):
+    """Tokenize the supported boot scripts, retaining offsets and scope depth.
+
+    This is deliberately a compatibility check, not a JavaScript parser.
+    Unsupported or ambiguous literal syntax fails closed instead of letting
+    comment/string contents masquerade as an executable containment anchor.
+    """
+    tokens, stack, i = [], [], 0
+    error = 'unsupported source boot/entry anchors: unsupported JavaScript literal or syntax'
+    while i < len(source):
+        if source[i].isspace():
+            i += 1
+            continue
+        if source.startswith('//', i):
+            end = source.find('\n', i + 2)
+            i = len(source) if end < 0 else end
+            continue
+        if source.startswith('/*', i):
+            end = source.find('*/', i + 2)
+            if end < 0:
+                raise ValueError(error)
+            i = end + 2
+            continue
+        start, value = i, source[i]
+        if value in '\"\'':
+            quote = value
+            i += 1
+            while i < len(source) and source[i] != quote:
+                if source[i] in '\r\n' and source[i - 1] != '\\':
+                    raise ValueError(error)
+                i += 2 if source[i] == '\\' else 1
+            if i >= len(source):
+                raise ValueError(error)
+            i += 1
+            value = '<literal>'
+        elif value == '/':
+            # Only unambiguous expression-start regex literals are supported.
+            # Division and regexes after control-flow parentheses need parsing.
+            previous = tokens[-1][0] if tokens else ''
+            if previous not in ('', '(', '[', '{', ',', ':', ';', '=', '!', '?', '&', '|', 'return', 'throw'):
+                raise ValueError(error)
+            i += 1
+            in_class = False
+            while i < len(source):
+                char = source[i]
+                if char in '\r\n':
+                    raise ValueError(error)
+                if char == '\\':
+                    i += 2
+                    continue
+                if char == '[':
+                    in_class = True
+                elif char == ']':
+                    in_class = False
+                elif char == '/' and not in_class:
+                    break
+                i += 1
+            if i >= len(source):
+                raise ValueError(error)
+            i += 1
+            while i < len(source) and source[i].isalpha():
+                i += 1
+            value = '<literal>'
+        else:
+            word = re.match(r'[A-Za-z0-9_$]+', source[i:])
+            if word:
+                value = word.group()
+                i += len(value)
+            elif value in '(){}[];.,:+-*%<>=!?&|~^':
+                i += 1
+            else:
+                raise ValueError(error)
+        depth = len(stack)
+        if value in ('(', '[', '{'):
+            stack.append(value)
+        elif value in (')', ']', '}'):
+            if not stack or stack.pop() != {')': '(', ']': '[', '}': '{'}[value]:
+                raise ValueError(error)
+        tokens.append((value, start, i, depth))
+    if stack:
+        raise ValueError(error)
+    return tokens
+
+
 def adapt_starter(directory):
     # Only adapt known, unique boot/entry pairs: a silent missed anchor leaves
     # an apparently contained package running unrestricted app navigation.
@@ -292,18 +376,28 @@ def adapt_starter(directory):
     boot = directory / 'js/boot.js'
     navigation = nav.read_text() if nav.is_file() else ''
     boot_source = boot.read_text() if boot.is_file() else ''
-    calls = list(re.finditer(r'^(bootApp|bootV3)\(\);[ \t]*$', navigation, re.M))
-    entries = re.findall(r'\bfunction\s+(appEntryScreen|v3EntryScreen)\s*\(\s*\)\s*\{', boot_source)
-    boots = re.findall(r'\bfunction\s+(bootApp|bootV3)\s*\(\s*\)\s*\{', boot_source)
     pairs = {'bootApp': 'appEntryScreen', 'bootV3': 'v3EntryScreen'}
-    if (len(calls) != 1 or len(re.findall(r'\b(?:bootApp|bootV3)\s*\(', navigation)) != 1 or
-            len(boots) != 1 or len(entries) != 1 or
-            calls[0].group(1) != boots[0] or pairs[boots[0]] != entries[0] or
-            'mbFlowInstall' in navigation):
+    nav_tokens, boot_tokens = starter_tokens(navigation), starter_tokens(boot_source)
+    calls = [i for i, token in enumerate(nav_tokens) if token[0] in pairs]
+    declarations = [i for i, token in enumerate(boot_tokens)
+                    if token[0] == 'function' and i + 1 < len(boot_tokens) and
+                    boot_tokens[i + 1][0] in set(pairs) | set(pairs.values())]
+    names = [boot_tokens[i + 1][0] for i in declarations]
+    call = calls[0] if len(calls) == 1 else None
+    if (call is None or nav_tokens[call][3] != 0 or
+            (call > 0 and nav_tokens[call - 1][0] not in (';', '}')) or
+            [t[0] for t in nav_tokens[call + 1:call + 4]] != ['(', ')', ';'] or
+            sorted(names) != sorted([nav_tokens[call][0], pairs[nav_tokens[call][0]]]) or
+            any(boot_tokens[i][3] != 0 or
+                (i > 0 and boot_tokens[i - 1][0] not in (';', '}')) or
+                [t[0] for t in boot_tokens[i + 2:i + 5]] != ['(', ')', '{']
+                for i in declarations) or
+            any(t[0] == 'mbFlowInstall' for t in nav_tokens)):
         raise ValueError('unsupported source boot/entry anchors: expected exactly one matching '
-                         'bootApp/appEntryScreen or bootV3/v3EntryScreen pair and one standalone boot call')
-    anchor = calls[0]
-    navigation = navigation[:anchor.end()] + '\nmbFlowInstall();' + navigation[anchor.end():]
+                         'bootApp/appEntryScreen or bootV3/v3EntryScreen pair and one top-level boot statement')
+    anchor_end = nav_tokens[call + 3][2]
+    navigation = navigation[:anchor_end] + '\nmbFlowInstall();' + navigation[anchor_end:]
+    entry = pairs[nav_tokens[call][0]]
     html = (directory / 'index.html').read_text()
     html = html.replace('<script src="release-config.js"></script>', '<script src="release-config.js"></script>\n  <script src="flow-config.js"></script>')
     html = html.replace('<script src="js/navigation.js"></script>', '<script src="js/flow.js"></script>\n<script src="js/navigation.js"></script>')
@@ -326,7 +420,7 @@ def adapt_starter(directory):
         topbar.write_text(topbar.read_text() + '\nrenderTopBar = function () { return ""; };\n')
     (directory / 'index.html').write_text(html)
     nav.write_text(navigation)
-    (directory / 'js/flow.js').write_text(GENERIC_RUNTIME.replace('__FLOW_ENTRY_FUNCTION__', entries[0]))
+    (directory / 'js/flow.js').write_text(GENERIC_RUNTIME.replace('__FLOW_ENTRY_FUNCTION__', entry))
     (directory / 'release-config.js').write_text('window.MB_RELEASE = Object.freeze({tracking: false, selector: "../../index.html"});\n')
 
 
