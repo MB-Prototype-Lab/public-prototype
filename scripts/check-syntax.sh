@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
 # JS syntax checker for classic browser scripts.
 # Use node or macOS jsc so the check works on machines with either engine.
 # nvm installations may be outside a non-interactive shell's PATH.

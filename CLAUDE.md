@@ -38,7 +38,7 @@ variables and check all four themes. See [hard rules](docs/app-contracts.md#hard
 Every Flow mirrors `app/css/components.css`, `app/js/refresh-pin.js` and the
 `app/index.html` head/Tools header (after the Flow adapter). Change all copies in
 one commit. Data JSON edits require `bash scripts/wrap-data.sh`; do not hand-edit
-wrappers or regenerate media as part of packaging. `MB_VERSION` is retired and errors.
+wrappers or regenerate media as part of packaging.
 
 No backend, localStorage, live LLM or runtime API keys. Release-controlled Useberry
 on HTTP(S) is the narrow telemetry exception; development tracking stays off.

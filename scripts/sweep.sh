@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
 # Correctness sweep — run from the repo root: bash scripts/sweep.sh
 # Concatenate the DOM stub, ordered app scripts and sweep.js for node or jsc.
 # One bundle preserves shared top-level const bindings like browser scripts.

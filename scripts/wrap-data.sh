@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
 # Generates app/data/*.js from the sibling *.json files.
 #
 # WHY THIS EXISTS (L13, architecture.md §1): the app is opened as a file:// page

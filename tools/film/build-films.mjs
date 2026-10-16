@@ -26,9 +26,6 @@ import { composition, CANVAS } from "./composition.mjs";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const TOOLS = path.resolve(HERE, "..");
 const REPO = path.resolve(TOOLS, "..");
-if (Object.hasOwn(process.env, "MB_VERSION")) {
-  throw new Error("MB_VERSION is retired; tooling uses app/");
-}
 const APP = path.join(REPO, "app");
 const BUILD = path.join(TOOLS, "build");
 const OUT = path.join(APP, "assets", "video", "onboarding");

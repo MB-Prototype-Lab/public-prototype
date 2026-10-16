@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
 # Generate daily-update and onboarding narration WAVs with offline macOS say
 # (D04, L10). Recorded audio has no speech boundary events, so daily segment
 # durations are measured here and written separately from the script (D29).
