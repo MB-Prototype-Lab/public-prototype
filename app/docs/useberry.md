@@ -1,6 +1,8 @@
 # Running a study against a published snapshot
 
-Read repository-root docs/publishing.md for release preparation. Development is
+## 1. Prepare a tracked snapshot
+
+Read [publishing](../../docs/publishing.md) for release preparation. Development is
 untracked. Choose tracking on when preparing a new snapshot; the packager records
 and freezes that choice in release-config.js. The catalog drives the selector badge.
 Never toggle tracking in a published build. To change tracking publish a new ID.
@@ -8,11 +10,8 @@ Legacy v4 keeps its original tracking on; this does not establish ongoing-study 
 
 ## 2. Point Useberry at it
 
-Use the **Snippet** import, not the proxy. Useberry's own docs say the proxy
-blocks resources carrying an `integrity` attribute, disrupts CSP/CORS-dependent
-apps, and that trigger elements should be set up with the snippet when the proxy
-will not show them. This prototype is ~100 scripts deep; the proxy is the
-fragile route.
+The documented study setup uses the **Snippet** import. Confirm the current
+import and task-criterion controls in the study account before launch.
 
 Nothing to paste into their UI — `js/useberry.js` already injects their tag when
 the flag is on.
@@ -23,16 +22,30 @@ study starts is a drop-off you created.
 
 ## 3. Task completion
 
-Their Single Task block takes **Path**, **URL** or **Trigger**. Use **URL** —
-every screen now has its own, and it is the only one of the three that does not
-depend on an element surviving a re-render.
+The documented Single Task criteria are **Path**, **URL** and **Trigger**.
+Screen URLs are stable across re-renders. Confirm the account's current matching
+controls and test the configured criterion on the hosted snapshot.
 
-| task | success URL contains |
+| Task | Success criterion |
 |---|---|
-| Finish setup | `?screen=home` |
-| Build a budget | `?screen=budget-done` |
-| Log yesterday's spending | `?screen=journal-done` |
-| Finish a lesson | `?screen=lesson-reward` |
+| Finish setup | `screen=home` |
+| Build a budget | `screen=budget-done` |
+| Log yesterday's spending | `screen=journal-done` |
+| Finish a lesson | `screen=reward` with the end-anchored matcher below, or a Trigger on the reward screen's Return Home button |
+
+Do not include a leading `?` in a contains value: the app preserves existing query
+parameters and appends `screen=` after them, for example
+`?PROLIFIC_PID=p1&screen=home`. A plain `screen=reward` contains check also matches
+`screen=reward-preview`, which appears before the lesson. If the criterion supports
+regular expressions, match the complete reward value through the end of the URL:
+
+```regex
+[?&]screen=reward(?:&[^#]*)?(?:#.*)?$
+```
+
+This allows other query parameters and a value-trail fragment, but excludes the
+preview. Otherwise use a Trigger on the completed reward's Return Home button
+(`data-ub="reward/navGoHome"`); validate it in the study account.
 
 Read the slug off the address bar while clicking through — what you see is what
 Useberry records.
@@ -45,9 +58,9 @@ about.
 ```
 ?screen=home                Home
 ?screen=onboarding          Onboarding from the top
-?screen=onboarding-3        Onboarding at a given step (0–9)
+?screen=onboarding-3        Onboarding at a given zero-based step (see ONB_STEPS)
 ?screen=budget-build        The three-step budget builder
-?screen=about-me            Budget tab
+?screen=about-me            Platinum paywall (L27); use budget-build for the builder
 ?screen=comparison          Where it's going
 ?screen=my-progress         My Progress
 ?screen=journal-entry       A fresh Money Journal session
@@ -81,15 +94,16 @@ signal it.
 ## 6. Reading the click data
 
 Every control carries a `data-ub` attribute, derived from the handler already on
-it and stamped on each render. Nothing was hand-named, so nothing goes stale:
-rename `bbToggleHelp` and the reports rename themselves.
+it and stamped on each render. Derived names follow handler renames:
+rename `bbToggleHelp` and its click name changes too. Explicit `data-ub` names
+remain as authored.
 
 ```
 budget-build-1/bbToggleHelp:Utilities     the Help-me-out toggle on step 2
 budget-build-1/bbSet:Groceries            the Groceries slider on step 2
 topbar/navBack                            Back, anywhere
 nav/navGoTab:learn                        the Learn tab
-onboarding-3/householdSize=2              "2 people" on onboarding step 4
+onboarding-3/onbSetAdults:2               "2 adults" on onboarding step 4
 ```
 
 The prefix is the screen, so the same Continue button on step 1 and step 2 are
@@ -126,10 +140,11 @@ land on:
 Keys are the first three letters of the category. A drag records where it came
 to **rest**, not every tick.
 
-**Why the fragment.** `?screen=` has to stay identical across testers or the flow
-report cannot aggregate, and it is what a URL task-completion criterion matches
-on. The fragment is carried in the href Useberry records and ignored by URL
-matchers, so `?screen=budget-done` still matches with a trail attached.
+**Why the fragment.** The screen slug stays stable while the values vary. The
+fragment carries the trail separately from the query. A contains criterion for
+`screen=budget-done` still matches with a trail attached; an exact or regular-expression
+criterion must allow the fragment, as the lesson matcher in §3 does. Verify how the
+current study account records and matches the full URL.
 
 **Only on a checkpoint view.** Cleared on the next screen, so exactly one URL per
 session carries it.
@@ -137,26 +152,22 @@ session carries it.
 **⚠ Free text can never reach it.** `ubTrailRecord()` takes numbers, and takes a
 string only under a key declared in `UB_TRAIL_ENUMS`. The tester's name, journal
 prose and the buddy's name are not recorded and must not be added — the trail
-travels in a URL a third party logs, and Useberry's own policy is that testers
-stay pseudonymous. `sweep.sh §7e` fails if that guard is removed.
+travels in a URL a third party logs. Keep participants pseudonymous. `sweep.sh §7e` fails if that guard is removed.
 
 During a moderated run, the admin panel's footer shows the trail filling live.
 
 ## 8. What you get, and what you do not
 
-**Do get:** one screen per view in the flow report, including each wizard step;
-drop-off per screen; click heatmaps segmented per screen; URL-based task
-completion; a readable `<title>` on every screen; a `data-ub` name on every
-control; and the figures a tester set, at three checkpoints.
+**App-provided signals:** a URL and readable `<title>` per screen and wizard
+step, a `data-ub` name per control, and checkpoint figures in the value trail.
+Confirm screen reports, heatmaps and task completion in the study account.
 
 Session recording availability depends on the current service account. Hosted-file
 immutability does not guarantee external Useberry behavior.
 
-**Not built, deliberately:** custom events. Their tracker exposes
-`useberryLive = {}` — an empty object with no methods. The only channel is an
-internal postMessage protocol between their script and their player; imitating
-it would be unversioned and would fail silently mid-round. The value trail in
-§7 is how values get out instead.
+**Not built:** custom events. The app injects the tracker script and does not
+imitate an internal tracker/player protocol. The value trail in §7 is the app's
+implemented channel for checkpoint figures.
 
 ## 9. Before you launch
 
