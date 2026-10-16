@@ -68,11 +68,8 @@ study-flow checks were not recorded in that historical deployment report. Reposi
 cutover is now complete; this does not retroactively establish missing browser
 evidence. Preserve the historical fallback and coordinate study-link changes separately.
 
-The initial deployment used a one-time bootstrap because green had no previous
-manifest. GitHub now has `VERIFIED_MIGRATION_BASELINE` set to the baseline SHA;
-`BOOTSTRAP_PUBLICATION_REF` has been removed. Do not restore the bootstrap
-variable for later publications. Every later run must retrieve and validate
-green's live manifest; a failed retrieval or invalid manifest stops deployment.
+Do not restore `BOOTSTRAP_PUBLICATION_REF`. Every deployment must retrieve and
+validate green's live manifest; a failed retrieval or invalid manifest stops deployment.
 Deployment never validates against blue's publication history. If a custom
 domain is chosen later, review both URLs before publication.
 
@@ -158,7 +155,7 @@ never overwritten. If upload/deploy failed and main is unchanged, an authorized 
 of the same publication is deterministic. If main advanced, prepare/review against
 current main and use a new publication tag; stale tags are rejected. If live manifest
 retrieval or validation fails, stop and investigate—do not substitute offline mode or
-bootstrap flags. A failed build never uploads a partially validated artifact.
+a replacement manifest. A failed build never uploads a partially validated artifact.
 
 ## Packaging and validation
 
@@ -196,7 +193,7 @@ python3 scripts/publish.py build --offline --previous /tmp/moneybuddy-rehearsal-
 Offline mode permits missing tags; existing moved tags still fail. It is for local
 rehearsal only, never deployment. Production requires a publication tag on current
 main, source commits on main, all source tags, known study flags, and a valid previous
-manifest or the exact approved bootstrap. A single concurrency group covers build
+manifest. A single concurrency group covers build
 through deployment. Main is fetched again immediately before deploy; old queued tags
 cannot overwrite newer catalog revisions. Freeze publication coordination briefly if
 main changes during that final check. A later source-only merge does not invalidate

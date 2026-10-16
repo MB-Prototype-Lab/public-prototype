@@ -38,8 +38,6 @@ jobs:
       - name: Validate and build against the live manifest
         env:
           PUBLICATION_REF: ${{ github.ref }}
-          VERIFIED_MIGRATION_BASELINE: ${{ vars.VERIFIED_MIGRATION_BASELINE }}
-          BOOTSTRAP_PUBLICATION_REF: ${{ vars.BOOTSTRAP_PUBLICATION_REF }}
         run: python3 scripts/deploy-prepare.py
       - uses: actions/upload-pages-artifact@v4
         with:

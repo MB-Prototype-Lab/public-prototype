@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Actions-only preparation; never treats network or manifest failures as bootstrap."""
+"""Actions-only preparation; stops on network or manifest failures."""
 import os
 from pathlib import Path
 import subprocess
@@ -13,7 +13,6 @@ subprocess.run(['git', 'fetch', 'origin', 'main', '--tags'], check=True)
 publish.require(publish.git('rev-parse', ref+'^{commit}') == publish.git('rev-parse', 'HEAD'), 'publication tag no longer matches checked-out revision')
 # This URL deliberately stays fixed: do not accept a manifest from an arbitrary input.
 url = 'https://mb-prototype-lab.github.io/public-prototype/publication-manifest.json'
-previous = None
 try:
     request = urllib.request.Request(url, headers={'Cache-Control': 'no-cache'})
     with urllib.request.urlopen(request, timeout=30) as response:
@@ -25,15 +24,10 @@ try:
     committed = publish.read_json(publish.git('show', manifest['revision']+':publication/catalog.json'))
     publish.require(committed == manifest['catalog'], 'live manifest catalog differs from Git')
 except urllib.error.HTTPError as exc:
-    if exc.code != 404 or os.environ.get('BOOTSTRAP_PUBLICATION_REF') != ref:
-        raise SystemExit('Cannot retrieve previous manifest; deployment stopped') from exc
+    raise SystemExit('Cannot retrieve previous manifest; deployment stopped') from exc
 
-command = ['python3', 'scripts/publish.py', 'build', '--revision', ref, '--output', 'publication-output']
-if previous is not None:
-    path = Path(os.environ['RUNNER_TEMP'])/'previous-publication.json'
-    path.write_bytes(previous)
-    command += ['--previous', str(path)]
-else:
-    # Exact tag approval is single use: admin clears it after successful bootstrap.
-    command += ['--bootstrap-baseline', os.environ.get('VERIFIED_MIGRATION_BASELINE', ''), '--bootstrap-tag', os.environ.get('BOOTSTRAP_PUBLICATION_REF', '')]
+path = Path(os.environ['RUNNER_TEMP'])/'previous-publication.json'
+path.write_bytes(previous)
+command = ['python3', 'scripts/publish.py', 'build', '--revision', ref, '--output', 'publication-output',
+           '--previous', str(path)]
 subprocess.run(command, check=True)

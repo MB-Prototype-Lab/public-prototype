@@ -19,10 +19,9 @@ REF = 'refs/tags/publish/rehearsal'
 
 
 class DeployPrepareTests(unittest.TestCase):
-    def execute(self, response=None, error=None, bootstrap=REF, invalid=False, mismatch=False):
+    def execute(self, response=None, error=None, invalid=False, mismatch=False):
         with tempfile.TemporaryDirectory() as directory:
-            env = {'PUBLICATION_REF': REF, 'BOOTSTRAP_PUBLICATION_REF': bootstrap,
-                   'VERIFIED_MIGRATION_BASELINE': 'baseline', 'RUNNER_TEMP': directory}
+            env = {'PUBLICATION_REF': REF, 'RUNNER_TEMP': directory}
             catalog = {'snapshots': []}
             body = response if response is not None else json.dumps(
                 {'revision': 'revision', 'catalog': catalog}).encode()
@@ -50,13 +49,10 @@ class DeployPrepareTests(unittest.TestCase):
         self.assertIn('--previous', command)
         self.assertNotIn('--bootstrap-baseline', command)
 
-    def test_exact_404_bootstrap(self):
+    def test_404_stops_before_packaging(self):
         error = urllib.error.HTTPError(URL, 404, 'missing', {}, None)
-        command = self.execute(error=error)
-        self.assertEqual(command[-4:], ['--bootstrap-baseline', 'baseline', '--bootstrap-tag', REF])
-        for bootstrap in ['', 'refs/tags/publish/other']:
-            with self.subTest(bootstrap=bootstrap), self.assertRaises(SystemExit):
-                self.execute(error=error, bootstrap=bootstrap)
+        with self.assertRaisesRegex(SystemExit, 'Cannot retrieve previous manifest; deployment stopped'):
+            self.execute(error=error)
 
     def test_other_network_failures_stop(self):
         for error in [urllib.error.HTTPError(URL, 403, 'forbidden', {}, None),

@@ -239,7 +239,7 @@ class PublicationTests(unittest.TestCase):
         result = check(source)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_cli_bootstrap_and_atomic_output(self):
+    def test_cli_previous_manifest_and_atomic_output(self):
         scripts = self.repo/'scripts'; scripts.mkdir()
         (scripts/'publish.py').write_bytes(Path(pub.__file__).read_bytes())
         (self.repo/'publication').mkdir()
@@ -254,15 +254,19 @@ class PublicationTests(unittest.TestCase):
             return subprocess.run(['python3', str(scripts/'publish.py'), 'build', '--revision', 'refs/tags/publish/first', '--output', str(self.repo/'out'), *extra], cwd=self.repo, capture_output=True, text=True)
         self.assertNotEqual(run().returncode, 0)
         self.assertFalse((self.repo/'out').exists())
-        self.assertNotEqual(run('--bootstrap-baseline', self.sha, '--bootstrap-tag', 'refs/tags/publish/wrong').returncode, 0)
-        result = run('--bootstrap-baseline', self.sha, '--bootstrap-tag', 'refs/tags/publish/first')
+        self.assertIn('previous manifest required', run().stderr)
+        previous = self.repo/'previous.json'
+        previous.write_text('{}')
+        self.assertNotEqual(run('--previous', str(previous)).returncode, 0)
+        self.assertFalse((self.repo/'out').exists())
+        previous.write_text(json.dumps(self.previous()))
+        result = run('--previous', str(previous))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((self.repo/'out/publication-manifest.json').is_file())
         self.assertNotEqual(run('--offline').returncode, 0)  # Never overwrite an output tree.
-        # Missing live manifest on subsequent publications still cannot bootstrap.
         self.git('commit', '--allow-empty', '-m', 'later')
         self.git('update-ref', 'refs/remotes/origin/main', 'HEAD')
-        result = run('--bootstrap-baseline', self.sha, '--bootstrap-tag', 'refs/tags/publish/first')
+        result = run('--previous', str(previous))
         self.assertIn('stale publication', result.stderr)
 
 

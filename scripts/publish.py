@@ -315,10 +315,8 @@ def main():
     pack = sub.add_parser('build')
     pack.add_argument('--revision', default='HEAD')
     pack.add_argument('--output', required=True)
-    pack.add_argument('--previous', help='previous live publication manifest; required after bootstrap')
+    pack.add_argument('--previous', help='previous live publication manifest; required for deployment')
     pack.add_argument('--offline', action='store_true', help='local rehearsal only; permits missing source tags')
-    pack.add_argument('--bootstrap-baseline', help='owner-verified SHA for first deployment only')
-    pack.add_argument('--bootstrap-tag', help='administrator-approved initial publication tag')
     pack.add_argument('--main-ref', default='refs/remotes/origin/main')
     prepare = sub.add_parser('prepare')
     prepare.add_argument('--flow', help='committed standalone Flow ID')
@@ -344,8 +342,7 @@ def main():
             try:
                 base = read_json(git('show', args.base+':publication/catalog.json'))
             except subprocess.CalledProcessError:
-                # Only the initial migration is allowed to lack a catalog.
-                require(git('rev-parse', args.base+'^{commit}').decode().strip() == catalog['migration_baseline'], 'base catalog unavailable')
+                raise ValueError('base catalog unavailable') from None
             else:
                 transition(catalog, base)
                 retained = {row['id'] for row in base['snapshots']}
@@ -364,8 +361,7 @@ def main():
             require(args.revision.startswith('refs/tags/publish/'), 'deployment requires publication tag ref')
             require(revision == git('rev-parse', args.main_ref+'^{commit}').decode().strip(), 'stale publication: tag must equal current main')
             require(all(r['ongoing_study'] is not None for r in catalog['snapshots']), 'owner must confirm study status before cutover')
-            if previous is None:
-                require(args.bootstrap_baseline == catalog['migration_baseline'] and args.bootstrap_tag == args.revision, 'previous manifest required unless exact first publication is approved')
+            require(previous is not None, 'previous manifest required for deployment')
             for row in catalog['snapshots']:
                 require(subprocess.run(['git', 'merge-base', '--is-ancestor', row['commit'], args.main_ref], capture_output=True).returncode == 0, 'source commit not on main')
         assets = {p: git('show', revision+':'+p) for p in ('index.html', 'gate/gate.js', 'gate/style.css')}
