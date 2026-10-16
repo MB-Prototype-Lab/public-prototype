@@ -228,13 +228,13 @@ def check_package(directory, m):
             raise ValueError(f'{directory}: missing {required}')
     html = (directory / 'index.html').read_text()
     scripts = re.findall(r'<script\b[^>]*\bsrc\s*=\s*["\']([^"\']+)["\']', html, re.I)
-    required_scripts = ['release-config.js', 'flow-config.js', 'js/refresh-pin.js', 'js/config.js', 'js/flow.js', 'js/navigation.js']
+    required_scripts = ['release-config.js', 'flow-config.js', 'js/refresh-pin.js', 'js/config.js', 'js/boot.js', 'js/flow.js', 'js/navigation.js']
     if any(scripts.count(name) != 1 for name in required_scripts):
         raise ValueError(f'{directory}: entry must load each required configuration/runtime script exactly once '
                          '(the source app commit must include js/refresh-pin.js)')
     if not (scripts.index('release-config.js') < scripts.index('js/refresh-pin.js') < scripts.index('js/config.js') and
             scripts.index('flow-config.js') < scripts.index('js/config.js') and
-            scripts.index('js/flow.js') < scripts.index('js/navigation.js')):
+            scripts.index('js/boot.js') < scripts.index('js/flow.js') < scripts.index('js/navigation.js')):
         raise ValueError(f'{directory}: policy must load before app config, runtime before navigation boot')
     registry = directory / 'js/state.js'
     if not registry.is_file():
@@ -257,7 +257,7 @@ function mbFlowSeed() {
 }
 function mbFlowRestart() { refreshPinRestart(); }
 function mbFlowExit() { location.assign(window.MB_RELEASE.selector); }
-appEntryScreen = function () { return window.MB_FLOW.entry; };
+__FLOW_ENTRY_FUNCTION__ = function () { return window.MB_FLOW.entry; };
 function mbFlowInstall() {
   try { var profile = new URL(location.href).searchParams.get("profile"); if (profile) profileApply(profile); } catch (e) {}
   state.adminCollapsed = true;
@@ -286,6 +286,24 @@ function mbFlowInstall() {
 
 
 def adapt_starter(directory):
+    # Only adapt known, unique boot/entry pairs: a silent missed anchor leaves
+    # an apparently contained package running unrestricted app navigation.
+    nav = directory / 'js/navigation.js'
+    boot = directory / 'js/boot.js'
+    navigation = nav.read_text() if nav.is_file() else ''
+    boot_source = boot.read_text() if boot.is_file() else ''
+    calls = list(re.finditer(r'^(bootApp|bootV3)\(\);[ \t]*$', navigation, re.M))
+    entries = re.findall(r'\bfunction\s+(appEntryScreen|v3EntryScreen)\s*\(\s*\)\s*\{', boot_source)
+    boots = re.findall(r'\bfunction\s+(bootApp|bootV3)\s*\(\s*\)\s*\{', boot_source)
+    pairs = {'bootApp': 'appEntryScreen', 'bootV3': 'v3EntryScreen'}
+    if (len(calls) != 1 or len(re.findall(r'\b(?:bootApp|bootV3)\s*\(', navigation)) != 1 or
+            len(boots) != 1 or len(entries) != 1 or
+            calls[0].group(1) != boots[0] or pairs[boots[0]] != entries[0] or
+            'mbFlowInstall' in navigation):
+        raise ValueError('unsupported source boot/entry anchors: expected exactly one matching '
+                         'bootApp/appEntryScreen or bootV3/v3EntryScreen pair and one standalone boot call')
+    anchor = calls[0]
+    navigation = navigation[:anchor.end()] + '\nmbFlowInstall();' + navigation[anchor.end():]
     html = (directory / 'index.html').read_text()
     html = html.replace('<script src="release-config.js"></script>', '<script src="release-config.js"></script>\n  <script src="flow-config.js"></script>')
     html = html.replace('<script src="js/navigation.js"></script>', '<script src="js/flow.js"></script>\n<script src="js/navigation.js"></script>')
@@ -307,9 +325,8 @@ def adapt_starter(directory):
     if topbar.exists():
         topbar.write_text(topbar.read_text() + '\nrenderTopBar = function () { return ""; };\n')
     (directory / 'index.html').write_text(html)
-    nav = directory / 'js/navigation.js'
-    nav.write_text(nav.read_text().replace('bootApp();', 'bootApp();\nmbFlowInstall();', 1))
-    (directory / 'js/flow.js').write_text(GENERIC_RUNTIME)
+    nav.write_text(navigation)
+    (directory / 'js/flow.js').write_text(GENERIC_RUNTIME.replace('__FLOW_ENTRY_FUNCTION__', entries[0]))
     (directory / 'release-config.js').write_text('window.MB_RELEASE = Object.freeze({tracking: false, selector: "../../index.html"});\n')
 
 

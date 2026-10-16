@@ -20,11 +20,12 @@ class FlowsTest(unittest.TestCase):
         self.git('init', '-b', 'main')
         self.git('config', 'user.email', 'test@example.com')
         self.git('config', 'user.name', 'Test')
-        self.write('app/index.html', '<script src="release-config.js"></script><script src="js/refresh-pin.js"></script><script src="js/config.js"></script><script src="js/navigation.js"></script>')
+        self.write('app/index.html', '<script src="release-config.js"></script><script src="js/refresh-pin.js"></script><script src="js/config.js"></script><script src="js/boot.js"></script><script src="js/navigation.js"></script>')
         self.write('app/release-config.js', '')
         self.write('app/js/refresh-pin.js', '')
         self.write('app/js/config.js', '')
         self.write('app/js/navigation.js', 'bootApp();')
+        self.write('app/js/boot.js', 'function bootApp() {}\nfunction appEntryScreen() {}\n')
         # Only the destinations registry declares screens; other arrays in state.js do not.
         self.write('app/js/state.js', 'const destinations = [\n  ["onboarding", "Onboarding"],\n  ["goals", "Goals"]\n];\nconst quizAnswers = [["Retirement", "Saving for later"]];\n')
         self.write('app/css/keyboard.css', '')
@@ -128,6 +129,49 @@ class FlowsTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'refresh-pin|policy must load'):
                     flows.create(self.root, 'stale', source, 'Stale', 'Old source')
                 self.assertFalse((self.root / 'flows/stale').exists())
+
+    def test_unsupported_boot_anchors_preserve_packages_and_discovery(self):
+        self.create()
+        before = {str(p.relative_to(self.root / 'flows')): p.read_bytes()
+                  for p in (self.root / 'flows').rglob('*') if p.is_file()}
+        fixtures = [('', 'function bootApp() {}\nfunction appEntryScreen() {}'),
+                    ('bootUnknown();', 'function bootUnknown() {}\nfunction appEntryScreen() {}'),
+                    ('bootApp();\nbootApp();', 'function bootApp() {}\nfunction appEntryScreen() {}'),
+                    ('bootApp();\nbootApp(); // duplicate', 'function bootApp() {}\nfunction appEntryScreen() {}'),
+                    ('bootApp();\nbootV3();', 'function bootApp() {}\nfunction appEntryScreen() {}'),
+                    ('bootApp();', 'function bootApp() {}'),
+                    ('bootApp();', 'function bootApp() {}\nfunction v3EntryScreen() {}'),
+                    ('bootApp();', 'function bootApp() {}\nfunction appEntryScreen() {}\nfunction appEntryScreen() {}'),
+                    ('bootApp();', 'function bootApp() {}\nfunction appEntryScreen() {}\nfunction v3EntryScreen() {}')]
+        for navigation, boot in fixtures:
+            with self.subTest(navigation=navigation, boot=boot):
+                self.write('app/js/navigation.js', navigation)
+                self.write('app/js/boot.js', boot)
+                self.git('commit', '-am', 'unsupported boot shape')
+                source = self.git('rev-parse', 'HEAD').strip()
+                with self.assertRaisesRegex(ValueError, '^unsupported source boot/entry anchors:'):
+                    flows.create(self.root, 'unsupported', source, 'Unsupported', 'Bad anchors')
+                self.assertFalse((self.root / 'flows/unsupported').exists())
+                self.assertFalse(list((self.root / 'flows').glob('.creating-*')))
+                after = {str(p.relative_to(self.root / 'flows')): p.read_bytes()
+                         for p in (self.root / 'flows').rglob('*') if p.is_file()}
+                self.assertEqual(before, after)
+
+    def test_boot_script_must_load_once_before_the_flow_override(self):
+        html = (self.root / 'app/index.html').read_text()
+        tag = '<script src="js/boot.js"></script>'
+        for entry in (html.replace(tag, ''), html.replace(tag, tag + tag),
+                      html.replace(tag, '').replace('<script src="js/navigation.js"></script>',
+                                                   '<script src="js/navigation.js"></script>' + tag)):
+            with self.subTest(entry=entry):
+                self.write('app/index.html', entry)
+                self.git('commit', '-am', 'unsupported boot script order')
+                source = self.git('rev-parse', 'HEAD').strip()
+                before = (self.root / 'flows/catalog.js').read_bytes()
+                with self.assertRaisesRegex(ValueError, 'required configuration/runtime|policy must load'):
+                    flows.create(self.root, 'bad-order', source, 'Bad order', 'Boot script regression')
+                self.assertFalse((self.root / 'flows/bad-order').exists())
+                self.assertEqual(before, (self.root / 'flows/catalog.js').read_bytes())
 
     def test_scope_covers_staged_unstaged_untracked_and_integration(self):
         self.assertEqual(flows.scope(self.root, 'flow'), ('main', self.base))
@@ -273,6 +317,65 @@ class FlowsTest(unittest.TestCase):
         self.assertEqual(before, {p: p.read_bytes() for p in paths})
 
 
+class GeneratedFlowRuntimeTest(unittest.TestCase):
+    def test_current_and_historical_sources_boot_with_containment(self):
+        repo = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory(prefix='generated flow runtime ') as temporary:
+            root = Path(temporary)
+            # Use real app bytes without relying on a historical commit being
+            # present in a clone. The second source changes only the boot names.
+            archive = flows.git(repo, 'archive', '--format=tar', 'HEAD', 'app')
+            subprocess.run(['tar', '-xf', '-', '-C', str(root)], input=archive, check=True)
+            def git(*args):
+                return flows.git(root, *args).decode().strip()
+            git('init', '-b', 'main')
+            git('config', 'user.email', 'test@example.com')
+            git('config', 'user.name', 'Test')
+            flows.catalog(root)
+            for ident, boot_name, entry_name in [('current', 'bootApp', 'appEntryScreen'),
+                                                 ('historical', 'bootV3', 'v3EntryScreen')]:
+                if ident == 'historical':
+                    for name in ('boot.js', 'navigation.js'):
+                        path = root / 'app/js' / name
+                        path.write_text(path.read_text().replace('bootApp', boot_name).replace('appEntryScreen', entry_name))
+                git('add', 'app')
+                git('commit', '-m', ident + ' source')
+                source = git('rev-parse', 'HEAD')
+                flows.create(root, ident, source, ident, 'Runtime containment regression')
+                flows.check(root, ident)
+                package = root / 'flows' / ident
+                self.assertEqual((package / 'js/navigation.js').read_text().count('mbFlowInstall();'), 1)
+                result = subprocess.run(['node', '-e', r'''
+const assert = require('node:assert/strict');
+const {loadApp} = require(process.argv[1]);
+for (const href of ['https://prototype.example/flows/test/index.html',
+                    'https://prototype.example/flows/test/index.html?screen=home']) {
+  const app = loadApp({folder: process.argv[2], href, sourceOverrides: {
+    'js/flow.js': s => s.replace('function mbFlowInstall() {',
+      'function mbFlowInstall() { window.__installs = (window.__installs || 0) + 1;')
+  }});
+  assert.equal(app.run('window.__installs'), 1);
+  assert.equal(app.run('state.screen'), 'onboarding');
+  assert.equal(app.run(process.argv[3] + '()'), 'onboarding');
+  assert.match(app.run(process.argv[3] + '.toString()'), /window.MB_FLOW.entry/);
+  for (const action of ['go("home")', 'navGoTab("learn")', 'navGoTabRoot("aboutMe")',
+                        'navAdminJump("goals")', 'screenLinkApply()', 'navBack()']) {
+    app.run(action);
+    assert.equal(app.run('state.screen'), 'onboarding', action);
+    assert.equal(app.run('JSON.stringify(state.nav.stacks.home)'), '["onboarding"]', action);
+  }
+  app.run('mbFlowToolsToggle(true)');
+  const tools = app.document.getElementById('adminRoot').innerHTML;
+  assert.match(tools, /Flow setup/);
+  assert.doesNotMatch(tools, /navAdminJump|Jump to screen/);
+  assert.equal(app.document.getElementById('navRoot').innerHTML, '');
+  assert.deepEqual(app.log.errors, []);
+}
+''', str(repo / 'tests/lib/app-vm.cjs'), str(package), entry_name],
+                                        capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
 class FlowShellParityTest(unittest.TestCase):
     """Committed Flows keep the full app's page shell around the phone."""
 
@@ -294,6 +397,7 @@ class FlowShellParityTest(unittest.TestCase):
             (starter / 'js').mkdir()
             (starter / 'index.html').write_text((self.ROOT / 'app/index.html').read_text())
             (starter / 'js/navigation.js').write_text('bootApp();')
+            (starter / 'js/boot.js').write_text('function bootApp() {}\nfunction appEntryScreen() {}\n')
             flows.adapt_starter(starter)
             expected = self.shell((starter / 'index.html').read_text())
         self.assertEqual(expected[1].count('>Exit Flow<'), 1)
