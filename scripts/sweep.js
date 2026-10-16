@@ -1391,10 +1391,21 @@ chk(emptyTitle.length === 0,
     "researcher reads in the report");
 
 // ── tracking is off in development ─────────────────────────────────────────
-// Whatever the flag says, the tracker must stay inert on file:// -- there is no
-// session behind it there and the fetch buys a console error and nothing else.
-chk(typeof useberryActive === "function" && useberryActive() === false,
-    "the tracker stays inert off http/https");
+// Execute the real guard with independent inputs. Its development const cannot
+// be reassigned; isolated bindings keep both it and location unchanged.
+(function () {
+  var probe = typeof useberryActive === "function" ?
+    new Function("USEBERRY_TRACKING", "location", "return (" + useberryActive.toString() + ")();") : null;
+  var supported = ["http:", "https:"], unsupported = ["file:", "ftp:"];
+  chk(!!probe && unsupported.every(function (protocol) { return probe(true, { protocol: protocol }) === false; }),
+      "the tracker stays inert off http/https");
+  chk(!!probe && supported.every(function (protocol) { return probe(true, { protocol: protocol }) === true; }),
+      "the tracker is active on http/https when enabled");
+  chk(!!probe && supported.concat(unsupported).every(function (protocol) {
+    return probe(false, { protocol: protocol }) === false;
+  }) && useberryActive() === false,
+      "disabled tracking stays inert on every tested protocol");
+})();
 
 // Development defaults and published settings are tested independently.
 chk(window.MB_RELEASE.tracking === false && USEBERRY_TRACKING === false,
