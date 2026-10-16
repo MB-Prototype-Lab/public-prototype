@@ -206,18 +206,7 @@ authorization boundary in [CLAUDE.md](../CLAUDE.md); report each outcome separat
 
 ## Publish a specific revision
 
-Select a tested committed package on verified current main, a new permanent snapshot
-ID, label and tracking choice. Preparation can be rehearsed locally:
-
-```sh
-python3 scripts/publish.py prepare --flow my-flow --id my-flow-study-01 --commit FULL_MAIN_SHA --label 'My Flow study' --tracking on
-```
-
-This prints a proposed catalog row; it does not publish or create tags. The
-`flow-static-v1` format uses `source_dir=flows/my-flow` and the stable hosted path
-`versions/my-flow-study-01/index.html`. The working Flow ID identifies the experience;
-the snapshot ID identifies one immutable revision. Full-app preparation omits
-`--flow` and excludes Flows. Follow [publishing](publishing.md) for catalog review,
-source tags, previous-manifest checks, artifact size and explicit deployment.
-Published tracking and selector destination are frozen. Archive/hidden/retired rules
-and study protections apply equally; retiring a Flow covers every packaged HTML entry.
+Follow [Prepare a Flow snapshot](publishing.md#prepare-a-flow-snapshot) for selecting
+a tested revision, preparing its immutable catalog identity, study/tracking decisions,
+review, tags and explicit publication. Working Flow IDs and permanent snapshot IDs
+remain separate; merging a Flow neither publishes it nor approves product integration.

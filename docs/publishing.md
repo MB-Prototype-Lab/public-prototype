@@ -40,38 +40,37 @@ Restart Flow stays in the Flow, and Exit returns to the selector.
 Guarantees cover hosted bytes and stable paths, not Useberry service behavior or
 already-loaded browser copies.
 
-## Green publication and migration baseline
+## Current setup
 
-The first green publication succeeded on 2026-09-21. The owner confirmed in
-[PR #2](https://github.com/MB-Prototype-Lab/public-prototype/pull/2) that the blue
-site's main and demo refs and last successful Pages build used
-`6666b1a7cd27a1c63a2ee51bd5728a6fe9356791`. That is the catalog's migration
-baseline, and green `demo` remains there as a fallback. Before consolidation,
-every original file from v1, v2, v3, v3.1 and v4 was exported and compared with
-that commit. The digests and source identities remain in `publication/catalog.json`.
-The immutable `snapshot/v1`, `snapshot/v2`, `snapshot/v3`, `snapshot/v3.1`, and
-`snapshot/v4` tags all point to the baseline commit.
+This is the recorded setup; re-inspect current saved settings and refs before a
+release or settings change. Settings changes require separate authorization.
 
-The owner also confirmed that v4 is the only ongoing legacy study. The catalog
-records v4 as active, tracking on, and `ongoing_study: true`; v1–v3.1 are
-archived, tracking off, and `ongoing_study: false`. These are explicit study
-decisions, not inferences from tracking settings.
+- The catalog migration baseline and immutable `snapshot/v1`, `snapshot/v2`,
+  `snapshot/v3`, `snapshot/v3.1` and `snapshot/v4` source identity is
+  `6666b1a7cd27a1c63a2ee51bd5728a6fe9356791`. Retain `demo` as the historical
+  fallback and leave PM/HoffDemo branches intact.
+- The catalog records v4 as active, tracking on, and `ongoing_study: true`;
+  v1–v3.1 are archived, tracking off, and `ongoing_study: false`. Study status
+  is an explicit PM decision, never an inference from tracking.
+- Every deployment retrieves and validates the [live manifest](https://mb-prototype-lab.github.io/public-prototype/publication-manifest.json),
+  binding it to its committed catalog. Failed retrieval (including 404) or invalid
+  contents stop deployment. Do not restore `BOOTSTRAP_PUBLICATION_REF` or substitute
+  blue's publication history. The recorded `VERIFIED_MIGRATION_BASELINE` variable
+  matches the catalog; deployment no longer uses it. Leave settings untouched
+  without separate authorization.
+- Recorded Pages hosting uses [the site](https://mb-prototype-lab.github.io/public-prototype/)
+  over HTTPS and [the publication workflow](https://github.com/MB-Prototype-Lab/public-prototype/actions/workflows/publish.yml).
+  The `github-pages` environment permits `publish/*` tags; the workflow requires
+  `pages: write` and `id-token: write`. Review both URLs if choosing a custom domain.
+- Re-inspect `Protect main`: the recorded rules require PRs, squash merges, zero
+  approving reviews, current-base `App checks` and `Publication checks`, and block
+  deletion and non-fast-forward updates. `Browser journeys` is advisory until
+  separately made required. Re-inspect `Immutable publication tags`: updates and
+  deletion are blocked for `snapshot/*` and `publish/*`.
 
-The `publish/2026-09-21-green-01` tag points to main commit
-`572a47770ee41ff2f435c7aca6d42486064c4a62`. Its
-[publication run](https://github.com/MB-Prototype-Lab/public-prototype/actions/runs/35669399656)
-and GitHub Pages deployment succeeded. The live
-[green manifest](https://mb-prototype-lab.github.io/public-prototype/publication-manifest.json)
-reports that revision and all five legacy snapshots. The green selector and
-legacy entry URLs respond, but PM browser, media, deep-link and participant
-study-flow checks were not recorded in that historical deployment report. Repository
-cutover is now complete; this does not retroactively establish missing browser
-evidence. Preserve the historical fallback and coordinate study-link changes separately.
-
-Do not restore `BOOTSTRAP_PUBLICATION_REF`. Every deployment must retrieve and
-validate green's live manifest; a failed retrieval or invalid manifest stops deployment.
-Deployment never validates against blue's publication history. If a custom
-domain is chosen later, review both URLs before publication.
+Local checks cannot exercise `publish.yml`, verify administrator permissions or
+prove an Actions deployment succeeds. [Outstanding PM checks](future-work.md#outstanding-publication-pm-checks)
+remain separate from automated and HTTP evidence.
 
 ## Prepare a new snapshot
 
@@ -199,34 +198,3 @@ cannot overwrite newer catalog revisions. Freeze publication coordination briefl
 main changes during that final check. A later source-only merge does not invalidate
 the bytes of an in-progress approved publication, but no newer publication can run
 concurrently. The previous manifest is also bound to its catalog revision in Git.
-
-## Recorded setup and browser verification
-
-GitHub settings inspected on 2026-09-22 show:
-
-- Pages uses a GitHub Actions workflow with HTTPS at
-  https://mb-prototype-lab.github.io/public-prototype/. The `github-pages`
-  environment allows `publish/*` tags, and the first publication deployment
-  succeeded with the workflow's `pages: write` and `id-token: write` permissions.
-- The active `Protect main` ruleset requires PRs with squash merges, zero
-  approving reviews, current-base `App checks` and `Publication checks`, and
-  blocks deletion and non-fast-forward updates. The active `Immutable publication
-  tags` ruleset blocks updates and deletion under `snapshot/*` and `publish/*`.
-- The owner-verified `VERIFIED_MIGRATION_BASELINE` variable matches the catalog.
-  The one-time `BOOTSTRAP_PUBLICATION_REF` variable is absent. Source and
-  publication tags are present at the identities listed above.
-
-The deployment result and HTTP responses do not establish visual or participant
-study behavior. Repository cutover is complete. Record outstanding PM checks for
-passcode/selector refresh, historical entry paths/media, narrow layouts/themes,
-participant deep links and active studies separately; do not infer those results
-from cutover. Retain `demo`, historical publication identities and PM branches.
-Windows/WSL and macOS browser evidence must be recorded separately; automated
-rehearsals do not establish either platform. For future settings changes, inspect
-current saved state and obtain separate authorization. Future merges and publications
-also require their own authorization.
-
-Workflow syntax and Pages action wiring were checked against the official
-[custom Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
-and [concurrency documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency).
-Local tests do not verify administrator permissions or prove a future Actions run succeeds.
