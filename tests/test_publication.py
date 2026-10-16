@@ -208,6 +208,37 @@ class PublicationTests(unittest.TestCase):
             pub.validate_assets({'index.html': b'<img src="missing.png">'}, [])
         pub.validate_assets({'index.html': b'<img src="asset.png">', 'asset.png': b'png'}, [])
 
+    def test_check_new_source_must_already_be_on_base(self):
+        scripts = self.repo/'scripts'; scripts.mkdir()
+        (scripts/'publish.py').write_bytes(Path(pub.__file__).read_bytes())
+        (self.repo/'publication').mkdir()
+        catalog_path = self.repo/'publication/catalog.json'
+        catalog_path.write_text(json.dumps(self.catalog))
+        self.git('add', 'scripts', 'publication')
+        self.git('commit', '-m', 'base catalog')
+        base = self.git('rev-parse', 'HEAD')
+        (self.repo/'app/new.js').write_text('// new snapshot source')
+        self.git('add', 'app/new.js')
+        self.git('commit', '-m', 'source not yet in base')
+        source = self.git('rev-parse', 'HEAD')
+        row = dict(self.row, id='new', source_tag='snapshot/new', commit=source,
+                   source_dir='app', public_path='versions/new/index.html', format='static-v1')
+        row['digest'] = pub.digest(pub.package(row, self.repo, False))
+        self.catalog['snapshots'].append(row)
+        catalog_path.write_text(json.dumps(self.catalog))
+        # The fixture retains its legacy source tree; check forbids editable versions.
+        import shutil
+        shutil.rmtree(self.repo/'versions')
+        def check(ref):
+            return subprocess.run(['python3', str(scripts/'publish.py'), 'check', '--base', ref],
+                                  cwd=self.repo.parent, capture_output=True, text=True)
+        result = check(base)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('new snapshot source must be on catalog base before merge: new', result.stderr)
+        # The same catalog is safe once the base includes its source commit.
+        result = check(source)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_cli_bootstrap_and_atomic_output(self):
         scripts = self.repo/'scripts'; scripts.mkdir()
         (scripts/'publish.py').write_bytes(Path(pub.__file__).read_bytes())

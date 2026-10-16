@@ -179,13 +179,18 @@ for(const protocol of ['https:','http:','file:']) {
             (scripts/name).write_bytes((Path(pub.__file__).parent/name).read_bytes())
         command=['python3',str(scripts/'publish.py'),'prepare','--flow','emergency-fund',
                  '--id','prepared-flow','--commit',self.flow['commit'],
-                 '--label','Fund study','--tracking','off']
-        result=subprocess.run(command,cwd=self.repo,capture_output=True,text=True)
+                 '--label','Fund study','--tracking','off','--main-ref','main']
+        result=subprocess.run(command,cwd=self.repo.parent,capture_output=True,text=True)
         self.assertEqual(result.returncode,0,result.stderr)
         prepared=json.loads(result.stdout)
+        self.assertIsNone(prepared['ongoing_study'])
+        self.assertEqual(prepared['order'],0)
         self.assertEqual(prepared['source_dir'],'flows/emergency-fund')
         self.assertEqual(prepared['format'],'flow-static-v1')
         self.assertEqual(prepared['digest'],self.flow['digest'])
+        default_ref=subprocess.run(command[:-2],cwd=self.repo.parent,capture_output=True,text=True)
+        self.assertNotEqual(default_ref.returncode,0)
+        self.assertIn('snapshot source must be on main ref: refs/remotes/origin/main',default_ref.stderr)
         command[command.index('emergency-fund')]='../app'
         self.assertNotEqual(subprocess.run(command,cwd=self.repo,capture_output=True).returncode,0)
 

@@ -23,7 +23,7 @@ COMMIT="$(git rev-parse HEAD)"
 
 # prepare prints a catalog row; add each one to this clone's catalog.
 add_row() {
-  python3 scripts/publish.py prepare "$@" --commit "$COMMIT" > "$WORK/row.json"
+  python3 scripts/publish.py prepare "$@" --main-ref main --commit "$COMMIT" > "$WORK/row.json"
   python3 -c '
 import json, sys
 row = json.load(open(sys.argv[1]))

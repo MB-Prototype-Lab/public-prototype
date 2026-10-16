@@ -87,6 +87,12 @@ domain is chosen later, review both URLs before publication.
    python3 scripts/publish.py prepare --id comparison-2026-09 --commit FULL_SHA --label 'September comparison' --tracking off
    ```
 
+   Preparation checks the already-fetched `refs/remotes/origin/main`; it never
+   fetches implicitly. Use `--main-ref REF` only to name the verified main ref
+   explicitly (local rehearsals may use `--main-ref main`). `check --base REF`
+   rejects new catalog rows unless their source commit is already an ancestor of
+   that base, so the source must reach main before the catalog PR merges.
+
    The command prints JSON; review and add it to snapshots in the catalog on a task
    branch. Study status starts unknown (`null`); confirm it with PMs and set actual
    ongoing_study alongside description, order and state. It exports committed

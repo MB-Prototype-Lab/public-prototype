@@ -326,6 +326,7 @@ def main():
     prepare.add_argument('--commit', required=True)
     prepare.add_argument('--label', required=True)
     prepare.add_argument('--tracking', choices=['on', 'off'], required=True)
+    prepare.add_argument('--main-ref', default='refs/remotes/origin/main', help='already-fetched main ref containing the source commit')
     args = parser.parse_args()
     if args.command == 'prepare':
         row = dict(id=args.id, source_tag='snapshot/'+args.id, commit=git('rev-parse', args.commit+'^{commit}').decode().strip(), source_dir='app', public_path='versions/'+args.id+'/index.html', format='static-v1', tracking=args.tracking=='on', digest='0'*64, label=args.label, description='', order=0, state='active', ongoing_study=None)
@@ -333,7 +334,7 @@ def main():
         if args.flow is not None:
             require(FLOW_ID.fullmatch(args.flow), 'invalid Flow id')
             row.update(source_dir='flows/' + args.flow, format='flow-static-v1')
-        require(subprocess.run(['git', 'merge-base', '--is-ancestor', row['commit'], 'main'], capture_output=True).returncode == 0, 'snapshot source must be on local main')
+        require(subprocess.run(['git', '-C', str(ROOT), 'merge-base', '--is-ancestor', row['commit'], args.main_ref], capture_output=True).returncode == 0, 'snapshot source must be on main ref: ' + args.main_ref)
         row['digest'] = digest(package(row, require_tags=False))
         print(json.dumps(row, indent=2))
     elif args.command == 'check':
@@ -347,6 +348,11 @@ def main():
                 require(git('rev-parse', args.base+'^{commit}').decode().strip() == catalog['migration_baseline'], 'base catalog unavailable')
             else:
                 transition(catalog, base)
+                retained = {row['id'] for row in base['snapshots']}
+                for row in catalog['snapshots']:
+                    if row['id'] not in retained:
+                        require(subprocess.run(['git', '-C', str(ROOT), 'merge-base', '--is-ancestor', row['commit'], args.base], capture_output=True).returncode == 0,
+                                'new snapshot source must be on catalog base before merge: ' + row['id'])
         for row in catalog['snapshots']:
             require(digest(package(row, require_tags=False)) == row['digest'], 'snapshot digest mismatch')
         print('Catalog policy and committed snapshot digests verified (missing tags allowed offline).')
