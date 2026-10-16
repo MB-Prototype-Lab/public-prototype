@@ -42,7 +42,7 @@ const { REPO, DEFAULT_CLOCK } = require('../lib/app-vm.cjs');
 const { mediaDurations, shimSource } = require('./media-shim.cjs');
 const { openComparer } = require('./pixels.cjs');
 const { writeReport, STATUS_TEXT, countsAsChange } = require('./report.cjs');
-const { measurePhoneGeometry, compareGeometry } = require('./geometry.cjs');
+const { measurePhoneGeometry, compareGeometry, validGeometry } = require('./geometry.cjs');
 const journeysApi = require('../app-journeys.cjs');
 const { declaresChange, readAs } = require('../lib/pr-declarations.cjs');
 
@@ -443,6 +443,17 @@ function pairShots(before, after) {
   return [...byKey.values()].sort((x, y) => Number(x.step) - Number(y.step) || PART_ORDER.indexOf(x.part) - PART_ORDER.indexOf(y.part));
 }
 
+// Each side must retain its own complete first-run coverage, including pictures
+// that matched across versions. A side that initially stopped has no later
+// pictures to require; the other side's inventory must not invent those for it.
+function missingRetryEvidence(initial, retry) {
+  const key = shot => shot.step + ' ' + shot.part;
+  const captured = new Map(retry.map(shot => [key(shot), shot]));
+  const valid = shot => shot && shot.file && fs.existsSync(shot.file) && (shot.part !== 'phone' || validGeometry(shot.geometry));
+  return [...new Set(initial.filter(shot => !valid(captured.get(key(shot)))).map(key)
+    .concat(retry.filter(shot => !valid(shot)).map(key)))];
+}
+
 async function runTree(browser, tree, plan, outDir) {
   const results = [];
   // Variants in parallel, journeys in order within each.
@@ -538,18 +549,13 @@ async function main(runtime = {}) {
         const b2 = await captureOne(browser, base, variant, journey, path.join(tmp, 'base'));
         const h2 = await captureOne(browser, head, variant, journey, path.join(tmp, 'head'));
         const again = new Map(pairShots(b2.shots, h2.shots).map(p => [p.key, p]));
+        const original = results => results.find(r => r.id === row.id && r.variant === row.variant).shots;
         const retry = row.retry = { baseFailure: b2.failure, headFailure: h2.failure,
           basePageErrors: b2.pageErrors, headPageErrors: h2.pageErrors,
-          pageErrors: h2.pageErrors.filter(e => !b2.pageErrors.includes(e)), missingBefore: [], missingAfter: [] };
+          pageErrors: h2.pageErrors.filter(e => !b2.pageErrors.includes(e)),
+          missingBefore: missingRetryEvidence(original(baseRes), b2.shots),
+          missingAfter: missingRetryEvidence(original(headRes), h2.shots) };
         row.pageErrors = [...new Set(row.pageErrors.concat(retry.pageErrors))];
-        // Coverage must exist on both sides before equal pictures mean a healthy
-        // repeat. A picture captured before the journey broke is insufficient.
-        for (const item of row.items.filter(i => i.status === 'changed')) {
-          const p = again.get(item.key);
-          const geometry = item.part === 'phone' ? compareGeometry(p && p.b && p.b.geometry, p && p.h && p.h.geometry) : null;
-          if (!p || !p.b || !p.b.file || (geometry && !geometry.validBefore)) retry.missingBefore.push(item.key);
-          if (!p || !p.h || !p.h.file || (geometry && !geometry.validAfter)) retry.missingAfter.push(item.key);
-        }
         const healthy = !retry.baseFailure && !retry.headFailure && !retry.basePageErrors.length && !retry.headPageErrors.length &&
           !retry.missingBefore.length && !retry.missingAfter.length;
         for (const item of row.items) {

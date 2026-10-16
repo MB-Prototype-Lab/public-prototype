@@ -134,7 +134,9 @@ with Tools.
   after** means only one version has that picture (the journey stopped early, or Tools was closed, on the
   other); it counts as a change.
 - **Flaky**: it differed once but matched on a healthy repeat, so it is not
-  counted. Both journeys must finish with complete pictures and geometry, and
+  counted. Both journeys must finish with their entire first-run picture
+  inventory and valid phone geometry, including checkpoints that initially
+  matched, and
   without page errors, before a repeat can establish this.
 - **Broke**: the journey stopped before its last step (a button it needed was
   missing, disabled or covered), or the page raised an error. The report keeps

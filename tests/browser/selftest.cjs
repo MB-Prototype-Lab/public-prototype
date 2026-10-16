@@ -27,13 +27,21 @@ async function runCase(options = {}) {
   let compares = 0;
   const result = (dir, retry, head) => {
     fs.mkdirSync(dir, { recursive: true });
-    const file = path.join(dir, '000-phone.png');
-    fs.writeFileSync(file, 'test image');
     const geometry = head && options.geometry ? { ...GEOMETRY, ...options.geometry } : { ...GEOMETRY };
     const side = head ? 'head' : 'base';
     const stage = retry ? 'retry' : 'initial';
-    return { id: 'picker-tour', variant: 'naturalLight', shots: retry && options[side + 'Missing'] ? [] : [{ label: '000 boot', step: '000', part: 'phone', file,
-      geometry: head && (options.missingGeometry || (retry && options.retryMissingGeometry)) ? undefined : geometry }],
+    const shots = (options.twoCheckpoints ? ['000', '001'] : ['000']).flatMap(step => {
+      const change = retry && options[side + 'Second'];
+      if (retry && options[side + 'Missing']) return [];
+      if (step === '001' && ((!head && options.baseInitiallyMissingSecond) || change === 'absent')) return [];
+      const part = step === '001' && change === 'replaced' ? 'selector' : 'phone';
+      const file = path.join(dir, step + '-' + part + '.png');
+      fs.writeFileSync(file, 'test image');
+      return [{ label: step + ' boot', step, part,
+        file: step === '001' && change === 'file' ? undefined : step === '001' && change === 'unreadable' ? file + '.missing' : file,
+        geometry: head && (options.missingGeometry || (retry && options.retryMissingGeometry)) || (step === '001' && change === 'geometry') ? undefined : geometry }];
+    });
+    return { id: 'picker-tour', variant: 'naturalLight', shots,
       failure: options[stage + side + 'Failure'] || null, pageErrors: options[stage + side + 'Errors'] || [] };
   };
   try {
@@ -127,6 +135,31 @@ async function run() {
   assert.deepEqual(commonErrors.rows[0].retry.basePageErrors, ['shared error']);
   assert.deepEqual(commonErrors.rows[0].retry.headPageErrors, ['shared error']);
   assert.equal(commonErrors.summary.flaky, 0, 'page errors do not provide a healthy repeat');
+  const complete = await runCase({ pixelChanged: true, twoCheckpoints: true });
+  assert.equal(complete.ok, true);
+  assert.equal(complete.summary.flaky, 1);
+  assert.equal(complete.rows[0].items[1].status, 'same');
+  for (const mode of [undefined, '--report', '--allow-declared']) {
+    for (const headSecond of ['absent', 'replaced', 'geometry', 'file', 'unreadable']) {
+      const incomplete = await runCase({ pixelChanged: true, twoCheckpoints: true, headSecond, mode, body: declared });
+      assert.equal(incomplete.ok, false, JSON.stringify({ mode, headSecond }));
+      assert.equal(incomplete.summary.brokenAfter, 1);
+      assert.equal(incomplete.summary.flaky, 0);
+      assert.deepEqual(incomplete.rows[0].retry.missingAfter, ['001 phone']);
+      assert.equal(incomplete.rows[0].items[1].status, 'same', 'the lost checkpoint initially matched');
+      assert.match(incomplete.html, /Missing after: 001 phone/);
+    }
+    const beforeIncomplete = await runCase({ pixelChanged: true, twoCheckpoints: true, baseSecond: 'absent', mode, body: declared });
+    assert.equal(beforeIncomplete.summary.brokenBeforeOnly, 1);
+    assert.equal(beforeIncomplete.summary.flaky, 0);
+    assert.equal(beforeIncomplete.ok, !!mode);
+    const expectedAbsent = await runCase({ pixelChanged: true, twoCheckpoints: true, baseInitiallyMissingSecond: true,
+      initialbaseFailure: 'before initially stopped', retrybaseFailure: 'before stopped again', mode, body: declared });
+    assert.deepEqual(expectedAbsent.rows[0].retry.missingBefore, [], 'initially absent before-only frames are not required');
+    assert.equal(expectedAbsent.summary.brokenAfter, 0);
+    assert.equal(expectedAbsent.summary.brokenBeforeOnly, 1);
+    assert.equal(expectedAbsent.ok, !!mode);
+  }
   return true;
 }
 
