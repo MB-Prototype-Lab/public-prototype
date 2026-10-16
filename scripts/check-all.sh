@@ -20,6 +20,10 @@ if [ -z "$NODE" ]; then
   done
 fi
 PYTHON="$(command -v python3 2>/dev/null || true)"
+# Store aliases, broken installs and older Python cannot run the repository tools.
+if [ -n "$PYTHON" ] && ! "$PYTHON" -c 'import sys; raise SystemExit(sys.version_info < (3, 11))' >/dev/null 2>&1; then
+  PYTHON=""
+fi
 # The node-based scripts below find node the same way; put it on PATH for them.
 [ -n "$NODE" ] && export PATH="$(dirname "$NODE"):$PATH"
 
@@ -75,9 +79,9 @@ run() {
   local missing=""
   case "$needs" in
     node)   [ -z "$NODE" ] && missing="node" ;;
-    python) [ -z "$PYTHON" ] && missing="python3" ;;
+    python) [ -z "$PYTHON" ] && missing="python3 3.11+" ;;
     both|browser)
-      [ -z "$NODE" ] && missing="node"; [ -z "$PYTHON" ] && missing="${missing:+$missing, }python3" ;;
+      [ -z "$NODE" ] && missing="node"; [ -z "$PYTHON" ] && missing="${missing:+$missing, }python3 3.11+" ;;
   esac
   if [ "$needs" = browser ] && [ -z "$missing" ]; then
     [ "$BROWSER_MISSING" = unchecked ] && BROWSER_MISSING="$(browser_missing)"

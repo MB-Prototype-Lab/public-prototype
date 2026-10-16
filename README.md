@@ -27,8 +27,9 @@ below; you do not need WSL to use the Code tab in Claude Desktop on Windows.
 2. Send the agent this request:
 
    > Set up MoneyBuddy for me in Claude Desktop on Windows. I do not use a
-   > terminal or WSL. Install or verify Git for Windows and GitHub CLI, then
-   > start GitHub CLI's browser sign-in and let me complete it in my browser.
+   > terminal or WSL. Install or verify Git for Windows, GitHub CLI, Python 3.11+
+   > and Node 22. Verify `python3 --version` and `node --version`. Make `python3`
+   > run the installed interpreter, not a Windows Store alias. Then start GitHub CLI's browser sign-in and let me complete it in my browser.
    > Never ask me for a token in chat. Clone the repository from
    > `https://github.com/MB-Prototype-Lab/public-prototype.git` into this work
    > folder if it is not already here. Use the repository folder, not a Git
@@ -45,7 +46,11 @@ below; you do not need WSL to use the Code tab in Claude Desktop on Windows.
    repository settings yourself. [Claude Desktop's Code tab](https://code.claude.com/docs/en/desktop)
    works on Windows without selecting WSL, and [GitHub CLI supports browser sign-in](https://cli.github.com/manual/gh_auth_login).
 
-   For agents: run `gh auth login --hostname github.com --git-protocol https --web`
+   For agents: verify Python 3.11+ with `python3 --version` and Node 22 with
+   `node --version`. On Windows, `python3` must launch the installed interpreter;
+   a Microsoft Store App Execution Alias is not sufficient. Install/configure Python
+   and its PATH or disable the conflicting alias, then verify `python3` again.
+   The project tools call `python3` directly. Run `gh auth login --hostname github.com --git-protocol https --web`
    and let the operator finish the browser flow. Then run
    `gh auth setup-git --hostname github.com` and verify access with
    `gh repo view MB-Prototype-Lab/public-prototype`. Confirm GitHub CLI stores
@@ -79,7 +84,9 @@ chat, Discord, password managers, documents, and repository files.
 
 Send the agent this request:
 
-> Set up my MoneyBuddy checkout. Install or verify Git and GitHub CLI. Give me
+> Set up my MoneyBuddy checkout. Install or verify Git, GitHub CLI, Python 3.11+
+> and Node 22. Verify `python3 --version` and `node --version`. On Windows, make
+> `python3` run the installed interpreter, not a Store alias. Give me
 > an OS-appropriate hidden prompt so I can paste my token directly into my own
 > terminal for `gh auth login`; do not receive or print it yourself. Configure
 > GitHub CLI as Git's HTTPS credential helper, then clone
@@ -88,7 +95,11 @@ Send the agent this request:
 > branch, uncommitted files, and current `main`. Preserve existing work. Read
 > `AGENTS.md`, `CLAUDE.md`, and `docs/workflow.md` before starting a task.
 
-For agents: use a masked terminal prompt to pass the token on standard input to
+For agents: verify Python 3.11+ with `python3 --version` and Node 22 with
+`node --version`. On Windows, ensure `python3` launches the installed interpreter,
+not a Microsoft Store App Execution Alias; configure Python/PATH or disable the
+conflicting alias, then verify again. The project tools call `python3` directly.
+Use a masked terminal prompt to pass the token on standard input to
 `gh auth login --hostname github.com --git-protocol https --with-token`. Keep it
 out of chat, shell history, temporary files, and tool output. Confirm a secure
 credential store is available; do not accept plaintext storage. Then run
