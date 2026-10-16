@@ -328,7 +328,7 @@ def main():
     prepare.add_argument('--tracking', choices=['on', 'off'], required=True)
     args = parser.parse_args()
     if args.command == 'prepare':
-        row = dict(id=args.id, source_tag='snapshot/'+args.id, commit=git('rev-parse', args.commit+'^{commit}').decode().strip(), source_dir='app', public_path='versions/'+args.id+'/index.html', format='static-v1', tracking=args.tracking=='on', digest='0'*64, label=args.label, description='', order=0, state='active', ongoing_study=False)
+        row = dict(id=args.id, source_tag='snapshot/'+args.id, commit=git('rev-parse', args.commit+'^{commit}').decode().strip(), source_dir='app', public_path='versions/'+args.id+'/index.html', format='static-v1', tracking=args.tracking=='on', digest='0'*64, label=args.label, description='', order=0, state='active', ongoing_study=None)
         require(ID.fullmatch(args.id), 'invalid snapshot id')
         if args.flow is not None:
             require(FLOW_ID.fullmatch(args.flow), 'invalid Flow id')

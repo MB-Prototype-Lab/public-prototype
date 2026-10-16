@@ -88,7 +88,8 @@ domain is chosen later, review both URLs before publication.
    ```
 
    The command prints JSON; review and add it to snapshots in the catalog on a task
-   branch. Set description, order, state and actual ongoing_study. It exports committed
+   branch. Study status starts unknown (`null`); confirm it with PMs and set actual
+   ongoing_study alongside description, order and state. It exports committed
    files, inserts release configuration and calculates the expected digest. It does
    not create tags or change main. Duplicate IDs/paths fail catalog validation.
 3. Run local checks and prepare the catalog PR through docs/workflow.md. Explain
