@@ -1,15 +1,12 @@
 # Future work (not implemented)
 
-Agent-managed local variants are implemented in [local comparisons](local-variants.md).
 Historical detached snapshot comparisons remain future work.
 
-The pinned blue main (`b9e0332`) and HoffDemo-Chat (`ddee54e`, including HoffDemo
-and HoffDemo-ESF at `8c7a252`) features are integrated into `app/`, as is the Big
-Purchase Calculator from HoffDemo-BigPurchase (`b4abe14`; its calculator-first entry
-is the Big purchase Flow). Keep those source branches intact. Later source commits
-require a separate scope decision; do not restore editable `versions/` directories.
-Publication and team cutover remain separate work. GitHub Issues, remote branch
-deletion and Git history cleanup are outside this integration.
+Keep `HoffDemo`, `HoffDemo-ESF`, `HoffDemo-Chat` and `HoffDemo-BigPurchase`
+source branches intact. Later source commits require a separate scope decision;
+do not restore editable `versions/` directories. Publication remains separate
+work. GitHub Issues, remote branch deletion and Git history cleanup are outside
+this scope.
 
 ## Half-wired features (deleted; Git history keeps the code)
 
