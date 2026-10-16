@@ -30,7 +30,7 @@ When a decision changes, edit its line to state the rule as it now stands.
 ## Navigation
 
 - **L5** — Navigation is the five tabs (D34) plus Home as an icon at the top left of a shared top bar, with a back stack per tab.
-- **L14** — The v2 screens the spec never mentions stay in the app, off the main paths, reachable from the Tools jump list.
+- **L14** — Secondary screens stay in the app, off the main participant paths, reachable from the Tools jump list.
 - **D33** — Marketplace is a visible, greyed-out tab that does nothing.
 - **D34** — The bottom nav has five tabs in this order: Goals, Budget, My Progress, Education, Marketplace (labels may be shorter).
 
