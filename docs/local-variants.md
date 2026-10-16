@@ -109,10 +109,14 @@ file (including deletions/new files); directories and pathspec patterns are not
 accepted. Checkpoint commits include the selected working contents. Unrelated staged,
 unstaged, and untracked files remain in the primary checkout and are not copied.
 Every variant starts at the same recorded checkpoint. Output supplies IDs,
-branches, labels, and the primary root. Worktree URLs use `.worktrees/variant-A/`,
+branches, labels, and the primary root. Branches use `variant/<task>-A`,
+`variant/<task>-B`, and so on, where `<task>` is the current task branch without
+its leading `work/`. Worktree URLs use `.worktrees/variant-A/`,
 `.worktrees/variant-B/`, and so on (after Z comes AA). If names are already occupied
 by retained branches or worktrees, the whole new comparison gets a matching suffix,
-such as `variant-A-2` and `variant-B-2`. Existing comparisons keep their original IDs.
+such as `variant-A-2` and `variant-B-2`, with branches
+`variant/<task>-A-2` and `variant/<task>-B-2`. Existing comparisons keep their
+recorded IDs and branches, including legacy names accepted for cleanup.
 Use the exact recorded ID when adopting or cleaning up.
 Implement each choice there and run affected checks from that exact checkout.
 Do not recursively search `.worktrees/`; use the registered path for targeted work.

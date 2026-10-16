@@ -45,8 +45,8 @@ def show_browser_urls(root, state=None, distro=None):
             target = comparison_target(state)
             print('Comparing: ' + target['label'])
             for variant in state['variants']:
-                if not variant.get('removed') and valid(root, variant):
-                    entry = location(root, variant) / target['path']
+                if not variant.get('removed') and valid(root, variant, state['branch']):
+                    entry = location(root, variant, state['branch']) / target['path']
                     if entry.is_file():
                         print(variant['label'] + ': ' + browser_url(entry, distro))
     except RuntimeError as error:
@@ -190,7 +190,11 @@ def option_letter(number):
     return letters
 
 
-def available_names(root, count):
+def variant_branch(task_branch, ident):
+    return 'variant/' + task_branch.removeprefix('work/') + '-' + ident.removeprefix('variant-')
+
+
+def available_names(root, count, task_branch):
     """Keep letters aligned across a comparison; never reuse retained branches."""
     branches = {name.casefold() for name in git(root, 'for-each-ref', '--format=%(refname)', 'refs/heads').splitlines()}
     registered = {path.casefold() for path in records(root)}
@@ -200,25 +204,32 @@ def available_names(root, count):
     while True:
         suffix = '' if serial == 1 else '-' + str(serial)
         names = ['variant-' + option_letter(n) + suffix for n in range(1, count + 1)]
+        refs = [('refs/heads/' + variant_branch(task_branch, name)).casefold() for name in names]
+        if any(ref.startswith(branch + '/') for ref in refs for branch in branches):
+            raise RuntimeError('Variant branch namespace is occupied; preserve it and choose another task branch')
         if all(not os.path.lexists(directory / name) and
                str(directory / name).casefold() not in registered and
-               ('refs/heads/variant/' + name).casefold() not in branches for name in names):
+               not any(branch == ref or branch.startswith(ref + '/') for branch in branches)
+               for name, ref in zip(names, refs)):
             return names
         serial += 1
 
 
-def location(root, variant):
+def location(root, variant, task_branch):
     ident = variant['id']
     if not re.fullmatch(r'(?:[a-z0-9][a-z0-9-]*|variant-[A-Z]+(?:-[1-9][0-9]*)?)', ident):
         raise RuntimeError('Invalid managed variant identity')
     path = root / '.worktrees' / ident
-    if path.resolve() != path or variant['branch'] != 'variant/' + ident:
+    branches = {'variant/' + ident}
+    if re.fullmatch(r'variant-[A-Z]+(?:-[1-9][0-9]*)?', ident):
+        branches.add(variant_branch(task_branch, ident))
+    if path.resolve() != path or variant['branch'] not in branches:
         raise RuntimeError('Managed path or branch identity changed')
     return path
 
 
-def valid(root, variant):
-    path = location(root, variant)
+def valid(root, variant, task_branch):
+    path = location(root, variant, task_branch)
     registered = records(root).get(str(path))
     if not path.exists():
         return False
@@ -236,10 +247,10 @@ def refresh(root, state):
     for variant in state['variants']:
         if variant.get('removed'):
             continue
-        if not valid(root, variant):
+        if not valid(root, variant, state['branch']):
             print('Missing worktree: ' + variant['id'], file=sys.stderr)
             continue
-        path = location(root, variant)
+        path = location(root, variant, state['branch'])
         atomic(path / '.local-preview/return.js', 'window.MB_LOCAL_RETURN = ' + json.dumps({'href': '../../index.html'}) + ';\n')
         if not (path / target['path']).is_file():
             print('Missing ' + target['path'] + ' in ' + variant['id'], file=sys.stderr)
@@ -300,15 +311,15 @@ def run(root, args):
         ident = uuid.uuid4().hex[:12]
         if (directory / 'sessions' / (ident + '.json')).exists():
             raise RuntimeError('Session identity collision; retry creation')
-        names = available_names(root, len(args.option))
+        names = available_names(root, len(args.option), branch)
         print(git(root, 'status', '--short'))
         checkpoint(root, args.file, 'Checkpoint local comparison task files')
         commit = git(root, 'rev-parse', 'HEAD')
         target = flow_at(root, flow, commit) if flow is not None else {'kind': 'app'}
         state = {'id': ident, 'root': str(root), 'branch': branch, 'checkpoint': commit, 'target': target, 'status': 'creating', 'variants': []}
         for vid, (label, description) in zip(names, args.option):
-            variant = {'id': vid, 'label': label, 'description': description, 'branch': 'variant/' + vid}
-            path = location(root, variant)
+            variant = {'id': vid, 'label': label, 'description': description, 'branch': variant_branch(branch, vid)}
+            path = location(root, variant, state['branch'])
             if path.exists() or 'refs/heads/' + variant['branch'] in git(root, 'for-each-ref', '--format=%(refname)', 'refs/heads').splitlines():
                 raise RuntimeError('Variant branch/path collision')
             state['variants'].append(variant)
@@ -316,7 +327,7 @@ def run(root, args):
         atomic(active, ident)
         # Save the entire creation intent first so failures remain recoverable.
         for variant in state['variants']:
-            git(root, 'worktree', 'add', '-b', variant['branch'], str(location(root, variant)), state['checkpoint'])
+            git(root, 'worktree', 'add', '-b', variant['branch'], str(location(root, variant, state['branch'])), state['checkpoint'])
         state['status'] = 'active'
     elif state is None:
         raise RuntimeError('No comparison registered')
@@ -325,9 +336,9 @@ def run(root, args):
             if state['status'] != 'creating':
                 raise RuntimeError('--resume only applies to interrupted creation')
             for variant in state['variants']:
-                if valid(root, variant):
+                if valid(root, variant, state['branch']):
                     continue
-                path = location(root, variant)
+                path = location(root, variant, state['branch'])
                 if str(path) in records(root):
                     raise RuntimeError('Missing registered worktree; repair Git registration before resuming')
                 branches = git(root, 'for-each-ref', '--format=%(refname)', 'refs/heads').splitlines()
@@ -337,7 +348,7 @@ def run(root, args):
                     git(root, 'worktree', 'add', str(path), variant['branch'])
                 else:
                     git(root, 'worktree', 'add', '-b', variant['branch'], str(path), state['checkpoint'])
-        if state['status'] == 'creating' and all(valid(root, v) for v in state['variants']):
+        if state['status'] == 'creating' and all(valid(root, v, state['branch']) for v in state['variants']):
             state['status'] = 'active'
     elif args.command == 'close':
         state['status'] = 'closed'
@@ -349,11 +360,11 @@ def run(root, args):
             if len(selected) != 1 or state['status'] not in ('active', 'merging', 'verification'):
                 raise RuntimeError('Adopt one variant from an active comparison')
             variant = selected[0]
-            if not valid(root, variant):
+            if not valid(root, variant, state['branch']):
                 raise RuntimeError('Chosen worktree is missing')
             if current(root) != state['branch']:
                 raise RuntimeError('Return the primary checkout to the original branch')
-            path = location(root, variant)
+            path = location(root, variant, state['branch'])
             if state.get('winner') and state['winner'] != variant['id']:
                 raise RuntimeError('Resume the recorded adoption before choosing another winner')
             clean(root)
@@ -375,9 +386,9 @@ def run(root, args):
             if state['status'] != 'closed':
                 raise RuntimeError('Close the comparison before cleanup')
             for variant in selected:
-                if valid(root, variant):
-                    clean(location(root, variant))
-                    git(root, 'worktree', 'remove', str(location(root, variant)))
+                if valid(root, variant, state['branch']):
+                    clean(location(root, variant, state['branch']))
+                    git(root, 'worktree', 'remove', str(location(root, variant, state['branch'])))
                 variant['removed'] = True
                 save(root, state)
     save(root, state)
