@@ -92,7 +92,12 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(output['versions/v1/index.html'], self.build()['versions/v1/index.html'])
         self.row['state'] = 'retired'
         retired = self.build(previous=original)
-        self.assertIn(b'This build has been retired', retired['versions/v1/index.html'])
+        notice = retired['versions/v1/index.html']
+        self.assertIn(b'This build has been retired', notice)
+        self.assertIn(b'<html lang="en">', notice)
+        self.assertIn(b'<meta name="viewport" content="width=device-width, initial-scale=1">', notice)
+        self.assertIn(b'&lt;script&gt;alert(1)&lt;/script&gt;', notice)
+        self.assertIn(b'href="../../index.html"', notice)
         self.assertNotIn('versions/v1/assets/a.png', retired)
         self.row['state'] = 'active'
         restored = self.build(previous=json.loads(retired['publication-manifest.json']))

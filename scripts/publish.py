@@ -287,7 +287,7 @@ def build(catalog, revision, assets, repo=ROOT, previous=None, require_tags=True
         if previous and row['id'] in previous['snapshots']:
             require(hashes == previous['snapshots'][row['id']], 'published snapshot bytes changed')
         if row['state'] == 'retired':
-            files = {'index.html': ('<!doctype html><meta charset="utf-8"><title>Build retired</title><h1>This build has been retired</h1><p>' + html.escape(row['label']) + '</p><a href="../../index.html">Return to selector</a>').encode()}
+            files = {'index.html': ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Build retired</title></head><body><h1>This build has been retired</h1><p>' + html.escape(row['label']) + '</p><a href="../../index.html">Return to selector</a></body></html>').encode()}
         prefix = row['public_path'].rsplit('/', 1)[0] + '/'
         output.update({prefix + k: v for k, v in files.items()})
     validate_assets(output, [r['public_path'].rsplit('/', 1)[0] + '/' for r in catalog['snapshots'] if r['format'] in ('static-v1', 'flow-static-v1')])
