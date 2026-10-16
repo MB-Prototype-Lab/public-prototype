@@ -30,8 +30,11 @@ async function runCase(options = {}) {
     const file = path.join(dir, '000-phone.png');
     fs.writeFileSync(file, 'test image');
     const geometry = head && options.geometry ? { ...GEOMETRY, ...options.geometry } : { ...GEOMETRY };
-    return { id: 'picker-tour', variant: 'naturalLight', shots: [{ label: '000 boot', step: '000', part: 'phone', file,
-      geometry: head && options.missingGeometry ? undefined : geometry }], failure: null, pageErrors: [] };
+    const side = head ? 'head' : 'base';
+    const stage = retry ? 'retry' : 'initial';
+    return { id: 'picker-tour', variant: 'naturalLight', shots: retry && options[side + 'Missing'] ? [] : [{ label: '000 boot', step: '000', part: 'phone', file,
+      geometry: head && (options.missingGeometry || (retry && options.retryMissingGeometry)) ? undefined : geometry }],
+      failure: options[stage + side + 'Failure'] || null, pageErrors: options[stage + side + 'Errors'] || [] };
   };
   try {
     const tree = path.resolve(__dirname, '../..');
@@ -74,6 +77,56 @@ async function run() {
   const missing = await runCase({ missingGeometry: true });
   assert.equal(missing.ok, false);
   assert.equal(missing.summary.flaky, 0);
+
+  const healthy = await runCase({ pixelChanged: true });
+  assert.equal(healthy.ok, true);
+  assert.equal(healthy.summary.flaky, 1);
+  assert.equal(healthy.summary.broken, 0);
+  const declared = '## Phone and Tools changes\nPhone: approved picture changes\nTools: approved Tools changes\n';
+  for (const mode of [undefined, '--report', '--allow-declared']) {
+    for (const problem of [
+      { retryheadFailure: 'control disappeared on the retry' },
+      { retryheadErrors: ['new retry page error'] },
+      { retrybaseFailure: 'before stopped', retryheadFailure: 'after stopped' },
+      { headMissing: true },
+      { retryMissingGeometry: true },
+    ]) {
+      const broken = await runCase({ pixelChanged: true, mode, body: declared, ...problem });
+      assert.equal(broken.ok, false, JSON.stringify({ mode, problem }));
+      assert.equal(broken.summary.brokenAfter, 1);
+      assert.equal(broken.summary.flaky, 0);
+      assert.ok(broken.rows[0].retry);
+      assert.match(broken.html, /Repeat check/);
+    }
+  }
+  const stopped = await runCase({ pixelChanged: true, retryheadFailure: 'control disappeared on the retry',
+    retryheadErrors: ['new retry page error'], mode: '--report' });
+  assert.equal(stopped.rows[0].retry.headFailure, 'control disappeared on the retry');
+  assert.deepEqual(stopped.rows[0].pageErrors, ['new retry page error']);
+  assert.match(stopped.html, /control disappeared on the retry/);
+  assert.match(stopped.html, /new retry page error/);
+  for (const mode of [undefined, '--report', '--allow-declared']) {
+    const beforeOnly = await runCase({ pixelChanged: true, retrybaseFailure: 'before stopped', mode, body: declared });
+    assert.equal(beforeOnly.summary.brokenBeforeOnly, 1);
+    assert.equal(beforeOnly.summary.brokenAfter, 0);
+    assert.equal(beforeOnly.summary.flaky, 0);
+    assert.equal(beforeOnly.ok, !!mode);
+  }
+  const firstFailure = await runCase({ pixelChanged: true, initialheadFailure: 'first run stopped', mode: '--report' });
+  assert.equal(firstFailure.ok, false);
+  assert.equal(firstFailure.rows[0].headFailure, 'first run stopped');
+  const firstError = await runCase({ pixelChanged: true, initialheadErrors: ['first page error'], mode: '--report' });
+  assert.equal(firstError.ok, false);
+  assert.deepEqual(firstError.rows[0].headPageErrors, ['first page error']);
+  assert.deepEqual(firstError.rows[0].pageErrors, ['first page error']);
+  const beforeMissing = await runCase({ pixelChanged: true, baseMissing: true, mode: '--report' });
+  assert.equal(beforeMissing.ok, true);
+  assert.equal(beforeMissing.summary.brokenBeforeOnly, 1);
+  assert.equal(beforeMissing.summary.flaky, 0);
+  const commonErrors = await runCase({ pixelChanged: true, retrybaseErrors: ['shared error'], retryheadErrors: ['shared error'] });
+  assert.deepEqual(commonErrors.rows[0].retry.basePageErrors, ['shared error']);
+  assert.deepEqual(commonErrors.rows[0].retry.headPageErrors, ['shared error']);
+  assert.equal(commonErrors.summary.flaky, 0, 'page errors do not provide a healthy repeat');
   return true;
 }
 

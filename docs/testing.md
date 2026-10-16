@@ -133,9 +133,15 @@ with Tools.
   differed again when the robot repeated the journey. **Only before** or **Only
   after** means only one version has that picture (the journey stopped early, or Tools was closed, on the
   other); it counts as a change.
-- **Flaky**: it differed once but not on the repeat, so it is not counted.
+- **Flaky**: it differed once but matched on a healthy repeat, so it is not
+  counted. Both journeys must finish with complete pictures and geometry, and
+  without page errors, before a repeat can establish this.
 - **Broke**: the journey stopped before its last step (a button it needed was
-  missing, disabled or covered), or the page raised an error.
+  missing, disabled or covered), or the page raised an error. The report keeps
+  failures and errors from both the first run and the repeat. An after-version
+  retry failure, new page error or missing retry evidence fails even in
+  `--report` mode or when the PR declares picture changes. Before-only failures
+  stay separate and count as a phone change.
 
 The same job also runs both Flows in Chromium from file:// (a folder with spaces)
 and over HTTP, and rehearses exporting Flow snapshots in a throwaway copy of the

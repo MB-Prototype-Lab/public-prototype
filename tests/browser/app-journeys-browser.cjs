@@ -524,6 +524,7 @@ async function main(runtime = {}) {
       rows.push({ id: h.id, variant: h.variant, items,
         baseFailure: b.failure || (items.some(i => i.geometry && !i.geometry.validBefore) ? 'Normal phone geometry missing before the change' : null),
         headFailure: h.failure || (items.some(i => i.geometry && !i.geometry.validAfter) ? 'Normal phone geometry missing after the change' : null),
+        basePageErrors: b.pageErrors, headPageErrors: h.pageErrors,
         pageErrors: h.pageErrors.filter(e => !b.pageErrors.includes(e)) });
     }
     // A difference must reproduce: re-run both sides of each changed journey
@@ -537,12 +538,33 @@ async function main(runtime = {}) {
         const b2 = await captureOne(browser, base, variant, journey, path.join(tmp, 'base'));
         const h2 = await captureOne(browser, head, variant, journey, path.join(tmp, 'head'));
         const again = new Map(pairShots(b2.shots, h2.shots).map(p => [p.key, p]));
+        const retry = row.retry = { baseFailure: b2.failure, headFailure: h2.failure,
+          basePageErrors: b2.pageErrors, headPageErrors: h2.pageErrors,
+          pageErrors: h2.pageErrors.filter(e => !b2.pageErrors.includes(e)), missingBefore: [], missingAfter: [] };
+        row.pageErrors = [...new Set(row.pageErrors.concat(retry.pageErrors))];
+        // Coverage must exist on both sides before equal pictures mean a healthy
+        // repeat. A picture captured before the journey broke is insufficient.
+        for (const item of row.items.filter(i => i.status === 'changed')) {
+          const p = again.get(item.key);
+          const geometry = item.part === 'phone' ? compareGeometry(p && p.b && p.b.geometry, p && p.h && p.h.geometry) : null;
+          if (!p || !p.b || !p.b.file || (geometry && !geometry.validBefore)) retry.missingBefore.push(item.key);
+          if (!p || !p.h || !p.h.file || (geometry && !geometry.validAfter)) retry.missingAfter.push(item.key);
+        }
+        const healthy = !retry.baseFailure && !retry.headFailure && !retry.basePageErrors.length && !retry.headPageErrors.length &&
+          !retry.missingBefore.length && !retry.missingAfter.length;
         for (const item of row.items) {
           const p = item.status === 'changed' && again.get(item.key);
-          if (!p || !p.b || !p.h) continue;
+          if (item.status !== 'changed') continue;
+          if (!p || !p.b || !p.h || retry.missingBefore.includes(item.key) || retry.missingAfter.includes(item.key)) {
+            item.retry = { status: 'incomplete' };
+            continue;
+          }
           const r = await comparer.compare(fs.readFileSync(p.b.file), fs.readFileSync(p.h.file));
           const geometry = item.part === 'phone' ? compareGeometry(p.b.geometry, p.h.geometry) : null;
-          if (r.sameSize && r.diffPixels / r.totalPixels <= FAIL_RATIO && (!geometry || geometry.same)) item.status = 'flaky';
+          const same = r.sameSize && r.diffPixels / r.totalPixels <= FAIL_RATIO && (!geometry || geometry.same);
+          item.retry = { status: !healthy ? 'broken' : same ? 'same' : 'changed', diffPixels: r.diffPixels,
+            size: [r.sizeA, r.sizeB], geometry };
+          if (healthy && same) item.status = 'flaky';
         }
       }
     }));
@@ -561,10 +583,13 @@ async function main(runtime = {}) {
       // A journey that stops early after the change, or on both sides (its
       // coverage is lost), or raises new page errors, fails the run. One that
       // stopped only before the change now goes further: a phone change.
-      row.broken = !!(row.baseFailure || row.headFailure || row.pageErrors.length);
+      const retry = row.retry;
+      row.broken = !!(row.baseFailure || row.headFailure || row.pageErrors.length || (retry &&
+        (retry.baseFailure || retry.headFailure || retry.missingBefore.length || retry.missingAfter.length)));
       if (!row.broken) continue;
       summary.broken++;
-      if (row.headFailure || row.pageErrors.length) summary.brokenAfter++; else summary.brokenBeforeOnly++;
+      if (row.headFailure || row.pageErrors.length || (retry && (retry.headFailure || retry.missingAfter.length))) summary.brokenAfter++;
+      else summary.brokenBeforeOnly++;
     }
     const report = writeReport(out, rows, summary, VARIANTS);
     console.log('Browser journeys: ' + rows.length + ' runs per side, ' + rows.reduce((n, r) => n + r.items.length, 0) + ' screenshots compared in ' + summary.seconds + 's');
@@ -574,6 +599,9 @@ async function main(runtime = {}) {
       const showPart = row.items.some(i => i.part !== 'phone');
       console.log('  ' + row.variant + ' / ' + row.id + ':' + (row.broken ? ' BROKEN' : '') + (bad.length ? ' ' + bad.map(i => STATUS_TEXT[i.status].toLowerCase() + ' @ ' + i.label + (showPart ? ' (' + i.part + ')' : '') + (i.geometry && !i.geometry.same ? ' [' + i.geometry.changes.join('; ') + ']' : '')).join('; ') : '') +
         (row.baseFailure || row.headFailure ? ' [before: ' + (row.baseFailure || 'finished') + ' | after: ' + (row.headFailure || 'finished') + ']' : '') +
+        (row.retry ? ' [repeat before: ' + (row.retry.baseFailure || 'finished') + ' | after: ' + (row.retry.headFailure || 'finished') +
+          (row.retry.missingBefore.length ? ' | missing before: ' + row.retry.missingBefore.join(', ') : '') +
+          (row.retry.missingAfter.length ? ' | missing after: ' + row.retry.missingAfter.join(', ') : '') + ']' : '') +
         (row.pageErrors.length ? ' [new page errors: ' + row.pageErrors.join(' | ') + ']' : ''));
     }
     console.log('Phone pictures changed: ' + summary.phoneChanged + ' · Tools pictures changed: ' + summary.toolsChanged + ' · flaky (did not reproduce): ' + summary.flaky +
