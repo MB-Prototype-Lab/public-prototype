@@ -10,6 +10,9 @@ that document are relative to the repository root. Remote actions follow the
 [authorization boundary](../../../CLAUDE.md#collaboration). Report observed results,
 not assumed remote success.
 
+At task intake, follow [Task scope](../../../docs/workflow.md#task-scope) and read
+the relevant [code-health sections](../../../docs/code-health.md) before editing.
+
 A request to narrow, shorten, reorder or start the prototype elsewhere (“only show the
 emergency fund”, “skip onboarding”) is a Flow: use [create-flow](../create-flow/SKILL.md)
 before writing code, never a switch in `app/`.

@@ -1,7 +1,9 @@
 # App architecture — cross-cutting contracts
 
 `app/` is the editable full product. This guide covers contracts shared by many
-screens; [app contracts](../../docs/app-contracts.md) records the rules and
+screens; read the runtime constraint and the sections for the dependencies being
+changed. [Code health](../../docs/code-health.md) guides maintenance review;
+[app contracts](../../docs/app-contracts.md) records the rules and
 [product decisions](../../docs/decisions.md) keeps their stable IDs. Operations
 follow [workflow](../../docs/workflow.md) and [publishing](../../docs/publishing.md).
 
@@ -17,6 +19,7 @@ local data reliably. Load data through ordered script tags (L13).
 
 Each `data/*.json` source has a generated `.js` wrapper assigning a global.
 Edit JSON, then run `bash scripts/wrap-data.sh`; never hand-edit wrappers.
+Do not regenerate media as part of packaging.
 `wrap-data.sh` rejects JSON without a mapped global. Authored
 `data/lesson-scripts.js` and `data/onboarding-storyboard.js` have no JSON sibling.
 

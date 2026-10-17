@@ -19,6 +19,7 @@ It runs, in CI order:
 bash scripts/check-syntax.sh
 bash scripts/sweep.sh
 python3 scripts/check-paths.py
+python3 scripts/check-markdown-links.py
 node tests/release-runtime.cjs
 node tests/local-variants.cjs
 node tests/flows-selector.cjs
@@ -35,6 +36,49 @@ node tests/browser/app-journeys-browser.cjs
 MB_FLOW_BASE_URL=http://127.0.0.1:<port>/ node tests/flows-browser.cjs   # with python3 -m http.server <port> on the repository root
 bash tests/browser/snapshot-smoke.sh <temporary folder>
 ```
+
+## Changing verification
+
+Read this section when changing checks, fixtures, journeys or comparison rules;
+use the package-specific sections below for ordinary verification. See
+[code health](code-health.md) for intake and handoff review.
+
+Exercise the real entrypoint and dependency, not a substitute that bypasses the
+behavior under test. Establish a passing baseline before demonstrating detection
+of a deliberate regression. A negative test must fail for the intended reason;
+assert evidence that distinguishes that failure from a broken setup.
+
+Preserve coverage when renaming or removing code. Explain changes to journeys,
+normalization, state aliases and comparison thresholds in the PR, including why
+they preserve the evidence rather than hide a difference. Review the actual
+comparison output and retain failures, incomplete evidence and blocked checks.
+Declaring an expected visual change never excuses a broken journey or missing
+retry evidence; see the [browser evidence rules](#browser-check-does-the-phone-look-the-same).
+
+Manually verify media, motion and platform behavior outside automated coverage.
+Investigate new warnings and explain unresolved ones in the handoff.
+
+## Pre-PR review lifecycle acceptance
+
+For lifecycle changes, keep deterministic real-Git tests, actual-app browser and
+harness controls, fresh-agent skill exercises and native platform acceptance
+separate. The [platform acceptance packet](pre-pr-review-platform-acceptance.md)
+owns commands, reusable fixture/generator entrypoints, native desktop-agent prompts
+and required evidence. Native Windows desktop-agent smoke is required before merge
+of this workflow feature; Linux/WSL results do not satisfy it. Docker-only
+prerequisites are its immediate follow-up, not implemented by this change.
+
+## Documentation links
+
+`python3 scripts/check-markdown-links.py` checks local file links and Markdown
+heading fragments in maintained root guidance, `docs/`, `app/docs/`, Flow docs,
+project skills and the PR template. It runs in check-all and CI without network
+access or extra dependencies. Inline and reference links and GitHub-style heading
+anchors (including duplicates) are supported; fenced examples and external URLs
+are ignored. It excludes `.worktrees/` and never reads protected datasets.
+Temporary-fixture tests in `tests/test_check_markdown_links.py` exercise its real
+command as well as link and anchor behavior. It does not enforce prose style or
+length.
 
 ## Journey checks: is the app's flow unchanged?
 

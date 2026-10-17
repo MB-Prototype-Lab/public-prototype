@@ -1,6 +1,10 @@
 # Current app contracts
 
-Read alongside app/docs/architecture.md. docs/workflow.md governs operations. Tracking is frozen by release configuration; see docs/publishing.md. Decision IDs cited here (L##, D##) are in [decisions](decisions.md).
+Read the sections relevant to the implementation being changed alongside the
+[architecture](../app/docs/architecture.md). Start with Hard rules and the affected
+behavior; use [code health](code-health.md) for maintenance and removal review.
+[Workflow](workflow.md) governs operations; [publishing](publishing.md) owns frozen
+release tracking. Decision IDs (L##, D##) are in [decisions](decisions.md).
 
 ## Combined prototype behavior
 
@@ -26,7 +30,8 @@ picker of nine starting profiles (L26).
 ### ESF budget exception (user approved)
 
 Ordinary builders use `submitBudgetBaseline()` and confirm replacement of an
-existing budget. **Creating or editing the ESF goal immediately replaces the
+existing budget; they never write `state.budget` directly.
+**Creating or editing the ESF goal immediately replaces the
 budget through `applyBudgetBaseline()` and returns to Goals, without a replacement
 confirmation.** This also discards an older pending builder proposal. Repeated
 saves leave exactly one emergency-fund goal; reopening keeps the session's figures.
@@ -208,13 +213,14 @@ assertions catch wrong factor wiring even when a total happens to match.
 
 **Code**
 - Vanilla JS, everything global, plain `<script>` tags. Keep names unique and
-  feature-prefixed. Load order in `index.html` matters.
+  feature-prefixed and modules separate. Load order in `index.html` matters.
 - One global `state`; mutate it then call `render()`. No partial updates.
 - **Always `h()`-escape** anything interpolated into an HTML template literal.
 - **Inputs use `onchange`, not `oninput`** — a full re-render mid-keystroke
   destroys focus. Sliders are the exception, paired with `debouncedRender()`.
 - **A `type="range"` slider on `oninput` must use `debouncedRender()`, never
-  `render()`** — product sliders as much as admin ones.
+  `render()`** — product sliders as much as admin ones. Keep slider maxima stable
+  during dragging.
   `render()` reassigns `.screen`'s innerHTML, destroying the element being
   dragged — the browser's pointer capture dies with the old node and the thumb
   stops tracking. State still updates immediately; only the repaint waits.

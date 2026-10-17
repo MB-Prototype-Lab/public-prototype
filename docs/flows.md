@@ -5,6 +5,10 @@ contained proposals for PM iteration, ticket references and studies. Merging a F
 makes it available to the team; product approval and integration into `app/` are
 separate work. Publication is also separate.
 
+For implementation edits, read [Edit and check](#edit-and-check), the package's
+`docs/flow.md` and relevant [code-health sections](code-health.md). Creation,
+integration and publication each have their own sections below.
+
 ## Preview and review
 
 Open root `index.html`, enter `1337`, and choose **Local Prototype** on the **Prototype**

@@ -134,7 +134,7 @@ prints the selector URL and each option's URL.
 
 ## 4. Ask your agent to use the project skills
 
-The repository has six skills in `.claude/skills/`. Name the relevant skill in
+The repository has seven skills in `.claude/skills/`. Name the relevant skill in
 your request; the agent reads its instructions and the linked project guides.
 
 | When you want to… | Ask for… | What the agent does |
@@ -143,6 +143,7 @@ your request; the agent reads its instructions and the linked project guides.
 | Compare local variants | [compare-local](.claude/skills/compare-local/SKILL.md) | Creates independent previews of the app or one Flow, keeps a chosen variant, and cleans up only selected work. |
 | Make or change a focused journey (a Flow) | [create-flow](.claude/skills/create-flow/SKILL.md) | Turns “only show…”, “skip onboarding…” or “start at…” into a contained Flow on the selector's Flows tab; the full app stays unchanged. |
 | Bring in changes from `main` | [sync](.claude/skills/sync/SKILL.md) | Fetches and merges current `main` into your task branch, then checks affected work. |
+| Review finished changes before a PR | [pre-pr-review](.claude/skills/pre-pr-review/SKILL.md) | Delegates a cold review, resumes saved reviews, shows the exact preview and applies verified behavior-preserving fixes locally; eligible completed workspaces are cleaned automatically. |
 | Get tested work into a pull request | [ship](.claude/skills/ship/SKILL.md) | Reviews changes, runs checks, prepares the PR, and records your testing. |
 | Update the live selector or add a snapshot | [publish](.claude/skills/publish/SKILL.md) | Follows the release procedure after an explicit publication request. |
 
@@ -154,6 +155,22 @@ handles routine code changes and automated checks. See
 check, ask your agent to “run all the checks”: it runs `bash scripts/check-all.sh`,
 and each line says PASS, FAIL or BLOCKED. BLOCKED means this computer cannot run
 that check; it is not a pass. Merging code does not update the live site.
+
+For a cold review, use any of these requests:
+
+- “Review my finished changes before a PR.”
+- “Continue my pre-PR review.”
+- “Show me the reviewed version.”
+- “Clean up old review worktrees.”
+- “Use ship to prepare the PR.”
+
+The [review procedure](docs/pre-pr-review.md#requests-and-results) discovers saved
+reviews for you and uses independent agents. It returns an outcome first, any
+product decisions, the exact labeled version to test and your next action. Your
+finished checkpoint and evidence remain available after eligible review workspaces
+are cleaned automatically. Review is local; shipping remains a separate request.
+For changes to this workflow, native Windows desktop-agent smoke is
+[required before merge](docs/pre-pr-review-platform-acceptance.md).
 
 ## Compare variants locally
 

@@ -146,6 +146,7 @@ snapshot_rehearsal() {
 run "JS syntax (app, gate)"            node   bash scripts/check-syntax.sh
 run "Sweep"                            both   bash scripts/sweep.sh
 run "Local paths"                      python "$PYTHON" scripts/check-paths.py
+run "Markdown links"                   python "$PYTHON" scripts/check-markdown-links.py
 run "Release runtime"                  node   "$NODE" tests/release-runtime.cjs
 run "Local variants selector"          node   "$NODE" tests/local-variants.cjs
 run "Flows selector"                   node   "$NODE" tests/flows-selector.cjs

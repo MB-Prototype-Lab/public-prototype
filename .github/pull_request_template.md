@@ -6,6 +6,10 @@
 
 <!-- What a tester or PM sees now. For Flow or app-integration work, name the scope. -->
 
+## Maintenance
+
+<!-- Related cleanup performed, or none; report unrelated findings without expanding scope. -->
+
 ## Validation run
 
 <!-- Commands actually run, with results. A check that could not run is blocked, not passed. -->

@@ -10,6 +10,24 @@ that document are relative to the repository root. Remote actions follow the
 [authorization boundary](../../../CLAUDE.md#collaboration). Report observed results,
 not assumed remote success.
 
+Before handoff, complete the [maintenance review](../../../docs/code-health.md#before-handoff)
+and include maintenance, verification evidence and unresolved limitations in PR text.
+
+When the PM asks for a cold review of finished work before a PR, use
+[pre-pr-review](../pre-pr-review/SKILL.md) and its
+[procedure](../../../docs/pre-pr-review.md).
+
+At ship intake, always discover persisted reviews with
+`python3 scripts/pre-pr-review.py status --json`, resolving IDs for the current task
+from disk rather than chat memory. Follow its
+[ship handoff](../../../docs/pre-pr-review.md#ship-handoff) for eligible cleanup,
+fixes, checkpoint, both comparisons, findings, decisions and limitations; report
+incomplete/stale evidence. Local review does not replace ship's sync, current-main
+comparisons, CI or applicable PM verification; do not force it on ordinary ship.
+Changes to this workflow require
+[native Windows desktop-agent acceptance](../../../docs/pre-pr-review-platform-acceptance.md)
+before merge.
+
 For a Flow task, read [Flows](../../../docs/flows.md), run
 `python3 scripts/flows.py scope --scope flow` after syncing main, and run all Flow
 plus existing app, publication and browser checks. A Flow PR shares a
