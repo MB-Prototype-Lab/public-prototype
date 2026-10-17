@@ -1,22 +1,15 @@
-// ─── Observation registry (D18, architecture §6) ─────────────────────────────
-// Screens ASK the registry what to show; they never hardcode an observation.
-// That is what makes the Phase 6 "reachable from ≥2 screens" check mechanical
-// rather than a hunt, and it means adding a surface is a data edit.
-//
-// Seven surface names are in use. They are regions, not screen ids — My
-// Progress queries two of them.
-//
-//   home_tip · home_task · budget_comparison · progress · progress_bills
-//   goals    · daily_update
+// ─── Observations (D18, architecture §6) ─────────────────────────────────────
+// The four seeded observations live in state.observations, and every screen
+// that shows one renders it through the copy helpers below. Each carries the
+// seed's `surfaces` tags, but code reads only two of them: journalDone picks
+// its cards by budget_comparison and progress. The other screens show the
+// observations in seed order. D18 (reachable from ≥2 screens) is checked on
+// the rendered screens by sweep §3.
 
 /** Observations that name this surface, in seed order. */
 function observationsFor(surface) {
   return (state.observations || []).filter(o =>
     Array.isArray(o.surfaces) && o.surfaces.indexOf(surface) !== -1);
-}
-
-function observationById(id) {
-  return (state.observations || []).find(o => o.id === id) || null;
 }
 
 // ── Live figures ─────────────────────────────────────────────────────────────
@@ -52,36 +45,10 @@ function observationsRecompute() {
   });
 }
 
-/**
- * The peer-comparison counterpart to the seeded plan_gap (L11). Both framings
- * must appear and be labelled distinctly — "over your plan" and "over your
- * peers" are different numbers for the same category, and neither may stand in
- * for the other. 04-budget-benchmarks calls this out as a trap.
- *
- * Returns null when the peer model has nothing for the category.
- */
-function observationPeerCounterpart(o) {
-  if (!o || !o.category) return null;
-  const peer = benchPeerValue(o.category, benchOptsForUser());
-  if (peer == null) return null;
-  const user = catValue(state.mtd, o.category);
-  return {
-    id: o.id + "__peer",
-    type: "peer_gap",
-    comparedTo: "peers",
-    category: o.category,
-    userValue: user,
-    peerValue: peer,
-    gapPercent: obsPercentOver(user, peer),
-    headline: "You're spending more on dining out than your peers",
-    surfaces: ["budget_comparison", "progress"]
-  };
-}
-
 // ── Copy ─────────────────────────────────────────────────────────────────────
 // Templated, so the number and the sentence can never disagree.
 //
-// Voice rules that bind here (A13, D26): no financial advice, ever — surface
+// Voice rules that bind here (D26): no financial advice, ever — surface
 // the number and the gap, never prescribe the action. Flags are framed as
 // questions, not instructions. No exclamation marks on a financial figure.
 
@@ -93,13 +60,6 @@ function observationDetail(o) {
     if (pct == null) return o.detail || "";
     if (pct <= 0) return "You're within your plan for this month.";
     return pct + "% above your own budget for this month.";
-  }
-
-  if (o.type === "peer_gap") {
-    const pct = o.gapPercent;
-    if (pct == null) return o.detail || "";
-    if (pct <= 0) return "That's in line with households like yours in your area.";
-    return pct + "% above what households like yours spend in your area.";
   }
 
   if (o.type === "subscription_flag") {
@@ -124,7 +84,7 @@ function observationHeadline(o) {
 /** The figure a card should lead with, or null when there isn't one. */
 function observationFigure(o) {
   if (!o) return null;
-  if (o.type === "plan_gap" || o.type === "peer_gap") {
+  if (o.type === "plan_gap") {
     return o.gapPercent == null ? null : (o.gapPercent > 0 ? "+" : "") + o.gapPercent + "%";
   }
   if (o.type === "bill_flag") return budgetFmt ? budgetFmt(o.amount) : "$" + o.amount;

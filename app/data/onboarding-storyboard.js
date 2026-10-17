@@ -1,8 +1,8 @@
 // ─── Onboarding intro storyboard ─────────────────────────────────────────────
-// AUTHORED, not spec data, and deliberately a hand-written .js with no .json
-// sibling — exactly like data/lesson-scripts.js. Storyboards never go through
-// TTS, and scripts/wrap-data.sh hard-errors on any .json it has no global
-// mapped for, so a JSON here would mean editing the generator for no gain.
+// Deliberately a hand-written .js with no .json sibling — exactly like
+// data/lesson-scripts.js. Storyboards never go through TTS, and
+// scripts/wrap-data.sh hard-errors on any .json it has no global mapped for,
+// so a JSON here would mean editing the generator for no gain.
 //
 // Rendered by components/hyperframes.js into onboarding step 8's stage. The
 // stage used to be renderBuddyStage() — a text placeholder describing the

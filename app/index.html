@@ -88,7 +88,7 @@ window.onunhandledrejection = function(e) {
 
 <!-- 1. Config + seed data — must load BEFORE anything that reads them.
      The app runs on file://, where fetch() is blocked and there is no dev
-     server, so spec JSON ships as script-loadable assignments (L13).
+     server, so the data ships as script-loadable assignments (L13).
      The .js files are GENERATED — run scripts/wrap-data.sh, never hand-edit. -->
 <script src="js/config.js"></script>
 <script src="data/persona.js"></script>
@@ -98,14 +98,10 @@ window.onunhandledrejection = function(e) {
 <!-- Help-me-out estimation trees: figures + their sources. The arithmetic
      that consumes them lives in js/help-me-out.js. -->
 <script src="data/help-me-out.js"></script>
-<!-- Emergency fund: irregular-bill figures, the Utilities row split, the crisis
-     rule. Not a spec copy — the ESF spec ships no data file. -->
+<!-- Emergency fund: the sourced figures js/esf.js prices its rows from. -->
 <script src="data/emergency-fund.js"></script>
 <!-- Nine starting profiles: the picker's options and the sweep's test matrix -->
 <script src="data/test-profiles.js"></script>
-<!-- 380 breeds -> the nine body types, for the creator's breed search. The
-     matching lives in js/breed-search.js; this is only the lookup. -->
-<script src="data/dog-breeds.js"></script>
 <script src="data/card-apr.js"></script>
 <script src="data/peer-benchmarks.js"></script>
 <script src="data/zip-cost-of-living.js"></script>
@@ -120,12 +116,12 @@ window.onunhandledrejection = function(e) {
      buddy-responses.json: that is the keyword matcher's response library and
      this is a tapped tree. Two shapes, two files. -->
 <script src="data/buddy-esf.js"></script>
-<!-- v3.1c: the Big Purchase Calculator's figures (every one sourced or flagged
+<!-- The Big Purchase Calculator's figures (every one sourced or flagged
      _prototype) and Buddy's copy for it. docs/big-purchase-spec.md §13 / §11. -->
 <script src="data/big-purchase.js"></script>
 <script src="data/buddy-bp.js"></script>
 <script src="data/lessons.js"></script>
-<!-- AUTHORED in 5c — lessons.json ships no script bodies (L8) -->
+<!-- Authored script bodies, separate from the lessons.json catalogue -->
 <script src="data/lesson-scripts.js"></script>
 
 <!-- 2. Data -->
@@ -137,7 +133,7 @@ window.onunhandledrejection = function(e) {
 <script src="js/observations.js"></script>
 <script src="js/journal.js"></script>
 <script src="js/goals.js"></script>
-<script src="js/lessons-v3.js"></script>
+<script src="js/framed-lessons.js"></script>
 <script src="js/lesson-rewards.js"></script>
 <!-- Seeds state from the data globals above; called from navigation.js at boot -->
 <script src="js/boot.js"></script>
@@ -147,12 +143,11 @@ window.onunhandledrejection = function(e) {
 <script src="js/narration.js"></script>
 <!-- Chat keyword matcher — data/logic only (no DOM); screens/chat.js renders it -->
 <script src="js/chat-router.js"></script>
-<!-- Builder seam: the normalized baseline every budget builder writes through.
-     Phase 2's lifestyle wizard becomes its only adapter (L6). -->
+<!-- Builder seam: the normalized baseline every budget builder writes through (L6). -->
 <script src="js/budget-baseline.js"></script>
 <!-- Reads the trees above plus the peer model; screens/help-me-out.js renders it -->
 <script src="js/help-me-out.js"></script>
-<!-- Emergency fund model: six survival categories as a VIEW over the taxonomy,
+<!-- Emergency fund model: survival expenses as a VIEW over the taxonomy,
      opening on the same peer figures the budget builder uses. Commits through
      the baseline seam above, so it seeds the budget. -->
 <script src="js/esf.js"></script>
@@ -191,37 +186,29 @@ window.onunhandledrejection = function(e) {
 <script src="screens/journal-confirm.js"></script>
 <script src="screens/home.js"></script>
 <script src="screens/budget-utils.js"></script>
-<script src="screens/budget-v3.js"></script>
+<script src="screens/budget.js"></script>
 <!-- The Budget tab, walled. Inert unless BUDGET_PAYWALL is on in js/config.js. -->
 <script src="screens/budget-paywall.js"></script>
-<!-- v3.1: three steps + a Help me out toggle per line. Replaces the twelve
-     sliders of spendingProfile and the six questions that followed it. -->
+<!-- Three steps + a Help me out toggle per line. -->
 <script src="screens/budget-build.js"></script>
 <!-- The estimation trees, asked one category at a time -->
 <script src="screens/help-me-out.js"></script>
-<!-- Emergency fund: four capture steps, then the number and the plan. Reads the
-     model in js/esf.js and hands single lines to the trees above. -->
+<!-- Emergency fund capture, then the number and the plan; reads js/esf.js. -->
 <script src="screens/esf-build.js"></script>
 <script src="screens/esf-plan.js"></script>
 <!-- Renders the pill and the overlay for both ESF screens above. -->
 <script src="screens/buddy-panel.js"></script>
-<!-- Big Purchase: landing + fund check, the three steps, the in-frame sheets,
-     and the Buddy panel drawn with the ESF panel's own classes. -->
+<!-- Big Purchase: the shared controls, landing + fund check, the finder, Your
+     car, the in-frame sheets, and the Buddy panel drawn with the ESF panel's own
+     classes. -->
+<script src="screens/bp-controls.js"></script>
 <script src="screens/bp-landing.js"></script>
 <script src="screens/bp-finder.js"></script>
-<script src="screens/bp-setup.js"></script>
-<script src="screens/bp-quiz.js"></script>
-<script src="screens/bp-cost.js"></script>
-<script src="screens/bp-options.js"></script>
-<script src="screens/bp-finance.js"></script>
-<script src="screens/bp-commit.js"></script>
 <script src="screens/bp-yourcar.js"></script>
 <script src="screens/bp-sheet.js"></script>
 <script src="screens/bp-buddy.js"></script>
 <script src="screens/budget-category.js"></script>
 <script src="screens/spend-estimator.js"></script>
-<script src="screens/lifestyle-wizard.js"></script>
-<script src="screens/budget-compare.js"></script>
 <script src="screens/budget-update-confirm.js"></script>
 <script src="screens/account-balances.js"></script>
 <script src="screens/debt-balances.js"></script>
@@ -231,7 +218,7 @@ window.onunhandledrejection = function(e) {
 <script src="screens/next-action.js"></script>
 <script src="screens/commitment.js"></script>
 <script src="screens/finish.js"></script>
-<script src="screens/goals-v3.js"></script>
+<script src="screens/goals.js"></script>
 <script src="screens/learn.js"></script>
 <script src="screens/topic.js"></script>
 <script src="screens/reward-preview.js"></script>
@@ -259,17 +246,15 @@ window.onunhandledrejection = function(e) {
 <!-- One URL and one <title> per screen, so a usability tracker can see the
      prototype at all, plus the per-task start URLs that rest on it. Loads
      before render.js, which calls into it. -->
-<!-- Breed text -> body types. Pure functions; the screen paints the result. -->
-<script src="js/breed-search.js"></script>
 <script src="js/screen-url.js"></script>
-<!-- Phase 2 of the same work: data-ub names on every control so a click report
+<!-- data-ub names on every control so a click report
      says what was pressed, and the value trail that carries what a tester set
-     out of an unmoderated session without a backend. Both are inert unless a
-     tracker is reading the page. -->
+     out of an unmoderated session without a backend. -->
 <script src="js/ub-names.js"></script>
 <script src="js/value-trail.js"></script>
-<!-- Usability tracking. Injects nothing unless USEBERRY_TRACKING is on in
-     js/config.js — the one sanctioned exception to D02, documented there. -->
+<!-- Usability tracking. Injects nothing unless the snapshot was prepared with
+     tracking on (publish.py prepare --tracking, frozen in release-config.js;
+     app/docs/useberry.md) — the one sanctioned exception to D02. -->
 <script src="js/useberry.js"></script>
 <script src="js/render.js"></script>
 <script src="js/navigation.js"></script>

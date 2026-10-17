@@ -228,20 +228,24 @@ def check_package(directory, m):
             raise ValueError(f'{directory}: missing {required}')
     html = (directory / 'index.html').read_text()
     scripts = re.findall(r'<script\b[^>]*\bsrc\s*=\s*["\']([^"\']+)["\']', html, re.I)
-    required_scripts = ['release-config.js', 'flow-config.js', 'js/refresh-pin.js', 'js/config.js', 'js/flow.js', 'js/navigation.js']
+    required_scripts = ['release-config.js', 'flow-config.js', 'js/refresh-pin.js', 'js/config.js', 'js/boot.js', 'js/flow.js', 'js/navigation.js']
     if any(scripts.count(name) != 1 for name in required_scripts):
         raise ValueError(f'{directory}: entry must load each required configuration/runtime script exactly once '
                          '(the source app commit must include js/refresh-pin.js)')
     if not (scripts.index('release-config.js') < scripts.index('js/refresh-pin.js') < scripts.index('js/config.js') and
             scripts.index('flow-config.js') < scripts.index('js/config.js') and
-            scripts.index('js/flow.js') < scripts.index('js/navigation.js')):
+            scripts.index('js/boot.js') < scripts.index('js/flow.js') < scripts.index('js/navigation.js')):
         raise ValueError(f'{directory}: policy must load before app config, runtime before navigation boot')
     registry = directory / 'js/state.js'
-    if registry.is_file():
-        declared = set(re.findall(r'\[\s*[\"\']([^\"\']+)[\"\']\s*,', registry.read_text()))
-        if declared and not set(m['allowed_screens']) <= declared:
-            raise ValueError(f'{directory}: policy includes undeclared screens')
-    check_dependencies(directory)
+    if not registry.is_file():
+        raise ValueError(f'{directory}: missing js/state.js, whose destinations registry declares the screens')
+    literal = re.search(r'^const destinations\s*=\s*\[(.*?)^\];', registry.read_text(), re.S | re.M)
+    if not literal:
+        raise ValueError(f'{registry}: no "const destinations = [...];" screen registry to check allowed_screens against')
+    declared = set(re.findall(r'\[\s*[\"\']([^\"\']+)[\"\']\s*,', literal.group(1)))
+    undeclared = sorted(set(m['allowed_screens']) - declared)
+    if undeclared:
+        raise ValueError(f'{directory}: allowed_screens not in the js/state.js destinations registry: ' + ', '.join(undeclared))
 
 
 GENERIC_RUNTIME = '''// Generated starter containment. Adapt policy and prerequisites for the concrete Flow.
@@ -253,7 +257,7 @@ function mbFlowSeed() {
 }
 function mbFlowRestart() { refreshPinRestart(); }
 function mbFlowExit() { location.assign(window.MB_RELEASE.selector); }
-v3EntryScreen = function () { return window.MB_FLOW.entry; };
+__FLOW_ENTRY_FUNCTION__ = function () { return window.MB_FLOW.entry; };
 function mbFlowInstall() {
   try { var profile = new URL(location.href).searchParams.get("profile"); if (profile) profileApply(profile); } catch (e) {}
   state.adminCollapsed = true;
@@ -281,7 +285,119 @@ function mbFlowInstall() {
 '''
 
 
+def starter_tokens(source):
+    """Tokenize the supported boot scripts, retaining offsets and scope depth.
+
+    This is deliberately a compatibility check, not a JavaScript parser.
+    Unsupported or ambiguous literal syntax fails closed instead of letting
+    comment/string contents masquerade as an executable containment anchor.
+    """
+    tokens, stack, i = [], [], 0
+    error = 'unsupported source boot/entry anchors: unsupported JavaScript literal or syntax'
+    while i < len(source):
+        if source[i].isspace():
+            i += 1
+            continue
+        if source.startswith('//', i):
+            end = source.find('\n', i + 2)
+            i = len(source) if end < 0 else end
+            continue
+        if source.startswith('/*', i):
+            end = source.find('*/', i + 2)
+            if end < 0:
+                raise ValueError(error)
+            i = end + 2
+            continue
+        start, value = i, source[i]
+        if value in '\"\'':
+            quote = value
+            i += 1
+            while i < len(source) and source[i] != quote:
+                if source[i] in '\r\n' and source[i - 1] != '\\':
+                    raise ValueError(error)
+                i += 2 if source[i] == '\\' else 1
+            if i >= len(source):
+                raise ValueError(error)
+            i += 1
+            value = '<literal>'
+        elif value == '/':
+            # Only unambiguous expression-start regex literals are supported.
+            # Division and regexes after control-flow parentheses need parsing.
+            previous = tokens[-1][0] if tokens else ''
+            if previous not in ('', '(', '[', '{', ',', ':', ';', '=', '!', '?', '&', '|', 'return', 'throw'):
+                raise ValueError(error)
+            i += 1
+            in_class = False
+            while i < len(source):
+                char = source[i]
+                if char in '\r\n':
+                    raise ValueError(error)
+                if char == '\\':
+                    i += 2
+                    continue
+                if char == '[':
+                    in_class = True
+                elif char == ']':
+                    in_class = False
+                elif char == '/' and not in_class:
+                    break
+                i += 1
+            if i >= len(source):
+                raise ValueError(error)
+            i += 1
+            while i < len(source) and source[i].isalpha():
+                i += 1
+            value = '<literal>'
+        else:
+            word = re.match(r'[A-Za-z0-9_$]+', source[i:])
+            if word:
+                value = word.group()
+                i += len(value)
+            elif value in '(){}[];.,:+-*%<>=!?&|~^':
+                i += 1
+            else:
+                raise ValueError(error)
+        depth = len(stack)
+        if value in ('(', '[', '{'):
+            stack.append(value)
+        elif value in (')', ']', '}'):
+            if not stack or stack.pop() != {')': '(', ']': '[', '}': '{'}[value]:
+                raise ValueError(error)
+        tokens.append((value, start, i, depth))
+    if stack:
+        raise ValueError(error)
+    return tokens
+
+
 def adapt_starter(directory):
+    # Only adapt known, unique boot/entry pairs: a silent missed anchor leaves
+    # an apparently contained package running unrestricted app navigation.
+    nav = directory / 'js/navigation.js'
+    boot = directory / 'js/boot.js'
+    navigation = nav.read_text() if nav.is_file() else ''
+    boot_source = boot.read_text() if boot.is_file() else ''
+    pairs = {'bootApp': 'appEntryScreen', 'bootV3': 'v3EntryScreen'}
+    nav_tokens, boot_tokens = starter_tokens(navigation), starter_tokens(boot_source)
+    calls = [i for i, token in enumerate(nav_tokens) if token[0] in pairs]
+    declarations = [i for i, token in enumerate(boot_tokens)
+                    if token[0] == 'function' and i + 1 < len(boot_tokens) and
+                    boot_tokens[i + 1][0] in set(pairs) | set(pairs.values())]
+    names = [boot_tokens[i + 1][0] for i in declarations]
+    call = calls[0] if len(calls) == 1 else None
+    if (call is None or nav_tokens[call][3] != 0 or
+            (call > 0 and nav_tokens[call - 1][0] not in (';', '}')) or
+            [t[0] for t in nav_tokens[call + 1:call + 4]] != ['(', ')', ';'] or
+            sorted(names) != sorted([nav_tokens[call][0], pairs[nav_tokens[call][0]]]) or
+            any(boot_tokens[i][3] != 0 or
+                (i > 0 and boot_tokens[i - 1][0] not in (';', '}')) or
+                [t[0] for t in boot_tokens[i + 2:i + 5]] != ['(', ')', '{']
+                for i in declarations) or
+            any(t[0] == 'mbFlowInstall' for t in nav_tokens)):
+        raise ValueError('unsupported source boot/entry anchors: expected exactly one matching '
+                         'bootApp/appEntryScreen or bootV3/v3EntryScreen pair and one top-level boot statement')
+    anchor_end = nav_tokens[call + 3][2]
+    navigation = navigation[:anchor_end] + '\nmbFlowInstall();' + navigation[anchor_end:]
+    entry = pairs[nav_tokens[call][0]]
     html = (directory / 'index.html').read_text()
     html = html.replace('<script src="release-config.js"></script>', '<script src="release-config.js"></script>\n  <script src="flow-config.js"></script>')
     html = html.replace('<script src="js/navigation.js"></script>', '<script src="js/flow.js"></script>\n<script src="js/navigation.js"></script>')
@@ -303,9 +419,8 @@ def adapt_starter(directory):
     if topbar.exists():
         topbar.write_text(topbar.read_text() + '\nrenderTopBar = function () { return ""; };\n')
     (directory / 'index.html').write_text(html)
-    nav = directory / 'js/navigation.js'
-    nav.write_text(nav.read_text().replace('bootV3();', 'bootV3();\nmbFlowInstall();', 1))
-    (directory / 'js/flow.js').write_text(GENERIC_RUNTIME)
+    nav.write_text(navigation)
+    (directory / 'js/flow.js').write_text(GENERIC_RUNTIME.replace('__FLOW_ENTRY_FUNCTION__', entry))
     (directory / 'release-config.js').write_text('window.MB_RELEASE = Object.freeze({tracking: false, selector: "../../index.html"});\n')
 
 
@@ -363,17 +478,40 @@ def create(root, ident, source, label, purpose):
         shutil.rmtree(temporary)
 
 
-def scope(root, base, selected_scope):
-    if not SHA.fullmatch(base):
-        raise ValueError('scope base must be a full commit SHA')
-    git(root, 'cat-file', '-e', base + '^{commit}')
+def is_commit(root, ref):
+    return subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '--quiet', ref + '^{commit}'], capture_output=True).returncode == 0
+
+
+def scope(root, selected_scope, against=None):
+    """Compare app/ with the merge base of main and HEAD; return (ref, base).
+
+    The merge base moves with each sync of main, so app changes merged in from main
+    never count as this task's own edits.
+    """
+    if against is None:
+        against = next((ref for ref in ('origin/main', 'main') if is_commit(root, ref)), None)
+        if against is None:
+            raise ValueError('no origin/main or main to compare with; name the main this branch merged with --against REF')
+    elif not is_commit(root, against):
+        raise ValueError(f'--against {against!r} is not a commit')
+    # A shallow clone lacks the history a merge base needs, whatever ref is named.
+    if git(root, 'rev-parse', '--is-shallow-repository').decode().strip() == 'true':
+        raise ValueError('this clone is shallow, so its merge base with main is unknown; run git fetch --unshallow, then retry')
+    try:
+        base = git(root, 'merge-base', against, 'HEAD').decode().strip()
+    except ValueError:
+        raise ValueError(f'{against} and HEAD share no history; name the main this branch merged with --against REF') from None
     changed = set(git(root, 'diff', '--name-only', base, '--', 'app').decode().splitlines())
     # A worktree restored to baseline can hide a different staged version. Check
     # the index separately because that version is what the next commit records.
     changed.update(git(root, 'diff', '--cached', '--name-only', base, '--', 'app').decode().splitlines())
     changed.update(git(root, 'ls-files', '--others', '--exclude-standard', 'app').decode().splitlines())
     if changed and selected_scope == 'flow':
-        raise ValueError('Flow scope changes app/: ' + ', '.join(sorted(changed)) + '; restore accidental edits or explicitly use app-integration scope for approved integration')
+        raise ValueError(f'Flow scope changes app/ since {base[:12]} (merge base of {against} and HEAD): '
+                         + ', '.join(sorted(changed)) + '. If main made these changes, merge it into this branch '
+                         'or pass --against the ref you merged; never revert main\'s work. Undo only this task\'s '
+                         'own app edits, and use --scope app-integration only for an approved integration.')
+    return against, base
 
 
 def main():
@@ -386,7 +524,7 @@ def main():
     verify = subs.add_parser('check')
     verify.add_argument('--id')
     guard = subs.add_parser('scope')
-    guard.add_argument('--base', required=True)
+    guard.add_argument('--against', metavar='REF', help='the main this branch merged (default: origin/main if present, else main)')
     guard.add_argument('--scope', choices=['flow', 'app-integration'], required=True)
     args = parser.parse_args()
     root = Path(git(Path.cwd(), 'rev-parse', '--show-toplevel').decode().strip())
@@ -397,7 +535,8 @@ def main():
     elif args.command == 'check':
         check(root, args.id)
     else:
-        scope(root, args.base, args.scope)
+        ref, base = scope(root, args.scope, args.against)
+        print(f'Flows scope: compared app/ with {base[:12]}, the merge base of {ref} and HEAD')
     print('Flows ' + args.command + ': OK')
 
 

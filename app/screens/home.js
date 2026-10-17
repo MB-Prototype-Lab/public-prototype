@@ -1,30 +1,6 @@
-// ─── Home (03-home-daily-loop) ───────────────────────────────────────────────
-// TAB: none — reached by the top-left icon, not a tab (L5/D34)
-// NAV BAR: Visible
-//
-// Top to bottom, per the spec:
-//   top bar      kibble · streak · buddy level · hamburger  → components/topbar.js
-//   tip banner   one line, 90 character HARD limit, puppy icon alongside
-//   buddy stage  the puppy with an idle cycle → components/buddy.js
-//   chat button  below the stage
-//   daily tasks  four at a time, each routing somewhere real and paying kibble
-//   bottom nav   -> components/nav.js
-//
-// -- THE TASK CARDS ARE THE GUIDED PATH -----------------------------------------
-// Everything else in the app can be browsed. These four cards are what the
-// prototype is actually testing: whether a person opens the thing they were
-// pointed at, and whether doing it visibly pays.
-//
-// A task is a CONTEXTUAL BOOKMARK, not a screen of its own. Its `route` names
-// somewhere that already exists -- "lesson:apr", "budget", "money_journal" --
-// and navRouteTask (js/navigation.js) decides whether that means switching to a
-// tab or launching a flow from Home. Tapping a card must be indistinguishable
-// from reaching the same place any other way.
-//
-// Each card advertises its Charity Points up front, and completing it credits
-// exactly that. The reward screen itemises it beside whatever the activity
-// itself earned, so the promise and the payout can be checked against each
-// other -- see lrPointsRecord in js/lesson-rewards.js.
+// Home uses the top-left icon, separate from the five tabs (L5, D34).
+// Tasks are bookmarks into existing journeys, routed by navRouteTask.
+// Advertised task points must match the reward ledger's itemized payout.
 
 const TIP_MAX_CHARS = 90;
 
@@ -36,10 +12,7 @@ function renderHome() {
               onclick="homeOpenChat()">Chat with ${h(state.buddy.name || "Buddy")}</button>
     </div>
 
-    <!-- The tip sits BETWEEN the buddy and the task list, not above everything.
-         At the top it pushed the buddy down the screen for a line of copy that
-         is context for the day rather than the point of it. Here it reads as a
-         lead-in to Today, and the stage gets the top of the screen. -->
+    <!-- Keep the tip between the buddy and tasks as context for Today. -->
     ${renderHomeTip()}
 
     <div class="row" style="margin-bottom:10px;">
@@ -68,21 +41,14 @@ function homeTasksDone() {
   return state.dailyTasks.filter(t => t.completed).length;
 }
 
-// Each task routes somewhere real and pays kibble. Tasks carrying an
-// observationId show it inline, so the observation is reachable from home as
-// well as from its other surfaces (D18 wants ≥2).
+// Each task routes somewhere real and pays kibble.
 function renderHomeTask(task) {
-  const obs = task.observationId ? observationById(task.observationId) : null;
   return `
     <div class="card home-task ${task.completed ? "home-task-done" : ""}">
-      <!-- The bones line sits UNDER THE TITLE, beside the button. It used to be
-           its own row below both, so every card was three lines tall for two
-           lines of content -- and on Home that pushed the third task entirely
-           below the fold. -->
+      <!-- Keep bones beside the button to fit all three tasks more compactly. -->
       <div class="row" style="align-items:center;gap:10px;">
         <div style="flex:1;">
           <p class="task-title" style="margin:0 0 2px;">${h(task.label)}</p>
-          ${obs ? `<p class="helper" style="margin:0;">${h(observationDetail(obs))}</p>` : ""}
           <p class="home-task-kibble">🦴 ${task.kibble} bones</p>
         </div>
         ${task.completed
@@ -101,18 +67,14 @@ function homeDoTask(taskId) {
   navRouteTask(task.route);
 }
 
-// Called when a routed task's flow completes. Kibble accrues and shows;
-// nothing spends it (L16) — every sink is on the spec's deferred list.
+// Task completion awards display-only kibble (L16).
 function homeCompleteTask(taskId) {
   const task = state.dailyTasks.find(t => t.id === taskId);
   if (!task || task.completed) return;
   task.completed = true;
   state.kibble += task.kibble;
-  // Itemise it if a lesson reward is being tallied right now. This is the
-  // figure the home card promised, so the reward screen has to name it as such
-  // — the lesson's own bones land on top and the total would otherwise read as
-  // twice what was advertised. No-op for the journal and budget tasks, which
-  // have no reward screen and no open ledger.
+  // Itemize task bones separately from lesson bones so the advertised task
+  // payout remains visible. Journal and budget tasks have no open reward ledger.
   if (typeof lrPointsRecord === "function") {
     lrPointsRecord("bones", task.kibble, "Today's task");
   }
@@ -128,14 +90,13 @@ function renderHomeAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">Daily Tasks</p>
       <p class="helper" style="margin-bottom:10px;">
-        Precomputed order (A7). The scoring engine is specified in
-        03-home-daily-loop but not run in the prototype.
+        Precomputed order. The scoring engine is not run in the prototype.
       </p>
       ${state.dailyTasks.map((t, i) => `
         <div class="input-group">
           <label>${i + 1}. ${h(t.label)}</label>
           <div class="helper">
-            route <code>${h(t.route)}</code> · ${t.kibble} bones${t.observationId ? " · " + h(t.observationId) : ""}
+            route <code>${h(t.route)}</code> · ${t.kibble} bones
           </div>
           <select onchange="state.dailyTasks[${i}].completed=(this.value==='true');render()">
             <option value="false" ${!t.completed ? "selected" : ""}>not done</option>

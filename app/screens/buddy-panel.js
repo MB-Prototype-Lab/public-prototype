@@ -1,50 +1,9 @@
-// ─── The Ask Buddy panel ─────────────────────────────────────────────────────
-// Renders the overlay and the pill that opens it. All state and navigation live
-// in js/buddy-esf.js — this file only draws, the same split screens/chat.js has
-// with js/chat-router.js.
-//
-// ── IT PAINTS INTO ITS OWN ROOT ──────────────────────────────────────────────
-// #buddyRoot is a SIBLING of #screenRoot in index.html, not a child — exactly
-// like #keyboardRoot, and for the same reason turned up a different way.
-//
-// esf-build.js warns that closing the simulated keypad removes 250px of layout,
-// which pulls a button out from under a finger mid-press so no click is ever
-// dispatched. A pill inside the scrolling screen inherits that. In its own
-// fixed layer the keypad's reflow cannot move it, so the press always lands.
-// Do NOT solve this locally with a second press latch — kbdInit already owns
-// that problem and two latches racing is worse than one.
-//
-// ── THE PANEL SCROLLS. THE ESF SCREENS STILL DO NOT. ─────────────────────────
-// Owner's ruling: "I want users to see each question they answered, otherwise
-// it's a lot of clicking to go back." So this is a real accumulating
-// transcript — every question and answer stays on screen, stacked, and the user
-// scrolls back through them. The no-scrolling rule is about the ESF capture
-// screens, and this panel is the one place it is deliberately relaxed.
-
-// ── The Ask button ───────────────────────────────────────────────────────────
-// IN THE FOOTER, between Back and Continue. It floated above the footer at
-// first, which cost no layout but sat on top of whatever row happened to be
-// under it — on step 3 that was the Medical label. The ESF steps have no nav
-// bar to hang it off (esf-build.js: "NAV BAR: Hidden — full-bleed"), so the
-// footer is the only bar there is, and the owner's call is that it belongs in
-// it: Back on the left, Ask in the middle, the green primary on the right.
-//
-// LEGO orange with DARK text. That pairing is not a style choice:
-//   #2B1A0E on #FF6D00 is about 5.2:1 and passes AA.
-//   White on #FF6D00 is about 2.9:1 and FAILS.
-// Green is already the action colour — Open on Home, Continue on every ESF
-// step. Buddy is not a task, so he gets a warm accent of his own that says
-// optional, available, on your side, and does not compete with the primary CTA.
-// Orange reads as WARNING in finance UI; the dog's face and using this colour
-// for nothing else is what mitigates that.
-//
-// The word is "Ask" and the dog carries the rest. "Help" is what people scan
-// for when stuck but it reads as app support, and testers did not want
-// support — they wanted the dog.
-//
-// The art is an <img> when it exists and the emoji otherwise. A missing
-// illustration must degrade to something, never to a gap where a face was
-// promised (D10's rule, applied to a button).
+// State and navigation live in js/buddy-esf.js; this file renders them.
+// The overlay uses a sibling root so keypad reflow cannot shift it; kbdInit
+// owns the shared press latch. The Ask button belongs in each screen's footer.
+// Allow transcript scrolling so all answers remain reviewable while capture
+// screens stay compact. Use the themed Ask accent with contrasting text.
+// Missing owner-supplied art falls back to emoji rather than an empty face.
 const ESF_BUDDY_PILL_ART = "assets/img/buddy-ask.png";
 const ESF_BUDDY_CHAT_ART = "assets/img/buddy-chat.png";
 
@@ -53,11 +12,7 @@ const ESF_BUDDY_ART_FALLBACK =
   "this.replaceWith(Object.assign(document.createElement('span')," +
   "{className:'esf-ask-emoji',textContent:'\\u{1F436}'}))";
 
-/**
- * The footer button. Rendered INTO the screen's own footer by esf-build.js and
- * esf-plan.js, not into #buddyRoot — it is part of the bar now, so it moves
- * with it rather than hovering over the content.
- */
+// Place Ask in the screen footer so it cannot cover expense rows.
 function renderEsfBuddyButton() {
   if (!esfBuddyAvailable()) return "";
   return `
@@ -69,28 +24,12 @@ function renderEsfBuddyButton() {
     </button>`;
 }
 
-// ── The panel ────────────────────────────────────────────────────────────────
-// Two notes about the bar at the bottom, kept OUT of the markup below. HTML
-// comments inside a template literal are rendered into the DOM, and a backtick
-// inside one ends the literal early — which is a JS syntax error several
-// hundred lines from anything that looks like the cause.
-//
-// THE X IS BOTTOM-LEFT. Away from the thumb's natural travel so it is not hit
-// by accident, still inside one-handed reach.
-//
-// THE INPUT IS PRESENT, VISIBLE AND INERT. It stays because it says "this is a
-// chat" at a glance, and removing it would hide the thing testers said they
-// wanted. It is inert because free text in a decision-tree prototype tests the
-// tree's coverage instead of the idea — nobody has to type a figure anywhere in
-// this feature. The `disabled` attribute is what guarantees the simulated
-// keypad can never open from it. The wrapper carries the click handler because
-// a disabled field dispatches no events, and that tap is the MEASUREMENT: how
-// many testers reach for it anyway is the demand for the real thing.
-
-// NO SUBTITLE. It carried the open row's label, which the transcript already
-// says — the row's name IS the first question, echoed as the user's own bubble
-// the moment they tap it. A header repeating it was the same word twice on one
-// screen, and it cost the only line of chrome that varied.
+// Keep comments with backticks outside template markup: a backtick in an
+// HTML comment still terminates the JavaScript literal.
+// Keep Close at bottom-left to reduce accidental taps. The disabled input
+// signals chat without opening the keypad; its wrapper records demand taps
+// because disabled fields dispatch no events.
+// The transcript already names the row, so the header needs no subtitle.
 function renderEsfBuddyPanel() {
   const b = esfBuddy();
   if (!b.open) return "";
@@ -127,15 +66,8 @@ function renderEsfBuddyPanel() {
     </div>`;
 }
 
-/**
- * The transcript.
- *
- * Buddy's runs carry ONE avatar, on the last bubble of the run, with the bubbles
- * above it tucked in. Three stacked paragraphs each wearing the same face reads
- * as three people talking; one face under a run reads as somebody finishing a
- * thought. That is the difference between this and a list of notices, and it is
- * most of what makes the panel look like a chat.
- */
+// Use one avatar on the final bubble of each Buddy run so adjacent
+// paragraphs read as one speaker's thought.
 function renderEsfBuddyThread() {
   const thread = esfBuddy().thread;
   return thread.map((m, i) => {
@@ -158,14 +90,8 @@ function renderEsfBuddyThread() {
   }).join("");
 }
 
-/**
- * The question list.
- *
- * Shown ALWAYS, even where there is only one entry (owner's ruling) — a
- * consistent shape, and the list is how the user learns what Buddy can talk
- * about. Rows already asked about are ticked and STILL TAPPABLE, because an
- * answer can be changed.
- */
+// Show the list even for one question to make Buddy's coverage visible.
+// Keep answered rows tappable so answers can be changed.
 function renderEsfBuddyList() {
   const b = esfBuddy();
   const items = esfBuddyItems();
@@ -186,22 +112,8 @@ function renderEsfBuddyList() {
     </div>`;
 }
 
-/**
- * The control under the transcript while a lifestyle question set is running.
- *
- * A LIST INSIDE THE PANEL, not a native <select>.
- *
- * It was a <select> first, which is what the owner asked for and is right on a
- * real phone, where the options open as a picker sheet. But this prototype is a
- * phone FRAME inside a desktop browser, and a select's option list is drawn by
- * the operating system — it is not laid out by the page, so it ignores the
- * frame entirely and spills out of the bottom of the phone. Nothing in CSS can
- * contain it.
- *
- * So the options are ordinary buttons in the panel's own footer, capped in
- * height and scrolling inside it. Same one-tap choice, same full option text
- * with the brand names that make it readable, and it can never leave the frame.
- */
+// Use scrolling buttons within the phone frame. Native select options are
+// OS-drawn and can escape the frame regardless of page CSS.
 function renderEsfBuddyQuestion() {
   const b = esfBuddy();
   if (!b.q || b.q.done) return "";
@@ -238,22 +150,19 @@ function renderEsfBuddyApply() {
     </div>`;
 }
 
-/** The answer choices, plus the two ways back. */
+// Render answer choices separately from navigation.
 function renderEsfBuddyChips() {
   const b = esfBuddy();
-  // A running question set owns the footer — its dropdown, or the figure it
-  // arrived at. The row's own chips would be a second thing to answer.
+  // A question set owns the footer until it supplies a figure; row chips
+  // would introduce a second question to answer.
   if (b.q) return b.q.done ? renderEsfBuddyApply() : renderEsfBuddyQuestion();
   const entry = b.node ? esfBuddyEntry(b.node) : null;
-  // esfBuddyChipsFor, not entry.chips — a variant entry keeps its choices in
-  // chipsIf and has no `chips` at all, so reading the raw key silently dropped
-  // every answer on the medical row and left only the two nav chips.
+  // Use esfBuddyChipsFor because variant entries can store choices in chipsIf
+  // instead of chips; reading the raw field would hide valid answers.
   const chips = (b.chips || [])
     .map(id => esfBuddyFindChip(esfBuddyChipsFor(entry), id))
     .filter(Boolean);
-  // Navigation is NOT in here any more — it lives in renderEsfBuddyNav below,
-  // in a fixed row. This rack only ever carries answers to what Buddy just
-  // asked, so nothing in it moves position for reasons the user cannot see.
+  // Keep navigation in its fixed row; this rack carries only current answers.
   if (!chips.length) return "";
 
   return `
@@ -264,24 +173,8 @@ function renderEsfBuddyChips() {
     </div>`;
 }
 
-/**
- * THE MENU. Three buttons, one row, always the same three in the same order:
- *
- *     [ Back to the list ]   [ Start over ]   [ Help me calculate this ]
- *
- * FIXED POSITION IS THE WHOLE POINT — a pattern to learn once, not a rack that
- * reshuffles as the conversation moves. It used to be exactly that: these
- * appeared and disappeared among the answer chips and wrapped onto a second
- * line, so the same action sat somewhere different on nearly every screen.
- *
- * A button that does not apply right now is DISABLED, never removed. Removing
- * one would shift the other two, which is the one thing this row exists to
- * prevent.
- *
- * "Help me calculate this" rather than "Help me work it out" — owner's call.
- * "Work it out" describes a mood; "calculate this" names the action and says it
- * applies to the row in front of you.
- */
+// Keep three navigation buttons in a stable order and position. Disable
+// unavailable actions rather than removing them and shifting the others.
 function renderEsfBuddyNav() {
   const b = esfBuddy();
   // Nothing has happened yet: the question list IS the screen and needs no menu.
@@ -303,13 +196,8 @@ function renderEsfBuddyNav() {
     </div>`;
 }
 
-/**
- * The fixed layer, painted by render() into #buddyRoot.
- *
- * Only the PANEL lives here now — the Ask button moved into each screen's own
- * footer. The panel still belongs in its own root: it has to sit over the
- * screen, and the keypad must not be able to shift it.
- */
+// Paint only the overlay into #buddyRoot so it stays above the screen
+// and cannot be displaced by the keypad; Ask lives in the screen footer.
 function renderEsfBuddyLayer() {
   if (!esfBuddyAvailable()) return "";
   return renderEsfBuddyPanel();

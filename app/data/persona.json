@@ -14,7 +14,7 @@
   },
 
   "lifestyle": {
-    "_note": "Set by the lifestyle wizard. These values are the persona default; the wizard overwrites them if the tester completes it.",
+    "_note": "Persona defaults. Help me out overwrites the lifestyle dimensions its questions cover.",
     "foodie": "moderate",
     "cooksAtHome": "sometimes",
     "hobbySpend": "low",
@@ -24,13 +24,10 @@
   },
 
   "state": {
-    "healthState": "slightly_behind",
-    "streakDays": 6,
     "streakDaysIfOnboarded": 1,
     "buddyLevel": 3,
     "kibbleBalance": 240,
-    "diamondBalance": 12,
-    "journalEntriesCompleted": 6
+    "diamondBalance": 12
   },
 
   "buddy": {

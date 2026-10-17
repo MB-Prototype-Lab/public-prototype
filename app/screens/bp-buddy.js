@@ -1,10 +1,6 @@
-// ─── Ask Buddy — the Big Purchase panel ──────────────────────────────────────
-// Draws the model in js/buddy-bp.js with the ESF panel's markup and classes, so
-// the two panels are visually one component. Reads the art constants from
-// screens/buddy-panel.js, which loads first.
-//
-// Painted into #buddyRoot by render(), never into the screen — the keypad's
-// 250px reflow must not be able to move it (see screens/buddy-panel.js).
+// Reuse ESF panel markup and art constants from buddy-panel.js, loaded first.
+// State lives in js/buddy-bp.js. Paint the overlay into #buddyRoot so keypad
+// reflow cannot move it; the Ask button renders in the screen footer.
 
 function renderBpBuddyButton() {
   if (!bpBuddyAvailable()) return "";
@@ -91,7 +87,7 @@ function renderBpBuddyList() {
     </div>`;
 }
 
-/** The ESF's fixed three-button row. "Help me calculate this" is always off in v1. */
+/* Keep the ESF panel's three-button layout; calculation help is disabled. */
 function renderBpBuddyNav() {
   const b = bpBuddy();
   if (!b.node && !b.thread.length) return "";

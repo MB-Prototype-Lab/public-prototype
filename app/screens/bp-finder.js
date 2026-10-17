@@ -1,34 +1,12 @@
-// ─── Big Purchase — Find your car (screen 2 of the new front) ────────────────
-// TAB: Goals (sub-screen) | NAV BAR: Hidden — full-bleed
-//
-// Owner, 2026-09-29. One screen, five views, each saying in its first line
-// what is happening on it:
-//
-//   start  I know what I want · Help me choose, with what peers spend
-//   know   type → make and model → new or used, one question at a time
-//   quiz   five short questions, then a price range (tier + its $ range)
-//   cars   three specific cars, each with a NEW and a USED price to tap
-//   car    the five lines, peers beside them, and two ways to spend less
-//
-// The tester chooses a PRICE, not a car (owner): tapping "Used $30,200" on the
-// 4Runner card fills in make, model and new/used in one go.
-//
-// Continue hands the chosen car to the original four steps, which stay as they
-// were (owner: "keep the original screens in at the end").
-//
-// Model and money: js/bp-finder.js. Nothing here does arithmetic.
-
-// ── Handlers ─────────────────────────────────────────────────────────────────
+// The start view offers make/model selection or the quiz. Quiz answers,
+// price range and suggested cars share a view; choosing a price sets model
+// and condition together. The car view shows costs and cheaper choices,
+// then Continue hands the selection to Your car.
+// Model and arithmetic live in js/bp-finder.js.
 
 function bpfOpen() {
   bpfSession();
   go("bpFinder");
-}
-
-function bpfView(view) {
-  const f = bpfSession();
-  f.view = view;
-  render();
 }
 
 function bpfStartPath(path) {
@@ -51,9 +29,8 @@ function bpfBack() {
 function bpfChoose(modelId, cond) {
   const f = bpfSession();
   bpfSelect(modelId, cond);
-  // The car the tester CHOSE from the list or the make-and-model picker. The
-  // ways to spend less are measured against it and stay put when one of them
-  // is tried (owner, 2026-10-03), so the original is always one tap away.
+  // Keep the original pick fixed while trying cheaper choices so savings
+  // share one baseline and the original remains one tap away.
   f.origin = { id: modelId, cond: cond };
   f.view = "car";
   render();
@@ -100,12 +77,8 @@ function bpfContinue() {
   go("bpYourCar");
 }
 
-// "I know what I want" — MAKE, then MODEL, then new or used, the way the big
-// car sites do it (owner, 2026-10-01: "drop-downs by make, then model… replicate
-// that for familiarity"). Kelley Blue Book, Edmunds and Cars.com all lead with
-// a make list A–Z and a model list that unlocks once a make is chosen, then one
-// button. Their Year select is New / Used here, because that is what this tool
-// prices. There is no type question: the make and model already say it.
+// Choose make, then model, then new or used. Make/model already determine
+// the vehicle type, so no separate type question is needed.
 function bpfKnowPick(field, value) {
   const k = bpfSession().know;
   if (field === "make") {
@@ -128,7 +101,7 @@ function bpfOpenList(which) {
 function bpfListPick(which, value) {
   bpSession().ui.sheet = null;
   bpfKnowPick(which, value);
-  // Choosing a make opens the Model question straight away (owner, 2026-10-03).
+  // Open Model immediately after choosing a make.
   if (which === "make" && value) bpfOpenList("model");
 }
 
@@ -204,9 +177,8 @@ function bpfSetBucket(type, use) {
   render();
 }
 
-// The three cars now sit on the quiz screen itself, under the price range
-// (owner, 2026-10-03: "all choices are self-contained on the same screen"), so
-// choosing a range stays on this view and the range row reopens the picker.
+// Keep suggested cars with the quiz result; choosing a range stays here
+// and its row can reopen the picker.
 function bpfSetTier(tier) {
   const f = bpfSession();
   f.tier = tier;
@@ -261,18 +233,6 @@ function renderBpfFoot(cont) {
     </div>`;
 }
 
-/** What peers spend, as plain facts. Used on the first view. */
-function renderBpfPeerFact() {
-  const p = bpfPeer();
-  if (!p.payment) return "";
-  return `
-    <div class="bpf-peerfact">
-      <p class="bpf-peerfact-who">${h(bpfPeerWho())} spend about</p>
-      <div class="bpf-peerfact-row"><span>Car payment</span><strong>${h(bpMoney(p.payment))} <i>a month</i></strong></div>
-      <div class="bpf-peerfact-row"><span>With insurance, fuel and upkeep</span><strong>${h(bpMoney(p.total))} <i>a month</i></strong></div>
-    </div>`;
-}
-
 function renderBpfDock(ask, tiles, closable) {
   return `
     <div class="bp-dock bpf-dock">
@@ -285,17 +245,8 @@ function renderBpfDock(ask, tiles, closable) {
     </div>`;
 }
 
-/** A hue for a make, so every maker keeps one colour wherever it shows. */
-function bpfMakeHue(make) {
-  const i = bpfMakes().indexOf(make);
-  return Math.round(((i < 0 ? 0 : i) * 137.5 + 24) % 360);
-}
-
-/**
- * A car box's colour says where it sits among the three, by price: the cheapest
- * is green (owner, 2026-10-03), the next blue, the dearest violet. Calm hues on
- * purpose: no red or amber, because a price is never flagged as high.
- */
+/* Use calm price-rank colors: cheapest green, then blue, then violet.
+ * Avoid warning colors because a price is not a verdict. */
 const BPF_RANK_HUES = [145, 215, 270];
 
 /** Each make's real logo in assets/img/logos: Simple Icons SVGs, plus six PNGs from the open car-logos-dataset. */
@@ -318,15 +269,8 @@ function renderBpfLogo(make) {
   return `<span class="bpf-logo" aria-hidden="true">${h(t.charAt(0).toUpperCase() + t.slice(1).toLowerCase())}</span>`;
 }
 
-/**
- * One question as a dropdown row. THE PATTERN FOR ANY SCREEN THAT ASKS SEVERAL
- * QUESTIONS (owner, 2026-10-03: "the first question appears at the bottom then
- * when it's answered, it moves to the top… this pattern needs to be used
- * everywhere"): every question has its row from the start, in place. An answered
- * row shows its answer; the question being asked is an open row ("Select one",
- * outlined) with its choices docked below; the rest are locked until their turn.
- * An answer then FILLS its row, and nothing jumps.
- */
+/* Keep every question row in place. Fill answered rows, dock the current
+ * choices below, and lock later rows until their turn so answers do not jump. */
 function renderBpfAnsRow(label, val, onclick, on, locked) {
   if (locked) {
     return `
@@ -371,20 +315,15 @@ function renderBpfStart() {
   return `
     <div class="journal-shell onb-pinned bpf-shell bpf-start-shell">
       <div class="journal-head">
-        ${/* The owner's banner lives here (2026-10-01), with the title it
-              illustrates. */ ""}
+        ${ ""}
         <div class="bp-land-banner bpf-banner">
           <img src="assets/img/buddy-car.jpg" alt="" aria-hidden="true">
         </div>
         ${renderBpfHead("Find the right car for you")}
       </div>
       <div class="journal-body">
-        ${/* Screens 2 and 3 are one screen (owner, 2026-10-03: "I know what I
-              want converted to a headline with make and model under it to
-              combine screen 2 and 3"). The headline is the "know" path; make,
-              model, new or used and the button sit in the thumb dock under it.
-              "Help me choose" is the other path, a row beneath the button.
-              No peer figures here (owner, 2026-10-01). */ ""}
+        ${/* Make/model selection and condition share the start view. Help me choose
+         * opens the quiz; peer figures appear with results rather than on this view. */ ""}
         ${m ? `
           <div class="bpf-know-pick">
             <p class="bpf-know-name">${h(bpfName(m))}</p>
@@ -417,86 +356,6 @@ function renderBpfStart() {
     </div>`;
 }
 
-/** The make-and-model list, grouped by price tier with each tier's range. */
-function renderBpfModelList(type, current) {
-  return `
-    <div class="bpf-modellist">
-      ${bpfTiers().map(t => {
-        const ms = bpfModels().filter(m => m.type === type && m.tier === t)
-                              .sort((a, b) => a.price - b.price);
-        if (!ms.length) return "";
-        const r = { lo: ms[0].price, hi: ms[ms.length - 1].price };
-        return `
-          <p class="bpf-tierhead">${h(bpVTierLabel(t))} <span>${h(bpfRangeLabel(r))}</span></p>
-          ${ms.map(m => `
-            <button class="bpf-modelopt ${current === m.id ? "on" : ""}" type="button"
-                    onclick="bpfKnowPick('model','${h(m.id)}')">
-              <span>${h(bpfName(m))}</span>
-              <span class="bpf-modelopt-price">${h(bpMoney(m.price))}</span>
-            </button>`).join("")}`;
-      }).join("")}
-    </div>`;
-}
-
-function renderBpfKnow() {
-  const f = bpfSession();
-  const k = f.know;
-  const m = k.model ? bpfModel(k.model) : null;
-  const ready = !!(m && k.cond);
-  // NOT NATIVE <select>s any more (owner, 2026-10-01: "the make drop-down
-  // choice wasn't one handed friendly. it dropped up"). A native list at the
-  // bottom of the screen opens UPWARD, away from the thumb. Each field now
-  // looks like a car-site dropdown but opens a list that rises from the
-  // bottom of the frame (bpfOpenList), which is how the car sites' own phone
-  // apps do it.
-  const field = (label, value, placeholder, list, enabled) => `
-    <div class="bpf-know-field">
-      <span>${h(label)}</span>
-      <button class="bpf-select ${value ? "" : "bpf-select-empty"}" type="button" ${enabled ? "" : "disabled"}
-              aria-haspopup="listbox" onclick="bpfOpenList('${list}')">
-        <span>${h(value || placeholder)}</span>
-        <span class="bp-drop-caret" aria-hidden="true">&#9662;</span>
-      </button>
-    </div>`;
-  // The prices are as big and bold as the car's name (owner): they are the
-  // reason for the choice, not a footnote to it.
-  const cond = (id, label, price) => `
-    <button class="bpf-cond ${k.cond === id ? "on" : ""}" type="button" aria-pressed="${k.cond === id}"
-            onclick="bpfKnowPick('cond','${id}')">
-      <span class="bpf-cond-label">${h(label)}</span>
-      <span class="bpf-cond-price">${h(bpMoney(price))}</span>
-    </button>`;
-  return `
-    <div class="journal-shell onb-pinned bpf-shell">
-      <div class="journal-head">${renderBpfHead("Which car do you have in mind?")}</div>
-      <div class="journal-body">
-        <p class="bp-lead">Choose the make and model. We'll price it new and used, and show what it
-           costs to own.</p>
-        ${m ? `
-          <div class="bpf-know-pick">
-            <p class="bpf-know-name">${h(bpfName(m))}</p>
-            <p class="bpf-know-why">${h(bpfTypeLabel(m.type))} · ${h(bpfKnown(m))}</p>
-          </div>` : ""}
-      </div>
-      <div class="bp-dock bpf-dock bpf-know">
-        ${field("Make", k.make, "Select a make", "make", true)}
-        ${field("Model", m ? m.model : null, k.make ? "Select a model" : "Select a make first", "model", !!k.make)}
-        ${m ? `
-          <div class="bpf-conds">
-            ${cond("new", "New", m.price)}
-            ${cond("used", "Used, about 3 years", bpfUsedPrice(m))}
-          </div>` : ""}
-        ${/* The CTA names the next screen (owner: "see what it costs" with the
-              price right above it read as already done). The next screen is
-              the monthly, year-one and five-year cost to OWN, beside peers. */ ""}
-        <button class="button full ${ready ? "" : "bp-off"}" type="button" aria-disabled="${!ready}"
-                onclick="bpfKnowGo()">${ready ? "See the real cost to own"
-                                     : m ? "Pick new or used" : "Pick a make and model"}</button>
-      </div>
-      ${renderBpfFoot(false)}
-    </div>`;
-}
-
 function renderBpfQuiz() {
   const f = bpfSession();
   const q = f.quiz;
@@ -509,11 +368,8 @@ function renderBpfQuiz() {
   const bucket = done ? bpfBucket() : null;
   const use = bucket ? bpfUse(bucket.type, bucket.use) : null;
 
-  // Everything the tester chose lives on this one screen (owner, 2026-10-03:
-  // "all choices are self-contained on the same screen. user can easily edit
-  // and modify to see the choices at the bottom"): the answers, the fit, the
-  // price range and the three cars. A picker (a question, the answers, the
-  // range) opens in the dock and always has an X to close it unchanged.
+  // Keep answers, fit, range and cars together for easy revision. Each
+  // open picker has a close control that leaves its answer unchanged.
   const pickingRange = !!(done && !current && (!f.tier || f.rangeOpen));
   const showCars = !!(done && f.tier && !current && !q.open && !f.rangeOpen);
 
@@ -526,10 +382,8 @@ function renderBpfQuiz() {
   } else if (q.open && !pickingRange) {
     dock = renderBpfDock("Tap an answer to change it", "", true);
   } else if (pickingRange) {
-    // The tier and its price range as one label (owner: "a duo display of the
-    // tier and price range"), the three cars in it underneath, and a plain tag
-    // on the range peers' payment falls in. A fact, not a nudge: every range
-    // is one tap away and none is drawn as chosen.
+    // Show tier and dollar range together, with cars below. Mark the peer
+    // range as information without preselecting an answer.
     const peerTier = bpfPeerTier(bucket.type, bucket.use);
     dock = renderBpfDock("Price range for " + (use ? use.label : "your pick"), `
       <div class="bpf-ranges">
@@ -566,10 +420,8 @@ function renderBpfQuiz() {
                                 .concat(tier ? [bpVTierLabel(tier)] : []).join(" · "),
                               "bpfQuizOpen()", false)}
           </div>` : `
-          ${/* The price range is the sixth question (owner, 2026-10-03: "price
-                needs to be part of the questions so there is only one set of
-                drop-downs"). It is locked until the five are answered, then it
-                is the open row like any other. */ ""}
+          ${/* Price follows the five quiz answers in the same row pattern; lock it
+           * until those answers are complete. */ ""}
           <div class="bp-answers bpf-answers">
             ${qs.map(x => {
               const o = bpfQuizOption(x, q.answers[x.id]);
@@ -628,60 +480,6 @@ function renderBpfCarBox(m, rank, alt) {
     </div>`;
 }
 
-/**
- * Why this car, in facts the tester gave us. Never "best for you" (owner,
- * 2026-09-28: "it's always here are choices based on info the user
- * submitted").
- */
-function bpfWhyLine(m) {
-  const f = bpfSession();
-  if (f.path !== "quiz") return bpfKnown(m) + ".";
-  const use = bpfUse(m.type, m.use);
-  return bpfKnown(m) + ". " + (use ? use.blurb + ", " : "") + "in the " +
-         bpVTierLabel(m.tier).toLowerCase() + " range you picked.";
-}
-
-function renderBpfLines(fig, loan) {
-  const rows = [
-    { label: "Sticker price", value: fig.sticker },
-    loan ? { label: "Down payment", note: "(" + Math.round(fig.down / Math.max(1, fig.sticker) * 100) + "%)", value: fig.down }
-         : { label: "Paid at purchase", note: "(with tax and fees)", value: fig.b.yearOne.atPurchase },
-    { label: "Total monthly cost", note: loan ? "(car payment + running it)" : "(running it)", value: fig.monthly, hero: true },
-    { label: "Year 1 cost", note: "(all-in)", value: fig.year1 },
-    { label: "Cost over 5 years", note: "(all-in)", value: fig.five }
-  ];
-  return `
-    <div class="bpf-lines">
-      ${rows.map(r => `
-        <div class="bpf-line ${r.hero ? "bpf-line-hero" : ""}">
-          <span class="bpf-line-label">${h(r.label)}${r.note ? ` <em>${h(r.note)}</em>` : ""}</span>
-          <span class="bpf-line-fig">${h(bpMoney(r.value))}</span>
-        </div>`).join("")}
-    </div>`;
-}
-
-function renderBpfPeerBox(fig, loan) {
-  const p = bpfPeer();
-  const my = { pay: loan ? fig.payment : 0, total: fig.monthly };
-  const pctMe = bpfPct(my.total), pctPeer = bpfPct(p.total);
-  const gap = my.total - p.total;
-  return `
-    <div class="bpf-peer">
-      <p class="bpf-box-head">Compared with peers</p>
-      <p class="bpf-box-note">${h(bpfPeerWho())}</p>
-      <div class="bpf-grid">
-        <span></span><span class="bpf-grid-h">This car</span><span class="bpf-grid-h">Peers</span>
-        <span>Car payment</span><strong>${h(bpMoney(my.pay))}</strong><strong>${h(bpMoney(p.payment))}</strong>
-        <span>Total monthly</span><strong>${h(bpMoney(my.total))}</strong><strong>${h(bpMoney(p.total))}</strong>
-        ${pctMe != null ? `
-          <span>Share of your income</span><strong>${pctMe}%</strong><strong>${pctPeer}%</strong>` : ""}
-      </div>
-      <p class="bpf-gap">${gap === 0
-        ? "The same total monthly as peers."
-        : h(bpMoney(Math.abs(gap))) + " a month " + (gap > 0 ? "more" : "less") + " than peers, all-in."}</p>
-    </div>`;
-}
-
 function bpfGrowth(perMonth, upfront) {
   const i = Number(bpSession().savingsRate) || 0.07;
   const r = i / 12;
@@ -689,13 +487,9 @@ function bpfGrowth(perMonth, upfront) {
   return (upfront || 0) * Math.pow(1 + i, 5) + perMonth * annuity;
 }
 
-/**
- * What an alternative saves: a month, and over five years if the money is kept
- * and grows at the saved rate (7%). Loan and cash cars use the engine's own
- * bpOpportunity (it counts the up-front money too, month by month); a lease, which
- * the engine does not model, and the peers' range use the same idea from the
- * figures on screen.
- */
+/* Show monthly savings and five-year growth at the session savings rate.
+ * Loan/cash choices use bpOpportunity, including upfront differences; leases
+ * use bpfGrowth with monthly and upfront differences. */
 function bpfSavings(orig, alt, figO, figA) {
   const perMonth = figO.monthly - figA.monthly;
   const leased = bpLeasing(bpfCard(orig.model, orig.cond)) || bpLeasing(bpfCard(alt.model, alt.cond));
@@ -705,14 +499,10 @@ function bpfSavings(orig, alt, figO, figA) {
   return { month: perMonth, five: grown };
 }
 
-/**
- * Alternative cars that can save you money (owner, 2026-10-03): one line saying
- * what the box is for, then for each alternative the saving a month and the
- * saving over 5 years, in two columns. The 5-year figure is not the price
- * difference: it is the money kept and grown at 7% a year, which the footnote
- * says. The tester's own pick stays at the top as a plain row, so it is one tap
- * away. Peers' range is information and is shown whether it saves money or not.
- */
+/* Keep the original pick reachable above cheaper choices. Five-year savings
+ * include modeled growth at the session rate, not just price difference; the
+ * footnote names that rate. Show the peer range as information even if it
+ * does not save money. */
 function renderBpfSave() {
   const o = bpfOrigin();
   if (!o) return "";
@@ -800,14 +590,8 @@ function bpfPeerFigures(m) {
   return { year1: pf.year1 + adj * 12, five: pf.five + adj * 60 };
 }
 
-/**
- * The one expense table (owner, 2026-10-03): this car in the first column,
- * bold; peers in the second, plain and smaller, behind a rule. Car payment, cost
- * of running it, the total monthly, the payment as a share of monthly income,
- * then year one and five years, so every figure sits beside its peer figure.
- * The footnote, inside the card, says who peers are and the miles assumed.
- * Peers are information only: no verdict, no threshold, anywhere.
- */
+/* Show car and peer costs side by side, with assumptions in the footnote.
+ * Peers are information only: no verdict or threshold. */
 function renderBpfTable(m, fig, loan) {
   const p = bpfPeer();
   const pf = loan ? bpfPeerFigures(m) : null;
@@ -862,17 +646,13 @@ const fig = bpfFigures(bpCard("pick"));  const leasing = !!fig.lease;  const loa
 function renderBpFinder() {
   const f = bpfSession();
   if (f.view === "quiz") return renderBpfQuiz();
-  if (f.view === "cars") return renderBpfQuiz();   // retired: the cars sit on the quiz screen
+  if (f.view === "cars") return renderBpfQuiz();   // The cars view uses the quiz's combined result display.
   if (f.view === "car")  return renderBpfCar();
   return renderBpfStart();
 }
 
-// ── Buddy: how we worked it out, with every figure editable ──────────────────
-// Owner: "there will be an option for users to click to see details of how
-// these costs are calculated. when clicked it will open the buddy chat that
-// will display these expenses... with options to edit them. If edited, it will
-// change the monthly, etc." The edits land on the pick card, so they carry
-// into steps 1–4 exactly as if they had been made there.
+// Calculator edits update the pick card and carry into Your car, keeping
+// the cost explanation and planning figures consistent.
 
 function bpfOpenCalc() {
   const b = bpBuddy();
@@ -901,7 +681,7 @@ function bpfCalcSet(rowId, raw) {
 function bpfCalcPay(field, value) {
   const s = bpSession();
   if (field === "mode") {
-    // Loan, Cash or Lease (owner, 2026-10-03). Lease is the flag the last screen reads too.
+    // Share the lease flag with Your car's payment controls.
     s.pay.leasing = value === "lease";
     if (value !== "lease") s.pay.mode = value;
     bpLog("bp_finder_calc_pay", { field: field, value: value });

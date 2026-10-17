@@ -1,6 +1,6 @@
 // ─── Money Journal engine (D11–D15) ──────────────────────────────────────────
-// The deepest build (D05) and the thing user testing is actually about: do
-// people engage with the input point? Everything downstream — the budget
+// The deepest build and the thing user testing is actually about: do people
+// engage with the input point? Everything downstream — the budget
 // comparison, the daily update, My Progress — consumes what this produces.
 //
 // Structured questions carry the parsing load (D11). There is no NLP here and
@@ -210,8 +210,7 @@ function journalSetFreeText(value) {
   state.journalSession.freeText = value;
 }
 
-// Attachment affordances are present and tappable and accept a file; nothing is
-// processed (02-money-journal). Recording the name only so the UI can show it.
+// Attachment taps record kind and time only; no file is collected or processed.
 function journalAddAttachment(kind) {
   state.journalSession.attachments.push({ kind: kind, at: Date.now() });
   render();
@@ -293,7 +292,7 @@ function journalBuildEntries() {
       const amt = ans.amount;
       if (amt == null || isNaN(amt) || amt <= 0) return;
       if (q.updatesGoalProgress) {
-        // 05-goals' event-based update, implemented as a journal question.
+        // The event-based goal update, implemented as a journal question.
         // Never ask someone to update a number directly — ask something they
         // actually know, and let the goal move as a consequence.
         journalEmitGoalEvent({ kind: "checking_balance", amount: amt });
@@ -305,11 +304,8 @@ function journalBuildEntries() {
         label: q.prompt,
         category: ans.category || "Other",
         amount: amt,
-        // Frozen ceiling for the confirm slider, exactly as the multi_select
-        // path does above. Without it, journal-confirm falls back to `amount` —
-        // the value the slider itself changes — so every release recomputed
-        // max = amount × 2.5 and snapped the thumb to 40% of a track that grew
-        // each time. A typed 350 would not stay where it was put.
+        // Freeze the slider ceiling as in multi_select. Deriving it from the
+        // edited amount would move the scale under the thumb on each release.
         baseAmount: amt,
         estimated: false,
         zeroReason: null
@@ -337,8 +333,7 @@ function journalAdjustEntry(entryId, amount) {
   debouncedRender();
 }
 
-// Phase 5 consumes this. Emitted now so the journal's submit path does not have
-// to be reopened months later.
+// Goals consumes these structured balance answers separately from spending.
 function journalEmitGoalEvent(evt) {
   state.goalEvents.push(Object.assign({ at: Date.now(), day: journalDayIndex() }, evt));
 }
@@ -382,7 +377,7 @@ function journalSubmit() {
     }
   });
 
-  // Engagement signals clear subscription flags (07-progress-bills).
+  // Engagement signals clear subscription flags.
   (s.signals || []).forEach(name => {
     const sub = (state.subs || []).find(x => x.name === name);
     if (sub) { sub.lastMentionedDay = journalDayIndex(); sub.status = "active_used"; sub.weeksSinceMention = 0; }
@@ -394,11 +389,8 @@ function journalSubmit() {
 
   state.journalEntriesCount = (state.journalEntriesCount || 0) + 1;
 
-  // The daily task that sent us here is now done. Without this the Money
-  // Journal task never greyed out on Home and the "n of 3 done" counter never
-  // moved, because homeCompleteTask had exactly one caller in the whole app
-  // (the lesson tail). Keyed off activeTaskId rather than a hardcoded id, since
-  // both the money_journal task and the subscription_confirm deep link land here.
+  // Complete the task that sent us here, not a hardcoded journal id: both
+  // money_journal and subscription_confirm routes submit through this path.
   if (state.activeTaskId && typeof homeCompleteTask === "function") {
     homeCompleteTask(state.activeTaskId);
     state.activeTaskId = null;   // or the next screen still thinks it is in a task
@@ -409,11 +401,6 @@ function journalSubmit() {
 
   observationsRecompute();
   go("journalDone");
-}
-
-function journalDiscard() {
-  state.journalSession = null;
-  navBack();
 }
 
 // Totals for the confirmation screen.

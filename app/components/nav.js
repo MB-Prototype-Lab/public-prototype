@@ -7,21 +7,9 @@
 // Market is deliberately DEAD — D33 makes Marketplace a visible but
 // non-interactive tab. The screens still exist and stay reachable from the admin
 // jump list (L14); only the tab affordance is disabled.
-// NOTE: the "Budget" tab's internal screen id is still `aboutMe` (rename was
-// label-only) — go('aboutMe') is correct, not go('budget').
-// Only visible on screens in NAV_VISIBLE_SCREENS. Excluded screens:
-//   lesson        — full-height audiobook player; full-bleed, no tab context
-//   quiz          — full-screen question flow; no tab context needed mid-quiz
-//   reward-preview — pre-lesson interstitial; nav would distract from the preview
-//   reward        — post-quiz celebration; nav bar would break the reward moment
-//   lifestyleChain — full-screen question flow; no tab context needed mid-chain
-//   postResult     — post-input reaction prompt; keep focus on the prompt
-//   nextAction     — next action selection; keep focus on the choice
-//   commitment     — commitment creation; keep focus on the input
-//   chat           — full-screen chat; has its own Back button, and the input
-//                    bar needs the bottom edge the nav would occupy
-//   budgetUpdateConfirm — old→new budget comparison; a decision gate, keep
-//                    focus on confirm/keep-editing/discard
+// The Budget tab's internal screen id is `aboutMe`, not `budget`.
+// Only listed screens show tabs; full-bleed flows and decision gates keep focus
+// on their own controls. Chat also needs the bottom edge for its input bar.
 const NAV_VISIBLE_SCREENS = ["home", "aboutMe",
   "myProgress", "goals", "learn", "topic", "simulation", "marketplace", "marketplaceDetail",
   "settings", "myDebts", "debtAnalyzer", "comparison", "accountBalances", "debtBalances",

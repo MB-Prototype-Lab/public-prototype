@@ -1,24 +1,5 @@
-// ─── Account Balances ──────────────────────────────────────────────────────────
-// TAB: Budget (sub-screen) | NAV BAR: Visible — Budget tab highlighted
-//
-// PURPOSE
-// Records point-in-time bank/cash account balance snapshots with date stamps.
-// The trend over time is the output (visible in My Progress).
-// Also serves as the first step of the Update This Month flow.
-//
-// NAVIGATION
-//   Entry: Budget → Account Balances card; Budget Setup → Update This Month
-//   Exit:  ← Budget (or → debtBalances if in monthly update flow)
-//
-// STATES
-//   Shows existing balance entries as a timeline list.
-//   Add form appears inline when adding a new entry.
-//
-// PRODUCTION NOTES
-//   Accounts: Checking, Savings, Cash, Investment, Brokerage, or custom (typed in).
-//   Monthly update flow: account balances → debt balances (2-step).
-//   After completing both steps, net position is compared to budget estimate.
-//   If gap > 10%, prompt to update the 2 Minute Budget sliders.
+// Tools reaches this balance-log screen; debt balances can follow it in a
+// monthly update. Store dated snapshots separately from the debt catalog.
 
 const ACCOUNT_TYPES = ["Checking", "Savings", "Cash", "Investment", "Brokerage", "Custom"];
 

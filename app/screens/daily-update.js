@@ -1,31 +1,8 @@
-// ─── Daily update (08-video-updates, D27–D30) ────────────────────────────────
-// TAB: None | NAV BAR: Hidden — full-bleed, the payoff moment
-//
-// "A personalized read on how the week is going — the tone of a financial
-// podcast made for one person." An animated DOM sequence, not an encoded video
-// (A9). Daily only (D27).
-//
-// ── THE SCRIPT / VISUAL SPLIT (D30) ──────────────────────────────────────────
-// Scripts stay GENERALIZED. Visuals carry the numbers.
-//
-//   script: "You're spending more on eating out than most households like yours"
-//   visual: 429 against 370, in an animating bar
-//
-// That is deliberate: one recorded script serves every user, and the figures
-// stay accurate without re-recording audio. So no cue may read its number from
-// the script — every one pulls live from state.
-//
-// ── TIMING (D29, L10) ────────────────────────────────────────────────────────
-// One audio file per segment, so the <audio> element IS the clock and the
-// segment index is exact rather than inferred from a playhead. Three tiers:
-//
-//   1. DAILY_TIMINGS   measured at generation (scripts/gen-audio.sh)
-//   2. the static block in daily-scripts.json  — the spec's fallback
-//   3. word count at 165 wpm                   — when a segment has neither
-//
-// Segment text and timings never share an object, and cues reference segment
-// ids rather than timestamps, so a re-cut segment shifts everything after it
-// and the visuals follow with no further edits.
+// Daily-only update (D27): general narration serves every tester while
+// visuals read live figures (D30). Timing precedence is generated DAILY_TIMINGS,
+// static daily-scripts.json timings, then word count at DU_WPM (D29).
+// WAV playback advances segments; unavailable playback uses the timing table.
+// Segment IDs keep cues independent of edits to text and duration.
 
 const DU_WPM = 165;
 
@@ -233,7 +210,7 @@ function duCueStreak() {
     </div>`;
 }
 
-// Reuses components/thermometer.js — two bars, user vs peer, user animates.
+// The shared thermometer draws positions; print amounts alongside it (D30).
 function duCueBarCompare() {
   const cat = "Dining out";
   const user = catValue(state.mtd, cat);
@@ -259,9 +236,7 @@ function duCueBarCompare() {
     </div>`;
 }
 
-// Declared in visualCues.types but unused by all three shipped scripts. Built
-// anyway — the type is clearly intended, and a variant added later would
-// otherwise fall back to the buddy.
+// Keep the declared number_reveal cue available for script variants.
 function duCueNumberReveal() {
   const total = catTotal(state.mtd);
   return `
@@ -287,8 +262,7 @@ function duCueCategoryGrid() {
     </div>`;
 }
 
-// A pace ring. components/badge-ring.js was checked for reuse and rejected: it
-// is badge-semantic (tier colours, bonus dots), not a goal-pace dial.
+// A goal-pace ring has no badge tiers or bonus dots, so it draws its own SVG.
 function duCueGoalRing() {
   const goal = (state.tacticalGoals || []).find(g => g.pacePercent != null) || {};
   const pct = Math.max(0, Math.min(100, goal.pacePercent || 0));
@@ -340,7 +314,7 @@ function renderDailyUpdateAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">Daily Update</p>
       <div class="input-group">
-        <label>Engagement variant (all 3 selectable, A10)</label>
+        <label>Engagement variant (all 3 selectable)</label>
         <select onchange="duSelectVariant(this.value)">
           ${duScripts().map(x => `
             <option value="${h(x.id)}" ${s && s.id === x.id ? "selected" : ""}>
@@ -354,7 +328,7 @@ function renderDailyUpdateAdmin() {
           ${duSegments().map((seg, i) => {
             const t = duTiming(s.id, seg);
             const src = (typeof DAILY_TIMINGS !== "undefined" && DAILY_TIMINGS[s.id] && DAILY_TIMINGS[s.id][seg.id])
-              ? "measured" : (s.timings && s.timings[seg.id] ? "spec" : "165wpm");
+              ? "measured" : (s.timings && s.timings[seg.id] ? "static" : "165wpm");
             return `${i === state.du.index ? "<strong>" : ""}${h(seg.id)} · ${h(seg.cue)} · ${t.duration}ms <em>(${src})</em>${i === state.du.index ? "</strong>" : ""}`;
           }).join("<br>")}
         </div>

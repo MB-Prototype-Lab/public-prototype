@@ -2,11 +2,10 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const BIG_PURCHASE =
 {
-  "_note": "Big Purchase Calculator (docs/big-purchase-spec.md Â§13). Every figure is sourced or flagged _prototype. FIGURES are data, ARITHMETIC is code: js/bp-engine.js and js/bp-vehicle.js read every number from here. If you edit this file, re-run: MB_VERSION=v3.1c bash scripts/wrap-data.sh",
+  "_note": "Big Purchase Calculator (docs/big-purchase-spec.md §13). Every figure is sourced or flagged _prototype. FIGURES are data, ARITHMETIC is code: js/bp-engine.js and js/bp-vehicle.js read every number from here. If you edit this file, re-run: bash scripts/wrap-data.sh",
 
   "credit": {
     "defaultTier": "600-660",
@@ -25,14 +24,11 @@ const BIG_PURCHASE =
 
   "opportunity": {
     "defaultRate": 0.07,
-    "options": [0.04, 0.05, 0.06, 0.07, 0.08, 0.10],
     "_note": "7% is the US stock market's long-run average return after inflation  -  not a recent 3-year return. Copy says what a difference is WORTH, never 'invest'."
   },
 
   "horizons": { "primary": 5,
     "_note": "5 years only. The secondary 3-year figure was dropped on the owner's call (2026-09-26): it appeared nowhere after the flow was split into five screens, and a second horizon beside the first reads as a rival answer." },
-
-  "categoryEmoji": { "vehicle": "🚗", "boatRv": "⛵", "home": "🏡", "vacation": "✈️", "other": "🛒" },
 
   "financing": {
     "defaultMode": "loan",
@@ -42,16 +38,7 @@ const BIG_PURCHASE =
     "defaultTerm": 60
   },
 
-  "plan": { "defaultMonthsOut": 12, "roundTo": 100, "notYetDays": 14 },
-
-  "taxBreak": {
-    "id": "carLoanInterest2025",
-    "newOnly": true,
-    "loanOnly": true,
-    "expires": "2028-12-31",
-    "link": "irs.gov/newsroom/one-big-beautiful-bill-provisions",
-    "_linkNote": "Confirm the exact URL at build (spec Â§9.2). The in-app page is MoneyBuddy's own summary, not IRS text."
-  },
+  "plan": { "defaultMonthsOut": 12, "roundTo": 100 },
 
   "vehicle": {
     "types": [
@@ -62,64 +49,19 @@ const BIG_PURCHASE =
       { "id": "motorcycle", "label": "Motorcycle" }
     ],
     "tierOrder": ["luxury", "premium", "everyday", "value"],
-    "_tierNote": "The DISPLAY label for the third tier is Standard (owner, 2026-09-26). The data KEY stays everyday: it is a join key across tierExamples, the factor tables and saved sessions, and renaming it would silently return undefined wherever one spot was missed. Same trick as Health displaying as Medical and Dental in the taxonomy.",
+    "_tierNote": "The DISPLAY label for the third tier is Standard (owner, 2026-09-26). The data KEY stays everyday: it is a join key across the factor tables and saved sessions, and renaming it would silently return undefined wherever one spot was missed. Same trick as Health displaying as Medical and Dental in the taxonomy.",
     "tierLabels": { "luxury": "Luxury", "premium": "Premium", "everyday": "Standard", "value": "Value" },
-    "tierExamples": {
-      "car":        { "luxury": "Porsche, Range Rover, Mercedes S-Class", "premium": "BMW, Lexus, Audi, Acura", "everyday": "Toyota, Honda, Ford, Chevy, Subaru", "value": "Kia, Hyundai, Nissan, Mitsubishi" },
-      "suv":        { "luxury": "Porsche, Range Rover, Mercedes S-Class", "premium": "BMW, Lexus, Audi, Acura", "everyday": "Toyota, Honda, Ford, Chevy, Subaru", "value": "Kia, Hyundai, Nissan, Mitsubishi" },
-      "minivan":    { "luxury": "Porsche, Range Rover, Mercedes S-Class", "premium": "BMW, Lexus, Audi, Acura", "everyday": "Toyota, Honda, Ford, Chevy, Subaru", "value": "Kia, Hyundai, Nissan, Mitsubishi" },
-      "truck":      { "luxury": "Ram Limited, GMC Denali", "premium": "Ford F-150 Platinum", "everyday": "Toyota Tacoma, Chevy Silverado", "value": "Nissan Frontier" },
-      "motorcycle": { "luxury": "Ducati, BMW", "premium": "Harley-Davidson, Triumph", "everyday": "Honda, Yamaha, Kawasaki", "value": "Royal Enfield, Kymco" }
-    },
     "fuels": [
       { "id": "gas",      "label": "Gas" },
-      { "id": "diesel",   "label": "Diesel", "hideFor": ["motorcycle", "minivan"] },
+      { "id": "diesel",   "label": "Diesel" },
       { "id": "hybrid",   "label": "Hybrid" },
       { "id": "electric", "label": "Electric" }
     ],
     "ages": [
-      { "id": "1-3", "label": "1-3 yrs", "startAge": 2 },
-      { "id": "4-6", "label": "4-6 yrs", "startAge": 5 },
-      { "id": "7+",  "label": "7+ yrs",  "startAge": 8 }
+      { "id": "1-3", "label": "1-3 yrs" },
+      { "id": "4-6", "label": "4-6 yrs" },
+      { "id": "7+",  "label": "7+ yrs" }
     ],
-
-    "quiz": {
-      "_note": "Four questions for somebody who has no car in mind yet (owner, 2026-09-26: 'the experience assumes the user has a car in mind, but they may not'). Every option carries SCORES, and the highest-scoring type wins — so a new question is a data entry, not a branch in the code. `tier` and `fuel` are nudges, applied only when the answers point somewhere clearly. It suggests a shape of vehicle, never a purchase: the tester can take it or pick for themselves, and the figures do not change until they do.",
-      "_prototype": true,
-      "questions": [
-        { "id": "who", "ask": "Who's usually in the car?", "options": [
-          { "id": "justMe",  "label": "Mostly just me",   "scores": { "car": 2, "motorcycle": 1 } },
-          { "id": "plusOne", "label": "Me and one other", "scores": { "car": 2, "suv": 1 } },
-          { "id": "family",  "label": "Three or more",    "scores": { "suv": 2, "minivan": 1 } },
-          { "id": "crowd",   "label": "Six or more",      "scores": { "minivan": 3, "suv": 1 } }
-        ] },
-        { "id": "use", "ask": "What do you use it for most?", "options": [
-          { "id": "commute", "label": "Getting to work",        "scores": { "car": 2, "motorcycle": 1 } },
-          { "id": "errands", "label": "Errands and school runs", "scores": { "suv": 1, "minivan": 1, "car": 1 } },
-          { "id": "haul",    "label": "Hauling or towing",       "scores": { "truck": 3 }, "fuel": "diesel" },
-          { "id": "trips",   "label": "Long road trips",         "scores": { "suv": 2, "car": 1 } }
-        ] },
-        { "id": "where", "ask": "Where do you do most of your driving?", "options": [
-          { "id": "city",  "label": "City streets",              "scores": { "car": 2, "motorcycle": 1 } },
-          { "id": "mixed", "label": "A bit of everything",       "scores": { "suv": 1, "car": 1 } },
-          { "id": "rural", "label": "Country roads and highways", "scores": { "truck": 1, "suv": 1 } },
-          { "id": "snow",  "label": "Snow, ice or steep hills",  "scores": { "suv": 2, "truck": 1 } }
-        ] },
-        { "id": "fuel", "ask": "How would you like to fuel it?",
-          "_note": "NEVER asks 'do you want an EV' cold. Each option says what it means for the person day to day — where you fill up, what it costs to run, what goes wrong — and the last one hands the choice back to the answers they already gave.",
-          "options": [
-            { "id": "electric", "emoji": "🔌", "label": "Plug it in",      "sub": "Charge at home, no gas stations, fewer moving parts to fix", "fuel": "electric" },
-            { "id": "hybrid",   "label": "A bit of both",   "sub": "Still uses gas, just a lot less of it", "fuel": "hybrid" },
-            { "id": "gas",      "label": "Stick with gas",  "sub": "Fill up anywhere, cheapest to buy", "fuel": "gas" },
-            { "id": "either",   "label": "No preference",   "sub": "We'll pick what suits your answers" }
-          ] },
-        { "id": "age", "ask": "New, or a few years old?", "options": [
-          { "id": "new",  "label": "Brand new",        "sub": "Full warranty, nothing worn out yet", "condition": "new" },
-          { "id": "used", "label": "A few years old",  "sub": "Someone else paid for the first few years", "condition": "used" },
-          { "id": "open", "label": "Show me both",     "sub": "We'll start new and price the used one beside it", "condition": "new" }
-        ] }
-      ]
-    },
 
     "finder": {
       "_note": "The car finder (owner, 2026-09-29): a SPECIFIC make and model, never a shape of vehicle. Three types, three uses each, three price tiers, three models per tier = 81 cars. Base trim only (owner: 'display the basic make/model'). Prices are approximate 2026 base MSRP including destination, fixed at build time (_prototype). Tier keys are the ones the insurance and upkeep factor tables already use; the tier's price RANGE on screen is derived from the three models in it, never typed. The used price is the same usedCut every other screen uses, so a used car costs the same wherever it appears.",
@@ -148,7 +90,6 @@ const BIG_PURCHASE =
         ]
       },
       "usedAge": "1-3",
-      "usedLabel": "Used, about 3 years old",
       "models": [
         { "id": "versa",        "make": "Nissan",        "model": "Versa",            "type": "car",   "use": "commuter",  "tier": "value",    "fuel": "gas",      "price": 18300, "why": "Seats 5, easy to park", "known": "One of the most affordable new cars in America" },
         { "id": "k4",           "make": "Kia",           "model": "K4",               "type": "car",   "use": "commuter",  "tier": "value",    "fuel": "gas",      "price": 22600, "why": "Seats 5, big touchscreen", "known": "Kia's bold new compact, packed with tech for the price" },
@@ -301,14 +242,6 @@ const BIG_PURCHASE =
     "alternatives": { "usedCut": 0.28, "tierCut": 0.35, "usedAge": "1-3", "_prototype": true,
                       "_note": "Fixed cuts, no real price data: used 1-3 yrs at -28%, one tier down at -35%. The used cut was 20% until 2026-09-27, which put a 1-3 year old car far too close to the new one beside it (owner: used price feels too low, especially compared to other brand). Most of what a car loses goes in the first two or three years, so 28% is the nearer figure." },
 
-    "retention": {
-      "year1": 0.80, "years2to5": 0.85, "year6plus": 0.88,
-      "tierAdjust": { "luxury": -0.03, "premium": -0.01, "everyday": 0, "value": 0.02 },
-      "fuelAdjust": { "gas": 0, "diesel": 0, "hybrid": 0.01, "electric": -0.03 },
-      "_prototype": true,
-      "_note": "Share of value kept each year. Luxury and electric lose faster, Value slower. Used cars start at their age band."
-    },
-
     "factors": {
       "insuranceType":  { "car": 1.0, "suv": 1.05, "minivan": 0.95, "truck": 1.05, "motorcycle": 0.45 },
       "insuranceTier":  { "luxury": 1.55, "premium": 1.25, "everyday": 1.0, "value": 0.9 },
@@ -348,8 +281,6 @@ const BIG_PURCHASE =
     "nationalCentsPerKwh": 16.5,
     "_fuelSource": "_prototype: EPA combined MPG class averages (rounded). Pump price reuses the ESF's EIA figures; electricity uses the state rate in zip-cost-of-living.json.",
 
-    "subscriptions": { "luxury": 45, "premium": 30, "everyday": 15, "value": 10, "_prototype": true,
-                       "_note": "Monthly connected-services bill: satellite radio, the app that unlocks and pre-heats the car, live traffic and in-car data, and on some brands the remote start or extra horsepower that now arrives as a subscription. RAISED 2026-09-27 (owner: 'what are subscriptions for a car? $15 seems too low'). Satellite radio alone is about $15 after the free trial, so a Standard car is no longer zero, and the label on screen now names what it is." },
     "charger": 1400,
     "gear": 800,
     "_flatSource": "_prototype: Level 2 home charger installed ($1,200-$1,600); starter riding gear  -  helmet, jacket, gloves ($600-$1,000).",

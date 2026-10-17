@@ -1,39 +1,7 @@
-// --- My Debts ----------------------------------------------------------------
-// TAB: Analysis (sub-screen) | NAV BAR: Visible -- Analysis tab highlighted
-//
-// -- V2 SCREEN, PARKED OFF THE MAIN PATH (L14) --------------------------------
-// v3 never specified this screen, and nothing in the five tabs or the daily
-// tasks routes to it. It stays because the decision was "keep the v2 screens,
-// keep them reachable, do not widen the tester's surface" -- so its only door is
-// the admin jump list.
-//
-// The header below says "Analysis tab", which is v2's nav. v3 has five tabs and
-// Analysis is not one of them (L5/D34). Read that line as v2 history, not as a
-// description of where this sits today.
-//
-// Before building on this: it renders v2 state (state.budget.debts), not any of
-// the v3 data files, and it has no part in the plan / self-reported / peer model
-// that the rest of v3 is arranged around (architecture section 5).
-//
-// PURPOSE
-// All cashflow debt instruments in one place — view, add, edit, and remove
-// individual debts. Excludes mortgage (that lives in the Housing budget category).
-//
-// NAVIGATION
-//   Entry: "Your Debt" card on the Analysis budget dashboard
-//   Exit:  ← Analysis back button; "Open Debt Analyzer" button → debt-analyzer
-//
-// STATES
-//   Empty: prompt to add first debt instrument
-//   Populated: list of debt cards with balance, APR, min payment, edit controls
-//
-// PRODUCTION NOTES
-//   Debt data lives in state.budget.debts[]. Each debt has: id, name, balance,
-//   apr, minPayment, type. Edits are inline — no separate edit screen.
-//   The Debt Analyzer reads from the same debts array; changes here reflect
-//   immediately in any open Debt Analyzer session.
-
-// ─── Handlers ─────────────────────────────────────────────────────────────────
+// L14 keeps this inherited debt catalog off the main paths. Tools and the
+// balance-entry screens can reach it. It reads state.budget.debts separately
+// from the plan/self-reported/peer layers. Mortgage belongs in Housing.
+// Inline edits share the same debt array with the analyzer.
 
 function addDebt() {
   state.selectedDebt = "new";

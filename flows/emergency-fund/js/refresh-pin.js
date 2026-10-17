@@ -2,11 +2,9 @@
 //
 // A browser refresh returns to the selector with a fresh app. "Pin on refresh"
 // in Admin Tools keeps the refresh here instead and restarts this page fresh.
-// One pin per browser tab, shared with Flows and the side-by-side toolbar: it
-// lives in sessionStorage, the narrow exception to D03 that the selector's
-// passcode unlock also uses. A new tab starts unpinned; nothing about the
-// participant is stored. Loaded in <head>, before anything boots, so an
-// unpinned reload leaves before the app starts.
+// One pin per browser tab, shared with Flows and the side-by-side toolbar.
+// sessionStorage holds reviewer preferences only (D03), never participant data.
+// Loaded in <head> so an unpinned reload leaves before the app starts.
 //
 // An embedded copy (a side-by-side pane) ignores the pin and never sends itself
 // to the selector: the page around it owns pinning and the way back.

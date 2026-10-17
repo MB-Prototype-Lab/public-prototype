@@ -1,11 +1,15 @@
 """Flow publication identity and lifecycle regression checks."""
 import copy
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
 import unittest
-import test_publication as legacy
+try:
+    import test_publication as legacy  # discover -s tests
+except ModuleNotFoundError:
+    from tests import test_publication as legacy  # python3 -m unittest tests.test_flow_publication
 pub = legacy.pub
 
 
@@ -93,13 +97,21 @@ class FlowPublicationTests(unittest.TestCase):
 
     def test_flow_metadata_mismatch_and_absent_wrapper(self):
         row=self.changed('flow.json',pub.canonical(dict(self.metadata,id='different')))
-        with self.assertRaises(ValueError): pub.package(row,self.repo,False)
+        with self.assertRaisesRegex(ValueError,r'^flow\.json \(emergency-fund\): unsafe or mismatched Flow ID$'): pub.package(row,self.repo,False)
+        package=self.repo/'flows/emergency-fund'
+        (package/'flow.json').write_bytes(json.dumps(self.metadata).encode()+b'\n')
+        (package/'flow-config.js').unlink()
+        self.git('add','flows')
+        self.git('commit','-m','policy wrapper deleted')
+        row=dict(self.flow,id='absent',source_tag='snapshot/absent',commit=self.git('rev-parse','HEAD'),public_path='versions/absent/index.html')
+        with self.assertRaisesRegex(ValueError,'^Flow policy wrapper differs from metadata$'): pub.package(row,self.repo,False)
 
     def test_flow_dependency_rejections(self):
-        for value in ('missing.png','../../../app/index.html','/app/index.html','../../index.html'):
+        for value,guard in (('missing.png','missing dependency'),('../../../app/index.html','traversal dependency'),
+                            ('/app/index.html','forbidden dependency'),('../../index.html','traversal dependency')):
             with self.subTest(value=value):
                 row=self.changed('index.html',('<script src="release-config.js"></script><script src="flow-config.js"></script><script src="js/config.js"></script><script src="js/flow.js"></script><script src="js/navigation.js"></script><img src="'+value+'">').encode())
-                with self.assertRaises(ValueError): pub.package(row,self.repo,False)
+                with self.assertRaisesRegex(ValueError,r'/index\.html: '+guard+' '+re.escape(repr(value))+'$'): pub.package(row,self.repo,False)
 
     def test_flow_identity_tags_digest_manifest_and_ceiling(self):
         previous=self.previous()
@@ -121,20 +133,26 @@ class FlowPublicationTests(unittest.TestCase):
         self.git('tag','snapshot/fund-study')
         with self.assertRaisesRegex(ValueError,'moved'): self.build(require_tags=False)
 
-    def test_flow_policy_malformed_wrapper_and_missing_asset(self):
-        for path,data in [('flow.json',b'{'),('flow-config.js',b'window.MB_FLOW={};'),
-                          ('index.html',b'<script src="release-config.js"></script><script src="flow-config.js"></script><a href="../../../app/index.html">Escape</a>')]:
-            with self.subTest(path=path):
+    def test_flow_policy_wrapper_scripts_and_escaping_anchor(self):
+        scripts=b'<script src="release-config.js"></script><script src="flow-config.js"></script><script src="js/config.js"></script><script src="js/flow.js"></script><script src="js/navigation.js"></script>'
+        for path,data,message in [('flow.json',b'{','^Expecting property name enclosed in double quotes'),
+                                  ('flow-config.js',b'window.MB_FLOW={};','^Flow policy wrapper differs from metadata$'),
+                                  # Missing runtime scripts stop packaging before any dependency is read.
+                                  ('index.html',b'<script src="release-config.js"></script><script src="flow-config.js"></script><a href="../../../app/index.html">Escape</a>',
+                                   '^Flow entry missing required policy/runtime scripts$'),
+                                  # Only the anchor check sees an escape with no file extension.
+                                  ('index.html',scripts+b'<a href="../../../app/">Escape</a>',r"/index\.html: traversal dependency '\.\./\.\./\.\./app/'$")]:
+            with self.subTest(path=path,data=data):
                 # Restore valid committed metadata between negative fixtures.
                 package=self.repo/'flows/emergency-fund'
                 (package/'flow.json').write_bytes(json.dumps(self.metadata).encode()+b'\n')
                 (package/'flow-config.js').write_bytes(self.wrapper())
                 row=self.changed(path,data)
-                with self.assertRaises(ValueError): pub.package(row,self.repo,False)
+                with self.assertRaisesRegex(ValueError,message): pub.package(row,self.repo,False)
 
     def test_frozen_tracking_resists_participant_urls(self):
-        node=shutil.which('node') or '/tmp/node-v22.23.3-linux-arm64/bin/node'
-        if not Path(node).exists(): self.skipTest('Node unavailable')
+        node=shutil.which('node')
+        if not node: self.skipTest('Node unavailable')
         root=Path(pub.__file__).resolve().parents[1]
         fixture={'config':(root/'app/js/config.js').read_text(),
                  'tracking':(root/'app/js/useberry.js').read_text()}
@@ -161,26 +179,32 @@ for(const protocol of ['https:','http:','file:']) {
             (scripts/name).write_bytes((Path(pub.__file__).parent/name).read_bytes())
         command=['python3',str(scripts/'publish.py'),'prepare','--flow','emergency-fund',
                  '--id','prepared-flow','--commit',self.flow['commit'],
-                 '--label','Fund study','--tracking','off']
-        result=subprocess.run(command,cwd=self.repo,capture_output=True,text=True)
+                 '--label','Fund study','--tracking','off','--main-ref','main']
+        result=subprocess.run(command,cwd=self.repo.parent,capture_output=True,text=True)
         self.assertEqual(result.returncode,0,result.stderr)
         prepared=json.loads(result.stdout)
+        self.assertIsNone(prepared['ongoing_study'])
+        self.assertEqual(prepared['order'],0)
         self.assertEqual(prepared['source_dir'],'flows/emergency-fund')
         self.assertEqual(prepared['format'],'flow-static-v1')
         self.assertEqual(prepared['digest'],self.flow['digest'])
+        default_ref=subprocess.run(command[:-2],cwd=self.repo.parent,capture_output=True,text=True)
+        self.assertNotEqual(default_ref.returncode,0)
+        self.assertIn('snapshot source must be on main ref: refs/remotes/origin/main',default_ref.stderr)
         command[command.index('emergency-fund')]='../app'
         self.assertNotEqual(subprocess.run(command,cwd=self.repo,capture_output=True).returncode,0)
 
     def test_final_inventory_and_dynamic_dependencies(self):
         original=pub.export(self.flow['commit'],self.flow['source_dir'],self.repo)['index.html']
-        for extra in (b'<link rel="stylesheet" href="../../index.html">',
-                      b'<img src="flow.json">', b'<script src="docs/author.json"></script>'):
+        for extra,message in ((b'<link rel="stylesheet" href="../../index.html">',"traversal dependency '../../index.html'"),
+                              (b'<img src="flow.json">',"missing dependency 'flow.json'"),
+                              (b'<script src="docs/author.json"></script>',"missing dependency 'docs/author.json'")):
             with self.subTest(extra=extra):
                 row=self.changed('index.html',original+extra)
-                with self.assertRaises(ValueError): pub.package(row,self.repo,False)
+                with self.assertRaisesRegex(ValueError,r'/index\.html: '+re.escape(message)+'$'): pub.package(row,self.repo,False)
         (self.repo/'flows/emergency-fund/index.html').write_bytes(original)
         row=self.changed('js/flow.js',b'const media = "assets/missing/" + theme + ".mp4";')
-        with self.assertRaises(ValueError): pub.package(row,self.repo,False)
+        with self.assertRaisesRegex(ValueError,r"/js/flow\.js: missing dependency 'assets/missing'$"): pub.package(row,self.repo,False)
 
     def test_policy_script_order(self):
         original=pub.export(self.flow['commit'],self.flow['source_dir'],self.repo)['index.html']
@@ -188,10 +212,11 @@ for(const protocol of ['https:','http:','file:']) {
         with self.assertRaisesRegex(ValueError,'script order'): pub.package(row,self.repo,False)
 
     def test_flow_source_shape_rejected(self):
-        for source in ('flows/../app','flows/Upper','flows/a/b','app'):
+        for source,message in (('flows/../app','unsafe source directory'),('flows/Upper','invalid Flow source directory'),
+                               ('flows/a/b','invalid Flow source directory'),('app','invalid Flow source directory')):
             catalog=copy.deepcopy(self.catalog)
             catalog['snapshots'][-1]['source_dir']=source
-            with self.assertRaises(ValueError): pub.validate(catalog)
+            with self.subTest(source=source), self.assertRaisesRegex(ValueError,'^'+message+'$'): pub.validate(catalog)
 
 
 if __name__=='__main__':

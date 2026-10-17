@@ -165,13 +165,20 @@ function kbdNotify() {
 }
 
 /** Return / Done: commit the field the way a blur would, and put it away. */
+let kbdCommitting = false;
 function kbdCommit() {
-  const el = kbdTarget;
-  if (el) {
-    try { el.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
-    try { el.blur(); } catch (e) {}
-  }
-  kbdClose();
+  // A field's change handler may auto-finish the same keypad (ZIP does).
+  // Dispatch exactly once rather than recursively committing that change.
+  if (kbdCommitting) return;
+  kbdCommitting = true;
+  try {
+    const el = kbdTarget;
+    if (el) {
+      try { el.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
+      try { el.blur(); } catch (e) {}
+    }
+    kbdClose();
+  } finally { kbdCommitting = false; }
 }
 
 /**
@@ -251,8 +258,7 @@ function kbdMarkup() {
 // ── Wiring ───────────────────────────────────────────────────────────────────
 
 // ── THE BUTTON-PRESS LATCH ───────────────────────────────────────────────────
-// Tapping Continue while the keyboard was up did nothing: the keyboard went
-// away and the screen stayed. Three facts, all in this file and its stylesheet:
+// Hold keyboard layout during button presses. Three facts explain why:
 //
 //   1. `.screen-scroll.kbd-open` adds 250px of padding-bottom (css/keyboard.css)
 //   2. kbdClose() drops that class, so closing REMOVES 250px of layout (kbdPaint)
@@ -262,7 +268,7 @@ function kbdMarkup() {
 // finger lifts, the footer jumps 250px down, and pointerup happens over
 // whatever is now under the finger. No `click` is ever dispatched on the button.
 //
-// The fix is to not close while a press is in flight. The blur still happens —
+// Do not close while a press is in flight. The blur still happens —
 // nothing exotic — but the LAYOUT holds still, so the button stays put and the
 // click lands normally. The keyboard then closes from kbdSyncAfterRender once
 // the handler has re-rendered and the field it belonged to no longer exists.
@@ -301,12 +307,9 @@ function kbdInit() {
     if (kbdAccepts(e.target)) { kbdOpen(e.target); return; }
     // A BUTTON TAKING FOCUS IS NOT A REASON TO CLOSE.
     //
-    // This is the half the first fix missed. Chrome and Edge focus a <button>
-    // on mousedown, so pressing Continue fires focusin with the BUTTON as the
-    // target — and this branch closed the keyboard immediately, synchronously,
-    // before the latch on focusout ever mattered. The layout dropped 250px and
-    // the click was lost exactly as before. (Safari and Firefox on macOS do not
-    // focus buttons this way, which is how it can look fixed on one machine.)
+    // Chrome and Edge focus buttons on mousedown. Honour the press latch here
+    // as well as on focusout, or keyboard removal can move the click target
+    // before pointerup. Button focus differs across browsers.
     if (kbdPressPending) return;
     kbdClose();
   });

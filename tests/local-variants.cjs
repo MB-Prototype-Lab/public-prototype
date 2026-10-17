@@ -30,8 +30,8 @@ function run(manifest, returnInfo, href = 'file:///tmp/My%20Project/index.html',
   const prototypeTab = element('button');
   const flowsTab = element('button');
   const body = element('body');
-  const nodes = { localAlternatives: section, localAlternativesList: list, localCompare: launch,
-    selectorScreen: selector, localAlternativesTitle: title, localFlowVariantsSlot: slot,
+  const nodes = { localVariants: section, localVariantsList: list, localCompare: launch,
+    selectorScreen: selector, localVariantsTitle: title, localFlowVariantsSlot: slot,
     gateTabs: tabs, gateTabPrototype: prototypeTab, gateTabFlows: flowsTab };
   const listeners = [];
   const redirects = [];

@@ -2,8 +2,7 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const ESTIMATOR_QUESTIONS =
 {
   "_note": "Behavioral spend estimator (extends the Money Journal). Questions ask HOW OFTEN and WHAT TYPE, never a dollar figure — people remember their habits, not their totals. Each option carries a full-rate `monthly` estimate; the engine multiplies by how far into the month we are (unless `fullMonth`, for bills already incurred). Plausible prototype figures (D19), not researched costs. Widen freely — this is data.",

@@ -2,8 +2,7 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const PERSONA =
 {
   "_note": "Fixed persona. Onboarding inputs override zip, householdSize, and incomeAnnual where the tester provides them (D09). Everything else always falls back to these values.",
@@ -21,7 +20,7 @@ const PERSONA =
   },
 
   "lifestyle": {
-    "_note": "Set by the lifestyle wizard. These values are the persona default; the wizard overwrites them if the tester completes it.",
+    "_note": "Persona defaults. Help me out overwrites the lifestyle dimensions its questions cover.",
     "foodie": "moderate",
     "cooksAtHome": "sometimes",
     "hobbySpend": "low",
@@ -31,13 +30,10 @@ const PERSONA =
   },
 
   "state": {
-    "healthState": "slightly_behind",
-    "streakDays": 6,
     "streakDaysIfOnboarded": 1,
     "buddyLevel": 3,
     "kibbleBalance": 240,
-    "diamondBalance": 12,
-    "journalEntriesCompleted": 6
+    "diamondBalance": 12
   },
 
   "buddy": {

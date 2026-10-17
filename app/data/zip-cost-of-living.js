@@ -2,8 +2,7 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const ZIP_COST_OF_LIVING =
 {
  "_note": "Cost of living for every ZIP code in the United States. Replaces a 3-digit prefix lookup against four hand-set tiers, under which Manhattan, Palo Alto, Santa Clara and Los Angeles were all the same number, nowhere could exceed 1.85x national on housing, and the headline averaged twelve categories unweighted so housing counted for one twelfth of it. Santa Clara read 121% of national and Rogers, Arkansas read 111%; BEA says 112.9 and 91.0, with housing at 213.0 against 75.8. Regenerate with scripts/build-cost-of-living.py, then scripts/wrap-data.sh. Prototype-grade (D19) \u2014 editable, not a live feed, not advice.",

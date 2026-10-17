@@ -1,21 +1,8 @@
-// ─── Help me out — the screen ────────────────────────────────────────────────
-// TAB: Budget (sub-screen) | NAV BAR: Hidden — full-bleed
-//
-// Two stages for one category:
-//
-//   ask      every question on ONE screen, revealing as the previous one is
-//            answered, with a running figure at the top
-//   confirm  the figure on a band slider, against what peers who answered the
-//            same way spend, and a button. No checkbox — the slider and the
-//            button ARE the affirmative, and a tick box on top of them is a
-//            third thing to do to a decision already made twice.
-//
-// The queue lives on state.budgetBuild: hand three lines over and you answer
-// all three back to back, then land on the next step. It used to bounce back to
-// the builder after each one with the toggle still lit, so Continue had to be
-// pressed again for a question it had already asked.
+// Reveal questions for one category, then confirm its estimate on a peer
+// slider. The slider and Use this button are the affirmative. Queue handed-over
+// lines on state.budgetBuild and advance after the final line.
 
-function hmoStart(category, opts) {
+function hmoStart(category) {
   if (!isCategory(category) || !hmoHasTree(category)) return;
   state.helpMeOut = {
     category: category,
@@ -24,8 +11,7 @@ function hmoStart(category, opts) {
     value: null,
     // Frozen when the confirm step opens. Derived from the value it carries,
     // so recomputing it per render would move the track under the thumb.
-    sliderMax: null,
-    target: (opts && opts.target) || "budget"
+    sliderMax: null
   };
   go("helpMeOut");
 }
@@ -111,25 +97,13 @@ function hmoBack() {
   hmoCancel();
 }
 
-/**
- * Take the figure and move on.
- *
- * Writes what the answers said about how they live as well as what they cost —
- * nothing in the v3.1 flow has updated state.lifestyle since the six lifestyle
- * questions retired, so every peer band elsewhere has been running on the
- * persona's seeded answers.
- */
+// Apply both the cost and lifestyle answers so peer bands reflect the
+// tester's habits instead of retaining only seeded assumptions.
 function hmoAccept() {
   const s = hmoSession();
   if (!s) return;
   hmoApplyLifestyle(s.category, s.answers);
-  // Two callers now. `target` already carried which flow asked, so it decides
-  // where the figure goes rather than a second flag meaning the same thing.
-  if (s.target === "esf") {
-    if (typeof esfApplyHelp === "function") esfApplyHelp(s.category, s.value);
-  } else if (typeof bbApplyHelp === "function") {
-    bbApplyHelp(s.category, s.value);
-  }
+  bbApplyHelp(s.category, s.value);
   state.helpMeOut = null;
   hmoAdvanceQueue();
 }
@@ -138,35 +112,15 @@ function hmoAccept() {
 function hmoCancel() {
   const s = hmoSession();
   if (!s) return;
-  if (s.target === "esf") {
-    const e = state.esf;
-    if (e && e.help && e.help[s.category]) delete e.help[s.category];
-  } else {
-    const b = state.budgetBuild;
-    if (b && b.help && b.help[s.category]) delete b.help[s.category];
-  }
+  const b = state.budgetBuild;
+  if (b && b.help && b.help[s.category]) delete b.help[s.category];
   state.helpMeOut = null;
   hmoAdvanceQueue();
 }
 
-/**
- * The next handed-over line, or out of the queue entirely.
- *
- * Advancing the STEP here rather than returning to it is the owner's call:
- * every category in the queue has already had its own confirm slider, so
- * landing back on the step to press Continue again asks for a decision that has
- * been made once per line already.
- */
+// Advance after the last queued line rather than asking for another
+// Continue on a step whose figures have already been confirmed.
 function hmoAdvanceQueue() {
-  // The emergency fund hands over one line at a time rather than queueing a
-  // step's worth, so it goes straight back to the screen it left. It never
-  // advances the step: unlike the builder, a tester who asked for help with
-  // groceries still has three other rows on that screen to look at.
-  if (state.esf && state.esf.returnTo === "esf") {
-    state.esf.returnTo = null;
-    go("esfBuild");
-    return;
-  }
   const b = state.budgetBuild;
   if (!b) { navGoTabRoot("aboutMe"); return; }
   const next = bbPendingHelp();

@@ -1,5 +1,5 @@
 // ─── The value trail ─────────────────────────────────────────────────────────
-// v4 only. What a tester actually SET — the figures they dragged sliders to and
+// What a tester actually SET — the figures they dragged sliders to and
 // the options they picked — carried out of an unmoderated session without a
 // backend, a database, or asking them to copy and paste anything.
 //

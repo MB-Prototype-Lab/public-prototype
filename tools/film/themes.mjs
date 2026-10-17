@@ -101,9 +101,9 @@ function flatten(cssPath, selector) {
 
 export const LOOKS = ["dark", "light"];
 
-// Which app theme each render serves. The app picks its film by theme id, so a
-// new theme must be added here or its testers silently fall back to the live
-// SVG engine — scripts/sweep.js §7c fails on exactly that.
+// Which app theme each render serves. The app picks its film by theme id: a
+// theme missing here plays another look's render (onbFilmAnyLook in
+// app/screens/onboarding.js) and gets its own look only once it is mapped here.
 export const LOOK_FOR_THEME = {
   dark: "dark", naturalDark: "dark",
   light: "light", naturalLight: "light"

@@ -2,11 +2,10 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const TEST_PROFILES =
 {
-  "_note": "Nine starting profiles: three cost-of-living tiers x three income levels. Used two ways — the picker a tester sees when they skip setup, and the matrix scripts/sweep.js drives every feature through. TEMPORARY SCAFFOLDING: PROFILE_PICKER in js/config.js takes the screen out of the flow, and this file goes with it when the real onboarding is the only door.",
+  "_note": "Nine starting profiles: three cost-of-living tiers x three income levels (L26). Used two ways — the picker a tester sees when they skip setup, and the matrix scripts/sweep.js drives every feature through.",
 
   "_sources": {
     "costOfLiving": "BEA Regional Price Parities 2023, already in zip-cost-of-living.json. Tiers were chosen empirically from that file by RPP, preferring recognisable metros over rural counties whose rent ratios sit at the data's cap.",

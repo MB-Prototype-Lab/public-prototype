@@ -1,12 +1,6 @@
-// ─── Budget update confirm ───────────────────────────────────────────────────
-// TAB: Budget (sub-screen) | NAV BAR: Hidden — a decision gate
-//
-// Gates EVERY builder update. A first budget applies straight away; saving over
-// an existing one parks the baseline here and shows old → new per category, so
-// a rebuild can never silently overwrite a budget the user tuned by hand.
-//
-// PORTED IN PHASE 2 — v2's version diffed 8 nested amounts. Under the flat 12
-// the diff is per category (baselineDiffRows in js/budget-baseline.js).
+// Confirm whole-budget replacements so rebuilding cannot silently overwrite
+// a hand-tuned plan. First saves apply immediately; ESF saves bypass this gate
+// and return to Goals (L6). baselineDiffRows compares the flat categories.
 
 function renderBudgetUpdateConfirm() {
   const pending = state.pendingBaseline;

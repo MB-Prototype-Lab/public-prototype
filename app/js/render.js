@@ -32,23 +32,24 @@
 // those three, not a new partial-render mechanism.
 //
 // -- ADDING A SCREEN NEEDS FIVE EDITS, THREE OF THEM HERE ---------------------
-// renderScreen(), adminSubtitle(), renderAdmin(), plus the jump list below and
-// activeTabFor in js/utils.js. Miss one and the admin panel quietly degrades to
-// its generic fallback rather than erroring -- which is what a cold session
-// misreads as a finished screen. See the checklist in architecture section 11.
+// renderScreen(), adminSubtitle(), renderAdmin(), plus destinations[] in
+// js/state.js (it fills the Tools jump list below) and activeTabFor in
+// js/utils.js. Miss one and the admin panel quietly degrades to its generic
+// fallback rather than erroring -- which is what a cold session misreads as a
+// finished screen. See the checklist in architecture section 11.
 
 function adminSubtitle() {
-  if (state.screen === "streak")         return "Streak splash — static launch screen shown first on every refresh.";
+  if (state.screen === "streak")         return "Streak splash — static screen, reached only from Tools; a session opens on onboarding or a study link's screen.";
   if (state.screen === "journalEntry")   return "Money Journal — 4 structured questions by priority, then free text (discarded).";
   if (state.screen === "journalConfirm") return "Confirmation — entries derived from structured answers only.";
   if (state.screen === "journalDone")    return "Post-submit — month-to-date updated, observations recomputed.";
-  if (state.screen === "home")           return "Home — tip banner, buddy stage, four daily tasks.";
+  if (state.screen === "home")           return "Home — tip banner, buddy stage, " + (state.dailyTasks || []).length + " daily tasks.";
   if (state.screen === "login")          return "Login scene — day/night by local time, then the daily-update prompt.";
   if (state.screen === "dailyUpdate")    return "Daily update — one audio file per segment; visuals carry the numbers (D30).";
   if (state.screen === "dailySummary")   return "Completion summary — observations stacked in plain language.";
-  if (state.screen === "dailyShare")     return "Share — anonymization on by default; the preview is the literal payload (A11).";
+  if (state.screen === "dailyShare")     return "Share — anonymization on by default; the preview is the literal payload.";
   if (state.screen === "onboarding")     return "Onboarding — " + ONB_STEPS.length +
-                                                " steps. Only ZIP, household and income override the persona (D09).";
+                                                " steps. Name, ZIP, household and income override the persona (D09).";
   if (state.screen === "learn")          return "Adjust XP config, lesson states, badge progress.";
   if (state.screen === "topic")          return "Override lesson statuses for this badge.";
   if (state.screen === "reward-preview") return "Lesson preview — read-only. Edit content in Learn admin.";
@@ -61,30 +62,22 @@ function adminSubtitle() {
                                                  ? "Budget — PAYWALLED. The tab is the Platinum wall; D31 overridden (L27)."
                                                  : "Budget — 12 flat categories, plan vs what the journal says.";
   if (state.screen === "profilePicker")   return "Starting profile — 3 cost-of-living tiers x 3 income levels. " +
-                                                 "Shown on \"Skip all setup\"; PROFILE_PICKER turns it off.";
+                                                 "Shown on \"Skip all setup\".";
   if (state.screen === "helpMeOut")       return "Help me out — " +
                                                  (state.helpMeOut ? catLabel(state.helpMeOut.category) + ", " + state.helpMeOut.stage : "no session") +
                                                  ". Habits in, a monthly figure out; never pro-rated.";
   if (state.screen === "esfBuild")        return "Emergency fund — capture step " +
                                                  ((state.esf && state.esf.step || 0) + 1) +
-                                                 " of " + ESF_STEPS.length + ". Six survival categories, typed figures only.";
+                                                 " of " + ESF_TOTAL_STEPS + ", asking across " +
+                                                 esfAskedCategoryCount() + " budget categories.";
   if (state.screen === "esfPlan")         return "Emergency fund — the number and the plan. One figure, not two: " +
                                                  "health cover is stated, never chosen.";
   if (state.screen === "bpLanding")       return "Big purchase — landing and the emergency fund check. Not numbered steps.";
   if (state.screen === "bpFinder")        return "Big purchase - find your car. Know-it or quiz, then the five lines, peers and ways to spend less.";
   if (state.screen === "bpYourCar")       return "Big purchase - your car. Pay for it and plan for it on one screen.";
-  if (state.screen === "bpSetup")         return "Big purchase — step 1 of 3, what you're buying. ZIP and miles only if not in state.";
-  if (state.screen === "bpQuiz")          return "Big purchase - help me pick. Four questions, docked one at a time; suggests a vehicle shape, never chooses.";
-  if (state.screen === "bpCost")          return "Big purchase — step 2 of 5, the costs that are easy to miss. Read-only defaults, plus the financed question.";
-  if (state.screen === "bpOptions")       return "Big purchase — step 3 of 5, ways to spend less. Every option priced on the same rows over 5 years.";
-  if (state.screen === "bpFinance")       return "Big purchase — step 4 of 5, paying for it. Final price and financing adjustments.";
-  if (state.screen === "bpCommit")        return "Big purchase — step 5 of 5, plan for it. One date: goal target and purchase date.";
-  if (state.screen === "budgetBuild")     return APP_VERSION + " builder — " + bbStep().title.toLowerCase() +
+  if (state.screen === "budgetBuild")     return "builder — " + bbStep().title.toLowerCase() +
                                                  " (step " + ((state.budgetBuild && state.budgetBuild.step || 0) + 1) +
                                                  " of " + BB_STEPS.length + "), Help me out per line.";
-  if (state.screen === "spendingProfile") return APP_VERSION + " step 1 — twelve sliders, opening on ZIP-adjusted national averages.";
-  if (state.screen === "budgetCompare")   return APP_VERSION + " step 3 — per category, their figure vs the model's vs the midpoint.";
-  if (state.screen === "lifestyleWizard") return "Lifestyle wizard — 6 questions feeding the peer model.";
   if (state.screen === "budgetDone")     return "Budget saved through the seam.";
   if (state.screen === "goals")          return "Goals — one strategic, several tactical. Pace is computed; the two types invert.";
   if (state.screen === "myProgress")     return "My Progress tab — output hub for profile, results, comparisons, goals.";
@@ -121,7 +114,7 @@ function renderScreen() {
   if (state.screen === "journalConfirm")    return renderJournalConfirm();
   if (state.screen === "journalDone")       return renderJournalDone();
   if (state.screen === "home")              return renderHome();
-  if (state.screen === "aboutMe")           return renderBudgetV3();
+  if (state.screen === "aboutMe")           return renderBudgetTab();
   if (state.screen === "profilePicker")     return renderProfilePicker();
   if (state.screen === "helpMeOut")         return renderHelpMeOut();
   if (state.screen === "budgetBuild")       return renderBudgetBuild();
@@ -130,15 +123,6 @@ function renderScreen() {
   if (state.screen === "bpLanding")         return renderBpLanding();
   if (state.screen === "bpFinder")          return renderBpFinder();
   if (state.screen === "bpYourCar")         return renderBpYourCar();
-  if (state.screen === "bpSetup")           return renderBpSetup();
-  if (state.screen === "bpQuiz")            return renderBpQuiz();
-  if (state.screen === "bpCost")            return renderBpCost();
-  if (state.screen === "bpOptions")         return renderBpOptions();
-  if (state.screen === "bpFinance")         return renderBpFinance();
-  if (state.screen === "bpCommit")          return renderBpCommit();
-  if (state.screen === "spendingProfile")   return renderSpendingProfile();
-  if (state.screen === "budgetCompare")     return renderBudgetCompare();
-  if (state.screen === "lifestyleWizard")   return renderLifestyleWizard();
   if (state.screen === "budgetDone")        return renderBudgetDone();
   if (state.screen === "budgetUpdateConfirm") return renderBudgetUpdateConfirm();
   if (state.screen === "myProgress")        return renderMyProgress();
@@ -151,7 +135,7 @@ function renderScreen() {
   if (state.screen === "nextAction")        return renderNextAction();
   if (state.screen === "commitment")        return renderCommitment();
   if (state.screen === "finish")            return renderFinish();
-  if (state.screen === "goals")             return renderGoalsV3();
+  if (state.screen === "goals")             return renderGoals();
   if (state.screen === "learn")             return renderLearn();
   if (state.screen === "topic")             return renderTopic();
   if (state.screen === "reward-preview")    return renderRewardPreview();
@@ -184,7 +168,7 @@ function renderAdmin() {
   if (state.screen === "journalConfirm") return renderJournalConfirmAdmin();
   if (state.screen === "journalDone")   return renderJournalDoneAdmin();
   if (state.screen === "home")          return renderHomeAdmin();
-  if (state.screen === "goals")         return renderGoalsV3Admin();
+  if (state.screen === "goals")         return renderGoalsAdmin();
   if (state.screen === "learn")         return renderLearnAdmin();
   if (state.screen === "topic")         return renderTopicAdmin();
   if (state.screen === "myProgress")    return renderMyProgressAdmin();
@@ -198,7 +182,7 @@ function renderAdmin() {
   if (state.screen === "reward")        return renderRewardAdmin();
   if (state.screen === "aboutMe")       return (typeof BUDGET_PAYWALL !== "undefined" && BUDGET_PAYWALL)
                                                ? renderBudgetPaywallAdmin()
-                                               : renderBudgetV3Admin();
+                                               : renderBudgetTabAdmin();
   if (state.screen === "profilePicker")   return renderProfilePickerAdmin();
   if (state.screen === "helpMeOut")       return renderHelpMeOutAdmin();
   if (state.screen === "budgetBuild")     return renderBudgetBuildAdmin();
@@ -207,15 +191,6 @@ function renderAdmin() {
   if (state.screen === "bpLanding")       return renderBpLandingAdmin();
   if (state.screen === "bpFinder")        return renderBpFinderAdmin();
   if (state.screen === "bpYourCar")       return renderBpYourCarAdmin();
-  if (state.screen === "bpSetup")         return renderBpSetupAdmin();
-  if (state.screen === "bpQuiz")          return renderBpQuizAdmin();
-  if (state.screen === "bpCost")          return renderBpCostAdmin();
-  if (state.screen === "bpOptions")       return renderBpOptionsAdmin();
-  if (state.screen === "bpFinance")       return renderBpFinanceAdmin();
-  if (state.screen === "bpCommit")        return renderBpCommitAdmin();
-  if (state.screen === "spendingProfile") return renderLifestyleWizardAdmin();
-  if (state.screen === "budgetCompare")   return renderBudgetCompareAdmin();
-  if (state.screen === "lifestyleWizard") return renderLifestyleWizardAdmin();
   if (state.screen === "myDebts")       return renderMyDebtsAdmin();
   if (state.screen === "debtAnalyzer")  return renderDebtAnalyzerAdmin();
   if (state.screen === "chat")          return renderChatAdmin();
@@ -227,12 +202,8 @@ function renderAdmin() {
       <div class="input-group">
         <label>Jump to screen</label>
         <select onchange="navAdminJump(this.value)">
-          ${["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home","journalEntry","journalConfirm","journalDone","aboutMe","budgetCategory","spendEstimator","budgetBuild","helpMeOut","esfBuild","esfPlan","bpLanding","bpFinder","bpYourCar","bpSetup","bpQuiz","bpCost","bpOptions","bpFinance","bpCommit","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","myProgress","comparison",
-             "accountBalances","debtBalances","postResult","nextAction","commitment","finish",
-             "goals","learn","topic","lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation","marketplace",
-             "marketplaceDetail","reward","settings","myDebts","debtAnalyzer",
-             "chat","budgetUpdateConfirm"].map(s => `
-            <option value="${s}" ${state.screen === s ? "selected" : ""}>${s}</option>
+          ${destinations.map(([id, label]) => `
+            <option value="${h(id)}" ${state.screen === id ? "selected" : ""}>${h(label)}</option>
           `).join("")}
         </select>
       </div>
@@ -270,15 +241,14 @@ function render() {
   // two things at once: it zeroes BOTH the top-bar and nav offsets in the CSS,
   // and it opts the screen out of the standard padding.
   //
-  // journal-mode is toggled several times below rather than once, because the
-  // screens that want it were added in different phases and each block reads as
-  // its own feature. The `|| contains("journal-mode")` on the later calls is
+  // journal-mode is toggled in several feature blocks. The
+  // `|| contains("journal-mode")` on the later calls is
   // load-bearing: toggle() with an explicit false REMOVES the class, so without
   // it each block would undo the one before and only the last list would win.
   // Any new full-bleed screen should join an existing list, not add a call.
   screenRoot.classList.toggle("lesson-mode",      state.screen === "lesson");
   screenRoot.classList.toggle("journal-mode",     ["lessonFraming","lessonQuiz","lessonSimulation","lessonReward"].includes(state.screen) || screenRoot.classList.contains("journal-mode"));
-  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","helpMeOut","esfBuild","esfPlan","bpLanding","bpFinder","bpYourCar","bpSetup","bpQuiz","bpCost","bpOptions","bpFinance","bpCommit","profilePicker","spendingProfile","budgetCompare","lifestyleWizard","budgetDone","spendEstimator"].includes(state.screen));
+  screenRoot.classList.toggle("journal-mode",     ["journalEntry","journalConfirm","journalDone","budgetBuild","helpMeOut","esfBuild","esfPlan","bpLanding","bpFinder","bpYourCar","profilePicker","budgetDone","spendEstimator"].includes(state.screen));
   screenRoot.classList.toggle("streak-mode",      state.screen === "streak");
   screenRoot.classList.toggle("login-mode",       state.screen === "login");
   screenRoot.classList.toggle("du-mode",          state.screen === "dailyUpdate");
@@ -294,11 +264,8 @@ function render() {
   // latch defers the close, and this is where the close actually happens.
   if (typeof kbdSyncAfterRender === "function") kbdSyncAfterRender();
 
-  // The intro film's storyboard is CSS animations, and a CSS animation starts
-  // the moment it is inserted. So the stage played itself the instant step 8
-  // rendered — silently, because the narration is on the clock and the clock
-  // was still paused. Sync them to the (paused, zeroed) player state on mount,
-  // the same way lpMountHook re-arms the lesson player above.
+  // CSS storyboard animations start on insertion. Sync them to the player's
+  // paused clock on mount so the picture cannot run ahead of narration.
   if (typeof onbVideoSyncFrames === "function") {
     const onb = state.onboarding;
     if (state.screen === "onboarding" && onb &&
@@ -341,8 +308,7 @@ function render() {
   const hasNav = !!navRoot.innerHTML;
   const hasTopbar = !!topbarRoot.innerHTML;
   // Offsets are driven by classes only — no inline px. The heights live in
-  // --topbar-h / --nav-h (css/variables.css) so the reservation is stated once
-  // instead of the three places v2 kept it in.
+  // --topbar-h / --nav-h (css/variables.css) so the reservation is stated once.
   navRoot.style.display = hasNav ? "" : "none";
   screenRoot.classList.toggle("no-nav", !hasNav);
   screenRoot.classList.toggle("no-topbar", !hasTopbar);
@@ -388,14 +354,8 @@ function render() {
   }
 
   // ── Hold the scroll position across a re-render of the SAME screen ─────────
-  // render() replaces .screen's innerHTML, which zeroes scrollTop, and every
-  // state change routes through here. Two things broke on that:
-  //
-  //   · flipping a "Help me out" toggle on a row below the fold threw the
-  //     tester back to the top of the step
-  //   · debouncedRender() also lands here, so DRAGGING any slider below the
-  //     fold snapped the page to the top every 400ms, mid-gesture
-  //
+  // Replacing innerHTML zeroes scrollTop; restore it for repaints so a toggle
+  // or slider below the fold cannot throw the tester back to the top.
   // Scrolling to the top is right when the VIEW actually changes — a new one
   // should start at its beginning. It is never right when the same view simply
   // repaints. The identity is scrollKey(), not state.screen: several flows are

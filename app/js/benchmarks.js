@@ -3,13 +3,7 @@
 // adjusted for where you live and how you live. NEVER real user data (D23).
 // When a user asks, say exactly that.
 //
-// ── The spec states the formula as a one-liner. It is wrong in all three terms ──
-//
-//   peerValue = base[category][incomeBand][householdSize]
-//             × colTier[zipPrefix][category]
-//             × lifestyleMod[category]
-//
-// Verified against the raw JSON, what it actually is:
+// ── Model formula ───────────────────────────────────────────────────────────
 //
 //   peerValue = base[cat][band][householdSize - 1]                  ARRAY INDEX
 //             × benchColMultipliers(zip)[cat]                       BEA, PER CATEGORY
@@ -17,14 +11,13 @@
 //             → round to nearest 5
 //
 // Every one of those three reads returns a plausible number when done wrong,
-// which is why the worked_example self-test at the bottom is not optional.
+// which is why the sweep independently checks the model's arithmetic.
 
 const BENCH_LIFESTYLE_DIMS = ["foodie", "cooksAtHome", "hobbySpend",
                               "paysRent", "commute", "travelFrequency"];
 
 /**
- * Annual income → band id (b1–b5). Onboarding collects a BAND, never a precise
- * figure (01-onboarding step 4), so this is mostly for the persona's $68,000.
+ * Annual income → band id (b1–b5), including onboarding's refined figure.
  */
 function benchIncomeBand(annualIncome) {
   const bands = PEER_BENCHMARKS.incomeBands;
@@ -74,15 +67,6 @@ function benchColTierName(zip) {
  *   2. The 3-digit prefix tier, if the ZIP is somehow absent. Coverage is 100%,
  *      so this is a guard, not a path anyone takes.
  *
- * ── WHY THIS REPLACED THE TIERS ─────────────────────────────────────────────
- * The prefix table mapped three digits to one of four hand-set tiers. So every
- * ZIP sharing a tier was IDENTICAL — Manhattan, Palo Alto, Santa Clara and Los
- * Angeles all resolved to the same figures — and `very_high` caps Housing at
- * 1.85, so nowhere in America could read higher. Santa Clara came out at 121%
- * of national against Rogers, Arkansas at 111%. BEA says 112.9 and 91.0, with
- * housing at 213.0 against 75.8: the real gap is twice as wide, both figures
- * were too high, and the housing difference was understated by a factor of two.
- *
  * ── LOCAL MODIFIERS ARE PER CATEGORY, FROM DIFFERENT SOURCES ────────────────
  * Housing moves with county rents; Utilities move with state electricity
  * prices; groceries do not track either. So each category takes its modifier
@@ -92,8 +76,8 @@ function benchColTierName(zip) {
  * everywhere: a streaming plan and a loan repayment cost the same in Palo Alto
  * as in Helena.
  *
- * Returns { source, multipliers, geo, county, tierName? }.
- * `source` is "county" | "prefix" | "fallback".
+ * Returns { source, multipliers, geo, county, state?, tierName? }.
+ * `source` is "county" | "prefixCounty" | "prefix" | "fallback".
  */
 function benchColMultipliers(zip) {
   const z = String(zip == null ? "" : zip).trim().slice(0, 5);
@@ -101,9 +85,7 @@ function benchColMultipliers(zip) {
 
   if (table && table.zips) {
     // Exact ZIP, then its 3-digit prefix. The prefix step catches PO-box-only
-    // and "unique" ZIPs that no county dataset lists — without it they drop to
-    // the tier table and read as exactly the national average, which is how
-    // Syracuse's 13201 came out at 100%.
+    // and "unique" ZIPs that no county dataset lists.
     let countyId = table.zips[z];
     let via = "county";
     if (countyId == null && table.prefixes) {
@@ -174,23 +156,9 @@ function benchColLocalModifier(category, county, state) {
   return 1;
 }
 
-/**
- * Is this area actually modeled, or is the national baseline standing in?
- *
- * One definition, two entry points: callers holding a resolved lookup use the
- * predicate directly, callers holding only a ZIP use the wrapper below. Written
- * twice they would eventually disagree.
- *
- * (Don't name the wrapper in this comment — sweep.sh §7b counts a mention as a
- * reference, and then it can neither report it as orphaned nor accept it in
- * DEAD_BASELINE.)
- */
+/** Is this area actually modeled, or is the national baseline standing in? */
 function benchColSupported(col) {
   return !!col && col.source !== "fallback";
-}
-
-function benchZipSupported(zip) {
-  return benchColSupported(benchColMultipliers(zip));
 }
 
 /**
@@ -207,9 +175,8 @@ function benchZipSupported(zip) {
  *
  * Two things it deliberately is NOT:
  *
- *   · Not an unweighted mean of the twelve. That is what it used to be, and it
- *     made Housing — the only category that really swings — one twelfth of the
- *     headline, flattening every real difference toward 1.0.
+ *   · Not an unweighted mean of the twelve: that would flatten Housing's
+ *     contribution and real regional differences toward 1.0.
  *   · Not a recomputation from the weights either. BEA's real weights are
  *     place-specific (where housing is expensive, people spend a larger share
  *     of income on it), so one national weight set reproduces published
@@ -307,7 +274,7 @@ function benchColPlaceName(col) {
 }
 
 /**
- * TRAP 3a — the wizard's answer labels do not all match the data keys, and a
+ * TRAP 3a — lifestyle values do not all match the data keys, and a
  * missed key silently contributes 1.0 instead of the real multiplier.
  *   paysRent: DATA keys are the STRINGS "true" / "false" / "shared", not
  *             booleans. Option values map onto them: rent/mortgage → "true"
@@ -392,87 +359,5 @@ function benchOptsForUser() {
     householdSize: p.householdSize,
     zip:           p.zip,
     lifestyle:     state.lifestyle
-  };
-}
-
-// ─── Self-test (PEER_BENCHMARKS.worked_example) ──────────────────────────────
-// The spec shipped a worked example so the model can verify itself on build:
-// Dining out, b3, household 2, ZIP 90066, foodie moderate + cooks sometimes →
-// 275 × 1.34 × 1.0 = 370.
-//
-// ── WHY IT NO LONGER ASSERTS 370 ────────────────────────────────────────────
-// The 1.34 was the `very_high` tier's Dining-out multiplier, and that tier is
-// exactly what this model replaced: it gave Manhattan, Palo Alto, Santa Clara
-// and Los Angeles all the same figures. BEA prices restaurant meals inside
-// "Services: Other", which for Los Angeles is 107.1 — so the col factor is now
-// 1.071 and the peer value is 295.
-//
-// That is a DELIBERATE change to a number the spec states, so it is recorded
-// here rather than absorbed: peer-benchmarks.json is a verbatim spec copy and
-// is never edited, and `worked_example.result` still reads 370.
-//
-// Worth knowing about the new figure: BEA's "Other services" bucket lumps
-// restaurants together with healthcare and insurance, which vary far less by
-// place, so 1.071 probably understates a Los Angeles restaurant bill. It is
-// still the best sourced number available — the alternative is inventing a
-// dining-out uplift, which is the class of plausible-looking fabrication this
-// whole model exists to remove.
-//
-// So the test now checks the three factors SEPARATELY. That is strictly
-// stronger than the old single assertion, which the original comment already
-// admitted several wrong readings could satisfy: the persona is household 2
-// with every lifestyle modifier at 1.0, so a wrong array index or a broken
-// lifestyle product both still produced 370.
-function benchSelfTest() {
-  const w = PEER_BENCHMARKS.worked_example;
-  const checks = [];
-
-  // 1. Base lookup — the array-index-off-by-one trap. Unchanged by this model.
-  const base = PEER_BENCHMARKS.base[w.category].b3[benchHouseholdIndex(2)];
-  checks.push({ name: "base b3 household 2", expected: w.base_b3_hh2, actual: base });
-
-  // 2. Lifestyle product across six dimensions. Also unchanged.
-  const life = benchLifestyleMultiplier(w.category, PERSONA.lifestyle);
-  checks.push({ name: "lifestyle multiplier", expected: w.lifestyleMultiplier, actual: life });
-
-  // 3. Cost of living — the factor this model replaced. Assert it against the
-  //    source that replaced it, so the check still has teeth.
-  const col = benchColMultipliers(PERSONA.identity.zip);
-  const bucket = ((ZIP_COST_OF_LIVING.method || {}).categoryBucket || {})[w.category];
-  const expectedCol = col.geo ? Number(col.geo[bucket]) / 100 : null;
-  const actualCol = Number(col.multipliers[w.category]);
-  checks.push({
-    name: "cost of living (BEA " + bucket + ")",
-    expected: expectedCol == null ? null : Math.round(expectedCol * 1000) / 1000,
-    actual: Math.round(actualCol * 1000) / 1000
-  });
-
-  // 4. End to end — the three factors actually multiply.
-  const step = PEER_BENCHMARKS.method.roundTo || 5;
-  const composed = Math.round((base * actualCol * life) / step) * step;
-  const actual = benchPeerValue(w.category, benchOptsForPersona());
-  checks.push({ name: "base x col x lifestyle", expected: composed, actual: actual });
-
-  const failed = checks.filter(c => c.expected == null || c.actual == null ||
-                                    Math.abs(c.expected - c.actual) > 1e-6);
-  return {
-    pass: failed.length === 0,
-    checks: checks,
-    failed: failed,
-    // What the spec's own worked example said, and what the model says now.
-    specResult: w.result,
-    actual: actual,
-    detail: w._check + "  —  col is now BEA " + bucket + ", so " +
-            base + " x " + (Math.round(actualCol * 1000) / 1000) + " x " + life + " = " + actual
-  };
-}
-
-/** The persona's own benchmark inputs — what the worked example describes. */
-function benchOptsForPersona() {
-  return {
-    annualIncome:  PERSONA.identity.incomeAnnual,   // 68000 → b3
-    householdSize: PERSONA.identity.householdSize,  // 2 → index 1
-    zip:           PERSONA.identity.zip,            // 90066 → Los Angeles County
-    lifestyle:     PERSONA.lifestyle                // foodie moderate, cooks sometimes
   };
 }

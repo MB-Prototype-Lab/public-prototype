@@ -1,19 +1,5 @@
-// ─── Login (03-home-daily-loop) ──────────────────────────────────────────────
-// TAB: None | NAV BAR: Hidden — full-bleed scene
-//
-// "A scene — happy, warm, day or night depending on local time. Animated
-// greeting. Then a prompt: watch your daily update?"
-//
-// Yes / No, plus a "remember my choice" checkbox. If checked on first use, tell
-// them once that it's changeable in their profile. Never mention it again.
-//
-// Backgrounds are described placeholders — assets B1 (day) and B2 (night) are
-// not generated. The day/night SWITCH is real, driven by local time.
-//
-// L22 allows owner-supplied buddy illustrations; it says nothing about these two
-// backgrounds, which stay described until the owner supplies them too. If they
-// arrive, they follow the same rule: the image is preferred and the description
-// is the fallback, never removed.
+// Use local time for the day/night scene. Background art remains a
+// description placeholder. Remember-choice notices appear once per session.
 
 function loginIsNight() {
   const hr = new Date().getHours();
@@ -69,8 +55,7 @@ function renderLogin() {
 }
 
 function loginAnswer(watch) {
-  // "If checked on first use, tell them once that it's changeable in their
-  // profile. Never mention it again."
+  // Show the preference notice only on its first remembered answer.
   if (state.rememberDailyChoice && !state.dailyPromptNoticeSeen) {
     state.dailyPromptNoticeSeen = true;
     state.dailyPromptNoticeShown = true;
@@ -78,9 +63,8 @@ function loginAnswer(watch) {
   state.dailyPromptAnswered = true;
   state.dailyPromptWatch = watch;
 
-  // Login sits ON TOP of the home root, so popping it means it cannot be
-  // returned to. "Yes" then pushes the daily update on top of home, so its
-  // Skip/Done still land on home.
+  // Pop Login before opening the update so Back cannot reopen the prompt
+  // and the update's Skip/Done return to Home.
   navBack();
   if (watch) duStart();
 }

@@ -4,7 +4,7 @@
 //   renderStreakCounter(opts)  — the big day count + "DAY STREAK" label
 //   renderStreakWeekRow(opts)  — the M–S weekday pill
 // Both read NO app state and take optional opts, so they can be dropped anywhere
-// (the splash today, a Home header later). Styled entirely with --streak-* theme
+// without coupling them to a screen. Styled entirely with --streak-* theme
 // tokens so no hex is hardcoded.
 
 // opts.count — the streak number (default 8, static).

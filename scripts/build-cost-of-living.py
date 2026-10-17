@@ -60,8 +60,6 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
-if "MB_VERSION" in os.environ:
-    raise SystemExit("error: MB_VERSION is retired; tooling uses app/")
 OUT = os.path.join(REPO, "app",
                    "data", "zip-cost-of-living.json")
 CACHE = os.environ.get("COL_CACHE", os.path.join(tempfile.gettempdir(), "moneybuddy-col-cache"))

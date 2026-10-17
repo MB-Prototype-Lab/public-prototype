@@ -1,21 +1,18 @@
 // ─── Big Purchase — the car finder's model ───────────────────────────────────
 // NO DOM. screens/bp-finder.js draws it.
 //
-// Owner, 2026-09-29: the tool used to start from a car the tester already had
-// in mind and hunt for a cheaper one. It now starts from the PERSON — how they
-// live, what they earn, what peers spend — and names a specific make and model.
+// A known-model path and a lifestyle quiz both lead to a specific make/model.
 //
 // ── ONE MONEY MODEL, STILL ───────────────────────────────────────────────────
 // Every figure here comes out of bpBreakdown(), called on a card built from a
 // catalog entry. Nothing in this file adds, rounds or multiplies a cost of its
-// own, so a car priced on the finder costs exactly what it costs on steps 2–4.
-// The used price is `alternatives.usedCut`, the same cut the options screen
+// own, so a car priced on the finder costs exactly what it costs on Your car.
+// The used price is `alternatives.usedCut`, the same cut bpVAlternatives()
 // applies, for the same reason.
 //
 // ── PEERS ARE INFORMATION, NEVER A LINE ─────────────────────────────────────
-// D26 and the owner (2026-09-28: "that rule cannot be broken. full stop"). The
-// peer figure is shown as what peers spend. Nothing here computes a limit, a
-// "too much", or a share of income anybody ought to stay under.
+// D26: the peer figure is a comparison, never a recommended spending limit.
+// bpfPeerPrice maps that payment to a price and tier, not an affordability rule.
 
 function bpfData() {
   return bpVData().finder || {};
@@ -55,10 +52,7 @@ function bpfName(m) {
 }
 
 /**
- * What the car is KNOWN for — its reputation, the line its marketing leads
- * with (owner, 2026-10-01: "what is the car known for? im sure it isn't known
- * for 5 seats and roomy back seats"). `why` (the spec line) stays in the data
- * as the fallback.
+ * Lead with the car's reputation, not its specifications. `why` is the fallback.
  */
 function bpfKnown(m) {
   return m ? (m.known || m.why || "") : "";
@@ -111,8 +105,7 @@ function bpfCard(m, cond, id) {
  */
 function bpfFigures(card, opts) {
   const b = bpBreakdown(card);
-  // Leasing (owner, 2026-10-03: also in "How we worked it out"): a new car on a
-  // lease swaps the loan figures for the lease estimate (js/bp-lease.js). Five years
+  // A new car on a lease uses the lease estimate (js/bp-lease.js). Five years
   // repeats the lease, and the peers' column opts out with {noLease: true}.
   if (!(opts && opts.noLease) && typeof bpLeasing === "function" && bpLeasing(card)) {
     const lf = bpLeaseFigures(card);
@@ -143,7 +136,7 @@ function bpfFigures(card, opts) {
 // ── The tester's pick ────────────────────────────────────────────────────────
 // Choosing a car on the finder WRITES the session's setup, so the card the rest
 // of the tool calls "pick" is that car. Edits made in Buddy's breakdown land on
-// the pick card and carry into steps 1–4 untouched.
+// the pick card and carry into Your car untouched.
 
 function bpfSelect(modelId, cond) {
   const s = bpSession();
@@ -195,15 +188,6 @@ function bpfPeer() {
            household: Math.max(1, parseInt(p.householdSize, 10) || 1) };
 }
 
-/**
- * "Peers in Nashville with a similar income". No household size (2026-09-29):
- * onboarding no longer asks it, so the figure reads the profile's default and
- * naming that default would claim something the tester never told us.
- */
-function bpfPeerWho() {
-  return "Peers in " + bpVCity() + " with a similar income";
-}
-
 function bpfPct(n) {
   const inc = bpfIncomeMonthly();
   return inc > 0 ? Math.round((Number(n) || 0) / inc * 100) : null;
@@ -248,26 +232,6 @@ function bpfPeerTier(type, use) {
     if (g < gap) { gap = g; best = t; }
   });
   return best;
-}
-
-/**
- * The car peers' payment buys: the dearest one in the catalog, new or used, at
- * or under the peer price. Same use first — it has to be the same kind of car
- * or it answers a different question — then anything of the same type, then
- * the cheapest used car of that type as a floor so the row is never empty.
- */
-function bpfPeerCar(type, use) {
-  const price = bpfPeerPrice(type);
-  const pool = [];
-  bpfModels().filter(m => m.type === type).forEach(m => {
-    pool.push({ model: m, cond: "new", price: m.price });
-    pool.push({ model: m, cond: "used", price: bpfUsedPrice(m) });
-  });
-  const pick = list => list.filter(x => x.price <= price)
-                           .sort((a, b) => b.price - a.price)[0] || null;
-  return pick(pool.filter(x => x.model.use === use)) ||
-         pick(pool) ||
-         pool.sort((a, b) => a.price - b.price)[0] || null;
 }
 
 // ── The quiz ─────────────────────────────────────────────────────────────────

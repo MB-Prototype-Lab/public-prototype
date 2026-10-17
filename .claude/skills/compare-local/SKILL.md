@@ -22,7 +22,10 @@ when the target is unclear.
 Inspect staged, unstaged, and untracked files before creation. Review each task file
 and explicitly select checkpoint paths; preserve unrelated work and ask only if
 ownership is ambiguous. Start all options from the current feature branch's shared
-checkpoint. A Flow must already be committed (or its entry files selected); commit
+checkpoint. New branches use `variant/<task>-A`, `variant/<task>-B`, and so on
+(`<task>` is the current task branch without its leading `work/`); worktree IDs
+and URLs remain `variant-A`, `variant-B`, and so on. Use recorded IDs for existing
+comparisons, including legacy names, and never rename their branches. A Flow must already be committed (or its entry files selected); commit
 a newly created Flow package first. Do not run start-work inside a variant or create
 nested comparisons.
 
@@ -49,9 +52,10 @@ clean, and adopt using a normal local merge. For a Flow comparison the tool refu
 a variant that changed anything outside `flows/<id>/` (other than the generated
 catalog); list those files for the PM in plain terms and ask, rather than working
 around it. Resolve mechanical conflicts; ask about competing product behavior while
-preserving the merge state. Run affected checks on the merged primary checkout
-(for a Flow: `flows.py check`, `check-syntax.sh flows`, `flows-runtime.cjs` and its
-behavior checks) before `adopt --verified` closes the comparison.
+preserving the merge state. Run affected checks on the merged primary checkout,
+always including `python3 -m unittest tests.test_flows` (for a Flow, also
+`flows.py check`, `check-syntax.sh flows`, `flows-runtime.cjs` and its behavior
+checks), before `adopt --verified` closes the comparison.
 
 Close retains all work. Cleanup requires concrete selected variant IDs and removes
 only clean worktrees, retaining branches. Dirty work requires a separate preservation

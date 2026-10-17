@@ -1,23 +1,12 @@
 #!/usr/bin/env bash
-if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
-# JS syntax checker — the automated gate for this repo.
-#
-# WHY THIS EXISTS: this repo gets worked on from more than one machine, and the
-# two do not agree on which JS engine exists. The Mac has no node but ships
-# JavaScriptCore (`jsc`, which exposes checkSyntax()); the Linux/WSL box has node
-# (often only under ~/.nvm, off PATH for non-interactive shells) and no jsc.
-# Hardcoding either one makes the repo's only automated gate fail outright on the
-# other machine, which is exactly what happened. So: use whichever is present.
-# Both were verified with a positive and a negative control — each correctly
-# rejects `function broken( {` and correctly accepts valid source.
-#
-# NOTE: jsc's checkSyntax() takes a FILE PATH, not source text. Passing source
-# makes it fail with "Could not open file", which looks like a syntax error and
-# isn't.
+# JS syntax checker for classic browser scripts.
+# Use node or macOS jsc so the check works on machines with either engine.
+# nvm installations may be outside a non-interactive shell's PATH.
+# jsc checkSyntax() takes a file path, not source text.
 #
 #   bash scripts/check-syntax.sh                 # all JS under app + gate
 #   bash scripts/check-syntax.sh path/to/file.js # specific files
-#   bash scripts/check-syntax.sh app     # everything under a directory
+#   bash scripts/check-syntax.sh app             # directory
 #
 # Exits non-zero if anything fails to parse.
 
@@ -62,16 +51,35 @@ if [ "${#files[@]}" -eq 0 ]; then
   echo "no .js files matched"; exit 0
 fi
 
+# node: compile each file as a classic browser <script>, all in one process.
+# `node --check` parses a .js file as a CommonJS or ES module, so it accepts a
+# top-level `return` or `export` that stops the file loading in a page.
+if [ "$ENGINE" = "node" ]; then
+  exec "$NODE" -e '
+    const fs = require("fs"), vm = require("vm");
+    const files = process.argv.slice(1);
+    let fail = 0;
+    for (const f of files) {
+      try {
+        new vm.Script(fs.readFileSync(f, "utf8"), { filename: f });
+      } catch (e) {
+        fail++;
+        const at = e instanceof SyntaxError ? e.stack.split("\n")[0] + "  " : "";
+        console.log("FAIL " + f);
+        console.log("     " + at + e.name + ": " + e.message);
+      }
+    }
+    console.log("─────────────────────────────────");
+    console.log((files.length - fail) + " passed, " + fail + " failed  (" + files.length + " files)");
+    process.exitCode = fail ? 1 : 0;
+  ' -- "${files[@]}"
+fi
+
 pass=0; fail=0
 for f in "${files[@]}"; do
   # Absolute path — jsc resolves relative to its own cwd, not necessarily ours.
   abs="$(cd "$(dirname "$f")" && pwd)/$(basename "$f")"
-  if [ "$ENGINE" = "node" ]; then
-    err_cmd() { "$NODE" --check "$abs" 2>&1; }
-  else
-    err_cmd() { "$JSC" -e "checkSyntax('$abs')" 2>&1; }
-  fi
-  if err=$(err_cmd); then
+  if err=$("$JSC" -e "checkSyntax('$abs')" 2>&1); then
     pass=$((pass + 1))
   else
     fail=$((fail + 1))

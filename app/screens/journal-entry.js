@@ -1,13 +1,5 @@
-// ─── Money Journal — entry ───────────────────────────────────────────────────
-// TAB: None | NAV BAR: Hidden — full-bleed, one question at a time
-//
-// PURPOSE
-// The input point the whole prototype exists to test. Four structured questions
-// (D11), then a free-text box that is silently discarded (D12).
-//
-// NAVIGATION
-//   Entry: home task (money_journal / subscription_confirm) or "add another"
-//   Exit:  last question → journalConfirm; top-bar back cancels the session
+// Structured answers drive journal entries (D11); free text is silently
+// discarded (D12). Confirmation is required before writing spending.
 
 function renderJournalEntry() {
   if (!state.journalSession) journalStart({});
@@ -83,9 +75,7 @@ function renderJournalInput(q, s) {
       <div class="journal-options">
         ${journalQuestionOptions(q).map((o, i) => {
           const on = picked.indexOf(i) !== -1;
-          // The checkbox is the only thing that distinguishes this from a
-          // single_select — the button markup is otherwise identical, so
-          // "pick as many as apply" was a claim the UI never backed up.
+          // Checkboxes distinguish multiple selection from the single-choice buttons.
           return `
           <button class="journal-opt opt-check ${on ? "picked" : ""}"
                   type="button" role="checkbox" aria-checked="${on ? "true" : "false"}"
@@ -113,8 +103,7 @@ function renderJournalInput(q, s) {
     `;
   }
 
-  // ── fill_number, optionally with a category picker. This IS the "dropdown"
-  // the prose mentions — a modifier on the number question, not its own type.
+  // A category dropdown modifies a number question; it is not a separate type.
   if (q.type === "fill_number") {
     const a = s.answers[q.id] || {};
     return `

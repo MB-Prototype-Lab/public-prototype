@@ -1,24 +1,6 @@
-// ─── Topic (Badge Detail) Page ────────────────────────────────────────────────
-// TAB: Education (sub-screen) | NAV BAR: Visible
-//
-// One badge, and every lesson that moves it. Reached from the Learn tab's badge
-// board or its search results; leaves into the lesson player via selectLesson.
-//
-// ── A LESSON BELONGS TO SEVERAL BADGES ───────────────────────────────────────
-// This is the structural fact the whole screen is arranged around, and it is
-// lessons.json's own stated design: "A lesson belongs to several courses.
-// Progress is on the lesson, so cross-cutting lessons level faster." The APR
-// lesson sits under three badges and finishing it moves all three.
-//
-// Two consequences visible here:
-//   · the same lesson appears on more than one topic page — not duplication
-//   · each row discloses the OTHER badges it moves, so a tester can see why
-//     one lesson advanced three rings
-//
-// ── NOTHING IS HARDCODED ─────────────────────────────────────────────────────
-// The list is filtered out of state.lessons at render time, so the admin panel's
-// status overrides and a test reset both take effect immediately. A literal list
-// here would drift from the catalog the moment either was used.
+// Filter current catalog lessons by badge so Tools overrides and Reset are
+// reflected immediately. Lessons can advance several badges; show the other
+// badges on each row to explain cross-badge progress.
 
 function renderTopic() {
   const badge   = currentBadge();
@@ -81,15 +63,8 @@ function renderTopic() {
       `}
     </div>
 
-    <!-- ── Practice ──
-         Deliberately NOT gated on finishing the lessons above. Nothing in the
-         prototype locks content behind progress (L16/D31 — overridden for the
-         Budget tab only, L27; lessons gate nothing), and a quiz you have
-         to earn would imply a progression system that does not exist.
-
-         This button goes to the V2 quiz (screen "quiz"). The v3 lessons reach
-         their own quiz — screen "lessonQuiz" — at the end of the player
-         instead, so the two never collide. See the trap note in CLAUDE.md. -->
+    <!-- Practice stays ungated (D31). Quiz uses the current lesson context;
+         framed lessons enter lessonQuiz from their player. -->
     <div class="card">
       <div class="section-title">Practice</div>
       <div class="flow-footer" style="margin-top:8px;">

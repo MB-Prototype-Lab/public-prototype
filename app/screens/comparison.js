@@ -1,33 +1,14 @@
-// ─── Three-layer comparison (D24, 04-budget-benchmarks) ──────────────────────
-// TAB: Budget (sub-screen) | NAV BAR: Visible
-//
-//   Plan          state.plan     "Your plan"        what you intended
-//   Self-reported state.mtd      "What you told me" what you think happened
-//   Automated     —              not in prototype   what actually happened
-//
-// "Never blur these. The gaps between them are the product."
-//
-// TWO DIFFERENT GAPS exist for the same category and neither may stand in for
-// the other. 04-budget-benchmarks names this as a trap:
-//
-//   over your plan   $429 against a $320 budget  = 34%
-//   over your peers  $429 against a $370 peer    = 16%
-//
-// So every row labels both, and the figures are computed — never the seed's
-// baked strings, which go stale the moment a tester logs anything (L17).
-
-// A gap is worth surfacing when it is proportionally large AND materially big.
-// Percentage alone flags $6 on a $4 category; dollars alone flags Housing for
-// being Housing.
+// D24: keep plan, self-reported spending and automated spending distinct;
+// automated data is absent here. Label plan and peer gaps separately (L11)
+// and compute them from current figures (L17).
+// Require both proportional and material dollar gaps: percentages alone flag
+// trivial amounts; dollars alone flag large categories for their size.
 const CMP_PCT_THRESHOLD = 15;
 const CMP_ABS_THRESHOLD = 25;
 
-// The plan layer only exists once the user has actually built one. state.plan
-// stays seeded with the persona's figures from bootV3 regardless, so without
-// this gate every "vs your plan" figure grades the user against a budget they
-// were told (on the budget tab) they do not have — and against a different
-// household's numbers at that. One chokepoint: everything downstream reads
-// hasPlan / vsPlan and degrades to peers-only on its own.
+// Gate the plan layer on completion: state.plan holds seeded figures even
+// before the tester builds a budget. Downstream readers use hasPlan/vsPlan
+// to fall back to peers only.
 function cmpHasPlan() {
   return state.planStatus === "complete";
 }
@@ -52,33 +33,19 @@ function cmpAllRows() {
   return CATEGORIES.map(cmpRow);
 }
 
-// ─── "Worth a look" means OVER peers, not far from them ──────────────────────
-// This used Math.abs on both the gap and the ranking, so a category far BELOW
-// peers scored exactly like one far above. Against a persona who is under peers
-// almost everywhere — which the seeded one is, LA prices against a modest
-// budget — the section filled with the biggest UNDER-spends and presented them
-// as things to look at.
-//
-// Signed now, and peers-only. A category over your own plan but under peers no
-// longer qualifies; both gaps are still on the card, labelled distinctly, so
-// L11 holds — what changed is which rows earn a card, not what a card says.
+// Worth a look flags spending above peers only. Keep the separate plan gap
+// on the card so neither comparison stands in for the other (L11).
 function cmpWorthNoticing(r) {
   if (r.peer == null) return false;
   const over = r.user - r.peer;
-  // Both gates, as before: dollars stop a $6 gap on a $4 category qualifying,
-  // percent stops Housing qualifying for being Housing.
+  // Require both dollar and percentage thresholds to avoid trivial gaps
+  // and large-category bias.
   return over >= CMP_ABS_THRESHOLD &&
          r.vsPeer != null && r.vsPeer >= CMP_PCT_THRESHOLD;
 }
 
-// Impact is measured in DOLLARS, not percent. A percentage ranking puts a $9
-// swing on a $30 category above a $180 swing on Housing, which is the opposite
-// of "the top dollar areas" — the gap worth surfacing is the one moving real
-// money. The percentage thresholds above still decide what QUALIFIES; this only
-// decides the order.
-// Dollars OVER peers, descending. Signed for the same reason as the filter —
-// and dollars rather than percent, because a percentage ranking puts a $9 swing
-// on a $30 category above a $180 swing on Housing.
+// Rank qualifying rows by dollars above peers, descending; a large
+// percentage on a small category need not move much money.
 function cmpImpact(r) {
   return r.peer == null ? 0 : (r.user - r.peer);
 }
@@ -95,12 +62,8 @@ function renderComparison() {
   `;
 }
 
-/**
- * Legend + "Worth a look" + all twelve. Shared, because the Budget tab IS this
- * view once a budget exists — the tab used to render twelve sliders, an editing
- * surface, where the review surface belongs. Sliders still live on the
- * per-category screen and in the wizard.
- */
+// Share the review body with the Budget tab; sliders belong on category
+// detail and builder screens.
 function renderComparisonBody() {
   const rows = cmpAllRows();
   // Cap at 3 — a short list of the biggest dollar gaps, each with a path in.
@@ -126,19 +89,8 @@ function renderComparisonBody() {
   `;
 }
 
-/**
- * "You have not told me anything yet" — the banner above the whole list.
- *
- * Every band on the screen below can draw a budget and a peer range without
- * the tester having logged a thing, and every dot sits on zero. That is a
- * chart full of shapes saying nothing, and it looks like the app has decided
- * they spent nothing rather than that it has not been told.
- *
- * Owner's requirement: when no spend is registered, say so at the top and give
- * one route into the Money Journal. Gated on the WHOLE month being empty — a
- * per-category version of this would put a banner over eleven categories the
- * moment somebody logs one.
- */
+// When the whole month has no spending, explain the zero dots and offer
+// one journal entry point so they cannot read as confirmed zero spending.
 function renderComparisonSpendBanner() {
   if (catTotal(state.mtd) > 0) return "";
   return `
@@ -155,15 +107,7 @@ function renderComparisonSpendBanner() {
     </div>`;
 }
 
-// ─── One category, on one track ──────────────────────────────────────────────
-// Was three stacked bars. Three bars state three numbers and leave the reader
-// to work out the relationship; the band puts them in one, which is the
-// comparison the screen exists for.
-//
-// What does NOT change: both gaps still appear, still labelled distinctly.
-// L11 is explicit that "34% over your plan" and "16% over peers" are different
-// claims about the same category and neither may stand in for the other — the
-// picture makes the relationship obvious, the pills keep it precise.
+// Use one track to show relationships and label both gaps separately (L11).
 function renderComparisonRow(r) {
   return `
     <div class="card cmp-row">
@@ -183,15 +127,8 @@ function renderComparisonRow(r) {
   `;
 }
 
-/**
- * The figures the track cannot state itself.
- *
- * A band is a position, not a number, so the caption carries the two the
- * tester would otherwise have to guess at. It also has to say when the peer
- * band ran off the right edge — the gray rule shows that the track was cut,
- * but only words can say what was cut off, and "peers are above this chart"
- * is one of the more interesting things the comparison can report.
- */
+// State the budget and peer range alongside their positions. Name a clipped
+// peer range explicitly; the track alone cannot say which figures are beyond it.
 function cmpBandCaption(r) {
   const g = budgetBandGeometry({ budget: r.plan, actual: r.user, peer: r.peer });
   const peers = !g.hasPeer ? "—"
@@ -215,9 +152,8 @@ function cmpGapPill(pct, label) {
           </span>`;
 }
 
-// A category worth a look: the same three bars as the list below, so the two
-// sections read identically, plus the dollar gap and a path in. States the
-// number and the gap; never prescribes an action (D26 — no financial advice).
+// Use the same band as the list, plus a dollar gap and a path to the category.
+// State the number and gap without prescribing an action (D26).
 function renderComparisonFlag(r) {
   const overPeer = r.peer != null && r.user > r.peer;
   const gap = cmpImpact(r);
@@ -244,12 +180,7 @@ function renderComparisonFlag(r) {
   `;
 }
 
-function cmpFlagBar(r, v, cls) {
-  const max = Math.max(r.plan, r.user, r.peer || 0, 1);
-  return `<div class="cmp-bar"><span class="${cls}" style="width:${Math.max(2, (v / max) * 100)}%"></span></div>`;
-}
-
-// ─── Compact strip for My Progress (07-progress-bills) ───────────────────────
+// ─── Compact strip for My Progress ───────────────────────────────────────────
 // "Same data as the budget tab, framed for review rather than editing."
 function renderComparisonCompact(limit) {
   const rows = cmpAllRows()
@@ -279,19 +210,9 @@ function renderComparisonCompact(limit) {
   `;
 }
 
-/**
- * Nothing logged yet.
- *
- * The band can draw a budget and a peer range with no spend at all, but the
- * dot — the whole reason to look — would sit on zero, which reads as "you have
- * spent nothing" rather than "you have not told me yet". So the prompt
- * replaces the chart rather than sitting under it.
- *
- * mpStartUpdate() is the existing entry point (screens/my-progress.js). It
- * clears state.activeTaskId before opening the journal, which matters: without
- * that, an abandoned bookmark task gets completed and pays out its bones for a
- * flow the tester never started. Reuse it rather than writing a second door.
- */
+// Replace empty charts with a journal prompt so zero does not imply no spend.
+// Reuse mpStartUpdate: it clears activeTaskId so an abandoned task cannot
+// complete and award bones when the journal is opened here.
 function renderComparisonNoSpend() {
   return `
     <div class="cmp-nospend">
@@ -313,9 +234,10 @@ function renderComparisonAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">Three Layers</p>
       <p class="helper" style="margin-bottom:10px;">
-        Flagged when |gap| ≥ ${CMP_PCT_THRESHOLD}% AND the difference is ≥
-        ${budgetFmt(CMP_ABS_THRESHOLD)} — percentage alone flags trivial
-        categories, dollars alone flags Housing for being Housing.
+        Flagged when what you&rsquo;ve told me is ≥ ${CMP_PCT_THRESHOLD}% AND ≥
+        ${budgetFmt(CMP_ABS_THRESHOLD)} over peers; under peers is never flagged.
+        Percentage alone flags trivial categories, dollars alone flags Housing
+        for being Housing.
       </p>
       <div class="helper" style="line-height:1.9;">
         ${rows.map(r => `
