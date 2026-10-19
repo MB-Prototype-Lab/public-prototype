@@ -10,6 +10,11 @@ agent delegation, Git and test prerequisites before expensive work; use default
 models and bounded worker packets. If delegation is unavailable, stop the delegated
 review and report it BLOCKED.
 
+Use the operator's chosen environment: native Windows or WSL/POSIX. Preflight
+tools there; do not require a second environment or native Git/Git Bash for a
+WSL operator. Follow [platform acceptance](../../../docs/pre-pr-review-platform-acceptance.md)
+for applicable evidence and the planned Docker test environment.
+
 The coordinator preserves the finished checkpoint, assigns a cold read-only
 reviewer, an independent verifier and one fixer at a time. Workers never delegate.
 PMs decide behavior; an accepted product change becomes task work and a new

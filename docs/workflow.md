@@ -75,9 +75,10 @@ the current task, retry eligible completed cleanup and carry checkpoint, fixes,
 both comparisons, findings, decisions and limitations into the handoff. Report
 incomplete/stale evidence. Do not force this optional review on ordinary ship; it
 does not replace sync, current-main checks, CI or applicable PM verification.
-Changes to this review workflow require
-[native Windows desktop-agent acceptance](pre-pr-review-platform-acceptance.md)
-before merge; missing evidence remains a merge blocker.
+Changes to this review workflow follow
+[platform acceptance](pre-pr-review-platform-acceptance.md) in the operator's
+chosen environment. Operators need not maintain both native Windows and WSL;
+unexercised additional environments remain recorded limitations.
 Review the entire diff to main for scope and unintended files. Review the `app/` diff
 for journey switches with the review questions in
 [one product](app-contracts.md#one-product-no-journey-switches); the PR text records

@@ -24,9 +24,10 @@ from disk rather than chat memory. Follow its
 fixes, checkpoint, both comparisons, findings, decisions and limitations; report
 incomplete/stale evidence. Local review does not replace ship's sync, current-main
 comparisons, CI or applicable PM verification; do not force it on ordinary ship.
-Changes to this workflow require
-[native Windows desktop-agent acceptance](../../../docs/pre-pr-review-platform-acceptance.md)
-before merge.
+For changes to this workflow, follow
+[platform acceptance](../../../docs/pre-pr-review-platform-acceptance.md)
+in the operator's chosen environment; a second native/WSL environment is not a
+merge requirement.
 
 For a Flow task, read [Flows](../../../docs/flows.md), run
 `python3 scripts/flows.py scope --scope flow` after syncing main, and run all Flow

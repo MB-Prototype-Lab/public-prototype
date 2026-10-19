@@ -61,12 +61,14 @@ Investigate new warnings and explain unresolved ones in the handoff.
 ## Pre-PR review lifecycle acceptance
 
 For lifecycle changes, keep deterministic real-Git tests, actual-app browser and
-harness controls, fresh-agent skill exercises and native platform acceptance
-separate. The [platform acceptance packet](pre-pr-review-platform-acceptance.md)
-owns commands, reusable fixture/generator entrypoints, native desktop-agent prompts
-and required evidence. Native Windows desktop-agent smoke is required before merge
-of this workflow feature; Linux/WSL results do not satisfy it. Docker-only
-prerequisites are its immediate follow-up, not implemented by this change.
+harness controls, fresh-agent skill exercises and host/browser evidence separate.
+The [platform acceptance packet](pre-pr-review-platform-acceptance.md) owns
+commands, reusable fixture/generator entrypoints, agent prompts and applicable
+evidence. Run in the operator's chosen environment; native Windows and WSL/POSIX
+are alternatives. Missing tools in an unused second environment do not block
+acceptance. Actual failed or blocked checks in the chosen environment remain
+visible. Docker test prerequisites are the immediate follow-up, not implemented
+by this change.
 
 ## Documentation links
 

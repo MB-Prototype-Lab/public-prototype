@@ -169,8 +169,8 @@ reviews for you and uses independent agents. It returns an outcome first, any
 product decisions, the exact labeled version to test and your next action. Your
 finished checkpoint and evidence remain available after eligible review workspaces
 are cleaned automatically. Review is local; shipping remains a separate request.
-For changes to this workflow, native Windows desktop-agent smoke is
-[required before merge](docs/pre-pr-review-platform-acceptance.md).
+Use your chosen native Windows or WSL/POSIX environment; you do not need both.
+Workflow changes follow [platform acceptance](docs/pre-pr-review-platform-acceptance.md).
 
 ## Compare variants locally
 

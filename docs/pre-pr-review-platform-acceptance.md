@@ -1,31 +1,51 @@
 # Pre-PR review platform acceptance
 
-This is the durable acceptance packet for changes to the
-[review lifecycle](pre-pr-review.md). Native Windows desktop-agent smoke is
-**required before merge** for this workflow feature. Linux/WSL checks, path-unit
-tests and synthetic worker identities cannot satisfy that requirement. Reuse installed prerequisites and the documented setup path; this PR does not
-build a new native prerequisite installer. Remote repository writes, shipping and
-publication keep their existing authorization boundaries. The agent runs commands
-and reports prerequisites; the PM should not have to type commands,
-install WSL, construct IDs or handwrite verification JSON.
+This is the acceptance packet for changes to the
+[review lifecycle](pre-pr-review.md). Operators choose their client and execution
+environment: native Windows or WSL/POSIX. Neither is mandated, and no operator
+must maintain both. Preflight Git and test tools in that chosen environment;
+native Git/Git Bash are not prerequisites for a WSL operator.
+
+Until the Docker follow-up below, reuse installed prerequisites and the documented
+setup for the chosen environment. Assess workflow changes using the retained
+automated, independent-review and applicable host/browser evidence. Native Windows
+desktop-agent acceptance is not a universal merge gate. Additional platform checks
+may improve coverage; an unexercised second environment is a recorded limitation,
+not a reason to require another toolchain. This does not waive failed checks or
+the independent evidence required for automatic review adoption.
+
+Remote repository writes, shipping and publication keep their existing
+authorization boundaries. The agent runs commands and reports prerequisites;
+the PM should not have to type commands, install a second environment, construct
+IDs or handwrite verification JSON.
 
 ## Evidence layers
 
-Keep these results separate, each with PASS, FAIL or BLOCKED, full tested SHA,
-platform/runtime versions, actual commands/exits and artifact locations:
+Keep these results separate with full tested SHA, platform/runtime versions,
+actual commands/exits and artifact locations. Use PASS, FAIL or BLOCKED for
+attempted checks. Mark unexercised additional environments as not run; do not
+infer that every row requires a separate environment on the operator's machine.
 
 | Layer | What it establishes |
 | --- | --- |
 | `python3 -m unittest discover -s tests -v` | Deterministic real-Git lifecycle safety using `tests/test_pre_pr_review.py` and reusable `tests/pre_pr_review_fixture.py`. Reports are explicitly synthetic; they prove no app/browser or host delegation behavior. |
 | Actual app controls/regressions | Real journey/browser entrypoints detect neutral, Phone, geometry and weakened-harness cases on committed disposable trees. |
-| Native Windows Python/Git lifecycle | Actual Windows paths, process/locking/Git behavior and safe recovery. |
-| Native desktop-agent skill | Real skill routing, fresh delegated roles, stop/resume, independent evidence, adoption and cleanup. |
-| Native Windows file browser | Windows browser opens exact encoded native file previews and exercises the selected experience. |
-| Windows browser via WSL UNC | Actual Windows browser opens the converter's encoded WSL URL; separate from native lifecycle execution. |
+| Lifecycle in the chosen environment | Actual paths, process/locking/Git behavior and safe recovery in native Windows or WSL/POSIX. |
+| Agent skill in the chosen client | Real skill routing, fresh delegated roles, stop/resume, independent evidence, adoption and cleanup. |
+| Host file browser | The operator's browser opens exact encoded previews and exercises the selected experience. |
+| Windows browser via WSL UNC, when used | Actual Windows browser opens the converter's encoded WSL URL; separate from native Windows lifecycle execution. |
 
-A missing prerequisite is BLOCKED, never evidence of a product regression or a
-pass. Native Windows/macOS file browser, media, real devices and other exclusions
-still follow [testing](testing.md#pm-checklist). Name unexercised platforms.
+A missing prerequisite for a check being attempted is BLOCKED, never evidence of
+a product regression or a pass. Missing native Windows tools do not block WSL
+lifecycle acceptance, and the reverse also holds. Browser, media, real devices and
+other exclusions still follow [testing](testing.md#pm-checklist). Name unexercised
+platforms without claiming coverage.
+
+Record unexercised, unused secondary environments in informational platform
+coverage notes and the PR, outside the blocking `verification.json` limitation
+inventory. That inventory covers gaps affecting required review evidence; do not
+invent a resolved entry for an untested platform. Missing required checks in the
+chosen environment still block automatic adoption.
 
 ## Actual app control and regression recipe
 
@@ -60,7 +80,7 @@ Inspect commands, full source/subject SHAs, reports and pictures for each case:
 
 These selected controls demonstrate real detection and independent harness
 assessment. They do not replace all journeys/themes/Flows, full check-all, lifecycle
-adoption evidence or PM/native acceptance. Do not submit partial selected-journey
+adoption evidence or applicable PM/host acceptance. Do not submit partial selected-journey
 reports as complete preservation coverage.
 
 ## Delegated forward exercises
@@ -121,29 +141,36 @@ Record each case as PASS/FAIL/BLOCKED with the actual skill outcome and artifact
 Protocol refusal on a minimal fixture proves that guard only; it does not establish
 successful real-app review or native platform acceptance.
 
-## Native Windows desktop-agent packet
+## Chosen-environment agent packet
 
-Run from the native desktop agent's **Local** checkout, not WSL. Give the agent this
-request and let it handle commands, record selection and reports:
+Run in the operator's existing client and environment. A WSL session can exercise
+the WSL lifecycle and open previews in a Windows browser; that needs no native
+Windows Git, Python or Bash. A native Windows session uses its native tools.
+Give the agent this request and let it handle commands, record selection and reports:
 
 > Use the pre-pr-review platform acceptance packet at
 > docs/pre-pr-review-platform-acceptance.md for the exact committed workflow change.
-> Run on native Windows in a disposable local clone with spaces, Unicode and # in
-> its path. Preserve my active checkout. Record versions, full SHAs, actual commands,
+> Use my current client and environment in a disposable local clone with spaces,
+> Unicode and # in its path. Preserve my active checkout. Record the environment,
+> versions, full SHAs, actual commands,
 > delegation and browser evidence. Exercise review, interrupt/resume, previews,
 > independent verification, adoption and safe automatic cleanup. Reuse installed
-> prerequisites and the documented setup; do not build a new native installer here.
+> prerequisites and the documented setup; do not require a second environment or
+> build an installer here.
 > Keep repository actions local; do not push or publish. If a prerequisite or fresh
 > agent delegation remains unavailable, report BLOCKED and retain evidence.
 
 The agent performs the following machine-side steps:
 
-1. Record Windows edition/build, desktop-agent host/version, shell, source/helper
-   full commit and Git/Python/Node/Playwright/Chromium versions. Inspect PowerShell
-   `Get-Command py,python,python3,git,node,bash` and execute the available real
-   interpreters. Require Python 3.11+, Node 22 and usable Git/Bash for check-all.
-   A Microsoft Store Python alias is BLOCKED. Verify installed native Chromium
-   launch. Diagnose missing setup without asking the PM to run installer commands.
+1. Record OS/build, agent client/version, execution environment, shell, source/helper
+   full commit and Git/Python/Node/Playwright/Chromium versions. Inspect and execute
+   tools in that environment: `command -v` in WSL/POSIX, or PowerShell
+   `Get-Command py,python,python3,git,node,bash` on native Windows. Require Python
+   3.11+, Node 22 and usable Git/Bash there for check-all. Execute Python aliases
+   to verify the actual version; a missing or old interpreter is BLOCKED. Verify
+   Chromium launch. Do not search for or install a parallel toolchain. When native
+   Windows Python needs UTF-8 mode, set and record `PYTHONUTF8=1` and retain any
+   original encoding failure.
 2. Create an independent disposable local clone of the tested committed source
    (no hardlinks and no remote calls), for example under a temporary
    `MoneyBuddy review café #` path. Configure Git identity/hooks only in the clone.
@@ -152,17 +179,18 @@ The agent performs the following machine-side steps:
    Create a named task branch from that frozen main and commit a neutral app
    comment. Record main, merge base and finished SHAs. Leave the active checkout
    untouched. Put evidence outside managed workspaces.
-3. Run native unittest discovery, `bash scripts/check-all.sh`, Markdown links and
+3. Run unittest discovery, `bash scripts/check-all.sh`, Markdown links and
    edited-skill validation. Set `PYTHONDONTWRITEBYTECODE=1`, reuse absolute installed
    `MB_PLAYWRIGHT_MODULE`, and direct reports outside managed workspaces. Retain
    complete actual logs/exits; resolve failures or mark the row BLOCKED. Run the
-   actual-app recipe above against the same tested snapshot in native Chromium.
-4. Ask the desktop agent: “Review my finished changes before a PR.” Supply the raw
+   actual-app recipe above against the same tested snapshot in that environment.
+4. Ask the agent: “Review my finished changes before a PR.” Supply the raw
    neutral-task requirement. Confirm fresh-context default-model cold reviewer,
    independent verifier and sole fixer as needed; real worker IDs; no worker
    delegation; baseline before fixes; one writer; coordinator alone performs
    lifecycle operations. If delegation is unavailable, stop the review with a
-   visible limitation. A fabricated worker record is not host acceptance.
+   visible limitation. A fabricated worker record is not host acceptance; WSL
+   delegation is valid evidence for the WSL client and need not be repeated natively.
 5. Check actual helper help, then exercise `status --json`, `start`, explicit
    coordinator-selected `resume ID`, `worker`, `url`, `adopt --verification` and
    `cleanup` through the [lifecycle procedure](pre-pr-review.md#persistent-lifecycle).
@@ -170,7 +198,8 @@ The agent performs the following machine-side steps:
    evidence. Never handwrite a passing attestation or substitute synthetic fixture
    reports. Return product decisions in the documented PM format if any appear.
 6. Ask: “Show me the reviewed version.” Open reported original/finished/reviewed
-   native file URLs in a native Windows browser. Check selector/passcode `1337`,
+   host file URLs in the operator's browser. Use native file URLs or the converter's
+   WSL UNC URLs as appropriate. Check selector/passcode `1337`,
    Local Prototype and an intended Flow when applicable, narrow layout/four themes,
    input/keyboard, refresh/restart/exit and independent sessions. Record URL,
    browser/version, full SHA and cleanliness. Encoded spaces, Unicode and # must
@@ -180,7 +209,7 @@ The agent performs the following machine-side steps:
 7. In a disposable controlled case, interrupt between saved creation intent and
    workspace creation or after adoption merge before phase save. Use a controlled
    reproducible interruption, not guessed deletion of source files. Restart the
-   desktop session and ask: “Continue my pre-PR review.” Confirm disk discovery, explicit
+   agent session and ask: “Continue my pre-PR review.” Confirm disk discovery, explicit
    selection internally, retained refs/evidence, safe missing committed workspace
    recreation and no second merge. Unknown stranded lock contents remain intact
    and reported. Retain before/after commands and actual Git state.
@@ -191,30 +220,39 @@ The agent performs the following machine-side steps:
    disposable case leave ignored/untracked content in a managed tree and prove
    cleanup retains it with a concrete reason. Original/unrelated worktrees, parent
    files, refs and evidence survive. Never force-remove caches or arbitrary data.
-9. Separately use the existing converter on a WSL checkout to produce its actual
+9. When the operator uses WSL with a Windows browser, use the existing converter
+   on that checkout to produce its actual
    distro-specific UNC preview. Open the encoded `file://wsl.localhost/...` URL
    in the Windows browser and exercise passcode/selector/app, refresh and exit.
-   Record distro, Windows browser, SHA and result. This row does not imply native
-   Windows helper acceptance, or vice versa.
+   Record distro, Windows browser, SHA and result. This proves that host preview
+   route; it does not require or imply native Windows helper execution.
 
-Report all six evidence-layer rows above, with exact tested commits and links.
-Native Windows lifecycle, desktop-agent and file-browser rows must pass before
-merge of this workflow feature. Any blocked row remains a named merge blocker;
-WSL automated Chromium success cannot waive it.
+Report the evidence-layer rows above with exact tested commits and links, including
+unexercised additional platforms. A successful WSL review does not claim native
+Windows lifecycle coverage, and needs no native repeat. Keep actual failed/BLOCKED
+checks and missing automatic-adoption evidence visible; additional-environment
+gaps do not create a universal merge blocker.
 
 ## Immediate follow-up: Docker prerequisites
 
-The next PR should make installed desktop agent plus Git the only host
-prerequisites beyond Docker. This PR does not implement an installer or Docker.
-Scope the follow-up to Windows/PowerShell and POSIX launchers, a pinned image with
-Python/Node/Playwright/Chromium and system libraries, full checks and both review
-comparisons, and selection of the exact committed version. Run Git operations in
-isolated managed workspaces, preserve original/index/ref/cleanup guards, and retain
-reports on the host with usable preview/evidence paths. Do not silently select a
-container's stale HEAD or assume container paths are host browser URLs.
+After this PR lands, provide a reproducible Docker test environment for either
+client choice. The operator needs their chosen agent client, Docker and any Git
+that client needs in its own environment. Put test prerequisites (Git, Bash,
+Python, Node, Playwright/Chromium and system libraries) in a pinned image; do not
+require a duplicate native/WSL toolchain. This PR does not implement Docker or an
+installer.
 
-Acceptance must include native Windows and POSIX launcher runs from paths with
-spaces/Unicode, exact command/version/image digest/full SHA evidence, real browser
-controls/regressions, interrupt/resume, independent-agent evidence and safe cleanup.
-Container success does not replace native desktop-agent routing or host file-preview
-acceptance. Preserve existing prerequisite diagnostics until the new path is proved.
+Scope the follow-up to Windows/PowerShell and WSL/POSIX entrypoints, full checks and
+both review comparisons, and selection of the exact committed version. Run Git
+operations in isolated managed workspaces, preserve original/index/ref/cleanup
+guards, and retain reports on the host with usable preview/evidence paths. Do not
+silently select a container's stale HEAD or assume container paths are host browser
+URLs.
+
+Validate both supported entrypoints at the project level, using operators' chosen
+environments; no individual must maintain both. Include paths with spaces/Unicode,
+exact command/version/image digest/full SHA evidence, real browser controls and
+regressions, interrupt/resume, independent-agent evidence and safe cleanup. Verify
+skill routing and host previews for the client being exercised without claiming
+another client's coverage. Preserve existing prerequisite diagnostics until the new
+path is proved.

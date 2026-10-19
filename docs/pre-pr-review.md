@@ -37,14 +37,17 @@ branch. Name missing previews unavailable; do not substitute an unverified versi
 ## Preflight and workers
 
 Before checkpointing or starting expensive workers, inspect Git state and available
-fresh-context delegation, Git, Python 3.11+, Node 22, Bash and Playwright/Chromium.
+fresh-context delegation, Git, Python 3.11+, Node 22, Bash and Playwright/Chromium
+in the operator's chosen environment. Native Windows and WSL/POSIX are alternatives;
+do not require native Git/Git Bash or a second toolchain for a WSL operator.
 Use the [testing prerequisites](testing.md) and distinguish PASS, FAIL and BLOCKED.
 Discover saved records first. If delegation cannot run, record the limitation and
 stop the delegated review; independent safe work can continue, but never replace
 it with a broad coordinator-only review or claim adoption-ready verification.
 Unavailable checks stay BLOCKED; investigation can continue without automatic
-adoption. Platform acceptance for this workflow feature is a separate
-[before-merge requirement](pre-pr-review-platform-acceptance.md).
+adoption. For workflow changes, use the applicable
+[platform acceptance](pre-pr-review-platform-acceptance.md) evidence; unexercised
+additional environments do not impose a second setup or an extra merge gate.
 
 The main conversation coordinates. Use the host's default models and fresh
 contexts (for example `fork_turns: "none"`). Assign a cold read-only reviewer, a
@@ -298,8 +301,10 @@ baseline/reviewed with command, exit and report. Negative evidence also names
 `regression_detected`, nonzero `regression_exit_code` and equal nonempty
 `expected_reason`/`actual_reason`. Decision and limitation inventories are explicit;
 resolved technical items include status, explanation and reports. Unresolved items
-or product differences block automatic adoption. Keep unavailable platform checks
-visible instead of inventing a resolved limitation.
+or product differences block automatic adoption. Keep unavailable required platform
+checks visible instead of inventing a resolved limitation. Unexercised, unused
+secondary environments belong in informational acceptance/PR coverage notes,
+outside this blocking inventory; see [platform acceptance](pre-pr-review-platform-acceptance.md).
 
 Register actual reviewer/verifier/fixer IDs and stop their ownership after their
 work. The verifier is distinct from reviewer and fixer and stops at the reviewed
@@ -373,6 +378,6 @@ Carry fixes, checkpoint/ref, both comparisons, decisions and unresolved findings
 limitations into PR text. Do not automatically force this optional review on every
 ship. [Ship](../.claude/skills/ship/SKILL.md) still performs normal sync, comparisons
 with current main, complete checks, CI and applicable PM verification. For changes
-to this workflow, [native Windows desktop-agent acceptance](pre-pr-review-platform-acceptance.md)
-is required before merge; Docker-only prerequisites are the immediate follow-up,
-not part of this implementation.
+to this workflow, follow [platform acceptance](pre-pr-review-platform-acceptance.md)
+in the operator's chosen environment. Docker test prerequisites are the immediate
+follow-up, not part of this implementation.
