@@ -60,8 +60,29 @@ p.mkdir(exist_ok=True)' "$NAME" || exit 2
       [[ $GIT_HELP == *relative-paths* ]] || fail 'Variants need host Git with relative worktree support (Git 2.48+).'
     fi
   fi
+  # Carry effective author/checkout policy without mounting host credentials.
+  GIT_ENV=()
+  CONFIG_COUNT=0
+  for CONFIG_KEY in user.name user.email core.autocrlf core.eol commit.gpgsign tag.gpgsign user.signingkey gpg.format; do
+    CONFIG_VALUE=$(git config --get "$CONFIG_KEY")
+    CONFIG_STATUS=$?
+    [[ $CONFIG_STATUS == 0 || $CONFIG_STATUS == 1 ]] || fail "Cannot read Git setting $CONFIG_KEY."
+    if [[ $CONFIG_KEY == core.eol && ( $CONFIG_STATUS == 1 || $CONFIG_VALUE == native ) ]]; then
+      CONFIG_VALUE=lf
+      [[ ${OSTYPE:-} == msys* ]] && CONFIG_VALUE=crlf
+      CONFIG_STATUS=0
+    fi
+    if [[ $CONFIG_STATUS == 0 ]]; then
+      GIT_ENV+=(--env "GIT_CONFIG_KEY_$CONFIG_COUNT=$CONFIG_KEY" --env "GIT_CONFIG_VALUE_$CONFIG_COUNT=$CONFIG_VALUE")
+      CONFIG_COUNT=$((CONFIG_COUNT + 1))
+    fi
+  done
+  GIT_ENV+=(--env "GIT_CONFIG_COUNT=$CONFIG_COUNT")
+  for AUTHOR_ENV in GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_AUTHOR_DATE GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL GIT_COMMITTER_DATE; do
+    GIT_ENV+=(--env "$AUTHOR_ENV")
+  done
   docker run --rm --init --platform linux/amd64 --network none --shm-size 1g \
-    --user "$RUN_UID" --env HOME=/tmp --env PYTHONDONTWRITEBYTECODE=1 \
+    --user "$RUN_UID" --env HOME=/tmp --env PYTHONDONTWRITEBYTECODE=1 "${GIT_ENV[@]}" \
     --mount "type=bind,source=$HOST_ROOT,target=/workspace/$NAME" \
     --mount "type=bind,source=$HOST_REVIEWS,target=/workspace/$NAME-reviews" \
     --workdir "/workspace/$NAME" --env "MB_HOST_ROOT=$HOST_ROOT" \

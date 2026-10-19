@@ -21,10 +21,11 @@ elif args[:2] == ['image', 'inspect']:
     print('sha256:test-image')
 elif args[0] == 'run':
     mounts = [args[i+1] for i, a in enumerate(args) if a == '--mount']
-    if '--entrypoint' in args:
-        mount = next(m for m in mounts if 'target=/host' in m)
+    if '--entrypoint' in args and '-c' in args:
+        mount = next(m for m in mounts if 'target=/host' in m or 'target=/parent' in m)
         host = pathlib.Path(mount.split('source=', 1)[1].split(',target=', 1)[0])
-        for name in (args[-3], args[-2]):
+        names = (args[-1] + '-reviews',) if 'target=/parent' in mount else (args[-3], args[-2])
+        for name in names:
             (host / name).mkdir(parents=True, exist_ok=True)
     elif '/input/git' in ''.join(mounts):
         mount = next(m for m in mounts if 'target=/input/git' in m)
@@ -86,6 +87,32 @@ class ContainerLauncherTests(unittest.TestCase):
         self.assertIn(f'type=bind,source={self.repo},target=/input/source,readonly', mounts)
         self.assertIn('none', call['args'])
         self.assertIn('MB_CHECK_IMAGE_ID=sha256:test-image', call['args'])
+
+    def test_helper_forwards_effective_git_policy_without_credentials(self):
+        global_config = self.base / 'global git settings'
+        self.env['GIT_CONFIG_GLOBAL'] = str(global_config)
+        for key in ('user.name', 'user.email'):
+            subprocess.run([GIT, '-C', str(self.repo), 'config', '--unset', key], check=True)
+        expected = {'user.name': 'PM café', 'user.email': 'pm@example.test',
+                    'core.autocrlf': 'true', 'core.eol': 'lf',
+                    'commit.gpgsign': 'true', 'tag.gpgsign': 'true',
+                    'user.signingkey': 'test-signing-id', 'gpg.format': 'ssh'}
+        for key, value in dict(expected, **{'core.eol': 'native', 'credential.helper': 'DO-NOT-FORWARD'}).items():
+            subprocess.run([GIT, 'config', '--file', str(global_config), key, value], check=True)
+        self.env['GIT_AUTHOR_NAME'] = 'Explicit author'
+        result = self.launch('helper', 'flows', 'check')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        call = next(c['args'] for c in self.calls() if 'scripts/flows.py' in c['args'])
+        settings = [call[i+1] for i, arg in enumerate(call) if arg == '--env']
+        values = dict(item.split('=', 1) for item in settings if '=' in item)
+        count = int(values['GIT_CONFIG_COUNT'])
+        actual = {values[f'GIT_CONFIG_KEY_{i}']: values[f'GIT_CONFIG_VALUE_{i}'] for i in range(count)}
+        self.assertEqual(actual, expected)
+        for name in ('GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_AUTHOR_DATE',
+                     'GIT_COMMITTER_NAME', 'GIT_COMMITTER_EMAIL', 'GIT_COMMITTER_DATE'):
+            self.assertIn(name, settings)
+        self.assertNotIn('DO-NOT-FORWARD', ' '.join(call))
+        self.assertNotIn(str(global_config), ' '.join(call))
 
     def test_each_run_builds_and_removes_only_its_own_tag(self):
         tags = []

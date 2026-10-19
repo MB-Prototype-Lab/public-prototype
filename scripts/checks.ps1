@@ -102,7 +102,27 @@ try {
                 if ($GitHelp -notmatch 'relative-paths') { Blocked 'Variants need host Git with relative worktree support (Git 2.48+).' }
             }
         }
-        $DockerArgs = $Common + @('--env','HOME=/tmp','--env','PYTHONDONTWRITEBYTECODE=1',
+        # Forward only effective identity/checkout/signing policy, never credentials.
+        $GitEnv = @()
+        $ConfigCount = 0
+        foreach ($ConfigKey in @('user.name','user.email','core.autocrlf','core.eol','commit.gpgsign','tag.gpgsign','user.signingkey','gpg.format')) {
+            $ConfigValue = (& git config --get $ConfigKey) -join "`n"
+            $ConfigStatus = $LASTEXITCODE
+            if ($ConfigStatus -notin @(0,1)) { throw "Cannot read Git setting $ConfigKey." }
+            if ($ConfigKey -eq 'core.eol' -and ($ConfigStatus -eq 1 -or $ConfigValue -eq 'native')) {
+                $ConfigValue = if ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT) { 'crlf' } else { 'lf' }
+                $ConfigStatus = 0
+            }
+            if ($ConfigStatus -eq 0) {
+                $GitEnv += @('--env',"GIT_CONFIG_KEY_$ConfigCount=$ConfigKey",'--env',"GIT_CONFIG_VALUE_$ConfigCount=$ConfigValue")
+                $ConfigCount++
+            }
+        }
+        $GitEnv += @('--env',"GIT_CONFIG_COUNT=$ConfigCount")
+        foreach ($AuthorEnv in @('GIT_AUTHOR_NAME','GIT_AUTHOR_EMAIL','GIT_AUTHOR_DATE','GIT_COMMITTER_NAME','GIT_COMMITTER_EMAIL','GIT_COMMITTER_DATE')) {
+            $GitEnv += @('--env',$AuthorEnv)
+        }
+        $DockerArgs = $Common + $GitEnv + @('--env','HOME=/tmp','--env','PYTHONDONTWRITEBYTECODE=1',
             '--mount',"type=bind,source=$Root,target=/workspace/$Name",
             '--mount',"type=bind,source=$ReviewRoot,target=/workspace/$Name-reviews",
             '--workdir',"/workspace/$Name",'--env',"MB_HOST_ROOT=$Root",'--env','MB_CONTAINER_PARENT=/workspace',

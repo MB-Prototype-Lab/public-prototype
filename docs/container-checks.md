@@ -124,6 +124,8 @@ The lifecycle launcher accepts absolute host `--verification` and `--file` paths
 and maps them into the validated mounts. Variant worktrees also use relative Git
 links so host agents can work in them.
 
+Lifecycle helpers carry effective host Git identity, line-ending and signing settings plus explicit author/committer overrides into the container; global Git config files and signing credentials are not mounted.
+
 Return host preview/report links to PMs, never container `/workspace` paths. For
 WSL previews, preserve the real distro identity. The agent coordinates independent
 workers on the host; Docker supplies their check environment.
