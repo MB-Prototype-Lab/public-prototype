@@ -1,0 +1,4 @@
+*.sh text eol=lf
+*.ps1 text eol=lf
+container/** text eol=lf
+tests/browser/package*.json text eol=lf

@@ -6,8 +6,7 @@ environment: native Windows or WSL/POSIX. Neither is mandated, and no operator
 must maintain both. Preflight Git and test tools in that chosen environment;
 native Git/Git Bash are not prerequisites for a WSL operator.
 
-Until the Docker follow-up below, reuse installed prerequisites and the documented
-setup for the chosen environment. Assess workflow changes using the retained
+Use the [container launcher](container-checks.md) in the chosen environment. Assess workflow changes using the retained
 automated, independent-review and applicable host/browser evidence. Native Windows
 desktop-agent acceptance is not a universal merge gate. Additional platform checks
 may improve coverage; an unexercised second environment is a recorded limitation,
@@ -55,12 +54,14 @@ Use the reusable opt-in generator, separate from unittest discovery:
 python3 tests/pre_pr_review_real_app.py --source /absolute/source/checkout --commit FULL_COMMITTED_SHA --out /absolute/evidence/real-app --node /absolute/path/to/node
 ```
 
-Use its `--help` for the current interface. On Windows use the verified native
-Python executable and argument arrays with native absolute paths. The source must
+These are in-container arguments: invoke through `checks.ps1 exec --` or
+`bash scripts/checks.sh exec --`, using `/work/repo` for captured source and a
+run-specific path under `/reports` for retained evidence. Use its `--help` for the
+current interface. The source must
 be the exact committed implementation under test. The generator creates disposable
 committed clones/worktrees without editing the source; no remote calls, installs,
-shipping or publication are needed. Reuse installed Playwright through an absolute
-`MB_PLAYWRIGHT_MODULE`; confirm an actual Chromium launch before controls. Keep
+shipping or publication are needed. The image supplies `MB_PLAYWRIGHT_MODULE`;
+confirm an actual Chromium launch with the container doctor before controls. Keep
 all generated outputs under the specified evidence directory. Record Python, Git,
 Node, Playwright and Chromium versions. A missing browser library is a setup
 failure, not regression evidence.
@@ -145,7 +146,8 @@ successful real-app review or native platform acceptance.
 
 Run in the operator's existing client and environment. A WSL session can exercise
 the WSL lifecycle and open previews in a Windows browser; that needs no native
-Windows Git, Python or Bash. A native Windows session uses its native tools.
+Windows Git, Python or Bash. Native Windows uses PowerShell, Git and Docker;
+Python, Node, Bash and Chromium run inside the shared Linux image.
 Give the agent this request and let it handle commands, record selection and reports:
 
 > Use the pre-pr-review platform acceptance packet at
@@ -162,15 +164,13 @@ Give the agent this request and let it handle commands, record selection and rep
 
 The agent performs the following machine-side steps:
 
-1. Record OS/build, agent client/version, execution environment, shell, source/helper
-   full commit and Git/Python/Node/Playwright/Chromium versions. Inspect and execute
-   tools in that environment: `command -v` in WSL/POSIX, or PowerShell
-   `Get-Command py,python,python3,git,node,bash` on native Windows. Require Python
-   3.11+, Node 22 and usable Git/Bash there for check-all. Execute Python aliases
-   to verify the actual version; a missing or old interpreter is BLOCKED. Verify
-   Chromium launch. Do not search for or install a parallel toolchain. When native
-   Windows Python needs UTF-8 mode, set and record `PYTHONUTF8=1` and retain any
-   original encoding failure.
+1. Record OS/build, agent client/version, execution environment, shell, full
+   source/helper commit, host Git/Docker versions and the container image identity.
+   Inspect host Git and Docker (`command -v git docker` in WSL/POSIX, or
+   `Get-Command git,docker` in PowerShell), then run the container launcher `doctor`.
+   Record its Git/Python/Node/Playwright/Chromium versions and launch result. No host
+   Python, Node, Playwright or extra Bash installation is required. Missing Docker
+   or a failed Chromium launch is BLOCKED; do not install a parallel host toolchain.
 2. Create an independent disposable local clone of the tested committed source
    (no hardlinks and no remote calls), for example under a temporary
    `MoneyBuddy review café #` path. Configure Git identity/hooks only in the clone.
@@ -179,11 +179,13 @@ The agent performs the following machine-side steps:
    Create a named task branch from that frozen main and commit a neutral app
    comment. Record main, merge base and finished SHAs. Leave the active checkout
    untouched. Put evidence outside managed workspaces.
-3. Run unittest discovery, `bash scripts/check-all.sh`, Markdown links and
-   edited-skill validation. Set `PYTHONDONTWRITEBYTECODE=1`, reuse absolute installed
-   `MB_PLAYWRIGHT_MODULE`, and direct reports outside managed workspaces. Retain
-   complete actual logs/exits; resolve failures or mark the row BLOCKED. Run the
-   actual-app recipe above against the same tested snapshot in that environment.
+3. Use the launcher for unittest discovery, `all --committed`, Markdown links and
+   [edited-skill validation](container-checks.md#targeted-skill-validation). Set
+   `MB_CHECK_OUTPUT_ROOT` to the existing absolute `host_artifact_dir` for managed
+   workspace checks. The image sets `PYTHONDONTWRITEBYTECODE` and
+   `MB_PLAYWRIGHT_MODULE`. Retain complete actual logs/exits; resolve failures or
+   mark the row BLOCKED. Run the actual-app recipe above against the same tested
+   snapshot inside the image.
 4. Ask the agent: “Review my finished changes before a PR.” Supply the raw
    neutral-task requirement. Confirm fresh-context default-model cold reviewer,
    independent verifier and sole fixer as needed; real worker IDs; no worker
@@ -233,26 +235,35 @@ Windows lifecycle coverage, and needs no native repeat. Keep actual failed/BLOCK
 checks and missing automatic-adoption evidence visible; additional-environment
 gaps do not create a universal merge blocker.
 
-## Immediate follow-up: Docker prerequisites
+## Container acceptance
 
-After this PR lands, provide a reproducible Docker test environment for either
-client choice. The operator needs their chosen agent client, Docker and any Git
-that client needs in its own environment. Put test prerequisites (Git, Bash,
-Python, Node, Playwright/Chromium and system libraries) in a pinned image; do not
-require a duplicate native/WSL toolchain. This PR does not implement Docker or an
-installer.
+The [container guide](container-checks.md) owns image and mount behavior. Validate
+PowerShell and Bash entrypoints at project level without requiring each PM to
+maintain both environments. Retain image identity, commands, full SHA and host
+report links. Exercise paths with spaces/Unicode, exact committed selection,
+Chromium controls, interruption/resume, independent-agent evidence and safe cleanup.
+Keep untested platforms and failed/BLOCKED checks visible. Host preview acceptance
+remains separate from Chromium tests inside Linux.
 
-Scope the follow-up to Windows/PowerShell and WSL/POSIX entrypoints, full checks and
-both review comparisons, and selection of the exact committed version. Run Git
-operations in isolated managed workspaces, preserve original/index/ref/cleanup
-guards, and retain reports on the host with usable preview/evidence paths. Do not
-silently select a container's stale HEAD or assume container paths are host browser
-URLs.
+## Host Git 2.43 compatibility
 
-Validate both supported entrypoints at the project level, using operators' chosen
-environments; no individual must maintain both. Include paths with spaces/Unicode,
-exact command/version/image digest/full SHA evidence, real browser controls and
-regressions, interrupt/resume, independent-agent evidence and safe cleanup. Verify
-skill routing and host previews for the client being exercised without claiming
-another client's coverage. Preserve existing prerequisite diagnostics until the new
-path is proved.
+Use the operator's normal Git 2.43 for host acceptance; do not substitute a temporary
+newer Git or upgrade the host to make a test pass. Record its executable and version
+separately from Git in the image. In disposable cases, exercise both review and
+variant creation, host editing/committing, container checks, commit import, adoption,
+cleanup and interrupted creation/resume.
+
+During each lifecycle, run host `git status` and `git diff` in the original and
+managed repositories. Commit a controlled change with host Git in a managed
+repository and confirm container Git observes that exact commit. Verify host
+operations still work after cleanup and after interruption. Compare original Git
+configuration before and after: repository format and extensions must remain
+unchanged, and `extensions.relativeWorktrees` must not be introduced. Each new
+managed checkout must have its own complete `.git`, no object alternates or shared
+hardlinks, and no linked-worktree registration in the original repository.
+
+Exercise retained refs and evidence, stale original/managed refs, dirty and ignored
+content, changed ownership metadata, unexpected directories and legacy records.
+They must be preserved or refused rather than overwritten or deleted. Record
+separate native Windows and WSL results; container Git success alone does not prove
+host Git compatibility.

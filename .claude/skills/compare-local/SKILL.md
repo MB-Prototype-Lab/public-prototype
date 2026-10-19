@@ -23,16 +23,16 @@ Inspect staged, unstaged, and untracked files before creation. Review each task 
 and explicitly select checkpoint paths; preserve unrelated work and ask only if
 ownership is ambiguous. Start all options from the current feature branch's shared
 checkpoint. New branches use `variant/<task>-A`, `variant/<task>-B`, and so on
-(`<task>` is the current task branch without its leading `work/`); worktree IDs
+(`<task>` is the current task branch without its leading `work/`); workspace IDs
 and URLs remain `variant-A`, `variant-B`, and so on. Use recorded IDs for existing
 comparisons, including legacy names, and never rename their branches. A Flow must already be committed (or its entry files selected); commit
 a newly created Flow package first. Do not run start-work inside a variant or create
 nested comparisons.
 
-Implement requested variants in their recorded worktrees, run affected checks,
+Implement requested variants in their recorded repositories, run affected checks,
 and refresh the manifest. In a Flow comparison, edit only `flows/<id>/` in each
 variant, never `app/`, another Flow, root `index.html` or `gate/`. A request to
-change A targets its registered checkout, not the primary app.
+change A targets its recorded checkout, not the primary app.
 
 Tell the PM the friendly labels and where to find them: the **Prototype** tab's
 **Prototype variants**, or the **Flows** tab's **<Flow> variants** (the tab shows a
@@ -58,10 +58,20 @@ always including `python3 -m unittest tests.test_flows` (for a Flow, also
 checks), before `adopt --verified` closes the comparison.
 
 Close retains all work. Cleanup requires concrete selected variant IDs and removes
-only clean worktrees, retaining branches. Dirty work requires a separate preservation
+only owned clean repositories after importing their commits into retained branches.
+Legacy linked worktrees keep their distinct recovery and cleanup rules.
+Dirty work requires a separate preservation
 or deletion decision; do not force removal. No pushes, main merges, or publication.
 
 Keeping a Flow variant updates that Flow only. It is not app integration: read
 [Flows](../../../docs/flows.md) for creating/editing/checking a Flow or selectively
 integrating its proposal into `app/`. Do not treat “keep this Flow” as a
 whole-directory app adoption.
+
+Use the [container launcher](../../../docs/container-checks.md) for runtime
+commands: `helper local-variants` runs the Python helper against the working checkout;
+`exec` runs disposable targeted checks. No host Python/Node installation is needed.
+
+Host Git 2.43 is supported. Use the normal installed Git and the container's pinned
+runtime; never require a host upgrade or a temporary parallel Git. New variants use
+independent offline repositories without changing the original repository format.

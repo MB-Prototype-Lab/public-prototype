@@ -11,7 +11,7 @@ place; Exit returns to the selector.
 ## Collaboration
 
 Use `.claude/skills/` for ordinary start-work, sync, ship, publish, compare-local,
-create-flow and pre-pr-review requests; follow [workflow](docs/workflow.md). Preserve dirty files
+create-flow, run-checks and pre-pr-review requests; follow [workflow](docs/workflow.md). Preserve dirty files
 and local-only commits. Start readable task branches from verified current main;
 sync by merging, never rebase or force push. Stage specific paths and keep
 `branching.md` untracked. Ship through a reviewed PR, passing checks and applicable
@@ -53,8 +53,8 @@ behavior and requires PM full-app verification before the PR. A Flow merge neith
 approves its proposal nor publishes it.
 
 Explain decisions in product terms. Record scope and validation in PR text.
-Repeat affected checks after material changes. Run every automated check with
-`bash scripts/check-all.sh`; BLOCKED is not a pass. Never claim an unavailable
+Repeat affected checks after material changes. Run every automated check through the [container launcher](docs/container-checks.md)
+(`bash scripts/checks.sh all` or `scripts/checks.ps1 all`); BLOCKED is not a pass. Never claim an unavailable
 runtime, browser or platform check passed. Follow [testing](docs/testing.md).
 
 ## Project map and references
@@ -67,7 +67,7 @@ runtime, browser or platform check passed. Follow [testing](docs/testing.md).
 | Preparing a snapshot, selector change or deployment | [publishing](docs/publishing.md) |
 | Changing app behavior | [app contracts](docs/app-contracts.md), [architecture](app/docs/architecture.md) |
 | Resolving product requirements or L##/D## IDs | [decisions](docs/decisions.md) |
-| Testing | [testing](docs/testing.md) |
+| Testing or building the check image | [container checks](docs/container-checks.md), [testing](docs/testing.md) |
 | Tracking and participant URLs | [Useberry](app/docs/useberry.md) |
 | Creating/editing/checking Flows or integrating proposals | [Flows](docs/flows.md), [create-flow](.claude/skills/create-flow/SKILL.md) |
 | Comparing local variants of the app or one Flow | [local variants](docs/local-variants.md) |

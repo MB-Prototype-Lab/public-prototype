@@ -38,3 +38,7 @@ chosen behavior into `app/` are separate requests.
 To revise an existing Flow, edit only its package, keep `source_app_commit`, and
 update `proposed_differences` and its `docs/flow.md`. Routine Flow work needs no
 subagents.
+
+Use the [container launcher](../../../docs/container-checks.md) for runtime
+commands: `helper flows` runs the Python helper against the working checkout;
+`exec` runs disposable targeted checks. No host Python/Node installation is needed.

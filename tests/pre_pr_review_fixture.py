@@ -21,7 +21,8 @@ SCRIPT = SOURCE / 'scripts/pre-pr-review.py'
 class ReviewFixture:
     """A private repository with a local main and a named, finished task branch."""
 
-    def __init__(self):
+    def __init__(self, backend="independent-v1"):
+        self.backend = backend
         self.temp = tempfile.TemporaryDirectory(prefix='pre pr review # % ')
         self.parent = Path(self.temp.name).resolve()
         self.root = self.parent / 'PM task café # %'
@@ -78,6 +79,14 @@ class ReviewFixture:
         return path
 
     def command(self, argv, root=None, env=None):
+        if self.backend == 'legacy-worktree' and len(argv) > 1 and str(argv[0]) == sys.executable and Path(argv[1]) == SCRIPT:
+            # Exercise compatibility with already deployed linked-worktree records.
+            # The module seam is test-only; production CLI has no legacy-create option.
+            code = ("import importlib.util,sys; "
+                    "s=importlib.util.spec_from_file_location('legacy_review',sys.argv[1]); "
+                    "m=importlib.util.module_from_spec(s);s.loader.exec_module(m); "
+                    "m.DEFAULT_BACKEND='legacy-worktree';sys.argv=sys.argv[1:];sys.exit(m.main())")
+            argv = [sys.executable, '-c', code, SCRIPT, *argv[2:]]
         return subprocess.run([str(arg) for arg in argv], cwd=root or self.root,
                               env=self.env if env is None else env,
                               capture_output=True, text=True, encoding='utf-8')
@@ -89,7 +98,8 @@ class ReviewFixture:
         return result.stdout if check else result
 
     def cli(self, *args, root=None, ok=True, env=None):
-        result = self.command([sys.executable, SCRIPT, *args], root=root, env=env)
+        command = [sys.executable, SCRIPT, *args]
+        result = self.command(command, root=root, env=env)
         if ok and result.returncode:
             raise AssertionError(f'CLI {args}: {result.stderr}{result.stdout}')
         if not ok and result.returncode == 0:
@@ -194,9 +204,9 @@ print(json.dumps({'fixture': 'synthetic lifecycle only', 'root': root, 'head': a
         observed = {'fixture': 'synthetic lifecycle only; no app/browser or agent acceptance',
                     'finished': record['finished'], 'reviewed': reviewed,
                     'main_tip': record['main_tip'],
-                    'diff': self.git('diff', '--stat', record['finished'], reviewed),
+                    'diff': self.git('diff', '--stat', record['finished'], reviewed, root=self.tree(record)),
                     'clean_review': not self.git('status', '--porcelain', root=self.tree(record)),
-                    'tracked_scope': self.git('diff', '--name-only', record['comparison_base'], reviewed)}
+                    'tracked_scope': self.git('diff', '--name-only', record['comparison_base'], reviewed, root=self.tree(record))}
         (directory / report).write_text(json.dumps(observed, indent=2), encoding='utf-8')
         evidence = {'schema_version': 1, 'review_id': record['id'],
                     'baseline': record['finished'], 'reviewed': reviewed,
@@ -283,3 +293,8 @@ print(json.dumps({'fixture': 'synthetic lifecycle only', 'root': root, 'head': a
         env = self.env.copy()
         env['PATH'] = str(bindir) + os.pathsep + self.env.get('PATH', '')
         return env, marker
+
+
+class LegacyReviewFixture(ReviewFixture):
+    def __init__(self):
+        super().__init__(backend='legacy-worktree')

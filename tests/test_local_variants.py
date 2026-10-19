@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import os
+import shutil
 from pathlib import Path, PureWindowsPath
 import subprocess
 import tempfile
@@ -251,7 +252,7 @@ class VariantsTest(unittest.TestCase):
     def test_missing_and_wrong_branch(self):
         state = self.create()
         missing, changed = state['variants']
-        self.git('worktree', 'remove', str(self.path(missing)))
+        shutil.rmtree(self.path(missing))
         self.cli('refresh')
         manifest = (self.root / '.local-preview/variants.js').read_text()
         self.assertNotIn(missing['id'], manifest)
@@ -322,6 +323,7 @@ class VariantsTest(unittest.TestCase):
                           'label': 'Legacy', 'description': 'Existing comparison'}
                 self.git('worktree', 'add', '-b', legacy['branch'], str(self.path(legacy)), state['checkpoint'])
                 state['status'] = 'closed'
+                state.pop('backend', None)
                 state['variants'] = [legacy]
                 module.save(self.root, state)
                 self.cli('cleanup', legacy['id'])
@@ -355,16 +357,15 @@ class VariantsTest(unittest.TestCase):
     def test_partial_creation_records_intent_and_collision_preserves_work(self):
         import argparse
         args = argparse.Namespace(command='create', session=None, option=[('A', 'one'), ('B', 'two')], file=[])
-        original = module.git
+        original = module.managed.create
         count = 0
-        def interrupted(root, *args):
+        def interrupted(*args):
             nonlocal count
-            if args[:2] == ('worktree', 'add'):
-                count += 1
-                if count == 2:
-                    raise RuntimeError('interrupted')
-            return original(root, *args)
-        with patch.object(module, 'git', side_effect=interrupted):
+            count += 1
+            if count == 2:
+                raise RuntimeError('interrupted')
+            return original(*args)
+        with patch.object(module.managed, 'create', side_effect=interrupted):
             with self.assertRaisesRegex(RuntimeError, 'interrupted'):
                 module.run(self.root, args)
         state = self.state()
@@ -382,6 +383,150 @@ class VariantsTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'collision'):
                 module.run(self.root, args)
         self.assertEqual(self.state()['id'], state['id'])
+
+
+    def test_managed_checkout_refuses_nested_comparison_after_branch_switch(self):
+        state = self.create()
+        path = self.path(state['variants'][0])
+        self.git('switch', '-c', 'work/nested', root=path)
+        config = (path / '.git/config').read_bytes()
+        marker = (path / '.git/moneybuddy-managed.json').read_bytes()
+        result = self.cli('create', '--option', 'Nested', 'must refuse', root=path, ok=False)
+        self.assertIn('primary checkout', result.stderr)
+        self.assertFalse((path / '.local-preview/current').exists())
+        self.assertEqual((path / '.git/config').read_bytes(), config)
+        self.assertEqual((path / '.git/moneybuddy-managed.json').read_bytes(), marker)
+        self.assertEqual(self.state(), state)
+        self.cli('url', root=path)
+
+    def test_independent_repositories_leave_host_format_unchanged(self):
+        before = (self.root / '.git/config').read_bytes()
+        state = self.create()
+        self.assertEqual(state['backend'], 'independent-v1')
+        for variant in state['variants']:
+            path = self.path(variant)
+            self.assertTrue((path / '.git').is_dir())
+            self.assertFalse((path / '.git/objects/info/alternates').exists())
+            self.git('status', '--porcelain', root=path)
+        self.assertEqual(len(module.records(self.root)), 1)
+        self.assertEqual((self.root / '.git/config').read_bytes(), before)
+        self.cli('close')
+        self.cli('cleanup', *[v['id'] for v in state['variants']])
+        self.git('status', '--porcelain')
+        self.assertEqual((self.root / '.git/config').read_bytes(), before)
+
+    def test_cleanup_imports_latest_variant_commit_and_retains_extra_branch(self):
+        state = self.create()
+        variant = state['variants'][0]
+        path = self.path(variant)
+        self.write('task', 'saved variant', root=path)
+        self.git('add', 'task', root=path)
+        self.git('commit', '-m', 'keep this work', root=path)
+        head = self.git('rev-parse', 'HEAD', root=path)
+        self.git('branch', 'extra-work', root=path)
+        self.cli('close')
+        self.cli('cleanup', variant['id'], ok=False)
+        self.assertTrue(path.exists())
+        self.assertEqual(self.git('rev-parse', variant['branch']), head)
+        self.git('branch', '-d', 'extra-work', root=path)
+        self.cli('cleanup', variant['id'])
+        self.assertEqual(self.git('show', variant['branch'] + ':task'), 'saved variant')
+
+    def test_cleanup_refuses_unowned_repository_and_missing_directory(self):
+        state = self.create()
+        variant = state['variants'][0]
+        marker = self.path(variant) / '.git/moneybuddy-managed.json'
+        original = marker.read_text()
+        marker.write_text('{}')
+        self.cli('close')
+        self.cli('cleanup', variant['id'], ok=False)
+        self.assertTrue(self.path(variant).exists())
+        marker.write_text(original)
+        shutil.rmtree(self.path(variant))
+        result = self.cli('cleanup', variant['id'], ok=False)
+        self.assertIn('missing', result.stderr)
+        self.assertFalse(self.state()['variants'][0].get('removed', False))
+
+    def test_interrupted_cleanup_reconciles_only_its_saved_intent_and_ref(self):
+        import argparse
+        state = self.create()
+        variant = state['variants'][0]
+        self.cli('close')
+        remove = module.managed.remove
+        def interrupted(*args, **kwargs):
+            remove(*args, **kwargs)
+            raise RuntimeError('interrupted after directory removal')
+        with patch.object(module.managed, 'remove', side_effect=interrupted):
+            with self.assertRaisesRegex(RuntimeError, 'interrupted after directory removal'):
+                module.run(self.root, argparse.Namespace(command='cleanup', session=None,
+                           variant=[variant['id']]))
+        self.assertFalse(self.path(variant).exists())
+        pending = self.state()['variants'][0]['cleanup_pending']
+        self.assertEqual(pending['head'], state['checkpoint'])
+        self.write('task', 'unrelated new commit')
+        self.git('add', 'task')
+        self.git('commit', '-m', 'unrelated new commit')
+        self.git('update-ref', 'refs/heads/' + variant['branch'], 'HEAD')
+        result = self.cli('cleanup', variant['id'], ok=False)
+        self.assertIn('matching cleanup intent', result.stderr)
+        self.assertFalse(self.state()['variants'][0].get('removed', False))
+        self.git('update-ref', 'refs/heads/' + variant['branch'], pending['head'])
+        self.cli('cleanup', variant['id'])
+        self.assertTrue(self.state()['variants'][0]['removed'])
+        self.assertNotIn('cleanup_pending', self.state()['variants'][0])
+        self.assertEqual(self.git('rev-parse', variant['branch']), pending['head'])
+
+    def test_adoption_refuses_changed_retained_ref(self):
+        state = self.create()
+        variant = state['variants'][0]
+        self.write('task', 'unrelated advance')
+        self.git('add', 'task')
+        self.git('commit', '-m', 'advance')
+        advance = self.git('rev-parse', 'HEAD')
+        self.git('update-ref', 'refs/heads/' + variant['branch'], advance)
+        result = self.cli('adopt', variant['id'], ok=False)
+        self.assertIn('changed outside this session', result.stderr)
+        self.assertEqual(self.git('rev-parse', variant['branch']), advance)
+
+
+    def test_cleanup_preserves_ignored_work_and_modified_return_metadata(self):
+        state = self.create()
+        variant = state['variants'][0]
+        path = self.path(variant)
+        self.cli('close')
+        self.write('.local-preview/notes.txt', 'keep my notes', root=path)
+        self.cli('cleanup', variant['id'], ok=False)
+        self.assertEqual((path / '.local-preview/notes.txt').read_text(), 'keep my notes')
+        (path / '.local-preview/notes.txt').unlink()
+        self.write('.local-preview/return.js', 'custom return data', root=path)
+        self.cli('cleanup', variant['id'], ok=False)
+        self.assertEqual((path / '.local-preview/return.js').read_text(), 'custom return data')
+
+    def test_interrupted_import_recovers_only_its_recorded_ref_update(self):
+        import argparse
+        state = self.create()
+        variant = state['variants'][0]
+        path = self.path(variant)
+        self.write('task', 'variant commit', root=path)
+        self.git('add', 'task', root=path)
+        self.git('commit', '-m', 'variant commit', root=path)
+        head = self.git('rev-parse', 'HEAD', root=path)
+        original = module.save
+        def interrupted(root, record):
+            candidate = record['variants'][0]
+            if candidate.get('imported') == head and 'import_pending' not in candidate:
+                raise RuntimeError('interrupted after ref update')
+            return original(root, record)
+        with patch.object(module, 'save', side_effect=interrupted):
+            with self.assertRaisesRegex(RuntimeError, 'interrupted after ref update'):
+                module.run(self.root, argparse.Namespace(command='adopt', session=None,
+                           variant=[variant['id']], file=[], verified=False))
+        saved = self.state()['variants'][0]
+        self.assertEqual(saved['import_pending'], head)
+        self.assertEqual(self.git('rev-parse', variant['branch']), head)
+        self.cli('adopt', variant['id'])
+        self.assertEqual(self.state()['status'], 'verification')
+        self.assertNotIn('import_pending', self.state()['variants'][0])
 
 
 class BrowserUrlTests(unittest.TestCase):
@@ -411,6 +556,23 @@ class BrowserUrlTests(unittest.TestCase):
                              'file://wsl.localhost/Another%20Distro/home/PM/index.html')
             with self.assertRaisesRegex(RuntimeError, 'Invalid WSL'):
                 module.browser_url(Path('/home/PM/index.html'), '../escape')
+
+    def test_container_on_wsl_kernel_keeps_internal_linux_urls(self):
+        environment = {'MB_CONTAINER': '1', 'WSL_DISTRO_NAME': 'Inherited host distro',
+                       'MB_WSL_DISTRO': 'Unmapped host distro'}
+        with patch.dict(module.os.environ, environment, clear=True), patch.object(module.platform, 'release', return_value='microsoft-standard-WSL2'), patch.object(module.subprocess, 'run') as run:
+            self.assertEqual(module.browser_url(Path('/tmp/fixture #1/index.html')),
+                             'file:///tmp/fixture%20%231/index.html')
+            run.assert_not_called()
+            self.assertEqual(module.browser_url(Path('/home/PM/index.html'), 'Explicit distro'),
+                             'file://wsl.localhost/Explicit%20distro/home/PM/index.html')
+
+    def test_container_mapped_wsl_host_url_uses_explicit_host_distro(self):
+        environment = {'MB_CONTAINER': '1', 'MB_HOST_ROOT': '/home/PM/project',
+                       'MB_CONTAINER_PARENT': '/workspace', 'MB_WSL_DISTRO': 'Ubuntu PM'}
+        with patch.dict(module.os.environ, environment, clear=True), patch.object(module.platform, 'release', return_value='microsoft-standard-WSL2'):
+            self.assertEqual(module.browser_url(Path('/workspace/project/index.html')),
+                             'file://wsl.localhost/Ubuntu%20PM/home/PM/project/index.html')
 
     def test_unknown_wsl_distro_does_not_print_linux_url(self):
         with patch.dict(module.os.environ, {}, clear=True), patch.object(module.platform, 'release', return_value='microsoft-standard-WSL2'), patch.object(module.subprocess, 'run', side_effect=FileNotFoundError):

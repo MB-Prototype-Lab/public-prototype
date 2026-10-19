@@ -70,7 +70,7 @@ actions; ordinary implementation keeps the task-scope workflow above.
 
 Complete the [maintenance handoff](code-health.md#before-handoff).
 Discover persisted [pre-PR review](pre-pr-review.md#ship-handoff) records with
-`python3 scripts/pre-pr-review.py status --json`, even in a new conversation. Resolve
+`bash scripts/checks.sh review status --json` (or `scripts/checks.ps1 review status --json`), even in a new conversation. Resolve
 the current task, retry eligible completed cleanup and carry checkpoint, fixes,
 both comparisons, findings, decisions and limitations into the handoff. Report
 incomplete/stale evidence. Do not force this optional review on ordinary ship; it
@@ -129,3 +129,6 @@ Selector changes also use a PR and publication tag. Catalog merges never deploy.
 Retirement needs an explicit request naming the build and acknowledging its direct
 URL will stop opening the app. Resolve an ongoing study before retirement or demotion.
 Hide builds to reduce clutter while retaining direct access.
+
+Use the [container launcher](container-checks.md) for checks and Python helpers.
+Host Git operations and GitHub/browser handoff keep the procedures above.

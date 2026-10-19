@@ -18,7 +18,7 @@ When the PM asks for a cold review of finished work before a PR, use
 [procedure](../../../docs/pre-pr-review.md).
 
 At ship intake, always discover persisted reviews with
-`python3 scripts/pre-pr-review.py status --json`, resolving IDs for the current task
+`bash scripts/checks.sh review status --json` (PowerShell: `scripts/checks.ps1 review status --json`), resolving IDs for the current task
 from disk rather than chat memory. Follow its
 [ship handoff](../../../docs/pre-pr-review.md#ship-handoff) for eligible cleanup,
 fixes, checkpoint, both comparisons, findings, decisions and limitations; report
@@ -30,8 +30,11 @@ in the operator's chosen environment; a second native/WSL environment is not a
 merge requirement.
 
 For a Flow task, read [Flows](../../../docs/flows.md), run
-`python3 scripts/flows.py scope --scope flow` after syncing main, and run all Flow
+`bash scripts/checks.sh helper flows scope --scope flow` after syncing main, and run all Flow
 plus existing app, publication and browser checks. A Flow PR shares a
 proposal without product approval or publication. For app-integration, obtain PM
 verification of the integrated full app before opening the PR; repeat affected
 verification after material changes.
+
+Run automated checks with [run-checks](../run-checks/SKILL.md); its image supplies
+the test toolchain and browser.

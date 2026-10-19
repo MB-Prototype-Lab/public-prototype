@@ -6,3 +6,4 @@ publication-output/
 .local-preview/
 .journeys/
 tests/browser/node_modules/
+.container-checks/

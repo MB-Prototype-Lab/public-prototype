@@ -8,17 +8,6 @@ do not restore editable `versions/` directories. Publication remains separate
 work. GitHub Issues, remote branch deletion and Git history cleanup are outside
 this scope.
 
-## Immediate follow-up: Docker test environment
-
-After the current review-workflow PR lands, containerize the automated checks and
-review comparisons so operators can use their preferred native Windows or WSL
-client without maintaining two environments. Keep test runtimes and browser
-dependencies in a pinned image, preserve exact-source selection and review safety,
-and return reports and usable previews to the host. The
-[Docker acceptance scope](pre-pr-review-platform-acceptance.md#immediate-follow-up-docker-prerequisites)
-owns the implementation and validation requirements. Docker is not implemented
-by the current PR.
-
 ## Half-wired features (deleted; Git history keeps the code)
 
 - **Help me out from an emergency fund row.** `esfRunHelp` handed one row to a Help me out tree and took the figure back, but no screen offered it.
