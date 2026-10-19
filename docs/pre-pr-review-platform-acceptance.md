@@ -244,3 +244,26 @@ report links. Exercise paths with spaces/Unicode, exact committed selection,
 Chromium controls, interruption/resume, independent-agent evidence and safe cleanup.
 Keep untested platforms and failed/BLOCKED checks visible. Host preview acceptance
 remains separate from Chromium tests inside Linux.
+
+## Host Git 2.43 compatibility
+
+Use the operator's normal Git 2.43 for host acceptance; do not substitute a temporary
+newer Git or upgrade the host to make a test pass. Record its executable and version
+separately from Git in the image. In disposable cases, exercise both review and
+variant creation, host editing/committing, container checks, commit import, adoption,
+cleanup and interrupted creation/resume.
+
+During each lifecycle, run host `git status` and `git diff` in the original and
+managed repositories. Commit a controlled change with host Git in a managed
+repository and confirm container Git observes that exact commit. Verify host
+operations still work after cleanup and after interruption. Compare original Git
+configuration before and after: repository format and extensions must remain
+unchanged, and `extensions.relativeWorktrees` must not be introduced. Each new
+managed checkout must have its own complete `.git`, no object alternates or shared
+hardlinks, and no linked-worktree registration in the original repository.
+
+Exercise retained refs and evidence, stale original/managed refs, dirty and ignored
+content, changed ownership metadata, unexpected directories and legacy records.
+They must be preserved or refused rather than overwritten or deleted. Record
+separate native Windows and WSL results; container Git success alone does not prove
+host Git compatibility.

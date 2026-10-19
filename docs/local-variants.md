@@ -5,7 +5,7 @@ PMs ask “Make two variants” (or alternatives), “Change option A,” “Kee
 `index.html`, enters 1337, and opens a variant or chooses **Compare side by side**.
 PM-facing text calls the choices **variants**. There is one active comparison per
 primary checkout, and it targets either the full app or one Flow. Closing restores
-the ordinary selector and retains all variant branches and worktrees. Published
+the ordinary selector and retains all variant branches and repositories. Published
 builds never contain local choices.
 
 ## Find variants on the selector
@@ -87,7 +87,8 @@ Remote actions follow the [authorization boundary](../CLAUDE.md#collaboration).
 Read the compare-local skill. Run commands below from the primary checkout using
 the [container launcher](container-checks.md). The Bash examples below use
 `bash scripts/checks.sh`; on Windows use `scripts/checks.ps1` with the same arguments. Host prerequisites are
-Git and Docker; Python runs in the image. Inspect `git status --short`, staged and unstaged diffs, untracked
+Git (2.43 supported) and Docker; Python runs in the image. Use the normal host Git; do not
+install or select a parallel newer host Git. Inspect `git status --short`, staged and unstaged diffs, untracked
 files, branch history, and registered worktrees (`git worktree list --porcelain`).
 Select the current feature branch, never main, demo, or a HoffDemo branch. Preserve
 unrelated files; ask only when ownership is ambiguous. Never stage everything.
@@ -110,36 +111,43 @@ Omit `--file` when task work is already committed. Repeat it for each reviewed t
 file (including deletions/new files); directories and pathspec patterns are not
 accepted. Checkpoint commits include the selected working contents. Unrelated staged,
 unstaged, and untracked files remain in the primary checkout and are not copied.
-Every variant starts at the same recorded checkpoint. Output supplies IDs,
+Every variant starts at the same recorded checkpoint in an independent repository
+created from an offline Git bundle. Each has its own complete `.git` and objects,
+without alternates, hardlinks or linked-worktree registration. Session and variant
+records use the `independent-v1` backend, record ownership and the last imported
+SHA; an internal marker must match before the helper manages that directory.
+Creation does not enable `extensions.relativeWorktrees` or upgrade the original
+repository format. Host agents can edit and commit with ordinary Git 2.43.
+Output supplies IDs,
 branches, labels, and the primary root. Branches use `variant/<task>-A`,
 `variant/<task>-B`, and so on, where `<task>` is the current task branch without
-its leading `work/`. Worktree URLs use `.worktrees/variant-A/`,
+its leading `work/`. Managed repository URLs use `.worktrees/variant-A/`,
 `.worktrees/variant-B/`, and so on (after Z comes AA). If names are already occupied
-by retained branches or worktrees, the whole new comparison gets a matching suffix,
+by retained branches or directories, the whole new comparison gets a matching suffix,
 such as `variant-A-2` and `variant-B-2`, with branches
 `variant/<task>-A-2` and `variant/<task>-B-2`. Existing comparisons keep their
 recorded IDs and branches, including legacy names accepted for cleanup.
 Use the exact recorded ID when adopting or cleaning up.
 Implement each choice there and run affected checks from that exact checkout.
-Do not recursively search `.worktrees/`; use the registered path for targeted work.
+Do not recursively search `.worktrees/`; use the recorded path for targeted work.
 Run refresh after changes to the comparison; browser discovery is not automatic.
 
 The ignored `.local-preview/` directory contains session records, the current session
 ID, and atomically generated classic-script manifests. Session records store the
 target's kind, Flow ID and label (older records without one mean the app); the
 manifest adds the derived entry path, and each variant link is that path inside its
-worktree. A variant's generated return metadata uses a relative path to send its
+repository. A variant's generated return metadata uses a relative path to send its
 root selector to the primary root on file://, including when a Windows browser opens
-the checkout through a WSL share. A variant Flow's exits reach that worktree root
+the checkout through a WSL share. A variant Flow's exits reach that repository root
 first, so they return the same way. App, Flow and release configuration are
-unchanged. Missing worktrees, and variants missing the target's entry file, are
+unchanged. Missing repositories, and variants missing the target's entry file, are
 reported and omitted from links. Refresh the browser selector after an agent operation.
 
 ## Keep a variant
 
 Review the winner's diff and run its checks. Commit only identified task files (or
 pass repeated `--file` arguments below). Preserve unrelated dirty files; adoption
-requires both the chosen worktree and original checkout clean and the original branch
+requires both the chosen repository and original checkout clean and the original branch
 checked out in the primary. Then use the recorded ID, not the display label:
 
 ```sh
@@ -148,6 +156,9 @@ bash scripts/checks.sh helper local-variants adopt <variant-id> --file app/scree
 bash scripts/checks.sh helper local-variants adopt <variant-id> --verified
 ```
 
+The helper first imports the selected variant's commits through an offline bundle
+and updates its reserved branch in the original repository only if the branch still
+matches the last recorded imported SHA. Unexpected branch movement is refused.
 The first step normally merges into the original feature branch, preserving its
 intervening commits. Conflicts remain available for resolution. Resolve mechanical
 conflicts and commit the merge; ask the PM about competing behavior. Run checks before
@@ -174,16 +185,24 @@ bash scripts/checks.sh helper local-variants cleanup <variant-id> <another-varia
 bash scripts/checks.sh helper local-variants --session <old-session-id> cleanup <variant-id>
 ```
 
-Cleanup requires a closed comparison and explicit managed IDs. It removes clean
-worktrees without force, retaining branches. Dirty work or branch deletion needs a
+Cleanup requires a closed comparison and explicit managed IDs. For independently
+owned repositories, it imports the latest committed variant HEAD into the retained
+branch before removing the clean owned directory. Missing or mismatched ownership,
+dirty or ignored content, and extra local branches or tags prevent removal.
+Legacy linked worktrees retain their distinct backend and worktree removal rules.
+Dirty work or branch deletion needs a
 separate concrete preservation/deletion decision. An archived session can be inspected
 with `--session <id> status`; it cannot replace the current comparison's manifest.
 
-Creation saves its intent before worktree operations. After an interruption, inspect
+Creation saves its intent before repository operations. After an interruption, inspect
 `status` and use `refresh --resume` to complete creation from the recorded checkpoint.
 Unexpected branches, paths, or advanced partial branches are refused; inspect and
-preserve them before repairing registration. Missing registered worktrees may need a
-Git worktree repair before resuming. Close can end a partial comparison while retaining
+preserve them before recovery. Never adopt an arbitrary existing directory or
+reinterpret a legacy record as an independently owned repository. Records without
+a backend identify legacy linked worktrees. Container execution refuses interrupted
+legacy creation; resume that legacy operation only in its original compatible host
+environment. Missing legacy registrations may need deliberate Git worktree repair.
+Close can end a partial comparison while retaining
 its surviving variants. Do not delete session records to bypass an error.
 
 An operation lock prevents concurrent tool mutations. If the process was killed,

@@ -31,3 +31,8 @@ Before any check in a managed finished/reviewed workspace, set
 Include that setting in verifier/fixer packets so captures and reports stay outside
 managed workspaces and eligible cleanup remains possible. See the procedure's
 [worker output rules](../../../docs/pre-pr-review.md#preflight-and-workers).
+
+Use the operator's normal host Git; Git 2.43 is supported. Never install or select a
+parallel newer host Git to bypass a lifecycle guard. New managed workspaces are
+independent repositories; preserve legacy linked-worktree records and follow the
+helper's explicit recovery constraints.

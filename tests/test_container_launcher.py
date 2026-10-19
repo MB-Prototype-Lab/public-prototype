@@ -114,6 +114,37 @@ class ContainerLauncherTests(unittest.TestCase):
         self.assertNotIn('DO-NOT-FORWARD', ' '.join(call))
         self.assertNotIn(str(global_config), ' '.join(call))
 
+    def test_review_and_variants_do_not_require_host_relative_worktrees(self):
+        # Model an ordinary host Git without the newer relative-worktree feature.
+        # The launchers must delegate lifecycle operations without probing it.
+        (self.bin / 'git').unlink()
+        (self.bin / 'git').write_text('#!' + sys.executable + '\n' +
+            'import os, sys\n' +
+            'if sys.argv[1:3] == ["worktree", "add"]:\n'
+            '    print("usage: git worktree add [--detach] PATH", file=sys.stderr)\n'
+            '    sys.exit(129)\n' +
+            'os.execv(' + repr(GIT) + ', [' + repr(GIT) + '] + sys.argv[1:])\n')
+        (self.bin / 'git').chmod(0o755)
+        before = (self.repo / '.git/config').read_bytes()
+        for args, script in ((('review', 'status', '--json'), 'pre-pr-review'),
+                             (('helper', 'local-variants', 'status'), 'local-variants')):
+            with self.subTest(script=script):
+                result = self.launch(*args)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertTrue(any('scripts/' + script + '.py' in c['args'] for c in self.calls()))
+                self.assertEqual((self.repo / '.git/config').read_bytes(), before)
+
+    def test_managed_checkouts_allow_tests_but_block_nested_helpers(self):
+        marker = self.repo / '.git/moneybuddy-managed.json'
+        marker.write_text('{}\n')
+        for args in (('review', 'start'), ('helper', 'local-variants', 'create')):
+            result = self.launch(*args)
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertIn('primary task checkout', result.stderr)
+        result = self.launch('all')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(marker.read_text(), '{}\n')
+
     def test_each_run_builds_and_removes_only_its_own_tag(self):
         tags = []
         for run_id in ('first', 'second'):

@@ -10,7 +10,9 @@ runs checks on their behalf. For independent review, use
 Install Git and Docker with Linux-container support in the agent's chosen
 Windows or WSL/POSIX environment. Docker Desktop must be running and permit
 access to the checkout drive. Native Windows uses PowerShell; WSL/POSIX uses Bash.
-Git Bash is also supported. Host Node, Python, npm, Make, and GNU utilities are
+Git Bash is also supported. Host Git 2.43 is supported; agents must use the
+operator's normal Git, without installing a newer or parallel host Git. The image
+pins its own Git independently. Host Node, Python, npm, Make, and GNU utilities are
 not prerequisites. GitHub CLI remains optional for the browser PR handoff.
 
 The first build needs network access and downloads the pinned Linux toolchain,
@@ -91,13 +93,14 @@ image, alongside their HTTP server. Normal checks have no external network acces
 Ordinary runs store captures/reports under `.container-checks/inputs/<run>` and
 `.container-checks/reports/<run>`. Set `MB_CHECK_OUTPUT_ROOT` to an existing absolute
 host directory to place `inputs/<run>` and `reports/<run>` there instead. For every
-check in a managed finished/reviewed worktree, this setting is required: use the
-record's `host_artifact_dir`, outside that worktree. Ignored output inside managed
+check in a managed finished/reviewed repository, this setting is required: use the
+record's `host_artifact_dir`, outside that repository. Ignored output inside managed
 workspaces prevents safe cleanup. Set the environment variable for the check and
 restore its prior value afterward; include it in worker instructions.
 
-Tests run directly from the selected linked worktree and build using its current
-container files; lifecycle/helper commands remain in the primary checkout.
+Tests capture the selected checkout, including independent managed repositories
+and conventional linked worktrees, and build using its current container files.
+Lifecycle/helper commands remain in the primary checkout.
 Keep logs, image/tool identities,
 source manifests, screenshots and comparison reports, including failures. A partial
 or interrupted run is not a pass. Inspect warnings as well as PASS/FAIL/BLOCKED.
@@ -107,22 +110,30 @@ Lifecycle and helper operations currently require the primary checkout with its 
 `.git` directory; isolated tests also support linked checkouts. These operations
 use explicit writable host mounts because they
 intentionally change the checkout or its managed workspaces. Review records use
-portable path identities; new managed worktrees require Git supporting relative
-worktree links on the host and in the image. Legacy schema-1 reviews remain intact;
-container execution must not silently reinterpret their absolute paths. The agent
-can run `review migrate ID` for a completed, cleaned legacy review. Migration
-validates ownership, retained refs, adoption and independent evidence, preserves a
-`record.native-v1.json` backup, and writes portable identities. Active legacy
-reviews or retained managed workspaces must finish and clean up in the original
-environment first. An unfinished legacy review on the current branch prevents a
-duplicate review; unrelated historical records do not block new tasks.
+portable path identities and an explicit workspace backend. New review and variant
+workspaces are independent repositories created through offline Git bundles. Each
+has a complete `.git` directory and its own objects, with no alternates, hardlinks
+or linked-worktree registration. Host and container access the same files through
+explicit mounts without enabling `extensions.relativeWorktrees` or changing the
+original repository format. Agents manage creation, commit transfer and cleanup;
+PMs do not need to learn these operations.
+
+Legacy linked-worktree records remain distinct and intact. Do not reinterpret them
+as independently owned repositories, delete them automatically, or remove a Git
+extension while linked worktrees still depend on it. Follow the helper's reported
+legacy constraints and the [review recovery rules](pre-pr-review.md#recovery-and-legacy-records).
+The path-only `review migrate ID` operation remains limited to completed, cleaned
+native records and retains its backup; it cannot convert an active linked workspace.
+An unrelated historical record must not become ownership proof for a new workspace.
 
 Review JSON exposes `host_artifact_dir`, `host_original_checkout`, and each
 workspace's `host_path` for the coordinating agent to edit files or author evidence
 on the host. Existing raw path fields identify in-container execution paths.
 The lifecycle launcher accepts absolute host `--verification` and `--file` paths
-and maps them into the validated mounts. Variant worktrees also use relative Git
-links so host agents can work in them.
+and maps them into the validated mounts. Host agents can edit and commit in each
+independent repository using their normal Git. Reviewed commits return through an
+offline export and guarded ref update before fast-forward adoption; variants keep
+their existing local merge policy.
 
 Lifecycle helpers carry effective host Git identity, line-ending and signing settings plus explicit author/committer overrides into the container; global Git config files and signing credentials are not mounted.
 

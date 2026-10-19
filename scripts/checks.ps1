@@ -79,6 +79,9 @@ try {
         if (-not (Test-Path -LiteralPath (Join-Path $Root '.git') -PathType Container)) {
             Blocked 'Lifecycle/helper commands require the primary checkout with its own .git directory; isolated tests support linked checkouts.'
         }
+        if (Get-Item -LiteralPath (Join-Path $Root '.git/moneybuddy-managed.json') -Force -ErrorAction SilentlyContinue) {
+            Blocked 'Run lifecycle/helpers from the primary task checkout; managed checkouts are for editing and isolated checks.'
+        }
         $Name = [System.IO.Path]::GetFileName($Root)
         $ReviewRoot = $Root + '-reviews'
         if (Test-Path -LiteralPath $ReviewRoot) {
@@ -86,21 +89,11 @@ try {
             if (-not $Item.PSIsContainer -or ($Item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) { Blocked 'Review directory is an alias or unexpected file; preserved.' }
         } else { [void][System.IO.Directory]::CreateDirectory($ReviewRoot) }
         if ($Command -eq 'review') {
-            $SavedPreference = $ErrorActionPreference
-            $ErrorActionPreference = 'Continue'
-            try { $GitHelp = (& git worktree add -h 2>&1) -join "`n" } finally { $ErrorActionPreference = $SavedPreference }
-            if ($GitHelp -notmatch 'relative-paths') { Blocked 'Review needs host Git with relative worktree support (Git 2.48+). Upgrade Git before starting a container review.' }
             $Script = 'pre-pr-review'
         } else {
             if ($CommandArgs.Count -eq 0 -or $CommandArgs[0] -notin @('flows','local-variants','publish')) { Blocked 'helper expects flows, local-variants, or publish.' }
             $Script = $CommandArgs[0]
             $CommandArgs = @($CommandArgs | Select-Object -Skip 1)
-            if ($Script -eq 'local-variants') {
-                $SavedPreference = $ErrorActionPreference
-                $ErrorActionPreference = 'Continue'
-                try { $GitHelp = (& git worktree add -h 2>&1) -join "`n" } finally { $ErrorActionPreference = $SavedPreference }
-                if ($GitHelp -notmatch 'relative-paths') { Blocked 'Variants need host Git with relative worktree support (Git 2.48+).' }
-            }
         }
         # Forward only effective identity/checkout/signing policy, never credentials.
         $GitEnv = @()

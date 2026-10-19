@@ -42,23 +42,18 @@ fi
 
 if [[ $MODE == review || $MODE == helper ]]; then
   [[ -d .git ]] || fail 'Lifecycle/helper commands currently require the primary checkout with its own .git directory; linked checkouts remain supported for isolated tests.'
+  [[ ! -e .git/moneybuddy-managed.json && ! -L .git/moneybuddy-managed.json ]] || fail 'Run lifecycle/helpers from the primary task checkout; managed checkouts are for editing and isolated checks.'
   NAME=${ROOT##*/}
   HOST_REVIEWS="${HOST_ROOT}-reviews"
-  # A separate bounded mount lets review worktrees keep their relative Git links.
+  # A separate bounded mount contains independent managed review repositories.
   docker run --rm --platform linux/amd64 --network none --user "$RUN_UID" --mount "type=bind,source=${HOST_ROOT%/*},target=/parent" --entrypoint python3 "$IMAGE" -c 'import pathlib,sys; p=pathlib.Path("/parent")/(sys.argv[1]+"-reviews");
 if p.is_symlink(): raise SystemExit("Refusing symlink review directory")
 p.mkdir(exist_ok=True)' "$NAME" || exit 2
   if [[ $MODE == review ]]; then
-    GIT_HELP=$(git worktree add -h 2>&1 || true)
-    [[ $GIT_HELP == *relative-paths* ]] || fail 'Review needs host Git with relative worktree support (Git 2.48+). Upgrade Git before starting a container review.'
     SCRIPT=pre-pr-review
   else
     SCRIPT=${1:-}
     case "$SCRIPT" in flows|local-variants|publish) shift ;; *) fail 'helper expects flows, local-variants, or publish.' ;; esac
-    if [[ $SCRIPT == local-variants ]]; then
-      GIT_HELP=$(git worktree add -h 2>&1 || true)
-      [[ $GIT_HELP == *relative-paths* ]] || fail 'Variants need host Git with relative worktree support (Git 2.48+).'
-    fi
   fi
   # Carry effective author/checkout policy without mounting host credentials.
   GIT_ENV=()

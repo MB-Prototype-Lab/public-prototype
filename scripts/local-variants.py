@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Agent-operated local comparisons of the full app or one Flow. No network operations or recursive discovery."""
 import argparse
+import importlib.util
 import json
 import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -10,6 +11,64 @@ from urllib.parse import quote
 import subprocess
 import sys
 import uuid
+
+
+_spec = importlib.util.spec_from_file_location('managed_checkout', Path(__file__).with_name('managed-checkout.py'))
+managed = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(managed)
+BACKEND = 'independent-v1'
+
+
+def independent(variant):
+    backend = variant.get('backend', 'worktree')
+    if backend not in ('worktree', BACKEND):
+        raise RuntimeError('Unknown variant checkout backend; preserve the session')
+    return backend == BACKEND
+
+
+def owner(variant):
+    return {'kind': 'local-variants', 'id': variant['owner'], 'role': variant['id']}
+
+
+def create_checkout(root, state, variant):
+    path = location(root, variant, state['branch'])
+    ref = 'refs/heads/' + variant['branch']
+    refs = git(root, 'for-each-ref', '--format=%(refname)', ref).splitlines()
+    if ref in refs:
+        if git(root, 'rev-parse', ref) != state['checkpoint']:
+            raise RuntimeError('Interrupted variant branch advanced; preserve and inspect it')
+    else:
+        git(root, 'update-ref', ref, state['checkpoint'], '0' * len(state['checkpoint']))
+    managed.create(root, path, [ref], state['checkpoint'], 'refs/heads/' + variant['branch'], owner(variant))
+    variant['created'] = True
+    save(root, state)
+
+
+def sync_variant(root, state, variant):
+    """Import objects offline, then advance only the ref reserved by this session."""
+    path = location(root, variant, state['branch'])
+    head = managed.validate(path, owner(variant), 'refs/heads/' + variant['branch'])
+    ref = 'refs/heads/' + variant['branch']
+    previous = variant['imported']
+    current_ref = git(root, 'rev-parse', ref)
+    if current_ref != previous:
+        if current_ref != variant.get('import_pending'):
+            raise RuntimeError('Retained variant branch changed outside this session; preserve it')
+        previous = current_ref
+    if any(branch == ref for branch in records(root).values()):
+        raise RuntimeError('Retained variant branch is checked out elsewhere; preserve it')
+    imported = managed.import_objects(path, root, ref)
+    if imported != head:
+        raise RuntimeError('Variant changed during import; retry after inspecting it')
+    git(root, 'merge-base', '--is-ancestor', state['checkpoint'], imported)
+    git(root, 'merge-base', '--is-ancestor', previous, imported)
+    variant['import_pending'] = imported
+    save(root, state)
+    git(root, 'update-ref', ref, imported, previous)
+    variant['imported'] = imported
+    variant.pop('import_pending', None)
+    save(root, state)
+    return imported
 
 
 def browser_url(path, distro=None):
@@ -177,15 +236,6 @@ def git(root, *args):
     return result.stdout.strip()
 
 
-def worktree_options(root):
-    if not os.environ.get('MB_HOST_ROOT'):
-        return []
-    result = subprocess.run(['git', '-C', str(root), 'worktree', 'add', '-h'], capture_output=True, text=True)
-    if 'relative-paths' not in result.stdout + result.stderr:
-        raise RuntimeError('Container comparisons require Git with worktree --relative-paths support; rebuild the checks image')
-    return ['--relative-paths']
-
-
 def atomic(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + '.tmp')
@@ -255,9 +305,12 @@ def location(root, variant, task_branch):
 
 def valid(root, variant, task_branch):
     path = location(root, variant, task_branch)
-    registered = records(root).get(str(path))
     if not path.exists():
         return False
+    if independent(variant):
+        managed.validate(path, owner(variant), 'refs/heads/' + variant['branch'])
+        return True
+    registered = records(root).get(str(path))
     if registered != 'refs/heads/' + variant['branch']:
         raise RuntimeError('Worktree registration/branch mismatch: ' + str(path))
     return True
@@ -341,9 +394,10 @@ def run(root, args):
         checkpoint(root, args.file, 'Checkpoint local comparison task files')
         commit = git(root, 'rev-parse', 'HEAD')
         target = flow_at(root, flow, commit) if flow is not None else {'kind': 'app'}
-        state = {'id': ident, 'root': str(root), 'branch': branch, 'checkpoint': commit, 'target': target, 'status': 'creating', 'variants': []}
+        state = {'id': ident, 'root': str(root), 'branch': branch, 'checkpoint': commit, 'target': target, 'status': 'creating', 'backend': BACKEND, 'variants': []}
         for vid, (label, description) in zip(names, args.option):
-            variant = {'id': vid, 'label': label, 'description': description, 'branch': variant_branch(branch, vid)}
+            variant = {'id': vid, 'label': label, 'description': description, 'branch': variant_branch(branch, vid),
+                       'backend': BACKEND, 'owner': ident, 'imported': commit}
             path = location(root, variant, state['branch'])
             if path.exists() or 'refs/heads/' + variant['branch'] in git(root, 'for-each-ref', '--format=%(refname)', 'refs/heads').splitlines():
                 raise RuntimeError('Variant branch/path collision')
@@ -352,7 +406,7 @@ def run(root, args):
         atomic(active, ident)
         # Save the entire creation intent first so failures remain recoverable.
         for variant in state['variants']:
-            git(root, 'worktree', 'add', *worktree_options(root), '-b', variant['branch'], str(location(root, variant, state['branch'])), state['checkpoint'])
+            create_checkout(root, state, variant)
         state['status'] = 'active'
     elif state is None:
         raise RuntimeError('No comparison registered')
@@ -362,17 +416,27 @@ def run(root, args):
                 raise RuntimeError('--resume only applies to interrupted creation')
             for variant in state['variants']:
                 if valid(root, variant, state['branch']):
+                    if independent(variant) and (git(location(root, variant, state['branch']), 'rev-parse', 'HEAD') != state['checkpoint'] or
+                                                 git(root, 'rev-parse', variant['branch']) != state['checkpoint']):
+                        raise RuntimeError('Interrupted variant branch advanced; preserve and inspect it')
                     continue
                 path = location(root, variant, state['branch'])
+                if independent(variant):
+                    if variant.get('created'):
+                        raise RuntimeError('Created variant checkout is missing; preserve its session and retained branch')
+                    create_checkout(root, state, variant)
+                    continue
+                if os.environ.get('MB_HOST_ROOT'):
+                    raise RuntimeError('Resume legacy worktrees from their original host environment')
                 if str(path) in records(root):
                     raise RuntimeError('Missing registered worktree; repair Git registration before resuming')
                 branches = git(root, 'for-each-ref', '--format=%(refname)', 'refs/heads').splitlines()
                 if 'refs/heads/' + variant['branch'] in branches:
                     if git(root, 'rev-parse', variant['branch']) != state['checkpoint']:
                         raise RuntimeError('Interrupted variant branch advanced; preserve and inspect it')
-                    git(root, 'worktree', 'add', *worktree_options(root), str(path), variant['branch'])
+                    git(root, 'worktree', 'add', str(path), variant['branch'])
                 else:
-                    git(root, 'worktree', 'add', *worktree_options(root), '-b', variant['branch'], str(path), state['checkpoint'])
+                    git(root, 'worktree', 'add', '-b', variant['branch'], str(path), state['checkpoint'])
         if state['status'] == 'creating' and all(valid(root, v, state['branch']) for v in state['variants']):
             state['status'] = 'active'
     elif args.command == 'close':
@@ -395,7 +459,9 @@ def run(root, args):
             clean(root)
             checkpoint(path, args.file, 'Complete local variant for adoption')
             clean(path)
-            adopt_scope(root, state, variant)
+            adopt_scope(path if independent(variant) else root, state, variant)
+            if independent(variant):
+                sync_variant(root, state, variant)
             if args.verified:
                 if state['status'] not in ('merging', 'verification'):
                     raise RuntimeError('Merge and verify before closing adoption')
@@ -413,8 +479,21 @@ def run(root, args):
             for variant in selected:
                 if valid(root, variant, state['branch']):
                     clean(location(root, variant, state['branch']))
-                    git(root, 'worktree', 'remove', str(location(root, variant, state['branch'])))
+                    if independent(variant):
+                        head = sync_variant(root, state, variant)
+                        variant['cleanup_pending'] = {'head': head, 'owner': owner(variant), 'branch': variant['branch']}
+                        save(root, state)
+                        managed.remove(location(root, variant, state['branch']), owner(variant), head, 'refs/heads/' + variant['branch'],
+                                       allowed_ignored={'.local-preview/return.js': b'window.MB_LOCAL_RETURN = {"href": "../../index.html"};\n'})
+                    else:
+                        git(root, 'worktree', 'remove', str(location(root, variant, state['branch'])))
+                elif independent(variant) and not variant.get('removed'):
+                    pending = variant.get('cleanup_pending')
+                    expected = {'head': variant['imported'], 'owner': owner(variant), 'branch': variant['branch']}
+                    if pending != expected or git(root, 'rev-parse', 'refs/heads/' + variant['branch']) != pending['head']:
+                        raise RuntimeError('Variant checkout is missing without matching cleanup intent and retained ref; retain its session for recovery')
                 variant['removed'] = True
+                variant.pop('cleanup_pending', None)
                 save(root, state)
     save(root, state)
     # Archived cleanup must not replace a newer comparison's manifest.
@@ -452,12 +531,12 @@ def main():
         common = (root / common).resolve()
         if common != root / '.git':
             raise RuntimeError('Run from the primary checkout; nested comparisons are not supported')
+        if args.command not in ('url', 'status') and os.path.lexists(root / '.git/moneybuddy-managed.json'):
+            raise RuntimeError('Run mutations from the primary checkout; managed review and variant checkouts cannot create nested comparisons')
         if args.session and args.command not in ('status', 'cleanup'):
             raise RuntimeError('--session is only for status or cleanup')
         if args.command == 'url':
             return 0 if show_browser_urls(root, distro=args.wsl_distro) else 1
-        if args.command == 'create' or (args.command == 'refresh' and args.resume):
-            worktree_options(root)  # Preflight before writing metadata or checkpointing.
         directory = root / '.local-preview'
         directory.mkdir(exist_ok=True)
         if directory.is_symlink():

@@ -21,6 +21,7 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 
+DEFAULT_BACKEND = 'independent-v1'
 SCHEMA = 1
 CONTAINER_RECORD_SCHEMA = 2
 PATH_FIELDS = frozenset(('repository', 'original_checkout', 'artifact_dir', 'path',
@@ -36,6 +37,32 @@ GIT_OPERATION_MARKERS = ('MERGE_HEAD', 'MERGE_MSG', 'MERGE_MODE', 'MERGE_AUTOSTA
 
 class Refusal(RuntimeError):
     pass
+
+
+_helper_spec = importlib.util.spec_from_file_location('managed_checkout', Path(__file__).with_name('managed-checkout.py'))
+managed = importlib.util.module_from_spec(_helper_spec)
+_previous_bytecode = sys.dont_write_bytecode
+try:
+    sys.dont_write_bytecode = True
+    _helper_spec.loader.exec_module(managed)
+finally:
+    sys.dont_write_bytecode = _previous_bytecode
+
+
+def independent(record):
+    return record.get('workspace_backend') == 'independent-v1'
+
+
+def owner(record, role):
+    return {'kind': 'pre-pr-review', 'id': record['id'], 'role': role,
+            'token': record['workspace_token']}
+
+
+def managed_call(function, *args):
+    try:
+        return function(*args)
+    except managed.ManagedCheckoutError as error:
+        raise Refusal(str(error)) from error
 
 
 def run(root, *args, env=None, input=None, check=True):
@@ -198,14 +225,6 @@ class Store:
                 result['host_' + key] = str(self.host_path(Path(path)))
         return result
 
-    def relative_worktrees(self):
-        if self.host_root:
-            help_result = run(self.root, 'worktree', 'add', '-h', check=False)
-            if b'relative-paths' not in help_result.stdout + help_result.stderr:
-                raise Refusal('Container reviews require Git with worktree --relative-paths support; rebuild the checks image')
-            return ['--relative-paths']
-        return []
-
     def artifact_path(self, ident):
         if not isinstance(ident, str) or not IDENT.fullmatch(ident):
             raise Refusal('Invalid explicit review ID')
@@ -326,6 +345,10 @@ class Store:
     def validate_record(self, record, directory=None):
         if not isinstance(record, dict):
             raise Refusal('Review record must be a JSON object')
+        if record.get('workspace_backend') not in (None, 'legacy-worktree', 'independent-v1'):
+            raise Refusal('Unknown workspace backend; retained')
+        if independent(record) and not re.fullmatch(r'[0-9a-f]{32}', record.get('workspace_token', '')):
+            raise Refusal('Missing independent workspace ownership token')
         if record.get('phase') not in ('creating', 'ready', 'adopting', 'completed', 'superseded'):
             raise Refusal('Missing or invalid lifecycle phase; record retained')
         if not isinstance(record.get('description'), str) or not record['description'].strip():
@@ -482,6 +505,11 @@ def clean(root, ignored=False):
     return not run(root, *args).stdout
 
 
+def legacy_mutation_guard(store, record):
+    if store.host_root and not independent(record) and any(os.path.lexists(w['path']) for w in record['workspaces'].values()):
+        raise Refusal('Legacy linked review workspaces require cleanup in their original environment; no automatic independent migration')
+
+
 def no_writers(record):
     active = [key for key, worker in record['workers'].items() if worker.get('state') != 'stopped']
     if active:
@@ -495,7 +523,18 @@ def refs_valid(store, record):
     if sha(store.root, record['checkpoint_ref']) != record['finished']:
         raise Refusal('Checkpoint ref moved; preserve and inspect')
     reviewed = sha(store.root, record['review_ref'])
-    if run(store.root, 'merge-base', '--is-ancestor', record['finished'], reviewed, check=False).returncode:
+    if independent(record) and reviewed != record.get('retained_review', record['finished']):
+        intent = record.get('review_import') or {}
+        if (intent.get('from') != record.get('retained_review', record['finished'])
+                or intent.get('to') != reviewed):
+            raise Refusal('Retained review ref changed outside the lifecycle; preserved')
+    history_root = store.root
+    if independent(record) and record['phase'] not in TERMINAL:
+        path = Path(record['workspaces']['review']['path'])
+        if path.exists():
+            reviewed = workspace_valid(store, record, 'review', require_clean=False)
+            history_root = path
+    if run(history_root, 'merge-base', '--is-ancestor', record['finished'], reviewed, check=False).returncode:
         raise Refusal('Review no longer descends from the finished checkpoint')
     return reviewed
 
@@ -503,6 +542,15 @@ def refs_valid(store, record):
 def workspace_valid(store, record, role, expected=None, require_clean=True, ignored=False):
     workspace = record['workspaces'][role]
     path = Path(workspace['path'])
+    if independent(record):
+        current = managed_call(managed.validate, path, owner(record, role), record['review_ref'] if role == 'review' else None)
+        if expected and current != expected:
+            raise Refusal('Managed workspace HEAD mismatch: ' + str(path))
+        if require_clean:
+            no_git_operation(path)
+            if not clean(path, ignored):
+                raise Refusal('Managed workspace has local content including ignored files: ' + str(path))
+        return current
     registration = registrations(store.root).get(str(path))
     if not path.is_dir() or not registration:
         raise Refusal('Managed workspace absent or unregistered: ' + str(path))
@@ -731,6 +779,8 @@ def reconcile_absent_workspace(store, record, role, expected, registration):
 
 
 def create_workspaces(store, record):
+    if store.host_root and not independent(record):
+        raise Refusal('Legacy linked review creation requires its original environment; no automatic migration')
     reviewed = refs_valid(store, record)
     for role, expected in (('baseline', record['finished']), ('review', reviewed)):
         workspace = record['workspaces'][role]
@@ -749,10 +799,16 @@ def create_workspaces(store, record):
         no_writers(record)
         # Exact paths were durably recorded before even creating the parent.
         path.parent.mkdir(parents=True, exist_ok=True)
-        if role == 'baseline':
-            git(store.root, 'worktree', 'add', *store.relative_worktrees(), '--detach', str(path), expected)
+        if independent(record):
+            if workspace.get('created'):
+                raise Refusal('Independent workspace disappeared; committed or uncommitted work may be lost; retained record requires inspection')
+            managed_call(managed.create, store.root, path,
+                         ['refs/heads/main', record['checkpoint_ref'], record['review_ref']], expected,
+                         record['review_ref'] if role == 'review' else None, owner(record, role))
+        elif role == 'baseline':
+            git(store.root, 'worktree', 'add', '--detach', str(path), expected)
         else:
-            git(store.root, 'worktree', 'add', *store.relative_worktrees(), str(path), record['review_ref'].removeprefix('refs/heads/'))
+            git(store.root, 'worktree', 'add', str(path), record['review_ref'].removeprefix('refs/heads/'))
         workspace['created'] = True
         workspace['metadata_dir'] = str(Path(git(path, 'rev-parse', '--absolute-git-dir')).resolve())
         if workspace.get('recovery'):
@@ -790,7 +846,8 @@ def allocate_identity(store):
 
 
 def start(store, args):
-    store.relative_worktrees()  # Fail before creating a checkpoint or any review state.
+    if os.path.lexists(store.common / 'moneybuddy-managed.json'):
+        raise Refusal('Start reviews from the original checkout, not a managed review repository')
     no_git_operation(store.root)
     if not args.description.strip():
         raise Refusal('Description must identify the finished task')
@@ -842,9 +899,13 @@ def start(store, args):
                 entry = existing['workspaces'][role]
                 if os.path.lexists(entry['path']) or str(Path(entry['path'])) in registrations(store.root):
                     expected = existing['finished'] if role == 'baseline' else sha(store.root, existing['review_ref'])
-                    entry['retained_head'] = workspace_valid(store, existing, role, expected, require_clean=False)
+                    entry['retained_head'] = workspace_valid(store, existing, role, None if independent(existing) else expected, require_clean=False)
+                    if role == 'review' and independent(existing):
+                        refs_valid(store, existing)
+                        retain_review(store, existing, entry['retained_head'])
         ident, parent = allocate_identity(store)
         record = {'schema_version': SCHEMA, 'managed_by': 'pre-pr-review.py', 'id': ident,
+                  'workspace_backend': DEFAULT_BACKEND, 'workspace_token': uuid.uuid4().hex,
                   'repository': store.repo, 'original_checkout': str(store.root),
                   'original_branch': original_branch, 'description': args.description.strip(),
                   'scopes': scopes, 'selected_files': selected,
@@ -927,6 +988,7 @@ def refresh_verification(store, record):
 
 
 def resume(store, record):
+    legacy_mutation_guard(store, record)
     no_writers(record)
     if record.get('checkpoint_intent'):
         finish_checkpoint(store, record)
@@ -936,6 +998,10 @@ def resume(store, record):
     if record['phase'] == 'creating':
         ensure_refs(store, record)
     refs_valid(store, record)
+    if independent(record) and record.get('review_import'):
+        target = record['review_import']['to']
+        workspace_valid(store, record, 'review', target, require_clean=False)
+        retain_review(store, record, target)
     reconcile_predecessor(store, record)
     if record['phase'] == 'adopting':
         recover_adoption(store, record)
@@ -959,8 +1025,11 @@ def resume(store, record):
 
 def changed_paths(store, record, reviewed):
     names = set()
+    history_root = store.root
+    if independent(record) and record['phase'] not in TERMINAL and Path(record['workspaces']['review']['path']).is_dir():
+        history_root = Path(record['workspaces']['review']['path'])
     for base, head in ((record['comparison_base'], record['finished']), (record['finished'], reviewed)):
-        names.update(name for name in run(store.root, 'diff', '--name-only', '--no-renames', '-z', base, head).stdout.decode('utf-8', errors='surrogateescape').split('\0') if name)
+        names.update(name for name in run(history_root, 'diff', '--name-only', '--no-renames', '-z', base, head).stdout.decode('utf-8', errors='surrogateescape').split('\0') if name)
     return sorted(names)
 
 
@@ -1175,6 +1244,37 @@ def original_valid(store, record, expected):
         raise Refusal('Original checkout has staged, unstaged or untracked content; preserve it before adoption')
 
 
+def retain_review(store, record, reviewed):
+    if not independent(record):
+        return
+    if any(entry.get('branch') == record['review_ref'] for entry in registrations(store.root).values()):
+        raise Refusal('Retained review branch is checked out elsewhere; import withheld')
+    workspace_valid(store, record, 'review', reviewed, require_clean=False)
+    if managed_call(managed.import_objects, Path(record['workspaces']['review']['path']), store.root, record['review_ref']) != reviewed:
+        raise Refusal('Review advanced during object export; import withheld')
+    previous = record.get('retained_review', record['finished'])
+    current = sha(store.root, record['review_ref'])
+    pending = record.get('review_import')
+    if pending and pending != {'from': previous, 'to': reviewed}:
+        raise Refusal('Interrupted retained-ref import has another target; preserve and inspect')
+    if current == reviewed and (current == previous or pending):
+        record['retained_review'] = reviewed
+        record['review_import'] = None
+        store.save(record)
+        return
+    if current != previous:
+        raise Refusal('Retained review ref changed outside the lifecycle; preserved')
+    record['review_import'] = {'from': previous, 'to': reviewed}
+    store.save(record)
+    if any(entry.get('branch') == record['review_ref'] for entry in registrations(store.root).values()):
+        raise Refusal('Retained review branch is checked out elsewhere; import withheld')
+    workspace_valid(store, record, 'review', reviewed, require_clean=False)
+    git(store.root, 'update-ref', record['review_ref'], reviewed, previous)
+    record['retained_review'] = reviewed
+    record['review_import'] = None
+    store.save(record)
+
+
 def recover_adoption(store, record):
     intent = record.get('adoption')
     if not isinstance(intent, dict) or intent.get('status') != 'intent':
@@ -1196,8 +1296,10 @@ def recover_adoption(store, record):
         original_valid(store, record, record['finished'])
         if refs_valid(store, record) != reviewed:
             raise Refusal('Review moved while resuming adoption')
+        retain_review(store, record, reviewed)
         git(store.root, 'merge', '--ff-only', '--no-overwrite-ignore', reviewed)
     original_valid(store, record, reviewed)
+    retain_review(store, record, reviewed)
     record['reviewed'] = reviewed
     record['verification'] = verified
     record['phase'] = 'completed'
@@ -1209,6 +1311,7 @@ def recover_adoption(store, record):
 
 
 def adopt(store, record, path):
+    legacy_mutation_guard(store, record)
     no_writers(record)
     if record['phase'] == 'completed':
         refresh_verification(store, record)
@@ -1247,6 +1350,7 @@ def adopt(store, record, path):
     repeated = verification(store, record, path, reviewed)
     if repeated['reports'] != verified['reports']:
         raise Refusal('Verification changed immediately before adoption')
+    retain_review(store, record, reviewed)
     git(store.root, 'merge', '--ff-only', '--no-overwrite-ignore', reviewed)
     recover_adoption(store, record)
     cleanup_chain(store, record)
@@ -1278,6 +1382,7 @@ def completed_descendant(store, record):
 
 
 def cleanup_one(store, record):
+    legacy_mutation_guard(store, record)
     if not completed_descendant(store, record):
         raise Refusal('Cleanup requires a successfully completed task (or its eligible superseded review)')
     no_writers(record)
@@ -1303,7 +1408,11 @@ def cleanup_one(store, record):
             record['cleanup'][role] = {'status': 'intent', 'head': expected, 'path': str(path), 'at': now()}
             store.save(record)
             # Never force removal, prune registrations, or remove an unregistered directory.
-            git(store.root, 'worktree', 'remove', str(path))
+            if independent(record):
+                managed_call(managed.remove, path, owner(record, role), expected,
+                             record['review_ref'] if role == 'review' else None)
+            else:
+                git(store.root, 'worktree', 'remove', str(path))
             workspace['removed'] = True
             record['cleanup'][role] = {'status': 'removed', 'at': now()}
         except Refusal as error:
@@ -1354,6 +1463,7 @@ def retry_completed(store, original_branch, exclude=None):
 
 
 def worker(store, record, args):
+    legacy_mutation_guard(store, record)
     if record['phase'] != 'ready':
         raise Refusal('Workers may register only on a ready review')
     if not args.worker_id.strip():
@@ -1443,7 +1553,7 @@ def status_record(store, record):
             result['recovery'] = {'status': 'incomplete-checkpoint', 'reason': 'No trustworthy prepared intent; no old-HEAD review may be created'}
     for role, workspace in record['workspaces'].items():
         try:
-            expected = record['finished'] if role == 'baseline' else sha(store.root, record['review_ref'])
+            expected = record['finished'] if role == 'baseline' else refs_valid(store, record)
             head = workspace_valid(store, record, role, expected, require_clean=False)
             result['observed'][role] = {'head': head, 'clean': clean(Path(workspace['path'])), 'available': True}
         except Refusal as error:

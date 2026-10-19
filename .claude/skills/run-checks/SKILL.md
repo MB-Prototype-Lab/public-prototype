@@ -32,3 +32,8 @@ skills and authorization boundaries. Checks do not authorize those actions.
 When skills changed, also run the
 [targeted skill validator](../../../docs/container-checks.md#targeted-skill-validation)
 inside the image for each edited skill directory.
+
+Use the operator's normal host Git; Git 2.43 is supported. Never install or select a
+parallel newer host Git to bypass a lifecycle guard. New managed workspaces are
+independent repositories; preserve legacy linked-worktree records and follow the
+helper's explicit recovery constraints.

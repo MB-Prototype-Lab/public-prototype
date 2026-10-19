@@ -41,6 +41,8 @@ fresh-context delegation, Git and Docker
 in the operator's chosen environment. Run the [container doctor](container-checks.md)
 to verify the image supplies Python, Node and Chromium. Native Windows and WSL/POSIX are alternatives;
 do not require native Git/Git Bash or a second toolchain for a WSL operator.
+Support the normal host Git 2.43; do not bypass a compatibility failure with a
+temporary or upgraded host Git. The container supplies its own pinned tools.
 Use the [testing prerequisites](testing.md) and distinguish PASS, FAIL and BLOCKED.
 Discover saved records first. If delegation cannot run, record the limitation and
 stop the delegated review; independent safe work can continue, but never replace
@@ -74,7 +76,7 @@ invoking the launcher. It stores captures under `inputs/<run>` and evidence unde
 `reports/<run>` there. Do not use the default `.container-checks` directory inside
 finished/reviewed workspaces: even ignored output prevents safe cleanup. Put this
 setting and the exact host artifact path in each worker packet. Run `all --committed`
-and `compare --committed --base REF` from the intended linked workspace; the
+and `compare --committed --base REF` from the intended managed repository; the
 launcher builds from that workspace's container files and tests its selected HEAD.
 Lifecycle/helper commands stay in the primary checkout. The image sets Python's
 no-bytecode policy and supplies Playwright. Direct every other report/output into
@@ -107,7 +109,12 @@ checkout and named branch, description/scopes, selected files and initial status
 managed workspace paths, required checks, phase, workers, verification, adoption,
 cleanup and predecessor/successor links. Managed workspaces are siblings at
 `<checkout-name>-reviews/<id>/finished` and `.../reviewed`; paths and creation
-intent are saved before creation. Retained refs are
+intent are saved before creation. New workspaces are independent repositories,
+created from offline bundles with complete `.git` directories and owned metadata.
+Records declare `workspace_backend: independent-v1` and an ownership token.
+Their objects are independent: no alternates, hardlinks, linked-worktree links or
+repository-format upgrades. The host's ordinary Git can inspect and commit there.
+Retained refs are
 `refs/heads/checkpoint/pre-pr-<id>` and `refs/heads/review/pre-pr-<id>`. Lifecycle
 phases distinguish creation, ready review, successful completion and supersession;
 operation intents retain interrupted checkpoint, adoption and cleanup state.
@@ -117,7 +124,7 @@ Never infer completion from an existing directory or a previous chat message.
 | --- | --- |
 | `status --json` or `status ID --json` | Read-only discovery and observed workspace/evidence state, filtered to the original checkout/repository. Report corrupt, missing or legacy records without silently overwriting them. |
 | `start --description TEXT --scope app --file PATH --json` | Generate an ID, selectively checkpoint exact complete files, freeze scope and create isolated workspaces. Repeat `--file` and `--scope`; scopes are `app`, `docs`, `tooling`, or `flow:ID`. Omit files when HEAD already is the finished checkpoint. |
-| `resume ID [--import-legacy] --json` | Revalidate record ownership, refs, branch, workspace registrations/HEADs/cleanliness and evidence. Inspect interrupted operations before continuing. |
+| `resume ID [--import-legacy] --json` | Revalidate record ownership, refs, branch, workspace ownership/HEADs/cleanliness and evidence. Inspect interrupted operations before continuing. |
 | `worker ID --role reviewer\|verifier\|fixer --worker-id HOST_ID --state active\|stopped --json` | Record real host worker ownership and lifecycle; immutable roles keep verifier and fixer identities independent. |
 | `url ID --version original\|finished\|reviewed [--wsl-distro NAME] --json` | Resolve an exact available selector preview and its observed identity; see [Preview](#preview). |
 | `adopt ID --verification PATH --json` | Validate independent SHA-bound evidence and original/review workspace guards, then ff-only adopt or complete an independently verified no-fix review. |
@@ -167,7 +174,20 @@ already equals the intended `reviewed`; the latter completes the saved operation
 without merging twice. Any other original state remains untouched. Reconcile an
 already removed workspace with cleanup intent idempotently.
 
-Legacy records are discovery findings, never current ownership proof. Inspect the
+The workspace backend is separate from path encoding: schema 1 uses native paths
+and schema 2 uses portable container paths. Records without a workspace backend
+identify legacy linked worktrees; they are never implicitly converted into
+independent repositories. Native legacy operations retain their original guards.
+Container mutations of active legacy linked workspaces are refused: preserve them
+and finish and clean them in the original compatible environment. Completed,
+already-cleaned portable legacy records remain available for evidence discovery.
+
+`review migrate ID` converts only a completed, cleaned schema-1 review's paths to
+schema 2, after ownership, refs, adoption and evidence checks. It preserves
+`record.native-v1.json` and does not convert an active linked workspace to an
+independent repository. A historical record alone does not authorize cleanup.
+
+Older legacy records are discovery findings, never current ownership proof. Inspect the
 original record, repository, refs, exact registered paths and retained SHAs before
 explicit `resume ID --import-legacy`. Import requires canonical original/ref/sibling
 workspace ownership, retains `record.legacy.json`, drops old verification and
@@ -336,11 +356,14 @@ for browser/host evidence.
 
 Before adoption, stop workers and independently establish every required check,
 coverage and preservation gate above, including no-fix reviews. Immediately recheck
-checkpoint/review refs, exact clean registered reviewed workspace and SHA,
+checkpoint/review refs, exact clean owned reviewed repository and SHA,
 `finished` ancestry, original checkout's recorded branch and its branch ref/HEAD
 exactly equal to `finished`, and a clean original index/worktree including untracked
 files. Never substitute another checkout or branch checked out elsewhere. The
-helper persists adoption intent, revalidates evidence/guards, and runs
+helper imports reviewed commits through an offline export into the original
+repository, validates the exported SHA and ancestry, and updates its retained
+review ref only against the recorded expected value. It persists adoption intent,
+revalidates evidence/guards, and runs
 `git merge --ff-only --no-overwrite-ignore` only when those gates hold. Ignored
 original files may remain when they do not collide with incoming tracked paths;
 Git refuses collisions on both initial adoption and recovery, retaining the
@@ -357,9 +380,11 @@ Successful adoption/no-fix completion automatically removes eligible managed
 finished/reviewed workspaces, including eligible superseded predecessors of the
 completed task. Start/resume and ship retry eligible cleanup; an explicit
 completed-task sweep is also available. Every removal requires recorded path and
-ownership, matching registration/branch/HEAD, no active workers, successful task
-completion and cleanliness including ignored content. Use `git worktree remove`
-without force. Dirty, untracked, ignored, advanced, mismatched, active, legacy or
+ownership, matching backend/branch/HEAD, no active workers, successful task
+completion and cleanliness including ignored content. Before removing an owned
+independent repository, retain its verified commits in the original repository.
+Never apply independent-repository removal to a legacy linked worktree. Dirty,
+untracked, ignored, advanced, mismatched, active, legacy or
 unrelated paths are retained with a reason. Pending reviews remain intact. Cleanup
 is idempotent, preserves refs/evidence and unknown parent contents, and never deletes
 branches or prunes registrations globally. All cleanliness gates conservatively

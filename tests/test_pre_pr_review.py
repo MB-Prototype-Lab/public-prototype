@@ -13,7 +13,7 @@ import sys
 import unittest
 from urllib.parse import quote
 
-from pre_pr_review_fixture import ReviewFixture, SCRIPT
+from pre_pr_review_fixture import LegacyReviewFixture as ReviewFixture, SCRIPT
 
 
 class PrePrReviewTest(unittest.TestCase):

@@ -96,16 +96,14 @@ class ContainerReviewTest(unittest.TestCase):
         with self.assertRaisesRegex(review.Refusal, 'does not match'):
             self.store()
 
-    def test_relative_worktree_capability_checked_before_checkpoint(self):
-        help_result = self.fx.command(['git', 'worktree', 'add', '-h'])
-        if 'relative-paths' in help_result.stdout + help_result.stderr:
-            self.skipTest('Old-Git refusal applies only before relative worktree support')
-        self.fx.env.update(self.env)
-        before = self.fx.git('rev-parse', 'HEAD')
-        self.fx.write('task.txt', 'must not checkpoint on unsupported Git\n')
-        result = self.fx.cli('start', '--description', 'container attempt', '--scope', 'tooling', '--file', 'task.txt', '--json', ok=False)
-        self.assertIn('--relative-paths support', result.stdout)
-        self.assertEqual(self.fx.git('rev-parse', 'HEAD'), before)
+    def test_independent_container_review_never_enables_git_extensions(self):
+        fx = ReviewFixture()
+        self.addCleanup(fx.close)
+        fx.env.update({'MB_HOST_ROOT': str(fx.root), 'MB_CONTAINER_PARENT': str(fx.parent)})
+        record = json.loads(fx.cli('start', '--description', 'compatible Git', '--scope', 'docs', '--json').stdout)
+        self.assertEqual(record['workspace_backend'], 'independent-v1')
+        self.assertNotIn('extensions.', fx.git('config', '--local', '--list'))
+        self.assertEqual(fx.git('status', '--porcelain'), '')
 
     def test_completed_cleaned_native_review_migrates_with_evidence(self):
         self.fx.adopt(self.record)
@@ -166,26 +164,16 @@ class ContainerReviewTest(unittest.TestCase):
             review.migrate_container(store, self.record['id'])
         self.assertEqual(path.read_bytes(), before)
 
-    def test_container_variants_use_relative_worktree_links(self):
-        help_result = self.fx.command(['git', 'worktree', 'add', '-h'])
+    def test_container_variants_use_independent_repositories(self):
         self.fx.env.update(self.env)
         command = ['python3', SCRIPT.with_name('local-variants.py'), 'create', '--option', 'A', 'One option']
-        before = self.fx.git('rev-parse', 'HEAD')
         result = self.fx.command(command)
-        if 'relative-paths' not in help_result.stdout + help_result.stderr:
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn('--relative-paths support', result.stderr)
-            self.assertEqual(self.fx.git('rev-parse', 'HEAD'), before)
-        else:
-            self.assertEqual(result.returncode, 0, result.stderr)
-            pointer = (self.fx.root / '.worktrees/variant-A/.git').read_text().strip().removeprefix('gitdir: ')
-            self.assertFalse(Path(pointer).is_absolute())
-            self.assertIn('file:///C:/PM%20projects/', result.stdout)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.fx.root / '.worktrees/variant-A/.git').is_dir())
+        self.assertNotIn('extensions.', self.fx.git('config', '--local', '--list'))
+        self.assertIn('file:///C:/PM%20projects/', result.stdout)
 
-    def test_relative_review_survives_container_mount_relocation_and_adopts(self):
-        help_result = self.fx.command(['git', 'worktree', 'add', '-h'])
-        if 'relative-paths' not in help_result.stdout + help_result.stderr:
-            self.skipTest('Requires Git with --relative-paths')
+    def test_independent_review_survives_container_mount_relocation_and_adopts(self):
         fx = ReviewFixture()
         self.addCleanup(fx.close)
         host_root = 'C:/PM projects/' + fx.root.name
@@ -210,18 +198,15 @@ class ContainerReviewTest(unittest.TestCase):
         self.assertTrue(adopted['verification']['fresh'])
         self.assertFalse(Path(resumed['workspaces']['review']['path']).exists())
 
-    def test_real_relative_worktrees_when_supported(self):
-        help_result = self.fx.command(['git', 'worktree', 'add', '-h'])
-        if 'relative-paths' not in help_result.stdout + help_result.stderr:
-            self.skipTest('Requires Git with --relative-paths; executed in the checks image')
+    def test_real_independent_repositories(self):
         fx = ReviewFixture()
         self.addCleanup(fx.close)
         fx.env.update({'MB_HOST_ROOT': 'C:/PM projects/' + fx.root.name,
                        'MB_CONTAINER_PARENT': str(fx.parent)})
         record = json.loads(fx.cli('start', '--description', 'Container review', '--scope', 'docs', '--json').stdout)
         for role in ('baseline', 'review'):
-            pointer = (fx.tree(record, role) / '.git').read_text().strip().removeprefix('gitdir: ')
-            self.assertFalse(Path(pointer).is_absolute())
+            self.assertTrue((fx.tree(record, role) / '.git').is_dir())
+            self.assertFalse((fx.tree(record, role) / '.git/objects/info/alternates').exists())
             self.assertEqual(fx.git('rev-parse', 'HEAD', root=fx.tree(record, role)).strip(), record['finished'])
         resumed = json.loads(fx.cli('resume', record['id'], '--json').stdout)
         self.assertEqual(resumed['id'], record['id'])
