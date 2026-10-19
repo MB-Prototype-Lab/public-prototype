@@ -275,6 +275,13 @@ All verified against the raw JSON on 2026-08-07.
 - **Paying a card in full costs nothing.** `lrSimBalance` returns 1 month and $0
   interest when the payment covers the balance, because that is the grace period
   the APR lesson teaches in its own script. It used to charge a month first.
+- **The APR script and its video are keyed by line position.** All seven APR
+  versions keep the same line positions through line 9, so one pause setting
+  (`narration.pauseAfter` in `lessons.json`) and the three cut line maps
+  (`visualTemplate.cardCut` / `figureFree` / `unknownCut`) cover them. Adding,
+  removing or reordering an APR line means updating both, then the sweep's 7k.
+  `{rateLine}` and `{cardName}` resolve in `lessonResolveScript`; the scripts
+  never put "the", "a" or "your" before `{cardName}`.
 - **There are TWO quiz screens.** `quiz` (`screens/quiz.js`) serves the v2
   catalog; `lessonQuiz` (`screens/lesson-outcome.js`) serves v3, and every v3
   lesson including APR goes through that one. Fixing the wrong one changes

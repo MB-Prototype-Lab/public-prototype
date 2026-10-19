@@ -299,7 +299,10 @@ const state = {
     // no generated .wav — which is all of them but interest-builds. While it is
     // set, lpTick's bar is capped inside the current line and only the voice's
     // own `onend` advances the caption, so the two cannot separate.
-    speechDriven:    false
+    speechDriven:    false,
+    // A scripted silence between two lines (lpPauseAfter) while live speech
+    // drives the clock; cleared by lpStopSpeaking on pause, seek and stop.
+    pauseTimer:      null
   },
 
   // Theme — picked from the admin panel, resets on page refresh (D03: no
@@ -1032,7 +1035,7 @@ function resetUserData() {
   state.esfGoal              = null;
   state.esfEvents            = [];
   state.esfSelfReported      = null;
-  state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1, scrubWasPlaying: false };
+  state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1, scrubWasPlaying: false, speechDriven: false, pauseTimer: null };
   state.chat                 = { messages: [], bubbles: [] };
   // Lesson framing answers and the derived visual plan. Without these a reset
   // keeps the last run's figures (and, with LESSON_REUSE_FRAMING on, the lesson

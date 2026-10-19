@@ -509,7 +509,10 @@ Object.keys(LESSON_SCRIPTS).forEach(function (k) {
     ADVICE.forEach(function (re) { if (re.test(line)) scriptHits.push(k); });
   });
 });
-chk(scriptHits.length === 0, "no advice in the 15 lesson scripts", scriptHits.join(", "));
+Object.keys(typeof LESSON_SCRIPT_PARTS === "object" ? LESSON_SCRIPT_PARTS : {}).forEach(function (k) {
+  ADVICE.forEach(function (re) { if (re.test(LESSON_SCRIPT_PARTS[k])) scriptHits.push(k); });
+});
+chk(scriptHits.length === 0, "no advice in the 16 lesson scripts or their swapped-in lines", scriptHits.join(", "));
 
 var duHits = [];
 (DAILY_SCRIPTS.scripts || []).forEach(function (s) {
@@ -898,7 +901,7 @@ var missingScripts = [];
 (LESSONS_V3.lessons || []).forEach(function (l) {
   (l.scriptVariants || []).forEach(function (v) { if (!lessonScriptFor(v.id)) missingScripts.push(v.id); });
 });
-chk(missingScripts.length === 0, "all 15 lesson variants have a script body", missingScripts.join(", "));
+chk(missingScripts.length === 0, "all 16 lesson variants have a script body", missingScripts.join(", "));
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("7b. Unreferenced functions — inventory, not a verdict");
@@ -2235,40 +2238,50 @@ section("7k. APR lesson: questions every time, a picture with no card");
 // A tester who once answered "no card" re-opened APR from Learn: the stored
 // answers skipped the questions, and a run with no card APR drew a blank green
 // stage -- the storyboard needs their rate, and the waveform stand-in is gone
-// (L10). Now Begin always asks, and a no-figure run plays the figure-free cut.
+// (L10). Now Begin always asks, and every version plays its own cut of the
+// beat library: the card cut (figures), the no-card cut and the rate-unknown
+// cut (both figure-free), each timed to that version's own cues.
 if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "undefined") {
   var aprL = LESSONS_V3.lessons.filter(function (l) { return l.id === "apr"; })[0];
-  var ffMap = aprL && aprL.visualTemplate && aprL.visualTemplate.figureFree;
-  var defScript = ffMap && lessonScriptFor(ffMap.script);
-  var inRange = !!(ffMap && defScript) && ffMap.beats.every(function (e) {
-    return e.lines[0] >= 0 && e.lines[1] >= e.lines[0] && e.lines[1] < defScript.length;
-  });
-  chk(inRange, "every line in the no-card cut's map exists in " + (ffMap ? ffMap.script : "its script"));
-
+  var aprVt = aprL && aprL.visualTemplate;
   var k7 = { screen: state.screen, prof: state.lessonProfile, fr: state.lessonFraming };
-  // No card: the plan renders, one beat per map entry, timed to the no-card cues.
-  state.lessonProfile = { apr: { inputs: {}, figure: null, bucket: null, variantId: "apr_default" } };
-  lessonOpenPlayer(aprL, "apr_default");
-  var ffPlan = state.lessonVisualPlan;
-  var ffSb = ffPlan && ffPlan.storyboard;
-  var ffT = lpTimingFor("apr", defScript.length, defScript);
-  var timed = !!ffSb && ffSb.spine.length === ffMap.beats.length &&
-    ffMap.beats.every(function (e, i) {
-      var b = ffSb.spine[i];
-      var to = e.lines[1] + 1 < ffT.cues.length ? ffT.cues[e.lines[1] + 1] / ffT.total : 1;
-      return Math.abs(b.from - ffT.cues[e.lines[0]] / ffT.total) < 1e-9 && Math.abs(b.to - to) < 1e-9;
-    });
-  chk(hyperframesCanRender(ffPlan) && timed,
-      "with no card APR the stage plays the figure-free cut, timed to the no-card script");
-  var ffHtml = hyperframesMarkup(ffSb, ffPlan, ffT.total, {});
-  chk(!/\{\w+\}/.test(ffHtml) && ffHtml.indexOf("\u2014") === -1 && !/your card/i.test(ffHtml),
-      "the figure-free cut shows no unresolved figure, dash or \"your card\"");
+  var k7Ids = {};
+  ((aprVt && aprVt.spine) || []).forEach(function (b) { k7Ids[b.id] = true; });
 
-  // A card: untouched -- the full spine, figures required.
-  state.lessonProfile = { apr: { inputs: { enteredApr: 24 }, figure: 24, bucket: "slightly_above", variantId: "apr_slightly_above" } };
-  lessonOpenPlayer(aprL, "apr_slightly_above");
-  chk(state.lessonVisualPlan.storyboard === aprL.visualTemplate,
-      "a run with a card APR keeps the full storyboard");
+  function k7Cut(label, map, variantId, inputs, figure, bucket, figures) {
+    if (!map) { chk(false, "APR has a " + label); return null; }
+    var script = lessonResolveScript(lessonScriptFor(variantId), inputs);
+    chk(map.beats.every(function (e) {
+      return k7Ids[e.beat] && e.lines[0] >= 0 && e.lines[1] >= e.lines[0] && e.lines[1] < script.length;
+    }), "every beat in the " + label + " is in the library and every line exists in " + variantId);
+    state.lessonProfile = { apr: { inputs: inputs, figure: figure, bucket: bucket, variantId: variantId } };
+    lessonOpenPlayer(aprL, variantId);
+    var plan = state.lessonVisualPlan, sb = plan && plan.storyboard;
+    var t = lpTimingFor("apr", script.length, script);
+    var timed = !!sb && sb.spine.length === map.beats.length && map.beats.every(function (e, i) {
+      var bt = sb.spine[i];
+      var to = e.lines[1] + 1 < t.cues.length ? t.cues[e.lines[1] + 1] / t.total : 1;
+      return Math.abs(bt.from - t.cues[e.lines[0]] / t.total) < 1e-9 && Math.abs(bt.to - to) < 1e-9;
+    });
+    chk(hyperframesCanRender(plan) && timed && sb.requiresFigures === figures,
+        variantId + " plays the " + label + ", timed to its own script" + (figures ? ", figures required" : ", figure-free"));
+    var html = hyperframesMarkup(sb, plan, t.total, {});
+    chk(!/\{\w+\}/.test(html) && html.indexOf("—") === -1,
+        "the " + label + " shows no unresolved token or missing-figure dash");
+    return html;
+  }
+
+  var ffHtml = k7Cut("no-card cut", aprVt && aprVt.figureFree, "apr_default", {}, null, null, false);
+  // Only what is drawn as text; the markup's own CSS has keyframe percentages.
+  var ffText = ffHtml && (ffHtml.match(/<text[^>]*>[^<]*<\/text>/g) || []).join(" ").replace(/<[^>]*>/g, " ");
+  var ffClaim = ffText && ffText.replace(/18–28%/g, "").match(/your card|\d+(\.\d+)?%(?! a)/);
+  chk(!!ffHtml && !ffClaim, "the no-card cut claims no card and plots no rate", ffClaim ? ffClaim[0] : "");
+  k7Cut("rate-unknown cut", aprVt && aprVt.unknownCut, "apr_unknown",
+        { directRate: "other", useAverage: true }, CARD_APR.marketAverage, "about_average", false);
+  var cardHtml = k7Cut("card cut", aprVt && aprVt.cardCut, "apr_slightly_above",
+        { enteredApr: 24 }, 24, "slightly_above", true);
+  chk(!!cardHtml && cardHtml.indexOf("rate you entered") !== -1 && cardHtml.indexOf("24%") !== -1,
+      "a typed rate is plotted and labelled \"rate you entered\", never \"your rate\"");
 
   // Re-open with stored answers: the questions come back.
   state.lessonFraming = null;
@@ -2277,6 +2290,79 @@ if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "u
       "re-opening APR with answers already stored asks the questions again");
 
   state.screen = k7.screen; state.lessonProfile = k7.prof; state.lessonFraming = k7.fr;
+  if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section("7k2. APR lesson: buckets, replay, Skip, and I do / we do / you do");
+
+// The narration says "outside / inside the typical range" and "about level", so
+// the buckets are cut in APR points at the band's own edges (lessonBucketFor).
+// A replay with a different card kept the first run's narration and position
+// (renderLesson resets only on a new lesson id). Skip left the last card's
+// figures under the no-card narration. The order is lesson -> calculator ->
+// quiz -> reward.
+if (typeof lessonBucketFor === "function" && typeof LESSONS_V3 !== "undefined") {
+  var bL = LESSONS_V3.lessons.filter(function (l) { return l.id === "apr"; })[0];
+  var EDGES = [[17.99, "deeply_below"], [18, "slightly_below"], [20.99, "slightly_below"], [21.0, "about_average"],
+               [22.15, "about_average"], [23.3, "about_average"], [23.31, "slightly_above"], [28, "slightly_above"],
+               [28.01, "deeply_above"]];
+  var edgeBad = EDGES.filter(function (e) { return lessonBucketFor(bL, e[0]) !== e[1]; })
+                     .map(function (e) { return e[0] + " -> " + lessonBucketFor(bL, e[0]) + " (want " + e[1] + ")"; });
+  chk(edgeBad.length === 0, "APR buckets cut at 18 / 21.0 / 23.3 / 28 points", edgeBad.join("; "));
+  chk(lessonSelectVariant(bL, [], { directRate: "other", useAverage: true }).id === "apr_unknown" &&
+      lessonSelectVariant(bL, [], {}).id === "apr_default" &&
+      lessonSelectVariant(bL, [], { directRate: "other", useAverage: true, enteredApr: 30 }).id === "apr_deeply_above",
+      "a card with no rate plays apr_unknown; no card plays apr_default; a typed rate wins");
+
+  var r7 = { screen: state.screen, prof: state.lessonProfile, fr: state.lessonFraming, lesson: state.currentLesson,
+             quiz: state.lessonQuiz, sim: state.lessonSim };
+  // Replay: run 1 well below, played to the end; run 2 well above must start over on run 2's lines.
+  state.lessonProfile = { apr: { inputs: { enteredApr: 15 }, figure: 15, bucket: "deeply_below", variantId: "apr_deeply_below" } };
+  lessonOpenPlayer(bL, "apr_deeply_below");
+  renderSafe("lesson");
+  var lp7 = state.lessonPlayback;
+  lp7.index = lp7.sentences.length - 1; lp7.ended = true; lp7.completed = true;
+  if (lp7.timer) { clearInterval(lp7.timer); lp7.timer = null; }
+  state.lessonProfile = { apr: { inputs: { enteredApr: 30 }, figure: 30, bucket: "deeply_above", variantId: "apr_deeply_above" } };
+  lessonOpenPlayer(bL, "apr_deeply_above");
+  renderSafe("lesson");
+  lp7 = state.lessonPlayback;
+  if (lp7.timer) { clearInterval(lp7.timer); lp7.timer = null; }
+  chk(JSON.stringify(lp7.sentences) === JSON.stringify(state.lessonVariantScript) &&
+      lp7.sentences.join(" ").indexOf("well above") !== -1 && lp7.index === 0 && !lp7.ended,
+      "replaying APR with a different card starts over on the new card's lines");
+  if (typeof lpStopSpeaking === "function") lpStopSpeaking();
+
+  // Skip after a card run: the profile is cleared, so no card figure survives.
+  state.lessonFraming = null;
+  lessonV3Start("apr");
+  lessonSkipFraming();
+  var sp = state.lessonProfile.apr;
+  chk(sp && sp.figure == null && !Object.keys(sp.inputs).length && sp.variantId === "apr_default" &&
+      state.lessonVisualPlan.userFigure == null,
+      "Skip clears the last run's card, so the no-card version shows no card figure");
+  if (typeof lpStopSpeaking === "function") lpStopSpeaking();
+
+  // I do -> we do -> you do -> reward.
+  lessonLeavePlayer();
+  var s1 = state.screen;
+  lessonQuizStart();
+  var s2 = state.screen, q7 = state.lessonQuiz;
+  var ownQuiz = !!q7 && q7.questions.length === bL.quiz.length &&
+                q7.questions.every(function (q) { return !!q.why; });
+  if (q7) { q7.index = q7.questions.length - 1; q7.picked = q7.questions[q7.index].correct; }
+  // The reward itself credits XP; only the hand-off is under test here.
+  var realReward = lessonRewardStart, rewarded = false;
+  lessonRewardStart = function () { rewarded = true; };
+  lessonQuizNext();
+  lessonRewardStart = realReward;
+  chk(s1 === "lessonSimulation" && s2 === "lessonQuiz" && ownQuiz && rewarded,
+      "APR runs lesson -> calculator -> its own quiz (with reasons) -> reward",
+      s1 + " -> " + s2 + " -> " + (rewarded ? "reward" : state.screen));
+
+  state.screen = r7.screen; state.lessonProfile = r7.prof; state.lessonFraming = r7.fr;
+  state.currentLesson = r7.lesson; state.lessonQuiz = r7.quiz; state.lessonSim = r7.sim;
   if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
 }
 

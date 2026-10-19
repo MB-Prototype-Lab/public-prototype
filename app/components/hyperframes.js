@@ -26,6 +26,8 @@
 // or `{ id, from, to, slot: "bucket" }` to splice in the segment for the current
 // outcome. Coordinates live in a 100 x 72 viewBox, so everything is relative.
 // Labels carry {tokens} that resolve against the caller's data.
+// Lesson storyboards arrive already cut: lessonCutStoryboard (js/lessons-v3.js)
+// maps a lesson's beat library to its script lines and times each beat.
 
 const HF_VIEW_W = 100;
 const HF_VIEW_H = 72;
@@ -70,16 +72,18 @@ function hfGapPhrase(user, avg) {
  * A rate difference in percentage points is not a felt quantity. The same gap
  * in dollars is.
  *
- * Per $1,000 carried for a year at simple annual interest — the honest way to
- * say it, since anything cleverer implies a repayment schedule nobody has
- * given us. The visual carries the condition ("only on what you carry"); the
- * script stays figure-free.
+ * Per $1,000 carried a full year with nothing paid, compounded monthly --
+ * exactly the mechanics the lesson has just taught: a monthly slice of the APR,
+ * then interest on that interest. Simple interest here contradicted the line
+ * before it. Whole dollars, because the screen says "about". The narration
+ * says "carried a full year"; the script stays figure-free.
  */
 const HF_PER_BALANCE = 1000;
 
 function hfDollarsOn(rate) {
   if (rate == null || !isFinite(rate)) return null;
-  return (Number(rate) / 100) * HF_PER_BALANCE;
+  const monthly = Number(rate) / 100 / 12;
+  return Math.round(HF_PER_BALANCE * (Math.pow(1 + monthly, 12) - 1));
 }
 
 function hfMoney(v) {
@@ -101,6 +105,8 @@ function hfTokens(data) {
     gapPct:    gap == null ? "—" : (gap > 0 ? "+" : "") + gap,
     gapPhrase: hfGapPhrase(data.userFigure, data.marketAvg),
     cardName:  data.cardName || "your card",
+    // What the plotted figure is: the picked card's usual rate, or theirs typed.
+    rateLabel: data.rateLabel || "usual rate",
     perBalance:  hfMoney(HF_PER_BALANCE),
     dollarsUser: hfMoney(dUser),
     dollarsAvg:  hfMoney(dAvg),
@@ -295,6 +301,9 @@ function hfScale(el, data, uid, n, beat, totalSec) {
   // below the thing it labelled and under the end labels, which is why it read
   // as sitting outside the chart.
   const yUserLabel = y - 6.2;
+  // The dot says WHAT it is ("usual rate" / "rate you entered") just above its
+  // figure, so the narration's "this one" can never read as the learner's own.
+  const yRateLabel = y - 10.6;
   const yBandCap   = y - 13.5;
   const yAvgLabel  = y + 8.4;
   const yEnds      = y + 14.5;
@@ -307,7 +316,7 @@ function hfScale(el, data, uid, n, beat, totalSec) {
       <rect x="${xLo}" y="${y - 3.1}" width="${Math.max(0.6, xHi - xLo)}" height="6.2" rx="3.1"
             fill="${ink}" opacity=".2"/>
       <line x1="${x}" y1="${y}" x2="${x + w}" y2="${y}" stroke="${ink}" stroke-width=".45" opacity=".45"/>
-      <text x="${x}" y="${yBandCap}" font-size="3.1" text-anchor="start" fill="${ink}" opacity=".62">cards like yours</text>
+      <text x="${x}" y="${yBandCap}" font-size="3.1" text-anchor="start" fill="${ink}" opacity=".62">typical range</text>
       <text x="${xLo}" y="${yEnds}" font-size="3.1" text-anchor="middle" fill="${ink}" opacity=".62">${hfNum(lo)}%</text>
       <text x="${xHi}" y="${yEnds}" font-size="3.1" text-anchor="middle" fill="${ink}" opacity=".62">${hfNum(hi)}%</text>
       <line x1="${xAvg}" y1="${y - 4.4}" x2="${xAvg}" y2="${y + 4.4}" stroke="${ink}" stroke-width=".7" opacity=".8"/>
@@ -316,6 +325,8 @@ function hfScale(el, data, uid, n, beat, totalSec) {
         <circle cx="${xUser}" cy="${y}" r="2.5" fill="${ink}"/>
         <text x="${xUser}" y="${yUserLabel}" font-size="4.4" text-anchor="${userAnchor}" fill="${ink}"
               font-weight="850">${hfNum(user)}%</text>
+        ${data.rateLabel ? `<text x="${xUser}" y="${yRateLabel}" font-size="2.9" text-anchor="${userAnchor}" fill="${ink}"
+              opacity=".8">${h(data.rateLabel)}</text>` : ""}
       </g>
     </g>`,
     extraCss: `.${markCls}{animation:hfk-${markCls} var(--hf-dur) linear both;transform-box:fill-box;transform-origin:center;}`,

@@ -155,9 +155,10 @@ function lrAwardKibble(award) {
 }
 
 // ── Quiz ─────────────────────────────────────────────────────────────────────
-// lessons.json ships ONE question per lesson, which is thin for a quiz, so v2's
-// 48-question pool tops it up to xpConfig.quizQuestionsRequired (L9). The
-// lesson's own question always comes first — it is the one written for it.
+// lessons.json ships ONE question for most lessons, which is thin for a quiz, so
+// v2's 48-question pool tops it up to xpConfig.quizQuestionsRequired (L9). The
+// lesson's own questions always come first — they are the ones written for it.
+// APR ships all three of its own, so it draws nothing from the pool.
 
 function lrQuizQuestions(lesson) {
   const want = (state.xpConfig && state.xpConfig.quizQuestionsRequired) || 3;
@@ -166,6 +167,7 @@ function lrQuizQuestions(lesson) {
     prompt: q.prompt,
     options: q.options,
     correct: q.correct,
+    why: q.why || null,   // shown once the right option is picked
     source: "lesson"
   }));
   if (own.length >= want) return own.slice(0, want);

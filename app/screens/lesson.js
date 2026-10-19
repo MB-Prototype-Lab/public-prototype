@@ -263,13 +263,29 @@ function lpSpeakCurrent() {
       const l = state.lessonPlayback;
       if (!l || !l.playing || l.index !== idx) return;
       if (idx >= l.sentences.length - 1) { lpEnd(); return; }
-      l.index = idx + 1;
-      l.elapsed = l.cues[l.index] || l.elapsed;
-      l.lastTick = Date.now();
-      lpHighlight(l.index);
-      lpUpdateProgress();
-      lpSyncHyperframes();
-      lpSpeakCurrent();
+      const advance = function () {
+        l.index = idx + 1;
+        l.elapsed = l.cues[l.index] || l.elapsed;
+        l.lastTick = Date.now();
+        lpHighlight(l.index);
+        lpUpdateProgress();
+        lpSyncHyperframes();
+        lpSpeakCurrent();
+      };
+      // A scripted silence after this line (lpPauseAfter): the clock keeps
+      // running inside the line's window, which already includes the pause,
+      // and the next line starts when it ends. Pause, seek and stop cancel it
+      // through lpStopSpeaking; the guard covers anything that slips past.
+      const hold = lpPauseAfter(l.currentLessonId, idx);
+      if (hold > 0) {
+        l.pauseTimer = setTimeout(function () {
+          l.pauseTimer = null;
+          if (!l.playing || l.index !== idx) return;
+          advance();
+        }, (hold * 1000) / (l.speed || 1));
+        return;
+      }
+      advance();
     },
     onError: function () {
       // No voice after all — hand the clock back to the estimate.
@@ -308,6 +324,7 @@ function lpHeld(lp) {
 function lpStopSpeaking() {
   const lp = state.lessonPlayback;
   if (lp) lp.speechDriven = false;
+  if (lp && lp.pauseTimer) { clearTimeout(lp.pauseTimer); lp.pauseTimer = null; }
   if (typeof narrationCancel === "function") narrationCancel();
 }
 
@@ -326,11 +343,28 @@ function lpLineSec(line) {
   return Math.max(LP_MIN_LINE_SEC, (words / wpm) * 60) + LP_LINE_GAP_SEC;
 }
 
+/**
+ * Seconds of silence a lesson scripts after line `idx` (0 when none).
+ *
+ * The APR panel asked for room to absorb two dense stretches -- after "what APR
+ * is" and after the mechanics -- without adding words. The lesson declares them
+ * (lessons.json `narration.pauseAfter`, 0-based line indexes, same positions
+ * in every variant); the cue map and the live voice both honour them.
+ */
+function lpPauseAfter(lessonId, idx) {
+  const lesson = (typeof lessonV3 === "function" && lessonId) ? lessonV3(lessonId) : null;
+  const n = lesson && lesson.narration;
+  return (n && (n.pauseAfter || []).indexOf(idx) !== -1) ? (n.pauseSec || 1) : 0;
+}
+
 /** Cue map from the script itself — cues[i] is when line i starts. */
-function lpCuesFromWords(sentences) {
+function lpCuesFromWords(sentences, lessonId) {
   const cues = [];
   let t = 0;
-  (sentences || []).forEach(line => { cues.push(t); t += lpLineSec(line); });
+  (sentences || []).forEach((line, i) => {
+    cues.push(t);
+    t += lpLineSec(line) + lpPauseAfter(lessonId, i);
+  });
   return { cues, total: Math.max(1, t) };
 }
 
@@ -340,7 +374,7 @@ function lpCuesFromWords(sentences) {
 function lpTimingFor(lessonId, lineCount, sentences) {
   const t = LP_TIMINGS[lessonId];
   if (t && t.cues && t.cues.length === lineCount) return t;
-  return lpCuesFromWords(sentences || []);
+  return lpCuesFromWords(sentences || [], lessonId);
 }
 
 // Index of the line currently being spoken: the last cue whose start ≤ elapsed.
@@ -747,7 +781,7 @@ function renderLesson() {
                       || LP_SCRIPTS[lesson.id]
                       || [
       "This lesson's content will be added soon.",
-      "Tap Next to proceed to the quiz."
+      "Tap Next to continue."
     ];
     const timing       = lpTimingFor(lesson.id, lp.sentences.length, lp.sentences);
     lp.cues            = timing.cues;
@@ -837,7 +871,7 @@ function renderLesson() {
           </div>
           <span id="lp-total" class="lp-time-label">${totalTime}</span>
         </div>
-        <button class="button full" id="lp-next-btn" type="button" onclick="lessonLeaveForQuiz()" ${(state.lessonPlayback.ended || state.lessonPlayback.completed) ? "" : "disabled"}>Next</button>
+        <button class="button full" id="lp-next-btn" type="button" onclick="lessonLeavePlayer()" ${(state.lessonPlayback.ended || state.lessonPlayback.completed) ? "" : "disabled"}>Next</button>
       </div>
 
     </div>
@@ -896,12 +930,13 @@ function renderLessonAdmin() {
 }
 
 
-// v3 (D38): the player's Next leads into the v3 quiz when a v3 lesson is
-// playing, and into v2's quiz otherwise. Keeps both paths alive rather than
-// repointing the button and stranding v2's lessons.
-function lessonLeaveForQuiz() {
-  if (state.lessonVariantId && typeof lessonQuizStart === "function") {
-    lessonQuizStart();
+// v3 (D38): the player's Next continues a v3 lesson into its calculator, then
+// the quiz -- I do, we do, you do (lessonSimStart goes straight to the quiz
+// when a lesson has no calculator). v2's lessons keep their own quiz-first
+// path rather than being repointed and stranded.
+function lessonLeavePlayer() {
+  if (state.lessonVariantId && typeof lessonSimStart === "function") {
+    lessonSimStart();
     return;
   }
   go("quiz");

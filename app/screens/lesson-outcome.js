@@ -1,10 +1,12 @@
 // ─── Lesson quiz · simulation · reward (06-education) ────────────────────────
 // TAB: Education (sub-screens) | NAV BAR: Hidden
 //
-// The tail of a lesson: quiz → simulation → reward. 06-education biases toward
-// the simulation — "a sandbox a user can push numbers through beats a
-// multiple-choice question about what a rate means" — so the quiz is short and
-// the simulation is the part with something to do.
+// The tail of a lesson: simulation → quiz → reward. I do (the narrated lesson),
+// we do (the calculator, with a guided "try this" where the lesson has one),
+// you do (the quiz). 06-education biases toward the simulation — "a sandbox a
+// user can push numbers through beats a multiple-choice question about what a
+// rate means" — so the quiz is short and comes last, checking what the lesson
+// and the sandbox just showed.
 //
 // RETURN ROUTING: came from home, return to home; came from Education, return
 // to Education. The per-stack nav already encodes that, so the reward screen
@@ -69,14 +71,15 @@ function renderLessonQuiz() {
         ${q.picked != null ? `
           <p class="helper" style="margin-top:12px;">
             That's the one. ${LESSONS_V3.badges.xpCorrectAnswer} XP.
-          </p>` : ""}
+          </p>
+          ${item.why ? `<p class="helper" style="margin-top:4px;">${h(item.why)}</p>` : ""}` : ""}
       </div>
 
       <div class="journal-foot">
         <span></span>
         ${q.picked != null
           ? `<button class="button" type="button" onclick="lessonQuizNext()">
-               ${q.index >= q.questions.length - 1 ? "Try the calculator" : "Next"}
+               ${q.index >= q.questions.length - 1 ? "Finish lesson" : "Next"}
              </button>`
           : `<p class="helper" style="margin:0;">Pick the right one to carry on.</p>`}
       </div>
@@ -103,7 +106,7 @@ function lessonQuizNext() {
   // Guard, not just an absent button: this is the only advance path, and it
   // used to be reachable with nothing answered.
   if (q.picked == null) return;
-  if (q.index >= q.questions.length - 1) { lessonSimStart(); return; }
+  if (q.index >= q.questions.length - 1) { lessonRewardStart(); return; }
   q.index++; q.picked = null; q.wrong = [];
   render();
 }
@@ -183,10 +186,12 @@ function lessonSimAvailable(lessonId) {
   return !!lessonSimSpec(lessonId);
 }
 
+/** From the player: the calculator if the lesson has one, else straight to the quiz. */
 function lessonSimStart() {
-  const lesson = lessonV3(state.lessonQuiz ? state.lessonQuiz.lessonId : null);
+  const lesson = lessonV3(state.lessonFraming ? state.lessonFraming.lessonId : null)
+              || lessonV3(state.currentLesson ? state.currentLesson.id : null);
   if (!lesson) { navBack(); return; }
-  lessonSimOpen(lesson.id, "v3");
+  if (!lessonSimOpen(lesson.id, "v3")) lessonQuizStart();
 }
 
 /**
@@ -214,6 +219,11 @@ function lessonSimOpen(lessonId, origin) {
   if (values.apr != null && typeof lessonProfileFigure === "function") {
     const rate = lessonProfileFigure(lessonId);
     if (rate != null) values.apr = lessonSimClamp("apr", rate);
+    // No card rate (no card, Skip): the framing line says "a typical card rate",
+    // so the slider has to open on it rather than on the spec's generic default.
+    else if (spec.seedTypical && typeof CARD_APR !== "undefined") {
+      values.apr = lessonSimClamp("apr", CARD_APR.marketAverage);
+    }
   }
 
   state.lessonSim = {
@@ -290,36 +300,67 @@ function renderLessonSimulation() {
   if (!spec) return lessonOutcomeNoSession("calculator",
     "The calculators come with their lesson, loaded with figures to play with.");
   const type = spec.type;
+  const copy = spec.copy || {};
 
   return `
     <div class="journal-shell">
       <div class="journal-head">
         <h1 class="title" style="font-size:21px;margin:0;">Try it with numbers</h1>
         <p class="helper" style="margin:6px 0 0;">
-          These are made-up figures to play with — not yours.
+          ${h(lessonSimFramingLine(s.lessonId, copy))}
         </p>
       </div>
       <div class="journal-body">
         <!-- Sliders first. They are the thing to touch; the scenarios below are
              shortcuts INTO them, so they read as "or start from one of these"
              rather than as a menu you pick before the calculator appears. -->
-        ${type === "balance_calculator"      ? renderSimBalance(s)   : ""}
+        ${type === "balance_calculator"      ? renderSimBalance(s, copy) : ""}
         ${type === "savings_pace_calculator" ? renderSimSavings(s)   : ""}
         ${type === "subscription_tally"      ? renderSimSubs(s)      : ""}
+        ${renderSimTryThis(copy)}
         ${renderSimScenarios(s, spec)}
       </div>
       <div class="journal-foot">
         <span></span>
-        <!-- Where "Finish" goes depends on which catalog the lesson came from:
-             the v3 reward reads lessonV3(), which has never heard of a v2
-             lesson and would drop it on home without its badge XP. -->
-        <button class="button" type="button"
-                onclick="${s.origin === "v2" ? "completeLesson()" : "lessonRewardStart()"}">
-          Finish lesson
-        </button>
+        <!-- A v3 lesson goes on to its quiz (you do). A v2 lesson arrives here
+             AFTER its quiz, and finishes through completeLesson: the v3 reward
+             reads lessonV3(), which has never heard of a v2 lesson and would
+             drop it on home without its badge XP. -->
+        ${s.origin === "v2"
+          ? `<button class="button" type="button" onclick="completeLesson()">Finish lesson</button>`
+          : `<button class="button" type="button" onclick="lessonQuizStart()">Next</button>`}
       </div>
     </div>
   `;
+}
+
+/**
+ * The line under the title: where the sliders' figures came from. A lesson's
+ * `copy.framing` has one line per source -- the card's usual rate, a rate they
+ * typed, or a typical rate when there is neither -- because the calculator
+ * seeds the APR from the profile and must say so. Without it, the old line.
+ */
+function lessonSimFramingLine(lessonId, copy) {
+  const f = copy && copy.framing;
+  if (!f) return "These are made-up figures to play with — not yours.";
+  const prof = (state.lessonProfile && state.lessonProfile[lessonId]) || {};
+  const inputs = prof.inputs || {};
+  const line = inputs.enteredApr != null ? f.entered
+             : (prof.figure != null && !inputs.useAverage) ? f.usual
+             : f.typical;
+  const name = typeof lessonSpokenCardName === "function" ? lessonSpokenCardName(inputs) : "your card";
+  return String(line || "").replace(/\{cardName\}/g, name);
+}
+
+/** The guided steps (we do), numbered, each ending on what the learner sees. */
+function renderSimTryThis(copy) {
+  const steps = (copy && copy.tryThis) || [];
+  if (!steps.length) return "";
+  return `
+    <div class="section-title" style="margin:18px 0 4px;">Try this</div>
+    <ol class="helper sim-try-this" style="margin:0 0 6px;padding-left:18px;">
+      ${steps.map(t => `<li style="margin:0 0 6px;">${h(t)}</li>`).join("")}
+    </ol>`;
 }
 
 /**
@@ -518,11 +559,15 @@ function lessonSimApplyScenario(i) {
 function renderSimScenarios(s, spec) {
   const set = LESSON_SIM_SCENARIOS[spec.type];
   if (!set) return "";
+  // A lesson may name the three cases itself (APR does: descriptive labels, no
+  // verdicts). The shared labels stay for every other lesson -- owner's call.
+  const copy = spec.copy || {};
+  const labels = copy.scenarioLabels || null;
   return `
     <div class="section-title" style="margin:18px 0 4px;">Three ways it can go</div>
     <p class="helper" style="margin:0 0 8px;font-size:11px;">
-      Tap one to move the sliders there. Your rate stays where you left it, so
-      all three are worked out against it.
+      ${copy.scenariosHelper ? h(copy.scenariosHelper) : `Tap one to move the sliders there. Your rate stays where you left it, so
+      all three are worked out against it.`}
     </p>
     <div class="sim-scenarios">
       ${set.rows.map((row, i) => {
@@ -530,36 +575,39 @@ function renderSimScenarios(s, spec) {
         if (!out) return "";
         // A button, not a card: it sets the sliders, so it has to be reachable
         // by keyboard and announce itself as something you can press.
+        const own = labels && labels[row.kind];
         return `
           <button class="card sim-out sim-scenario sim-scenario-${h(row.tone)}" type="button"
                   onclick="lessonSimApplyScenario(${i})">
-            <span class="sim-scenario-tone">${h(row.label)}</span>
+            <span class="sim-scenario-tone">${h(own || row.label)}</span>
             <span class="sim-scenario-head">${h(out.headline)}</span>
             ${out.sub ? `<span class="sim-scenario-sub">${h(out.sub)}</span>` : ""}
-            <span class="sim-scenario-sub">${h(row.detail)}</span>
+            ${own ? "" : `<span class="sim-scenario-sub">${h(row.detail)}</span>`}
           </button>`;
       }).join("")}
     </div>
-    <p class="helper" style="margin:8px 0 14px;font-size:11px;">
+    ${copy.scenariosNote ? `<p class="helper" style="margin:8px 0 6px;font-size:11px;">${h(copy.scenariosNote)}</p>` : ""}
+    ${labels ? "" : `<p class="helper" style="margin:8px 0 14px;font-size:11px;">
       Labelled by the arithmetic, not by what anyone ought to do.
-    </p>`;
+    </p>`}`;
 }
 
-function renderSimBalance(s) {
+function renderSimBalance(s, copy) {
   const v = s.values;
   const out = lrSimBalance(v);
+  copy = copy || {};
   return `
     ${simSlider("Balance", "balance", v.balance, budgetFmt)}
-    ${simSlider("APR", "apr", v.apr, x => x + "%")}
+    ${simSlider(copy.aprLabel || "APR", "apr", v.apr, x => x + "%")}
     ${simSlider("Monthly payment", "monthlyPayment", v.monthlyPayment, budgetFmt)}
     <div class="card sim-out">
       ${out.monthsToPayoff == null ? `
         <p class="du-figure du-figure-sm">Never</p>
         <p class="helper" style="margin:4px 0 0;">
-          At that payment the interest grows faster than the balance falls.
+          ${copy.never ? h(copy.never) : "At that payment the interest grows faster than the balance falls."}
         </p>
       ` : `
-        <p class="du-figure du-figure-sm">${out.monthsToPayoff} months</p>
+        <p class="du-figure du-figure-sm">${out.monthsToPayoff} ${out.monthsToPayoff === 1 ? "month" : "months"}</p>
         <p class="helper" style="margin:4px 0 0;">
           and ${budgetFmt(out.totalInterest)} of interest along the way.
         </p>`}
@@ -609,7 +657,9 @@ function renderSimSubs(s) {
 // ── Reward ───────────────────────────────────────────────────────────────────
 
 function lessonRewardStart() {
-  const lesson = lessonV3(state.lessonSim ? state.lessonSim.lessonId : null);
+  // The quiz is last now, so it names the lesson; the calculator is the fallback.
+  const lesson = lessonV3(state.lessonQuiz ? state.lessonQuiz.lessonId : null)
+              || lessonV3(state.lessonSim ? state.lessonSim.lessonId : null);
   if (!lesson) { navGoHome(); return; }
   const correct = state.lessonQuiz ? state.lessonQuiz.correct : 0;
   // Gates both the XP bonus and the task's own Charity Points line. Asked of

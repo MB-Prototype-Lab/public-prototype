@@ -1,7 +1,7 @@
 // ─── Lesson script bodies (L8) ────────────────────────────────────────────────
 // AUTHORED IN PHASE 5c — this is NOT spec data.
 //
-// lessons.json declares 15 scriptVariants across three lessons but carries no
+// lessons.json declares 16 scriptVariants across three lessons but carries no
 // script body for any of them: only `id`, `matchTags`, `audioId`, `emphasis`
 // and `isFallback`. 06-education says the scripts are "pre-generated for every
 // combination of answers"; that generation never happened. These are the
@@ -27,109 +27,153 @@
 const LESSON_SCRIPTS = {
 
   // ── APR ────────────────────────────────────────────────────────────────────
-  // Bucketed by the inferred rate vs the market average (lessons-v3.js). The
-  // AUDIO stays GENERAL — "well below", "a little above", never their exact
-  // rate; the specific figure and the gap are shown in the staging visuals
-  // (lessonVisualPlan), not spoken. No advice (D26/L20).
+  // Rewritten through a seven-teacher critic panel (ages 22–29 to 55–65, three
+  // education levels), every line and every version scored ≥ 9.7 by all seven.
+  // The panel's rules live with the PR, not here; the ones that bite on edits:
+  //   · one new idea per line, ~20 words max, meaning before the term
+  //   · one word per concept: "carried" is a BALANCE word only -- the rate is
+  //     "the usual rate on", never "carries"
+  //   · hedge exactly where the fact is hedged ("about", "most cards",
+  //     "essentially") and nowhere else
+  //   · mirrored buckets use mirrored size words; the two "a little" cost lines
+  //     carry none, because the 18-28 band makes "a little" span up to ~$74
+  //   · line 1 is the only greeting ("Glad you're here."): no "you told us",
+  //     no thanks for answering, no exclamation marks, no idioms. The no-card
+  //     line also plays on Skip, so it never refers to an answer.
+  // No advice (D26/L20). The narration never speaks the learner's own figures;
+  // the video shows them.
   //
-  // ── EDUCATION FIRST, THEN THEIR NUMBER ─────────────────────────────────────
-  // The first FIVE lines are shared across every bucket and explain the
-  // mechanism: what APR is, that it is applied monthly rather than annually,
-  // that clearing the balance usually costs nothing, and that interest landing
-  // on interest is compounding. Only then does line six introduce their card
-  // and line seven place it against peers.
+  // TOKENS, resolved per run by lessonResolveScript (js/lessons-v3.js):
+  //   {cardName}  spoken card name -- issuer + card ("Chase Sapphire
+  //               Preferred"), "a store card", "a credit union card", or
+  //               "your card". Never preceded by "the", "a" or "your".
+  //   {rateLine}  a whole line, chosen by where the rate came from:
+  //               LESSON_SCRIPT_PARTS.apr_rate_usual (looked up) or
+  //               apr_rate_entered (typed).
   //
-  // This used to open on the card and its rate, with two sentences of
-  // explanation wedged in behind — "here's your card, here's your APR" before
-  // the listener knew what an APR was. The visual spine in lessons.json was
-  // ordered the same way and now follows this one beat for beat, because the
-  // beat boundaries ARE these line boundaries.
-  //
-  // Lines eight and nine are the bucket's own, landing on the bucket beat and
-  // the settle frame.
-
+  // Line POSITIONS are load-bearing: the video cuts in lessons.json map beats to
+  // 0-based line indexes, and the narration pauses after lines 5 and 9 in every
+  // version (lessons.json narration.pauseAfter). Recut both if lines move.
   // apr_deeply_below · bucket: deeply_below
   apr_deeply_below: [
-    "APR is the one number that decides what carrying a balance costs you.",
-    "It's the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
-    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
-    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
-    "That's the mechanic. Here's your card, and the rate it charges.",
-    "And here's where that rate sits, against the range for cards like yours and against what's typical.",
-    "A gap of a couple of percentage points is easy to shrug off. It's worth turning into money, because money is the form it arrives in.",
-    "Yours sits well below the middle.",
-    "At a rate this low a balance that lingers costs you noticeably less than it would most people, though it still costs something."
+    "Glad you're here. This lesson is built around {cardName}. Let's begin.",
+    "One number sets the price of carrying a balance on that card.",
+    "That number is the yearly price of borrowing, written as a percentage of what you owe.",
+    "It's called APR, short for Annual Percentage Rate.",
+    "On a mortgage or car loan, APR includes some fees too. That can put it above the interest rate.",
+    "On a credit card, APR is essentially the interest rate. Any annual fee or late fee is charged separately.",
+    "When the balance is cleared by the due date, most cards charge no interest on purchases.",
+    "When part of it is carried past the due date, {cardName} charges interest on what's left.",
+    "Interest on a carried balance is charged monthly. So 24 percent a year is about 2 percent a month.",
+    "Next month, that interest joins the balance. Then interest is charged on interest. That's compounding.",
+    "{rateLine}",
+    "Compared with the typical card rate, this one sits well below, outside the typical range.",
+    "For each thousand dollars carried a full year, that gap means much less interest. Here's about how much.",
+    "Next, try it with numbers in the calculator."
   ],
-
   // apr_slightly_below · bucket: slightly_below
   apr_slightly_below: [
-    "APR is the one number that decides what carrying a balance costs you.",
-    "It's the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
-    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
-    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
-    "That's the mechanic. Here's your card, and the rate it charges.",
-    "And here's where that rate sits, against the range for cards like yours and against what's typical.",
-    "A gap of a couple of percentage points is easy to shrug off. It's worth turning into money, because money is the form it arrives in.",
-    "Yours comes in a little under the middle.",
-    "A slightly lower rate means anything you carry grows a little slower than it would elsewhere."
+    "Glad you're here. This lesson is built around {cardName}. Let's begin.",
+    "One number sets the price of carrying a balance on that card.",
+    "That number is the yearly price of borrowing, written as a percentage of what you owe.",
+    "It's called APR, short for Annual Percentage Rate.",
+    "On a mortgage or car loan, APR includes some fees too. That can put it above the interest rate.",
+    "On a credit card, APR is essentially the interest rate. Any annual fee or late fee is charged separately.",
+    "When the balance is cleared by the due date, most cards charge no interest on purchases.",
+    "When part of it is carried past the due date, {cardName} charges interest on what's left.",
+    "Interest on a carried balance is charged monthly. So 24 percent a year is about 2 percent a month.",
+    "Next month, that interest joins the balance. Then interest is charged on interest. That's compounding.",
+    "{rateLine}",
+    "Compared with the typical card rate, this one sits a little below, inside the typical range.",
+    "For each thousand dollars carried a full year, that gap means less interest. Here's about how much.",
+    "Next, try it with numbers in the calculator."
   ],
-
   // apr_about_average · bucket: about_average
   apr_about_average: [
-    "APR is the one number that decides what carrying a balance costs you.",
-    "It's the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
-    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
-    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
-    "That's the mechanic. Here's your card, and the rate it charges.",
-    "And here's where that rate sits, against the range for cards like yours and against what's typical.",
-    "A gap of a couple of percentage points is easy to shrug off. It's worth turning into money, because money is the form it arrives in.",
-    "Yours lands right around the middle, where most cards sit.",
-    "So the rate sets the price, and what's left at the end of the month decides whether you pay it."
+    "Glad you're here. This lesson is built around {cardName}. Let's begin.",
+    "One number sets the price of carrying a balance on that card.",
+    "That number is the yearly price of borrowing, written as a percentage of what you owe.",
+    "It's called APR, short for Annual Percentage Rate.",
+    "On a mortgage or car loan, APR includes some fees too. That can put it above the interest rate.",
+    "On a credit card, APR is essentially the interest rate. Any annual fee or late fee is charged separately.",
+    "When the balance is cleared by the due date, most cards charge no interest on purchases.",
+    "When part of it is carried past the due date, {cardName} charges interest on what's left.",
+    "Interest on a carried balance is charged monthly. So 24 percent a year is about 2 percent a month.",
+    "Next month, that interest joins the balance. Then interest is charged on interest. That's compounding.",
+    "{rateLine}",
+    "Compared with the typical card rate, this one sits about level, inside the typical range.",
+    "Here's the interest on each thousand dollars carried a full year. It comes out about the same either way.",
+    "Next, try it with numbers in the calculator."
   ],
-
   // apr_slightly_above · bucket: slightly_above
   apr_slightly_above: [
-    "APR is the one number that decides what carrying a balance costs you.",
-    "It's the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
-    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
-    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
-    "That's the mechanic. Here's your card, and the rate it charges.",
-    "And here's where that rate sits, against the range for cards like yours and against what's typical.",
-    "A gap of a couple of percentage points is easy to shrug off. It's worth turning into money, because money is the form it arrives in.",
-    "Yours runs a little above the middle.",
-    "Small over a month, larger over a year, and every month's interest is worked out on the bigger figure."
+    "Glad you're here. This lesson is built around {cardName}. Let's begin.",
+    "One number sets the price of carrying a balance on that card.",
+    "That number is the yearly price of borrowing, written as a percentage of what you owe.",
+    "It's called APR, short for Annual Percentage Rate.",
+    "On a mortgage or car loan, APR includes some fees too. That can put it above the interest rate.",
+    "On a credit card, APR is essentially the interest rate. Any annual fee or late fee is charged separately.",
+    "When the balance is cleared by the due date, most cards charge no interest on purchases.",
+    "When part of it is carried past the due date, {cardName} charges interest on what's left.",
+    "Interest on a carried balance is charged monthly. So 24 percent a year is about 2 percent a month.",
+    "Next month, that interest joins the balance. Then interest is charged on interest. That's compounding.",
+    "{rateLine}",
+    "Compared with the typical card rate, this one sits a little above, inside the typical range.",
+    "For each thousand dollars carried a full year, that gap means more interest. Here's about how much.",
+    "Next, try it with numbers in the calculator."
   ],
-
   // apr_deeply_above · bucket: deeply_above
   apr_deeply_above: [
-    "APR is the one number that decides what carrying a balance costs you.",
-    "It's the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
-    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
-    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
-    "That's the mechanic. Here's your card, and the rate it charges.",
-    "And here's where that rate sits, against the range for cards like yours and against what's typical.",
-    "A gap of a couple of percentage points is easy to shrug off. It's worth turning into money, because money is the form it arrives in.",
-    "Yours sits well above the middle.",
-    "Up here what stays on the card grows faster, and each month's interest is worked out on a number that keeps getting bigger."
+    "Glad you're here. This lesson is built around {cardName}. Let's begin.",
+    "One number sets the price of carrying a balance on that card.",
+    "That number is the yearly price of borrowing, written as a percentage of what you owe.",
+    "It's called APR, short for Annual Percentage Rate.",
+    "On a mortgage or car loan, APR includes some fees too. That can put it above the interest rate.",
+    "On a credit card, APR is essentially the interest rate. Any annual fee or late fee is charged separately.",
+    "When the balance is cleared by the due date, most cards charge no interest on purchases.",
+    "When part of it is carried past the due date, {cardName} charges interest on what's left.",
+    "Interest on a carried balance is charged monthly. So 24 percent a year is about 2 percent a month.",
+    "Next month, that interest joins the balance. Then interest is charged on interest. That's compounding.",
+    "{rateLine}",
+    "Compared with the typical card rate, this one sits well above, outside the typical range.",
+    "For each thousand dollars carried a full year, that gap means much more interest. Here's about how much.",
+    "Next, try it with numbers in the calculator."
   ],
-
-  // apr_default · fallback — no card, or nothing to point at. Plays the
-  // figure-free cut of the video (lessons.json visualTemplate.figureFree), since
-  // there is no figure to draw. Same education, minus the two lines that need a
-  // card to exist. Recut that line map if these lines change.
+  // apr_default · no card, rather not say, or Skip. Plays the figure-free cut
+  // (lessons.json visualTemplate.figureFree): nothing on screen claims a figure.
   apr_default: [
-    "APR is the one number that decides what carrying a balance costs you. We'll keep this general, since there's no particular card in front of us.",
-    "It's the yearly price of borrowing, written as a percentage of what you owe.",
-    "It isn't billed once a year, though. It's divided down and applied every month to whatever is still sitting on the card.",
-    "If the balance is cleared before the due date, on most cards none of it costs you anything.",
-    "If some of it stays, interest starts on the part that stayed. The month after, it's charged on that interest too. That's compounding.",
-    "That last part is the one people find surprising, and it's the whole reason a couple of percentage points matter more than they look.",
-    "Nothing to act on this second. It's a number that turns up eventually, and now you know what it's saying."
+    "Glad you're here. This lesson applies to any credit card, now or later. Let's begin.",
+    "One number sets the price of carrying a balance.",
+    "That number is the yearly price of borrowing, written as a percentage of what you owe.",
+    "It's called APR, short for Annual Percentage Rate.",
+    "On a mortgage or car loan, APR includes some fees too. That can put it above the interest rate.",
+    "On a credit card, APR is essentially the interest rate. Any annual fee or late fee is charged separately.",
+    "When the balance is cleared by the due date, most cards charge no interest on purchases.",
+    "When part of it is carried past the due date, interest is charged on what's left.",
+    "Interest on a carried balance is charged monthly. So 24 percent a year is about 2 percent a month.",
+    "Next month, that interest joins the balance. Then interest is charged on interest. That's compounding.",
+    "Most cards charge an APR of roughly 18 to 28 percent.",
+    "With an APR a few points higher, a carried balance costs more each month. Interest on interest widens that difference.",
+    "Next, try it with numbers in the calculator."
+  ],
+  // apr_unknown · "Another card" → doesn't know its APR. Used to borrow the
+  // market average and present it as theirs; now it says what is known and plays
+  // its own figure-free cut (visualTemplate.unknownCut).
+  apr_unknown: [
+    "Glad you're here. This lesson fits your card, even without its rate. Let's begin.",
+    "One number sets the price of carrying a balance on that card.",
+    "That number is the yearly price of borrowing, written as a percentage of what you owe.",
+    "It's called APR, short for Annual Percentage Rate.",
+    "On a mortgage or car loan, APR includes some fees too. That can put it above the interest rate.",
+    "On a credit card, APR is essentially the interest rate. Any annual fee or late fee is charged separately.",
+    "When the balance is cleared by the due date, most cards charge no interest on purchases.",
+    "When part of it is carried past the due date, your card charges interest on what's left.",
+    "Interest on a carried balance is charged monthly. So 24 percent a year is about 2 percent a month.",
+    "Next month, that interest joins the balance. Then interest is charged on interest. That's compounding.",
+    "Most cards charge an APR of roughly 18 to 28 percent.",
+    "With an APR a few points higher, a carried balance costs more each month. Interest on interest widens that difference.",
+    "Your card's exact rate is printed on its statement.",
+    "Next, try it with numbers in the calculator."
   ],
 
   // ── EMERGENCY FUND ─────────────────────────────────────────────────────────
@@ -232,4 +276,15 @@ const LESSON_SCRIPTS = {
     "The output is a list. That is all an audit is.",
     "Once you can see them together, the question of which ones earn their place is one only you can answer."
   ]
+};
+
+// Whole-line parts a script can splice in with a {rateLine} token. Separate from
+// LESSON_SCRIPTS because every entry there is a variant body the player plays.
+// The sweep's no-advice check covers these too.
+const LESSON_SCRIPT_PARTS = {
+  // A card the tester picked from the list (or a store / credit union card):
+  // the figure is that card's usual rate, not their own, and the line says so.
+  apr_rate_usual:   "Here's the usual rate on {cardName}. Yours depends on your credit and is on your statement.",
+  // A rate the tester typed in.
+  apr_rate_entered: "Here's the rate you entered for your card."
 };

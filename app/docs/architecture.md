@@ -634,10 +634,17 @@ a calculator for its own sake.
 **`origin` has to be carried, not inferred.** The v3 reward
 (`lessonRewardStart`) reads `lessonV3()`, which has never heard of a v2 lesson —
 one arriving there falls through to home and loses its badge XP. So
-`state.lessonSim.origin` decides where Finish goes: `completeLesson()` for v2,
-`lessonRewardStart()` for v3. `quizFinish()` (`screens/quiz.js`) is where the v2
-flow picks the calculator up, and it only inserts a step — the XP and badge path
-is identical either way.
+`state.lessonSim.origin` decides where the button goes: Finish → `completeLesson()`
+for v2; Next → `lessonQuizStart()` for v3. `quizFinish()` (`screens/quiz.js`) is
+where the v2 flow picks the calculator up, and it only inserts a step — the XP and
+badge path is identical either way.
+
+**v3 runs I do → we do → you do: lesson → calculator → quiz → reward.** The
+player's Next is `lessonLeavePlayer()` → `lessonSimStart()` (straight to the quiz
+when a lesson has no calculator), and the quiz's last answer is "Finish lesson" →
+`lessonRewardStart()`. The quiz comes last so it tests what the lesson taught and
+the calculator showed. v2 keeps quiz → calculator for now; the two catalogs differ
+on purpose until v2 gets the same rework.
 
 ### The calculator's shape: sliders, then three outcomes
 
@@ -1090,22 +1097,26 @@ cap)`. A beat snaps in, holds for its line, and snaps out at any runtime. The
 fraction cap survives as a ceiling so a very short beat cannot spend most of its
 life easing in.
 
-**Storyboard beat boundaries ARE script line boundaries.** The APR spine in
-`lessons.json` is cut from `lpCuesFromWords(apr_about_average)` — now **ten
-lines and nine beats**, `what` spanning lines 1–2 and every other beat one line.
-The other four buckets have different tail lengths, so their beats drift by a
-fraction of a line. Rewriting a script means recutting the fractions.
+**Storyboard beats are cut to script lines at runtime.** The APR `spine` in
+`lessons.json` is a beat *library* with no timing. Each version plays a **cut**
+that maps beats to 0-based line ranges: `cardCut` (the five bucket versions,
+figures required), `figureFree` (`apr_default`) and `unknownCut` (`apr_unknown`),
+both token-free. `lessonCutStoryboard` (`js/lessons-v3.js`) times each beat from
+that script's own cues (`lpTimingFor`), so the typed vs looked-up rate line, the
+narration pauses (`narration.pauseAfter`, lines 5 and 9) and the voice's pace
+never need hand-cut fractions. Moving a line means editing the line map, not
+recomputing fractions. "How Interest Builds" borrows APR's pre-panel education
+beats the same way (`LP_BORROWED_VISUALS`).
 
-The ninth beat is **`cost`**, and it is there because the script is deliberately
-figure-free: narration says the gap between two rates is worth turning into
-money, and the beat is where the money appears — what a carried balance costs
-for a year at their rate against the typical one, and the difference. It states
-its own condition (only on a balance carried past the due date), because a
-figure without that is a scare number rather than an explanation. Naming the
-amount is fine; telling anyone what to do about it is not (D26).
+The **`cost`** beat is where money appears, because the narration never speaks a
+figure: what $1,000 carried a full year costs at the typical rate and at the
+plotted one, compounded monthly as the lesson teaches (`hfDollarsOn`). It states
+its own condition (carried a full year), because a figure without that is a scare
+number rather than an explanation. Naming the amount is fine; telling anyone what
+to do about it is not (D26).
 
-**The onboarding storyboard does not have that problem**, and the difference is
-worth copying if a third storyboard ever appears. `data/onboarding-storyboard.js`
+**The onboarding storyboard was the model**, and it is worth copying if a third
+storyboard ever appears. `data/onboarding-storyboard.js`
 declares only *elements per segment id*; `onbStoryboard()` (`screens/onboarding.js`)
 builds the `from`/`to` fractions at render time from the player's own `v.cues`.
 Beat N spans segment N by construction, so rewriting a line re-cuts the beats
@@ -1263,6 +1274,12 @@ note says *"Also serves every 'I don't know' path."*
 
 That is 06-education's *"'I don't know' is a first-class answer, not a failure"*
 implemented in data. Don't add variants to "cover" them.
+
+APR no longer matches tags at all: `lessonSelectVariant` buckets the inferred
+rate (`lessonBucketFor`, APR points against `CARD_APR.typicalBand`). One "I don't
+know" has its own version: "Another card → No" (`useAverage`) plays `apr_unknown`,
+because bucketing the market average it infers would call their rate "about
+typical" by construction.
 
 <!-- Coverage per lesson: apr 14 answer tags → 8 variant tags; emergency-fund
      11 → 7; subscription-audit 10 → 7. Every unmatched tag routes to the

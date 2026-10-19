@@ -24,130 +24,347 @@ const LESSONS_V3 =
       "bucketDimension": {
         "kind": "apr",
         "reference": "market_average",
-        "_note": "Framing infers the user's APR (card lookup in CARD_APR, an entered %, or the market average). lessonInferFigure + lessonBucketFor compare it to CARD_APR.marketAverage and pick the bucket variant; no-info paths play the fallback."
+        "aboutPoints": 1.15,
+        "_note": "Framing infers the user's APR (card lookup in CARD_APR or an entered %). lessonBucketFor buckets in APR POINTS: outside CARD_APR.typicalBand (18-28) is 'well' above/below, within aboutPoints of CARD_APR.marketAverage (21.0-23.3) is about typical, the rest 'a little'. 'Another card -> don't know' plays apr_unknown; no card / Skip plays the fallback."
+      },
+      "narration": {
+        "_note": "Silent beats after lines 5 and 9 (0-based) in every APR version: after 'what APR is' and after the mechanics, so the densest stretches get room without more words. Honoured by the cue map and the live voice (screens/lesson.js lpPauseAfter). Recut if lines move.",
+        "pauseAfter": [5, 9],
+        "pauseSec": 1
       },
       "visualTemplate": {
         "kind": "hyperframes",
-        "_note": "Storyboard for the staging-area video (components/hyperframes.js). Beats are FRACTIONS of the lesson runtime, so the whole thing re-fits any duration. One shared spine; the `bucket` beat resolves to bucketSegments[bucket] so each outcome differs, but every segment renders from the user's own figures rather than baked art. Coordinates are in a 100 x 72 viewBox. Tokens ({userApr}, {marketAvg}, {bandLow}, {bandHigh}, {gapPhrase}, {cardName}) resolve at render time.",
-
-        "_spineNote": "Beat boundaries are the SCRIPT's line boundaries, derived from word count at DU_WPM (screens/lesson.js lpCuesFromWords) over apr_about_average's ten lines. 'what' spans lines 1-2; every other beat is one line. Education runs first, then the card, then where the rate sits, then what the gap is worth in money. The `cost` beat exists because a difference in percentage points is not a felt quantity and the narration is deliberately figure-free: the script says the gap is worth turning into money, and this is where the money appears. It states its own condition - only on a balance carried past the due date - because without that it is just a scare figure. Recut these fractions whenever a script line changes.",
+        "_note": "Storyboard for the staging-area video (components/hyperframes.js). `spine` is a LIBRARY of beats; each version plays a CUT that maps beats to its script's 0-based line indexes (inclusive), timed at runtime from that script's own cues (js/lessons-v3.js lessonCutStoryboard -> lpTimingFor, narration pauses included). So typed vs looked-up rate lines, pauses and TTS pace never need hand-cut fractions. Screen text follows the panel's rule: at most 6 words besides figures, using the line's own words. Tokens ({cardName}, {userApr}, {marketAvg}, {gapPhrase}, {dollarsAvg}, {dollarsUser}, {rateLabel}) resolve at render time; only the card cut may use them.",
         "spine": [
           {
-            "id": "what", "from": 0.0, "to": 0.158,
+            "_note": "what / monthly / paid_off / compounding are the pre-panel education beats. APR no longer plays them; \"How Interest Builds\" borrows them (LP_BORROWED_VISUALS, screens/lesson.js), so they stay as they were.",
+            "id": "what",
             "elements": [
-              { "type": "icon",  "name": "coin", "x": 50, "y": 22, "size": 18, "anim": "pop" },
+              { "type": "icon", "name": "coin", "x": 50, "y": 22, "size": 18, "anim": "pop" },
               { "type": "label", "text": "APR", "x": 50, "y": 48, "size": 12, "anim": "rise" },
-              { "type": "label", "text": "the yearly price of borrowing", "x": 50, "y": 60, "size": 3.6, "tone": "muted", "anim": "fade" }
+              {
+                "type": "label",
+                "text": "the yearly price of borrowing",
+                "x": 50,
+                "y": 60,
+                "size": 3.6,
+                "tone": "muted",
+                "anim": "fade"
+              }
             ]
           },
           {
-            "id": "monthly", "from": 0.158, "to": 0.283,
+            "id": "monthly",
             "elements": [
               { "type": "label", "text": "applied every month", "x": 50, "y": 12, "size": 4.6, "anim": "fade" },
               { "type": "stack", "count": 4, "x": 50, "y": 32, "anim": "accumulate" },
-              { "type": "label", "text": "on whatever is still owed", "x": 50, "y": 62, "size": 3.6, "tone": "muted", "anim": "fade" }
+              {
+                "type": "label",
+                "text": "on whatever is still owed",
+                "x": 50,
+                "y": 62,
+                "size": 3.6,
+                "tone": "muted",
+                "anim": "fade"
+              }
             ]
           },
           {
-            "id": "paid_off", "from": 0.283, "to": 0.386,
+            "id": "paid_off",
             "elements": [
-              { "type": "icon",  "name": "shield", "x": 50, "y": 24, "size": 16, "anim": "pop" },
+              { "type": "icon", "name": "shield", "x": 50, "y": 24, "size": 16, "anim": "pop" },
               { "type": "label", "text": "cleared in time", "x": 50, "y": 50, "size": 5.6, "anim": "rise" },
-              { "type": "label", "text": "costs nothing on most cards", "x": 50, "y": 60, "size": 3.6, "tone": "muted", "anim": "fade" }
+              {
+                "type": "label",
+                "text": "costs nothing on most cards",
+                "x": 50,
+                "y": 60,
+                "size": 3.6,
+                "tone": "muted",
+                "anim": "fade"
+              }
             ]
           },
           {
-            "id": "compounding", "from": 0.386, "to": 0.516,
+            "id": "compounding",
             "elements": [
-              { "type": "label", "text": "leave some behind", "x": 50, "y": 10, "size": 4.2, "tone": "muted", "anim": "fade" },
+              {
+                "type": "label",
+                "text": "leave some behind",
+                "x": 50,
+                "y": 10,
+                "size": 4.2,
+                "tone": "muted",
+                "anim": "fade"
+              },
               { "type": "stack", "count": 6, "x": 50, "y": 28, "anim": "accumulate" },
               { "type": "label", "text": "interest on interest", "x": 50, "y": 64, "size": 5.4, "anim": "rise" }
             ]
           },
           {
-            "id": "card", "from": 0.516, "to": 0.581,
+            "id": "intro",
             "elements": [
-              { "type": "icon",  "name": "card", "x": 50, "y": 18, "size": 16, "anim": "rise" },
-              { "type": "label", "text": "{cardName}", "x": 50, "y": 40, "size": 4.6, "anim": "fade" },
-              { "type": "label", "text": "{userApr}%", "x": 50, "y": 58, "size": 12, "anim": "rise" }
+              { "type": "icon", "name": "card", "x": 50, "y": 20, "size": 16, "anim": "pop" },
+              { "type": "label", "text": "{cardName}", "x": 50, "y": 46, "size": 6, "anim": "rise" }
             ]
           },
           {
-            "id": "compare", "from": 0.581, "to": 0.679,
+            "id": "intro_general",
             "elements": [
-              { "type": "label", "text": "where your rate sits", "x": 50, "y": 12, "size": 4.6, "anim": "fade" },
-              { "type": "scale", "x": 12, "y": 40, "w": 76, "anim": "draw" }
+              { "type": "icon", "name": "coin", "x": 50, "y": 22, "size": 16, "anim": "pop" },
+              { "type": "label", "text": "one number", "x": 50, "y": 48, "size": 6, "anim": "rise" }
             ]
           },
           {
-            "id": "cost", "from": 0.679, "to": 0.826,
+            "id": "intro_unknown",
             "elements": [
-              { "type": "label", "text": "on every {perBalance} you carry for a year", "x": 50, "y": 10, "size": 3.6, "tone": "muted", "anim": "fade" },
-              { "type": "label", "text": "{dollarsAvg}", "x": 27, "y": 32, "size": 7.4, "anim": "rise" },
-              { "type": "label", "text": "typical", "x": 27, "y": 40, "size": 3.2, "tone": "muted", "anim": "fade" },
-              { "type": "label", "text": "{dollarsUser}", "x": 73, "y": 32, "size": 7.4, "anim": "rise" },
-              { "type": "label", "text": "{cardName}", "x": 73, "y": 40, "size": 3.2, "tone": "muted", "anim": "fade" },
-              { "type": "label", "text": "{dollarsGap} {dollarsWord} a year", "x": 50, "y": 57, "size": 6.0, "anim": "rise" },
-              { "type": "label", "text": "and only on what you carry past the due date", "x": 50, "y": 66, "size": 3.2, "tone": "muted", "anim": "fade" }
+              { "type": "icon", "name": "card", "x": 50, "y": 20, "size": 16, "anim": "pop" },
+              { "type": "label", "text": "your card", "x": 50, "y": 46, "size": 6, "anim": "rise" }
             ]
           },
-          { "id": "bucket", "from": 0.826, "to": 0.886, "slot": "bucket" },
           {
-            "id": "settle", "from": 0.886, "to": 1.0, "hold": true,
+            "id": "price",
             "elements": [
-              { "type": "icon",  "name": "spark", "x": 50, "y": 16, "size": 12, "anim": "pop" },
-              { "type": "label", "text": "{userApr}% vs {marketAvg}% typical", "x": 50, "y": 40, "size": 5.2, "anim": "fade" },
+              { "type": "icon", "name": "coin", "x": 50, "y": 22, "size": 16, "anim": "pop" },
+              { "type": "label", "text": "yearly price of borrowing", "x": 50, "y": 50, "size": 5.2, "anim": "rise" }
+            ]
+          },
+          {
+            "id": "name",
+            "elements": [
+              { "type": "label", "text": "APR", "x": 50, "y": 38, "size": 12, "anim": "rise" },
+              { "type": "label", "text": "Annual Percentage Rate", "x": 50, "y": 54, "size": 5, "anim": "fade" }
+            ]
+          },
+          {
+            "id": "loan",
+            "elements": [
+              { "type": "label", "text": "loan APR", "x": 50, "y": 34, "size": 7, "anim": "rise" },
+              {
+                "type": "label",
+                "text": "rate plus fees",
+                "x": 50,
+                "y": 48,
+                "size": 5,
+                "tone": "muted",
+                "anim": "fade"
+              }
+            ]
+          },
+          {
+            "id": "card_apr",
+            "elements": [
+              { "type": "icon", "name": "card", "x": 50, "y": 18, "size": 14, "anim": "pop" },
+              { "type": "label", "text": "card APR", "x": 50, "y": 40, "size": 7, "anim": "rise" },
+              {
+                "type": "label",
+                "text": "rate, fees separate",
+                "x": 50,
+                "y": 54,
+                "size": 5,
+                "tone": "muted",
+                "anim": "fade"
+              }
+            ]
+          },
+          {
+            "id": "cleared",
+            "elements": [
+              { "type": "icon", "name": "shield", "x": 50, "y": 22, "size": 16, "anim": "pop" },
+              { "type": "label", "text": "cleared by due date", "x": 50, "y": 48, "size": 5.4, "anim": "rise" },
+              {
+                "type": "label",
+                "text": "no interest",
+                "x": 50,
+                "y": 58,
+                "size": 4.4,
+                "tone": "muted",
+                "anim": "fade"
+              }
+            ]
+          },
+          {
+            "id": "carried",
+            "elements": [
+              { "type": "label", "text": "carried balance", "x": 50, "y": 12, "size": 5, "anim": "fade" },
+              { "type": "stack", "count": 4, "x": 50, "y": 32, "anim": "accumulate" },
+              {
+                "type": "label",
+                "text": "interest charged",
+                "x": 50,
+                "y": 62,
+                "size": 4.4,
+                "tone": "muted",
+                "anim": "fade"
+              }
+            ]
+          },
+          {
+            "id": "slice",
+            "elements": [
+              { "type": "label", "text": "24% a year ≈ 2% a month", "x": 50, "y": 30, "size": 6, "anim": "rise" },
+              {
+                "type": "label",
+                "text": "$1,000 → about $20 a month",
+                "x": 50,
+                "y": 46,
+                "size": 4.6,
+                "tone": "muted",
+                "anim": "fade"
+              }
+            ]
+          },
+          {
+            "id": "interest_on_interest",
+            "elements": [
+              { "type": "stack", "count": 6, "x": 50, "y": 28, "anim": "accumulate" },
+              { "type": "label", "text": "interest on interest", "x": 50, "y": 62, "size": 5.4, "anim": "rise" }
+            ]
+          },
+          {
+            "id": "rate",
+            "elements": [
+              { "type": "icon", "name": "card", "x": 50, "y": 16, "size": 14, "anim": "rise" },
+              { "type": "label", "text": "{cardName}", "x": 50, "y": 36, "size": 4.4, "anim": "fade" },
+              { "type": "label", "text": "{userApr}%", "x": 50, "y": 52, "size": 12, "anim": "rise" },
+              {
+                "type": "label",
+                "text": "{rateLabel}",
+                "x": 50,
+                "y": 63,
+                "size": 3.6,
+                "tone": "muted",
+                "anim": "fade"
+              }
+            ]
+          },
+          { "id": "compare", "elements": [{ "type": "scale", "x": 12, "y": 40, "w": 76, "anim": "draw" }] },
+          {
+            "id": "cost",
+            "elements": [
+              {
+                "type": "label",
+                "text": "$1,000 carried a full year",
+                "x": 50,
+                "y": 12,
+                "size": 4.2,
+                "tone": "muted",
+                "anim": "fade"
+              },
+              { "type": "label", "text": "≈ {dollarsAvg}", "x": 27, "y": 34, "size": 7.4, "anim": "rise" },
+              { "type": "label", "text": "typical", "x": 27, "y": 43, "size": 3.2, "tone": "muted", "anim": "fade" },
+              { "type": "label", "text": "≈ {dollarsUser}", "x": 73, "y": 34, "size": 7.4, "anim": "rise" },
+              {
+                "type": "label",
+                "text": "{rateLabel}",
+                "x": 73,
+                "y": 43,
+                "size": 3.2,
+                "tone": "muted",
+                "anim": "fade"
+              }
+            ]
+          },
+          {
+            "id": "settle",
+            "elements": [
+              { "type": "icon", "name": "spark", "x": 50, "y": 16, "size": 12, "anim": "pop" },
+              {
+                "type": "label",
+                "text": "{userApr}% vs {marketAvg}% typical",
+                "x": 50,
+                "y": 40,
+                "size": 5.2,
+                "anim": "fade"
+              },
               { "type": "label", "text": "{gapPhrase}", "x": 50, "y": 54, "size": 6.4, "anim": "rise" }
+            ]
+          },
+          {
+            "id": "typical_range",
+            "elements": [
+              { "type": "label", "text": "typical range", "x": 50, "y": 30, "size": 5, "anim": "fade" },
+              { "type": "label", "text": "18–28%", "x": 50, "y": 46, "size": 10, "anim": "rise" }
+            ]
+          },
+          {
+            "id": "higher_apr",
+            "elements": [
+              { "type": "stack", "count": 5, "x": 50, "y": 28, "anim": "accumulate" },
+              { "type": "label", "text": "higher APR", "x": 50, "y": 54, "size": 6, "anim": "rise" },
+              {
+                "type": "label",
+                "text": "more each month",
+                "x": 50,
+                "y": 64,
+                "size": 4,
+                "tone": "muted",
+                "anim": "fade"
+              }
+            ]
+          },
+          {
+            "id": "statement",
+            "elements": [
+              { "type": "icon", "name": "card", "x": 50, "y": 20, "size": 16, "anim": "pop" },
+              { "type": "label", "text": "rate: on your statement", "x": 50, "y": 48, "size": 5, "anim": "rise" }
             ]
           }
         ],
-        "figureFree": {
-          "_note": "The cut played when there is no card APR to plot (no card, rather-not-say, Skip) -- the apr_default script. Only the four education beats, which use no tokens, so nothing on screen claims a figure the viewer never gave. Timed at runtime from apr_default's OWN line cues (js/lessons-v3.js lessonFigureFreeStoryboard), so the fractions are not written here. `lines` are 0-based indexes into apr_default, inclusive; the closing entry replays `what` and holds. Recut when apr_default's lines change.",
-          "script": "apr_default",
+        "cardCut": {
+          "_note": "The five bucket variants (14 lines). Figures required. Line 10 is the {rateLine}; 11 and 12 are the bucket's own lines; the bar (compare) carries position, cost carries dollars.",
           "beats": [
-            { "beat": "what",        "lines": [0, 1] },
-            { "beat": "monthly",     "lines": [2, 2] },
-            { "beat": "paid_off",    "lines": [3, 3] },
-            { "beat": "compounding", "lines": [4, 5] },
-            { "beat": "what",        "lines": [6, 6], "hold": true, "as": "close" }
+            { "beat": "intro", "lines": [0, 1] },
+            { "beat": "price", "lines": [2, 2] },
+            { "beat": "name", "lines": [3, 3] },
+            { "beat": "loan", "lines": [4, 4] },
+            { "beat": "card_apr", "lines": [5, 5] },
+            { "beat": "cleared", "lines": [6, 6] },
+            { "beat": "carried", "lines": [7, 7] },
+            { "beat": "slice", "lines": [8, 8] },
+            { "beat": "interest_on_interest", "lines": [9, 9] },
+            { "beat": "rate", "lines": [10, 10] },
+            { "beat": "compare", "lines": [11, 11] },
+            { "beat": "cost", "lines": [12, 12] },
+            { "beat": "settle", "lines": [13, 13], "hold": true }
           ]
         },
-        "bucketSegments": {
-          "deeply_below": {
-            "elements": [
-              { "type": "icon",  "name": "shield", "x": 50, "y": 20, "size": 16, "anim": "pop" },
-              { "type": "label", "text": "well below typical", "x": 50, "y": 44, "size": 6.2, "anim": "rise" },
-              { "type": "label", "text": "interest builds slowly at this rate", "x": 50, "y": 56, "size": 3.6, "tone": "muted", "anim": "fade" }
-            ]
-          },
-          "slightly_below": {
-            "elements": [
-              { "type": "icon",  "name": "shield", "x": 50, "y": 20, "size": 15, "anim": "pop" },
-              { "type": "label", "text": "a little below typical", "x": 50, "y": 44, "size": 6.2, "anim": "rise" },
-              { "type": "label", "text": "interest builds a touch slower", "x": 50, "y": 56, "size": 3.6, "tone": "muted", "anim": "fade" }
-            ]
-          },
-          "about_average": {
-            "elements": [
-              { "type": "icon",  "name": "spark", "x": 50, "y": 20, "size": 15, "anim": "pop" },
-              { "type": "label", "text": "right about typical", "x": 50, "y": 44, "size": 6.2, "anim": "rise" },
-              { "type": "label", "text": "the middle of the pack", "x": 50, "y": 56, "size": 3.6, "tone": "muted", "anim": "fade" }
-            ]
-          },
-          "slightly_above": {
-            "elements": [
-              { "type": "stack", "count": 5, "x": 50, "y": 30, "anim": "accumulate" },
-              { "type": "label", "text": "a little above typical", "x": 50, "y": 48, "size": 6.2, "anim": "rise" },
-              { "type": "label", "text": "a carried balance grows a bit faster", "x": 50, "y": 59, "size": 3.6, "tone": "muted", "anim": "fade" }
-            ]
-          },
-          "deeply_above": {
-            "elements": [
-              { "type": "stack", "count": 8, "x": 50, "y": 30, "anim": "accumulate" },
-              { "type": "label", "text": "well above typical", "x": 50, "y": 48, "size": 6.2, "anim": "rise" },
-              { "type": "label", "text": "a carried balance grows faster here", "x": 50, "y": 59, "size": 3.6, "tone": "muted", "anim": "fade" }
-            ]
-          }
+        "figureFree": {
+          "_note": "No card, rather not say, Skip -- apr_default (13 lines). Token-free, so nothing on screen claims a figure the viewer never gave; the $1,000 -> $20 frame still shows because the quiz uses it.",
+          "script": "apr_default",
+          "beats": [
+            { "beat": "intro_general", "lines": [0, 1] },
+            { "beat": "price", "lines": [2, 2] },
+            { "beat": "name", "lines": [3, 3] },
+            { "beat": "loan", "lines": [4, 4] },
+            { "beat": "card_apr", "lines": [5, 5] },
+            { "beat": "cleared", "lines": [6, 6] },
+            { "beat": "carried", "lines": [7, 7] },
+            { "beat": "slice", "lines": [8, 8] },
+            { "beat": "interest_on_interest", "lines": [9, 9] },
+            { "beat": "typical_range", "lines": [10, 10] },
+            { "beat": "higher_apr", "lines": [11, 11] },
+            { "beat": "name", "lines": [12, 12], "hold": true, "as": "close" }
+          ]
+        },
+        "unknownCut": {
+          "_note": "A card with no rate to hand -- apr_unknown (14 lines). Token-free like figureFree; the calculator, not the video, discloses that it opens on a typical rate.",
+          "script": "apr_unknown",
+          "beats": [
+            { "beat": "intro_unknown", "lines": [0, 1] },
+            { "beat": "price", "lines": [2, 2] },
+            { "beat": "name", "lines": [3, 3] },
+            { "beat": "loan", "lines": [4, 4] },
+            { "beat": "card_apr", "lines": [5, 5] },
+            { "beat": "cleared", "lines": [6, 6] },
+            { "beat": "carried", "lines": [7, 7] },
+            { "beat": "slice", "lines": [8, 8] },
+            { "beat": "interest_on_interest", "lines": [9, 9] },
+            { "beat": "typical_range", "lines": [10, 10] },
+            { "beat": "higher_apr", "lines": [11, 11] },
+            { "beat": "statement", "lines": [12, 12] },
+            { "beat": "name", "lines": [13, 13], "hold": true, "as": "close" }
+          ]
         }
       },
       "framing": [
@@ -201,26 +418,107 @@ const LESSONS_V3 =
         }
       ],
       "scriptVariants": [
-        { "id": "apr_deeply_below",   "bucket": "deeply_below",   "audioId": "apr_deeply_below",   "emphasis": "well_below_typical" },
-        { "id": "apr_slightly_below", "bucket": "slightly_below", "audioId": "apr_slightly_below", "emphasis": "a_little_below" },
-        { "id": "apr_about_average",  "bucket": "about_average",  "audioId": "apr_about_average",  "emphasis": "right_around_typical" },
-        { "id": "apr_slightly_above", "bucket": "slightly_above", "audioId": "apr_slightly_above", "emphasis": "a_little_above" },
-        { "id": "apr_deeply_above",   "bucket": "deeply_above",   "audioId": "apr_deeply_above",   "emphasis": "well_above_typical" },
-        { "id": "apr_default", "bucket": null, "isFallback": true, "audioId": "apr_default", "emphasis": "before_you_borrow", "_note": "No card / don't know / no info — the fallback, doubling as the 'before you borrow' framing." }
+        {
+          "id": "apr_deeply_below",
+          "bucket": "deeply_below",
+          "audioId": "apr_deeply_below",
+          "emphasis": "well_below_typical"
+        },
+        {
+          "id": "apr_slightly_below",
+          "bucket": "slightly_below",
+          "audioId": "apr_slightly_below",
+          "emphasis": "a_little_below"
+        },
+        {
+          "id": "apr_about_average",
+          "bucket": "about_average",
+          "audioId": "apr_about_average",
+          "emphasis": "about_typical"
+        },
+        {
+          "id": "apr_slightly_above",
+          "bucket": "slightly_above",
+          "audioId": "apr_slightly_above",
+          "emphasis": "a_little_above"
+        },
+        {
+          "id": "apr_deeply_above",
+          "bucket": "deeply_above",
+          "audioId": "apr_deeply_above",
+          "emphasis": "well_above_typical"
+        },
+        {
+          "id": "apr_unknown",
+          "bucket": null,
+          "rateUnknown": true,
+          "audioId": "apr_unknown",
+          "emphasis": "rate_on_statement",
+          "_note": "'Another card' -> doesn't know its APR. Says what is known (a card, no rate) instead of presenting the market average as theirs."
+        },
+        {
+          "id": "apr_default",
+          "bucket": null,
+          "isFallback": true,
+          "audioId": "apr_default",
+          "emphasis": "before_you_borrow",
+          "_note": "No card / rather not say / Skip -- the fallback, doubling as the 'before you borrow' framing."
+        }
       ],
       "quiz": [
         {
-          "prompt": "You owe $1,000 at 24% APR and pay only the minimum. Roughly what does that cost you over a year?",
-          "options": ["About $24", "About $120", "About $240", "Nothing if I make minimums"],
-          "correct": 2
+          "prompt": "What is APR?",
+          "options": [
+            "Annual Percentage Rate: the share of the balance due each month",
+            "Annual Percentage Rate: the yearly price of borrowing",
+            "Annual Payment Rate: the yearly price of borrowing",
+            "Annual Payment Rate: the share of the balance due each month"
+          ],
+          "correct": 1,
+          "why": "APR stands for Annual Percentage Rate, the yearly price of borrowing."
+        },
+        {
+          "prompt": "A card has a 22 percent APR and an annual fee. What does the 22 percent cover?",
+          "options": [
+            "Interest plus the annual fee",
+            "Interest on a carried balance",
+            "The annual fee, spread over the year",
+            "Interest plus any late fees"
+          ],
+          "correct": 1,
+          "why": "Unlike a loan's APR, a card's APR leaves out fees. It's essentially the interest rate."
+        },
+        {
+          "prompt": "Two people each put $1,000 on a card with a 24 percent APR. One clears it by the due date. One carries it a month. Roughly how much interest does each pay that month?",
+          "options": ["About $20 each", "$0 and about $20", "$0 and about $240", "About $240 each"],
+          "correct": 1,
+          "why": "Most cards: cleared by the due date, no interest. Carried, about 2 percent a month."
         }
       ],
       "simulation": {
         "type": "balance_calculator",
-        "_note": "Bias toward simulation over quiz. Sandbox for the BALANCE — never the user's real debt. The APR is the one exception: it is seeded from their own card, because a rate is the subject of the lesson and public information about a product rather than a fact about them. It stays draggable. See lrSimDefaults in js/lesson-rewards.js.",
+        "_note": "We do, after the lesson and before the quiz. Sandbox for the BALANCE -- never the user's real debt. The APR is the one exception: it is seeded from their card's usual rate or the rate they typed (or the typical rate when there is neither, seedTypical), and the framing line says which. It stays draggable. `copy` is APR-only wording, approved by the critic panel; the other calculators keep the shared copy (owner's call). See lessonSimOpen / renderLessonSimulation in screens/lesson-outcome.js.",
         "inputs": ["balance", "apr", "monthlyPayment"],
         "outputs": ["monthsToPayoff", "totalInterest"],
-        "defaults": { "balance": 1000, "apr": 24, "monthlyPayment": 40 }
+        "defaults": { "balance": 1000, "apr": 24, "monthlyPayment": 40 },
+        "seedTypical": true,
+        "copy": {
+          "framing": {
+            "usual": "The APR starts at the usual rate on {cardName}. The balance is made up.",
+            "entered": "The APR starts at the rate you entered. The balance is made up.",
+            "typical": "The APR starts at a typical card rate. The balance is made up."
+          },
+          "aprLabel": "APR · Annual Percentage Rate",
+          "never": "Each month's interest is at least the payment, so the balance never goes down.",
+          "tryThis": [
+            "Set the payment to the whole balance. The interest drops to $0.",
+            "Move the payment slider down. Payoff takes more months, and the interest adds up.",
+            "Tap Minimum only, then move the APR slider up and down a few points. The total interest rises and falls with it."
+          ],
+          "scenariosHelper": "Tap one to move the sliders there. The APR slider stays where you left it.",
+          "scenarioLabels": { "in_full": "Cleared by due date", "share": "A fifth a month", "minimum": "Minimum only" },
+          "scenariosNote": "On many cards, the minimum payment is about the interest plus 1% of the balance, at least $25. Here, the payment stays at the first month's minimum. A real minimum-only payoff usually takes longer."
+        }
       }
     },
     {

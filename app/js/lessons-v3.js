@@ -163,8 +163,9 @@ function lessonFramingFinish() {
 
 // ── Inference + bucketing (APR) ───────────────────────────────────────────────
 // The audio stays general (the bucket); the specific number lives in the visual
-// plan. "Don't know" → the market average (an about-average read); no card / no
-// info → null, which plays the fallback.
+// plan. "Don't know" → the market average, which seeds the calculator only: the
+// lesson plays apr_unknown and never presents that average as theirs. No card /
+// no info → null, which plays the fallback.
 /**
  * The CARD_APR entry a set of answers points at, or null. Entries are
  * `{ typical, low, high }`; a bare number is still accepted so the lookup keeps
@@ -185,12 +186,15 @@ function lessonEntryRate(entry) {
   return typeof entry === "number" ? entry : entry.typical;
 }
 
-/** The band the video draws as "cards like yours". Falls back to the national spread. */
-function lessonCardBand(inputs) {
-  const entry = lessonCardEntry(inputs);
-  if (entry && typeof entry === "object" && entry.low != null && entry.high != null) {
-    return { low: entry.low, high: entry.high };
-  }
+/**
+ * The band the video draws: the typical range of card APRs, for every card.
+ *
+ * It used to be the picked card's own offer range ("cards like yours"), while the
+ * bucket compared against the national average -- two references that disagreed:
+ * a store card at 28.5 sat mid-band for store cards and was "well above" in the
+ * narration. One reference now, and the bucket edges are this band's edges.
+ */
+function lessonCardBand() {
   const fb = (typeof CARD_APR !== "undefined" && CARD_APR.typicalBand) || null;
   return fb ? { low: fb.low, high: fb.high } : null;
 }
@@ -208,22 +212,47 @@ function lessonInferFigure(lesson, inputs) {
 /** What the video calls their card. Never a figure — the numbers are separate. */
 function lessonCardName(inputs) {
   inputs = inputs || {};
-  if (inputs.card) return inputs.card;
+  // "Platinum (Pay Over Time)" → "Platinum": the bracket is catalogue detail.
+  if (inputs.card) return inputs.card.replace(/\s*\([^)]*\)/g, "").trim();
   if (inputs.directRate === "store_retail") return "a store card";
   if (inputs.directRate === "credit_union") return "a credit union card";
   return "your card";
 }
 
+/**
+ * What the narration calls their card: issuer + card for a picked card ("Chase
+ * Sapphire Preferred" reads as a name where "Sapphire Preferred" alone does
+ * not), else the same phrase the video uses. The scripts never put "the", "a"
+ * or "your" in front of the token, so every one of these must stand alone.
+ */
+function lessonSpokenCardName(inputs) {
+  inputs = inputs || {};
+  if (inputs.issuer && inputs.card) return inputs.issuer + " " + lessonCardName(inputs);
+  return lessonCardName(inputs);
+}
+
+/**
+ * Bucket by APR POINTS against the typical card rate, with the typical band's
+ * edges as the "well" boundaries. The narration says "outside / inside the
+ * typical range", so the cut points have to BE the range:
+ *   well below < 18 · a little below 18 to < 21.0 · about 21.0–23.3 ·
+ *   a little above > 23.3 to 28 · well above > 28
+ * The old cut points were ratios of the average (0.85 / 0.95 / 1.05 / 1.20), so
+ * "well above" began at 26.6 -- inside the band the bar draws. The gap is rounded
+ * to cents so 23.3 and 21.0 land in "about" despite float error.
+ */
 function lessonBucketFor(lesson, figure) {
   if (figure == null || !lesson.bucketDimension) return null;
   if (lesson.bucketDimension.kind === "apr") {
-    const avg = (typeof CARD_APR !== "undefined" && CARD_APR.marketAverage) || 22;
-    const r = figure / avg;
-    if (r < 0.85) return "deeply_below";
-    if (r < 0.95) return "slightly_below";
-    if (r <= 1.05) return "about_average";
-    if (r <= 1.20) return "slightly_above";
-    return "deeply_above";
+    const avg  = (typeof CARD_APR !== "undefined" && CARD_APR.marketAverage) || 22;
+    const band = (typeof CARD_APR !== "undefined" && CARD_APR.typicalBand) || { low: 18, high: 28 };
+    const near = lesson.bucketDimension.aboutPoints != null ? lesson.bucketDimension.aboutPoints : 1.15;
+    const gap  = Math.round((figure - avg) * 100) / 100;
+    if (figure < band.low)  return "deeply_below";
+    if (figure > band.high) return "deeply_above";
+    if (gap < -near) return "slightly_below";
+    if (gap >  near) return "slightly_above";
+    return "about_average";
   }
   return null;
 }
@@ -246,7 +275,16 @@ function lessonSelectVariant(lesson, tags, inputs) {
   // Bucket lessons (APR): infer the figure, bucket it against the reference, and
   // match the bucket variant. No figure (no card / "I don't know" borrowing) →
   // the fallback, which is also the "before you borrow" script.
+  //
+  // A card with no rate to hand ("Another card" → don't know) has its own
+  // variant. The market average it infers would bucket as "about typical" by
+  // construction -- false comfort presented as their rate.
   if (lesson.bucketDimension) {
+    inputs = inputs || {};
+    if (inputs.useAverage && inputs.enteredApr == null) {
+      const unknown = variants.find(v => v.rateUnknown);
+      if (unknown) return unknown;
+    }
     const bucket = lessonBucketFor(lesson, lessonInferFigure(lesson, inputs || {}));
     if (bucket) {
       const hit = variants.find(v => v.bucket === bucket);
@@ -271,32 +309,49 @@ function lessonScriptFor(variantId) {
 }
 
 /**
- * The APR animation with nothing personal in it, for a run with no card APR.
+ * The script as this run speaks it: {rateLine} swapped for the line that fits
+ * where the rate came from, then {cardName} for the spoken card name. A script
+ * with no tokens comes back as the SAME array, so nothing downstream that
+ * compares scripts sees a copy it did not ask for.
+ */
+function lessonResolveScript(lines, inputs) {
+  if (!Array.isArray(lines) || !lines.some(l => /\{(cardName|rateLine)\}/.test(l))) return lines;
+  inputs = inputs || {};
+  const parts = (typeof LESSON_SCRIPT_PARTS !== "undefined" && LESSON_SCRIPT_PARTS) || {};
+  const rateLine = inputs.enteredApr != null ? parts.apr_rate_entered : parts.apr_rate_usual;
+  const spoken = lessonSpokenCardName(inputs);
+  return lines.map(l => (l === "{rateLine}" ? (rateLine || "") : l).replace(/\{cardName\}/g, spoken));
+}
+
+/**
+ * The APR animation with nothing personal in it, for a run with no card APR to
+ * plot: no card / Skip (visualTemplate.figureFree, apr_default) or a card whose
+ * rate the tester doesn't know (visualTemplate.unknownCut, apr_unknown).
  *
  * Without this the stage was plain green: the full storyboard needs the
  * viewer's own rate, and the waveform that used to stand in was retired (L10).
- * The four education beats use no figures at all, so they play here, each
- * spanning the no-card script's lines that tell the same thing
- * (visualTemplate.figureFree in lessons.json). Timed from THAT script's cues --
+ * Every education beat is token-free -- including the "$1,000 → about $20 a
+ * month" frame the quiz relies on -- so these cuts show the same lesson the
+ * card runs do, minus the personal figures. Timed from THAT script's cues --
  * the same lpTimingFor call renderLesson makes -- so the picture and the voice
- * run off one clock. Returns null when the lesson has no such cut, or the
- * script in hand is not the one the map was written against.
+ * run off one clock. Matched by VARIANT id, not by comparing script arrays:
+ * resolved scripts are copies (lessonResolveScript).
  */
-function lessonFigureFreeStoryboard(lesson, sentences) {
+function lessonFigureFreeStoryboard(lesson, sentences, variantId) {
   const vt = lesson && lesson.visualTemplate;
-  const ff = vt && vt.figureFree;
-  if (!ff || !Array.isArray(sentences) || !sentences.length) return null;
-  if (ff.script && lessonScriptFor(ff.script) !== sentences) return null;
-  return lessonCutStoryboard(vt, ff.beats, lesson.id, sentences);
+  const cut = vt && [vt.figureFree, vt.unknownCut].find(c => c && c.script === variantId);
+  if (!cut || !Array.isArray(sentences) || !sentences.length) return null;
+  return lessonCutStoryboard(vt, cut.beats, lesson.id, sentences);
 }
 
 /**
  * Cut `vt`'s spine to a line map: each entry plays one of its beats across the
  * given script lines, timed from those lines' cues (lpTimingFor -- the same
- * call the player makes, so picture and voice share one clock). Figure-free
- * by contract: callers only map beats that carry no {tokens}.
+ * call the player makes, so picture and voice share one clock, pauses
+ * included). Figure-free unless `opts.requiresFigures`: the APR card cut maps
+ * beats with {tokens}, and the renderer's figure gate has to stay on for it.
  */
-function lessonCutStoryboard(vt, beats, lessonId, sentences) {
+function lessonCutStoryboard(vt, beats, lessonId, sentences, opts) {
   if (!vt || !Array.isArray(beats) || !Array.isArray(sentences) || !sentences.length) return null;
   if (typeof lpTimingFor !== "function") return null;
   const t = lpTimingFor(lessonId, sentences.length, sentences);
@@ -316,7 +371,9 @@ function lessonCutStoryboard(vt, beats, lessonId, sentences) {
       elements: src.elements
     });
   });
-  return spine.length ? { kind: vt.kind, requiresFigures: false, spine: spine } : null;
+  return spine.length
+    ? { kind: vt.kind, requiresFigures: !!(opts && opts.requiresFigures), spine: spine }
+    : null;
 }
 
 /**
@@ -340,30 +397,50 @@ function lessonBorrowedVisualPlan(lessonId) {
  * plays — everything else about the player is untouched (D38).
  */
 function lessonOpenPlayer(lesson, variantId) {
-  state.lessonVariantId = variantId;
-  state.lessonVariantScript = lessonScriptFor(variantId);
-
-  // The data the staging-area video binds to. The narration stays general; every
-  // specific figure the viewer sees comes from here. Built from the session
-  // profile written when framing finished.
+  // The data the staging-area video binds to, and the tokens the script speaks.
+  // Built from the session profile written when framing finished.
   const prof = (state.lessonProfile && state.lessonProfile[lesson.id]) || {};
   const inputs = prof.inputs || {};
+
+  state.lessonVariantId = variantId;
+  state.lessonVariantScript = lessonResolveScript(lessonScriptFor(variantId), inputs);
+
+  // Every run starts the player from the top. renderLesson only reloads its
+  // sentences when the lesson ID changes, so replaying APR with a different card
+  // kept the first run's narration (the wrong bucket's lines) and its position
+  // -- the stage opened on its last frame with Next already enabled -- while the
+  // video took the new card's figures.
+  if (state.lessonPlayback) state.lessonPlayback.currentLessonId = null;
+
   const avg = (typeof CARD_APR !== "undefined" && CARD_APR.marketAverage) || null;
-  state.lessonVisualPlan = lesson.visualTemplate ? {
+  const vt = lesson.visualTemplate;
+  state.lessonVisualPlan = vt ? {
     lessonId: lesson.id,
     userFigure: prof.figure != null ? prof.figure : null,
     marketAvg: avg,
     gapPercent: (prof.figure != null && avg) ? Math.round(((prof.figure - avg) / avg) * 100) : null,
     bucket: prof.bucket || null,
-    band: lessonCardBand(inputs),
+    band: lessonCardBand(),
     cardName: lessonCardName(inputs),
-    storyboard: lesson.visualTemplate
+    // The figure on screen is the picked card's USUAL rate unless they typed
+    // their own; the labels say which, so "this one" never reads as theirs.
+    rateLabel: inputs.enteredApr != null ? "rate you entered" : "usual rate",
+    // A template with cuts is a beat LIBRARY with no timing of its own; it only
+    // plays through a cut below. With no cut to play, the stage falls back.
+    storyboard: vt.cardCut ? null : vt
   } : null;
-  // No figure to plot (no card, rather-not-say, Skip): play the figure-free cut
-  // instead of a blank stage. A card run is untouched -- same spine as before.
-  if (state.lessonVisualPlan && state.lessonVisualPlan.userFigure == null) {
-    const cut = lessonFigureFreeStoryboard(lesson, state.lessonVariantScript);
-    if (cut) state.lessonVisualPlan.storyboard = cut;
+  // No figure to plot -- no card, rather-not-say, Skip, or a card with no rate
+  // to hand: the variant's figure-free cut instead of a blank stage. A card run
+  // is cut to the card line map, so every beat follows its own line.
+  if (state.lessonVisualPlan) {
+    const sentences = state.lessonVariantScript;
+    const free = lessonFigureFreeStoryboard(lesson, sentences, variantId);
+    if (free) {
+      state.lessonVisualPlan.storyboard = free;
+    } else if (vt.cardCut && state.lessonVisualPlan.userFigure != null) {
+      const cut = lessonCutStoryboard(vt, vt.cardCut.beats, lesson.id, sentences, { requiresFigures: true });
+      if (cut) state.lessonVisualPlan.storyboard = cut;
+    }
   }
 
   // v2's player keys its content off state.currentLesson. The lesson is in the
@@ -399,6 +476,11 @@ function lessonSkipFraming() {
   const lesson = lessonV3(f.lessonId);
   f.questionId = null;
   f.variantId = lessonSelectVariant(lesson, [], {}).id;
+  // Skip answers nothing, so it must also CLEAR the last run's answers: the
+  // player and the calculator read the profile, and a stale card would put its
+  // figures over the no-card narration.
+  state.lessonProfile = state.lessonProfile || {};
+  state.lessonProfile[lesson.id] = { inputs: {}, figure: null, bucket: null, variantId: f.variantId };
   lessonOpenPlayer(lesson, f.variantId);
 }
 
@@ -482,7 +564,7 @@ function lessonV3LearnRow(lesson) {
  * screens/lesson.js falls back through `state.lessonVariantScript ||
  * LP_SCRIPTS[id]` and gates its video on `state.lessonVisualPlan`, one APR run
  * left EVERY other lesson playing APR's narration over APR's video — and
- * `lessonLeaveForQuiz`'s branch on `lessonVariantId` sent them all into the v3
+ * the player's Next (`lessonLeavePlayer`) branching on `lessonVariantId` sent them all into the v3
  * outcome chain, where a stale `lessonFraming.lessonId` handed them APR's quiz
  * and APR's calculator too.
  *
