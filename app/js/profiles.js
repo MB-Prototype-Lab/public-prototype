@@ -1,21 +1,13 @@
 // ─── Starting profiles ───────────────────────────────────────────────────────
 // Three cost-of-living tiers x three income levels, from data/test-profiles.json.
 //
-// ── WHY THIS EXISTS ─────────────────────────────────────────────────────────
-// Skipping setup never left the app broken, but it left it SILENT. onbFinish()
-// guards every write — `if (o.zip) state.profile.zip = o.zip` — so a skipped
-// field falls through to whatever bootV3 seeded, which is the persona: Sam,
-// 90066 Los Angeles, $68,000. A tester who skips is testing a profile nobody
-// chose and nothing on screen names, and every figure downstream is anchored on
-// it. The nine are an explicit answer to "who am I, then".
+// Explicit profiles make skipped setup inspectable rather than silently
+// assigning the persona. They also stress-test the peer model across places
+// and incomes.
 //
-// They are also the headless test matrix. Peer spending across them runs from
-// about $2,500 a month to about $12,000, which is a real stress range for
-// anything that reads the peer model — and the reason "$10 of transport" was
-// only ever found by hand is that there was one profile to find it in.
-//
-// TEMPORARY. PROFILE_PICKER (js/config.js) takes the screen out of the flow;
-// everything here still works because the sweep and the skip fallback use it.
+// Both uses are recorded (L26): "Skip all setup" always opens the picker
+// (screens/profile-picker.js), and the sweep drives every feature through the
+// same nine.
 
 function profileData() {
   return (typeof TEST_PROFILES !== "undefined" && TEST_PROFILES) || null;

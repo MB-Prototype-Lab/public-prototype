@@ -8,10 +8,8 @@
 //   the DOT           what you have actually spent (view), or what you are
 //                     setting (build, where the dot is the slider thumb)
 //
-// It replaces the three stacked Budget / Peers / You bars everywhere they were
-// rendered. Three bars state three numbers and leave the reader to do the
-// arithmetic; one track puts them in a spatial relationship, which is the
-// comparison the screen is actually for.
+// One track puts plan, peers and spend in a spatial relationship so the reader
+// need not compare three independent scales.
 //
 // ── HAND-ROLLED, IN CSS PERCENTAGES, NOT SVG ────────────────────────────────
 // L1 rules out chart libraries, so this is built by hand like every other
@@ -25,8 +23,8 @@
 // ── THE SCALE IS FULL-MONTH, AND THAT IS A CHOICE ───────────────────────────
 // Budget, peers and spend are all monthly figures, and spend-to-date is
 // compared against them as-is. Early in the month that flatters the tester --
-// five days in, nobody is over. The owner's call, for now: pro-rating is built
-// (see bandScale) and switched off, so turning it on later is one constant.
+// five days in, nobody is over. The owner's call: the peer band and the budget
+// mark stay whole-month figures, never scaled to the date.
 
 // The owner's peer spread. Not researched dispersion -- a stated +/-10% around
 // the modelled peer figure, so the band means "about what peers like you
@@ -37,20 +35,6 @@ const BAND_PEER_SPREAD = 0.10;
 // The 10% of breathing room past the largest mark, so nothing sits welded to
 // the right edge.
 const BAND_HEADROOM = 1.1;
-
-// ── The pro-rate switch ──────────────────────────────────────────────────────
-// Off: every figure is a full month and spend-to-date is compared against it.
-// On:  the peer band and the budget mark scale to how far into the month we
-//      are, so all three are "so far this month".
-//
-// Spend is NEVER scaled either way -- it is already a to-date figure, and
-// scaling it would be counting the month twice.
-const BAND_PRORATE = false;
-
-function bandScale() {
-  if (!BAND_PRORATE) return 1;
-  return (typeof estimatorMonthFraction === "function") ? estimatorMonthFraction() : 1;
-}
 
 /**
  * Everything the track needs, as numbers. Pure -- no DOM, no state reads --
@@ -67,17 +51,12 @@ function bandScale() {
  * Peers are in that max, so every mark is always visible with a tenth of the
  * track as breathing room past the highest one.
  *
- * This was briefly the other way round, with peers excluded so that a band
- * sitting above everything else would run off the edge and be marked. Against
- * the seeded persona that fired on five of twelve categories -- LA prices
- * against a modest budget -- so the chart drew nothing at all on nearly half
- * its rows. "Peers spend far more than you planned" is better said by a band
- * sitting hard right of the budget mark than by an empty track and a rule.
+ * Keep peers visible even far above plan: the gap is clearer than an empty
+ * track with an overflow rule.
  *
  * ── WHY BUILD MODE STILL SUPPLIES ITS OWN ───────────────────────────────────
  * There the budget IS the value being dragged, so an edge computed from the
- * marks would move under the thumb -- the recoil that budgetSliderMax() was
- * written to kill (screens/budget-v3.js). Build passes that stable ceiling
+ * marks would move under the thumb. Build passes budgetSliderMax()'s stable ceiling
  * instead. It is always well clear of the peer band (budgetSliderMax is at
  * least 2.2x the peer figure, against a band top of 1.1x), so peers stay on
  * screen there too -- a slider also needs somewhere to drag TO, which an edge
@@ -85,12 +64,11 @@ function bandScale() {
  */
 function budgetBandGeometry(o) {
   const opts  = o || {};
-  const scale = bandScale();
 
-  const budget = Math.max(0, Number(opts.budget) || 0) * scale;
-  const actual = Math.max(0, Number(opts.actual) || 0);          // never scaled
+  const budget = Math.max(0, Number(opts.budget) || 0);
+  const actual = Math.max(0, Number(opts.actual) || 0);
   const hasPeer = opts.peer != null && isFinite(Number(opts.peer)) && Number(opts.peer) > 0;
-  const peer   = hasPeer ? Math.max(0, Number(opts.peer)) * scale : null;
+  const peer   = hasPeer ? Math.max(0, Number(opts.peer)) : null;
   const peerLo = hasPeer ? peer * (1 - BAND_PEER_SPREAD) : null;
   const peerHi = hasPeer ? peer * (1 + BAND_PEER_SPREAD) : null;
 

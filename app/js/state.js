@@ -1,6 +1,6 @@
 // ─── App State ────────────────────────────────────────────────────────────────
 // Owns the entire app state object. All seed data resets on page refresh —
-// this is intentional for a prototype; no persistence layer exists yet.
+// this is intentional for a prototype; participant data is never persisted.
 //
 // Key sections in the state object:
 //   screen          — active screen key; always changed via go() in navigation.js
@@ -9,11 +9,15 @@
 //   tasks           — home screen daily task cards
 //   userProfile     — user-entered name, income, housing (cleared by resetUserData)
 //
-// resetUserData() clears all user-entered fields (budget, debts, profile) while
-// leaving seed/demo content (lessons, badges, tasks) intact.
+// resetUserData() (Tools "Reset User Data") leaves exactly the state a fresh
+// load has: this object as the page loaded it (STATE_AT_LOAD), then bootApp's
+// seed, which reopens onboarding. Only the reviewer's Tools settings carry over
+// (RESET_KEEPS): the theme, whether Tools is open, the lesson stage style and
+// the XP knobs.
 //
-// destinations[] drives two surfaces: the admin "Jump to screen" dropdown and
-// the per-task destination picker in the home admin panel.
+// destinations[] is the screen registry: each screen's id and the label it
+// shows in the Tools "Jump to screen" list (js/render.js) and the page title
+// (js/screen-url.js).
 
 const destinations = [
   ["streak",         "Streak Splash"],
@@ -33,17 +37,8 @@ const destinations = [
   ["bpLanding",      "Big purchase: Landing"],
   ["bpFinder",       "Big purchase: Find your car"],
   ["bpYourCar",      "Big purchase: Your car (pay and plan)"],
-  ["bpSetup",        "Big purchase: What you're buying"],
-  ["bpQuiz",         "Big purchase: Help me pick"],
-  ["bpCost",         "Big purchase: Hidden costs"],
-  ["bpOptions",      "Big purchase: Ways to spend less"],
-  ["bpFinance",      "Big purchase: Paying for it"],
-  ["bpCommit",       "Big purchase: Plan for it"],
   ["helpMeOut",      "Budget: Help me out"],
   ["profilePicker",  "Starting profile"],
-  ["spendingProfile","Budget: Spending Profile"],
-  ["budgetCompare",  "Budget: Which is closer"],
-  ["lifestyleWizard","Lifestyle Wizard"],
   ["budgetDone",     "Budget: Saved"],
   ["myProgress",     "My Progress"],
   ["learn",          "Learn"],
@@ -59,10 +54,8 @@ const destinations = [
   ["marketplace",    "Marketplace"],
   ["reward",         "Reward"],
 
-  // L14 — the v2 screens v3 never specified stay reachable HERE and nowhere
-  // else: nothing in the five tabs or the daily tasks routes to them. The
-  // Phase 6 sweep checks this list against every routable screen, so a screen
-  // that drops out is a visible warning rather than a quiet orphan.
+  // L14 — Tools keeps off-path screens reachable. The sweep checks this
+  // registry against every routable screen to catch quiet orphans.
   ["comparison",     "Where it's going"],
   ["budgetCategory", "Budget — one category"],
   ["spendEstimator", "Spend estimator"],
@@ -82,7 +75,8 @@ const destinations = [
 ];
 
 const state = {
-  // Navigation — opens on the streak splash on every fresh load/refresh.
+  // Navigation — bootApp replaces this with onboarding before the first render
+  // (D06), so the streak splash is reached only from Tools.
   screen: "streak",
 
   // ── Per-stack navigation history (L5, architecture §7) ────────────────────
@@ -127,11 +121,11 @@ const state = {
   onboarding: null,
   trialAccepted: null,
 
-  // ── Daily update (Phase 4) ────────────────────────────────────────────────
+  // ── Daily update ──────────────────────────────────────────────────────────
   // One audio file per segment, so `index` IS the position — no playhead maths.
   du: { scriptId: null, index: 0, playing: false, timer: null, finished: false },
 
-  // Share — anonymization ON by default (A11). The preview shows the literal
+  // Share — anonymization ON by default. The preview shows the literal
   // payload, so it can never drift from what would actually be posted.
   share: { anonymized: true, previewOpen: false, copied: false },
   streakRegisteredDay: null,
@@ -143,9 +137,8 @@ const state = {
   lessonVariantId: null,
   lessonVariantScript: null,
   // Per-lesson framing result for THIS session (answers, inferred figure,
-  // bucket, chosen variant). The LATEST answers only -- a re-open asks again
-  // (LESSON_REUSE_FRAMING, js/config.js). Cleared on refresh (D03 — in-memory
-  // only, no persistent cooldown).
+  // bucket, chosen variant). The LATEST answers only -- a re-open asks again.
+  // Cleared on refresh (D03 — in-memory only, no persistent cooldown).
   lessonProfile: {},
   // Parked hyperframe plan + runtime figures for the later staging-area video.
   lessonVisualPlan: null,
@@ -162,7 +155,7 @@ const state = {
   //                   what makes a second same-day entry ask DIFFERENT questions
   // journalRecurring: pattern follow-up answers. TRI-STATE values —
   //                   true | "weekdays" | false — never truthiness-checked
-  // goalEvents:       emitted by q_balance, consumed by Phase 5's goals
+  // goalEvents:       emitted by q_balance, consumed by goals
   journalSession: null,
   journalAsked: {},
 
@@ -190,13 +183,10 @@ const state = {
   selectedCategory: null,
 
   // ── Plan (12-category budget) ─────────────────────────────────────────────
-  // "empty" until a builder saves through the seam. v2's state.budget is
-  // vestigial and read only by my-progress until Phase 2b moves it.
   planStatus: "complete",
   planBuiltWith: null,
   planBuiltDate: null,
-  lifestyleWizard: null,
-  // v3.1 budget builder — three steps, per-line "Help me out". Holds the
+  // Budget builder — three steps, per-line "Help me out". Holds the
   // figures until bbSubmit() puts them through the baseline seam (L6).
   budgetBuild: null,
   // The Help-me-out run for ONE category: its answers, its stage, and the
@@ -221,11 +211,11 @@ const state = {
   // answered, so the task is not put to them again.
   esfSelfReported: null,
 
-  // ── Big purchase calculator (v3.1c) ───────────────────────────────────────
+  // ── Big purchase calculator ──────────────────────────────────────────────
   // bp           the in-flight run: setup answers, financing, per-card overrides,
   //              the selected card, sheets, Buddy. Cleared by bpStart()
-  // bigPurchase  the SAVED plan bpCommit() writes: the chosen card, its stack at
-  //              3 and 5 years, the goal id, the reminder and its figure
+  // bigPurchase  the SAVED plan bpCommit() writes: the chosen card, its rows,
+  //              financing and the goal id
   // bpEvents     session log (spec §12), in-memory under D03
   bp: null,
   bigPurchase: null,
@@ -236,45 +226,20 @@ const state = {
   // The picker session — tier, then income level.
   profilePick: null,
 
-  // Which of the six lifestyle dimensions the USER actually answered, as
-  // opposed to inheriting from the persona. state.lifestyle is fully populated
-  // at boot (bootV3), so it cannot tell the two apart — and the wizard needs
-  // to, or every question opens pre-selected with a stranger's answer.
-  // Onboarding step 5 sets the two it asks (ONB_LIFESTYLE_DIMS).
-  lifestyleAnswered: {},
-
-  // Figures the onboarding follow-up sliders collect: carMonthly, carAge,
-  // transitWeekly, walkMonthly, and the derived transportMonthly. A stated
-  // amount, not an answer key — the peer model never reads these, but the
-  // budget prefers transportMonthly over its own guess when it is present.
-  lifestyleDetail: {},
-
-  // Admin panel collapse — persists across screens.
-  //
-  // Starts CLOSED. On a phone the panel is gone entirely (css/layout.css hides
-  // both it and its expand tab under 768px), so a desktop that opened with dev
-  // chrome beside the frame was the odd one out — and the demo link is opened
-  // by people who are not developing. The expand tab is still there at any
-  // width that has room for it, which is the difference from mobile: hidden,
-  // not removed.
-  //
-  // State is in-memory (D03), so every refresh returns here. That is the point.
+  // Tools starts closed so demo visitors see the product, not instrumentation.
+  // The expand tab is available only at desktop widths (css/layout.css).
   adminCollapsed: true,
 
   // Lesson player stage style — toggled from admin panel.
   //
   //   "auto"     the default: video when the lesson HAS a storyboard and a
   //              personalized figure, clean otherwise
-  //   "video"    force hyperframes (still needs a storyboard to show anything)
   //   "waveform" the animated bar — admin-only, never a default
   //   "clean"    nothing behind the captions
   //
   // L10: the narration is a recorded .wav, and an animated waveform that does
   // not correspond to it is decoration pretending to be a visualisation — so
-  // waveform renders ONLY when explicitly selected here. A hardcoded "video"
-  // default reversed that, because only `apr` has a storyboard: every other
-  // lesson failed the storyboard test and fell through to the waveform.
-  // "auto" gives the intended split — apr is video, the rest are clean.
+  // waveform renders ONLY when explicitly selected here (lpStageShown).
   lpStageStyle: "auto",
 
   // ── Lesson playback session state ─────────────────────────────────────────
@@ -304,8 +269,7 @@ const state = {
 
   // Theme — picked from the admin panel, resets on page refresh (D03: no
   // persistence). Valid ids live in THEMES (js/theme.js). Default is Natural
-  // Light — L21 as revised; it originally shipped Dark so the D36 cream had to
-  // be chosen rather than defaulted into, and that call has been reversed.
+  // Light (L21).
   settings: { colorMode: "naturalLight" },
 
   // UI interaction state
@@ -345,7 +309,7 @@ const state = {
 
   // badges: persistent mastery objects per finance topic.
   // tier + level + progress drive the ring display.
-  // Whether a badge has bonus content is now derived from lessons[].dailyTask,
+  // Whether a badge has bonus content is derived from lessons[].dailyTask,
   // not stored as a static flag — keeping the two in sync automatically.
   badges: [
     { name: "Emergency Fund",   tier: "Copper", level: 4, progress: 36 },
@@ -836,15 +800,13 @@ const state = {
   ],
 
   // ─── XP configuration (admin-editable) ───────────────────────────────────
-  // These are the PRD's core tuning levers. All three are surfaced in the
-  // Learn admin panel so they can be adjusted during user testing without
-  // touching code.
+  // These are the PRD's core tuning levers. Both are surfaced in the Learn
+  // admin panel so they can be adjusted during user testing without touching
+  // code.
   //   bonusMultiplier:       daily task lessons earn this multiple of base XP (PRD placeholder: 5x)
-  //   discountedRate:        manual learning after daily bonus consumed (PRD placeholder: 0.5x)
   //   quizQuestionsRequired: questions answered correctly before quiz ends (default: 3)
   xpConfig: {
     bonusMultiplier: 5,
-    discountedRate: 0.5,
     quizQuestionsRequired: 3
   },
 
@@ -902,10 +864,8 @@ const state = {
   rewardXp: 0,             // total XP across all badges (base + bonus combined)
   rewardLessonTitle: "",   // lesson title shown in reward screen header
 
-  // Charity Points earned by this completion, itemised. Two awards can land —
-  // the lesson's own bones and the daily task's — and before this they both
-  // went silently into state.kibble, so the reward screen showed neither and
-  // the total came to roughly double what the home card had promised.
+  // Itemise the lesson's and daily task's Charity Points separately so the
+  // reward screen can explain the total credited to state.kibble.
   // Opened by lessonRewardStart / completeLesson, written through lrPointsRecord.
   rewardPoints: null,
 
@@ -916,12 +876,9 @@ const state = {
   selectedDebt: null,
   debtAnalyzerExtraPayment: 200,
   debtAnalyzerIncluded: {},
-  // ── v2 debt data (L14) ────────────────────────────────────────────────────
-  // v3 never specified debts, so the v2 debt screens are kept off the main
-  // paths and still need their instruments. Everything else that lived on
-  // state.budget — 5 nested category buckets, fixedOverhead, the peer-average
-  // profile — was retired in 2b along with the screens that read it. The v3
-  // budget is state.plan (12 flat categories).
+  // ── Debt data (L14) ───────────────────────────────────────────────────────
+  // Off-path debt screens need these instruments. The category budget lives
+  // separately in state.plan (12 flat categories).
   budget: {
     fixedOverhead: [
       { name: "Debt Minimum Payments", amount: 150 }
@@ -954,18 +911,6 @@ const state = {
     ]
   },
 
-  // ── Lifestyle answers and derived sub-sliders ─────────────────────────────
-  // answers: per theme, keyed by questionIndex → answerIndex (0–3)
-  // lastUpdated: ISO date string or null
-  lifestyleAnswers: {
-    food:          { answers: {}, lastUpdated: null },
-    entertainment: { answers: {}, lastUpdated: null },
-    travel:        { answers: {}, lastUpdated: null },
-    shopping:      { answers: {}, lastUpdated: null },
-    other:         { answers: {}, lastUpdated: null }
-  },
-
-
   // ── Point-in-time balance snapshots (for monthly tracking) ────────────────
   accountBalances: [],  // [{id, account, amount, date}]
 
@@ -977,16 +922,11 @@ const state = {
   // ── Post-result loop context ──────────────────────────────────────────────
   // Describes what was just completed. Drives the context headline on post-result
   // screen and the impact-landing destination on the finish screen.
-  // "budget" | "lifestyle" | "monthlyUpdate" | "goal" | null
+  // "monthlyUpdate" | "goal" | null
   postResultContext:  null,
-  postResultTheme:    null,   // lifestyle theme key when context === "lifestyle"
   postResultReaction: null,   // reaction selected on post-result screen
   nextAction:         null,   // action chosen on next-action screen
   monthlyUpdateGap:   null,   // detected gap from monthly update flow
-
-  // ── Lifestyle chain step tracking ────────────────────────────────────────
-  selectedLifestyleTheme: null,  // theme key active in lifestyle-chain screen
-  lifestyleChainStep:     0,     // 0-based index of current question in chain
 
   // ── Commitments from post-result loop ────────────────────────────────────
   commitments: [],  // [{id, text, createdAt, goalId}]
@@ -995,64 +935,37 @@ const state = {
   // Set by submitBudgetBaseline() when a builder saves over an EXISTING budget:
   // the baseline parks here while the shared update-confirm screen shows the
   // old → new comparison. Applied and cleared on confirm; cleared on discard.
-  // A new budget from either builder is a pure override — the old "re-apply
-  // lifestyle answers?" re-run prompt was removed with this seam.
   pendingBaseline: null,
 
 };
 
-// Wipes user-entered profile data and re-renders. Called from admin panel.
+// The state as the page loads it, before bootApp seeds the data. Taken here,
+// straight after the literal, so nothing has written to it yet.
+const STATE_AT_LOAD = JSON.parse(JSON.stringify(state));
+
+// Reviewer settings from the Tools panel, not tester data: a reset keeps them.
+const RESET_KEEPS = ["settings", "adminCollapsed", "lpStageStyle", "xpConfig"];
+
+// Tools "Reset User Data": the next tester starts from exactly what a fresh load
+// gives (D03), without the reload. Every field goes back to STATE_AT_LOAD, so a
+// field added later is reset without anyone remembering to list it here.
 function resetUserData() {
-  // The value trail is user-entered data too, and it is the kind that LEAVES:
-  // it rides in a URL a third party records. Left behind, the next tester on
-  // this browser would carry the previous one's figures into their checkpoint
-  // (js/value-trail.js).
+  // The value trail lives outside `state`, and it is user-entered data that
+  // LEAVES: it rides in a URL a third party records. Left behind, the next
+  // tester on this browser would carry the previous one's figures into their
+  // checkpoint (js/value-trail.js).
   if (typeof ubTrailReset === "function") ubTrailReset();
-  state.userProfile = { name: "", monthlyIncome: "", housingCost: "", notes: "" };
-  state.budget.debts         = [];
-  state.selectedDebt         = null;
-  state.debtAnalyzerIncluded = {};
-  state.selectedOffer        = null;
-  state.rewardBadgeGains     = null;
-  state.rewardXp             = 0;
-  state.rewardLessonTitle    = "";
-  state.rewardPoints         = null;
-  state.accountBalances      = [];
-  state.commitments          = [];
-  state.flowOrigin           = null;
-  state.postResultContext    = null;
-  state.postResultTheme      = null;
-  state.postResultReaction   = null;
-  state.nextAction           = null;
-  state.monthlyUpdateGap     = null;
-  state.editingGoalId        = null;
-  state.pendingBaseline      = null;
-  state.esf                  = null;
-  state.expenses             = null;
-  state.esfGoal              = null;
-  state.esfEvents            = [];
-  state.esfSelfReported      = null;
-  state.lessonPlayback       = { sentences: [], cues: [], total: 0, elapsed: 0, lastTick: 0, index: 0, playing: false, ended: false, completed: false, currentLessonId: null, pendingAutoPlay: false, timer: null, speed: 1, scrubWasPlaying: false };
-  state.chat                 = { messages: [], bubbles: [] };
-  // Lesson framing answers and the derived visual plan. Without these a reset
-  // keeps the last run's figures (and, with LESSON_REUSE_FRAMING on, the lesson
-  // would never re-ask its framing questions).
-  state.lessonFraming        = null;
-  state.lessonProfile        = {};
-  state.lessonVisualPlan     = null;
-  // Estimator cooldowns are keyed to the day clock, which bootV3() re-seeds —
-  // leaving them behind makes every category open on "All caught up" with no
-  // data behind it.
-  state.estimator            = null;
-  state.estimatorAsked       = {};
-  state.selectedCategory     = null;
-  // Setup answers that unlock follow-ups — without this, a reset leaves the
-  // streaming list and statement week behind and the follow-ups stay unlocked
-  // against questions the user no longer appears to have answered.
-  state.journalProfile       = {};
-  state.kbd                  = { open: false, layer: "abc", shift: false };
-  // Re-seed from the v3 data files so reset returns to the seeded start state
-  // rather than an empty one (D03: refresh does the same thing via the gate).
-  bootV3();
+  // Stop whatever is playing while its timers are still reachable: they are
+  // held on the state about to be replaced, and nothing could clear them after.
+  if (typeof lpStopPlayback === "function") lpStopPlayback();
+  if (typeof onbVideoStop === "function") onbVideoStop();
+  if (typeof duClearTimer === "function") duClearTimer();
+  if (typeof buddyStopIdle === "function") buddyStopIdle();
+  const kept = {};
+  RESET_KEEPS.forEach(k => { kept[k] = state[k]; });
+  Object.keys(state).forEach(k => { delete state[k]; });
+  Object.assign(state, JSON.parse(JSON.stringify(STATE_AT_LOAD)), kept);
+  // Re-seed from the data files and reopen onboarding, as the first boot does.
+  bootApp();
   render();
 }

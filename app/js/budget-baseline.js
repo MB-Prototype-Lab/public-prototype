@@ -5,50 +5,26 @@
 // Exception: esfCommit applies immediately and returns to Goals (owner-approved).
 //
 // Builders never write state.plan directly. That is the whole point of the
-// seam: v2 had two builders behind it, v3 has one (L6), and a third could be
-// added without touching anything downstream.
-//
-// PORTED IN PHASE 2 — v2's version converted an 8-amount payload into 5 nested
-// buckets via HOUSING_SPLIT / BILLS_SPLIT. Under the flat 12 (A2) there is
-// nothing to split: a baseline carries a monthly figure per category and the
-// conversion disappears.
+// seam (L6): a builder can be added without changing downstream readers.
 
 /**
  * Normalized baseline.
  *   source     builder id, shown as "Built with X"
  *   profile    { zip, householdSize, incomeAnnual }
- *   lifestyle  the six wizard dimensions, keyed for peer-benchmarks.json
+ *   lifestyle  the six lifestyle dimensions, keyed for peer-benchmarks.json
  *   monthly    { <category>: amount } across all 12
  */
 const BUDGET_BUILDER_LABELS = {
-  lifestyleWizard: "Lifestyle wizard",   // v3's builder; v3.1 keeps the id readable
   budgetBuild: "Budget builder",
   emergencyFund: "Emergency fund"        // seeds the budget; runs before it
 };
-
-/** Build a baseline from the current plan — powers builder re-entry. */
-function planToBaseline() {
-  const monthly = {};
-  CATEGORIES.forEach(c => { monthly[c] = catValue(state.plan, c); });
-  return {
-    source: state.planBuiltWith || null,
-    at: state.planBuiltDate || null,
-    profile: {
-      zip: state.profile.zip,
-      householdSize: state.profile.householdSize,
-      incomeAnnual: state.profile.incomeAnnual
-    },
-    lifestyle: Object.assign({}, state.lifestyle),
-    monthly: monthly
-  };
-}
 
 /** Commit a baseline: submit/confirm, or the approved immediate ESF save. */
 function applyBudgetBaseline(baseline) {
   if (!baseline || !baseline.monthly) return;
 
   if (baseline.profile) {
-    // D09 — onboarding/wizard inputs override the persona where they overlap.
+    // D09 — onboarding/builder inputs override the persona where they overlap.
     ["zip", "householdSize", "incomeAnnual"].forEach(k => {
       if (baseline.profile[k] != null && baseline.profile[k] !== "") {
         state.profile[k] = baseline.profile[k];
@@ -77,16 +53,12 @@ function applyBudgetBaseline(baseline) {
 
   // Mark any task that pointed at whatever built this baseline.
   //
-  // The standalone budget task is gone — the emergency fund runs first and
-  // seeds the budget, so "Saving for an emergency" is the task that completes
-  // when a baseline lands. budgetBuild stays matched because the builder is
-  // still admin-reachable and can still commit.
+  // Match both builders so off-path task cards also reflect a completed save.
   (state.tasks || []).forEach(t => {
     if (t.destination === "budgetBuild" || t.destination === "esfBuild") t.completed = true;
   });
   // Route through homeCompleteTask rather than setting the flag directly —
-  // doing it by hand marked the task done but skipped the Charity Points it
-  // pays, so building a budget silently earned nothing.
+  // it also credits the task's Charity Points.
   (state.dailyTasks || []).forEach(t => {
     if (t.route !== "budget" && t.route !== "emergency_fund") return;
     if (typeof homeCompleteTask === "function") homeCompleteTask(t.id);

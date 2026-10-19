@@ -1,27 +1,10 @@
-// ─── Post-Result Reaction Prompt ──────────────────────────────────────────────
-// TAB: None | NAV BAR: Hidden — full focus on reaction
-//
-// PURPOSE
-// First screen of the post-input loop. After completing any major Budget input
-// (2 Minute Budget, lifestyle chain, monthly update), shows a context summary, then asks
-// "How does this feel?" with a 4-notch slider before the user decides next steps.
-//
-// NAVIGATION
-//   Entry: Triggered after completing the 2 Minute Budget, lifestyle chain, or monthly update
-//   Exit:  Reaction selected → nextAction screen
-//
-// PRODUCTION NOTES
-//   state.postResultContext: "budget" | "lifestyle" | "monthlyUpdate" | "goal"
-//   state.postResultReaction: "worried" | "ok" | "good" | "excited" (or null)
-//   state.flowOrigin: set before entering this screen; preserved through finish
+// Ask for a reaction after the monthly-update result. Context selects the
+// summary heading; preserve flowOrigin through the next-action/finish journey.
 
 function renderPostResult() {
   const context = state.postResultContext;
-  const theme   = state.postResultTheme;
 
   const headlines = {
-    budget:       { title: "Budget updated",           sub: "Your spending plan has been saved." },
-    lifestyle:    { title: "Lifestyle answers saved",  sub: lifestyleThemeLabel(theme) + " has been recorded." },
     monthlyUpdate:{ title: "Monthly check-in done",    sub: "Your account and debt balances are logged." },
     goal:         { title: "Goal saved",               sub: "Your new goal has been added to My Progress." }
   };
@@ -41,18 +24,6 @@ function renderPostResult() {
         <div style="font-weight:850;font-size:16px;margin-bottom:4px;">${h(headline.title)}</div>
         <p class="helper" style="margin:0;">${h(headline.sub)}</p>
       </div>
-
-      ${context === "budget" ? `
-      <div class="card" style="margin-bottom:12px;">
-        <div class="section-title" style="margin-bottom:8px;">Your budget at a glance</div>
-        ${CATEGORIES.slice(0,5).map(cat => `
-          <div class="row" style="margin-bottom:4px;">
-            <span class="helper">${h(catLabel(cat))}</span>
-            <span class="stat-val">${budgetFmt(catValue(state.plan, cat))}</span>
-          </div>
-        `).join("")}
-      </div>
-      ` : ""}
 
       <h1 class="title" style="font-size:18px;margin-bottom:8px;">How does this feel?</h1>
 
@@ -132,14 +103,6 @@ function updateFeelingDescription() {
   };
   const el = $("feelingDesc");
   if (el) el.textContent = descs[val] || descs[2];
-}
-
-// 2b: v2's lifestyle themes were retired with their screens. The post-result
-// loop still labels its context, so fall back to the generic word.
-function lifestyleThemeLabel(themeKey) {
-  const q = (typeof LW_QUESTIONS !== "undefined" ? LW_QUESTIONS : [])
-    .find(function(x) { return x.dim === themeKey; });
-  return q ? q.prompt : "Lifestyle";
 }
 
 function selectReaction(sliderValue) {

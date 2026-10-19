@@ -1,0 +1,48 @@
+'use strict';
+// How the journey state check reads state across a cleanup. Entries are
+// reviewed like code, and a PR that adds one names it in its text.
+//   {key: 'currentName', as: 'nameInSnapshots'}  a state key renamed by a
+//     cleanup, given one name on both sides so the rename does not read as a
+//     change in what the app remembers.
+//   {removed: 'a.b.c', why: '<one line>'}  a field the app never reads, deleted
+//     by a cleanup: left out of the state digest and deltas on both sides. A dot
+//     path from the state root; `*` matches any key or index at that level, but
+//     not at every level. The commit that deletes the field adds its entry: one
+//     that still matches a field in the app's state warns in the gate and fails
+//     --against and at the head of --series.
+module.exports = [
+  { key: 'isFramed', as: 'isV3' },
+  { removed: 'xpConfig.discountedRate', why: 'the Learn Tools knob wrote it and nothing read it' },
+  { removed: 'helpMeOut.target', why: 'always "budget" once the emergency fund hook was deleted' },
+  { removed: 'esf.billAmounts', why: 'emergency fund bill overrides: nothing wrote them, and their one reader was deleted' },
+  { removed: 'esf.extras', why: 'the emergency fund extra-expense box no screen offers' },
+  { removed: 'esf.insuranceOverride', why: 'an emergency fund field nothing wrote or read' },
+  { removed: 'esf.declined', why: 'the emergency fund "I don\'t have one" flag nothing sets' },
+  { removed: 'esf.owns', why: 'its readers, the irregular-bill gate and the rent-or-own toggle, were deleted' },
+  { removed: 'esf.hasCar', why: 'its reader, the irregular-bill gate, was deleted' },
+  { removed: 'expenses.declined', why: 'copied from esf.declined, which nothing sets' },
+  { removed: 'expenses.extras', why: 'copied from esf.extras, which nothing fills' },
+  { removed: 'estimator.target', why: 'always "mtd": no caller asked for the budget mode' },
+  { removed: 'lessonProfile.*.variantId', why: 'written when framing finished and never read' },
+  { removed: 'onboarding.lwIndex', why: 'the position inside the removed lifestyle step' },
+  { removed: 'onboarding.lifestyleAnswered', why: 'only the removed lifestyle step wrote it' },
+  { removed: 'onboarding.lifestyleDetail', why: 'only the removed commute sliders wrote it' },
+  { removed: 'lifestyleWizard', why: 'the removed lifestyle wizard\'s session; always null without its screens' },
+  { removed: 'onboarding.buddyIndex', why: 'the position inside the removed buddy creator sub-steps; the buddy step is one screen' },
+  { removed: 'bp.ui.pick', why: 'the row the removed Big purchase range-picker sheet was open on' },
+  { removed: 'lifestyleAnswered', why: 'which lifestyle answers Help me out marked as the tester\'s own; nothing read it' },
+  { removed: 'lifestyleDetail', why: 'stated lifestyle amounts nothing filled or read' },
+  { removed: 'postResultTheme', why: 'the lifestyle theme for a post-result context nothing sets' },
+  { removed: 'bp.plan.remind', why: 'the Big purchase budget reminder box, which nothing ticked; the reminder is deleted' },
+  { removed: 'bigPurchase.remindBudget', why: 'always false: the deleted Big purchase reminder\'s switch' },
+  { removed: 'bigPurchase.budgetFigure', why: 'the monthly figure only the deleted Big purchase reminder offered' },
+  { removed: 'bigPurchase.taskDue', why: 'the deleted Big purchase reminder\'s due date; always null' },
+  { removed: 'bigPurchase.reminderClosed', why: 'whether the deleted Big purchase reminder was dismissed' },
+  { removed: 'bpEvents.*.detail.remindBudget', why: 'the deleted Big purchase reminder\'s switch, copied into the commit log entry' },
+  { removed: 'bp.askZip', why: 'decided whether to ask the ZIP on a Big purchase screen that no longer asks it; never read' },
+  { removed: 'bp.ui.edit', why: 'a Big purchase sheet field nothing set or read' },
+  { removed: 'bigPurchase.stack5', why: 'the saved plan\'s five-year cost stack; never read' },
+  { removed: 'lifestyleAnswers', why: 'per-theme answers of the removed lifestyle chain; never read' },
+  { removed: 'selectedLifestyleTheme', why: 'the removed lifestyle chain\'s active theme; never read' },
+  { removed: 'lifestyleChainStep', why: 'the removed lifestyle chain\'s question index; never read' },
+];

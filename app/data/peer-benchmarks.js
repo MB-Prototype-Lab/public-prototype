@@ -2,15 +2,14 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const PEER_BENCHMARKS =
 {
   "_note": "AI-generated at build time, stored static (D20). Structured as a MODEL — base values plus multiplicative adjustment rules — not a flat lookup of finished numbers. Never derived from real user data (D23).",
 
   "coverage": {
     "states": ["CA", "AR", "NY", "VA"],
-    "_note": "A12. Model structure supports all-US expansion by adding zipTiers entries only. No code changes required."
+    "_note": "Model structure supports all-US expansion by adding zipTiers entries only. No code changes required."
   },
 
   "method": {
@@ -91,7 +90,7 @@ const PEER_BENCHMARKS =
   },
 
   "lifestyleModifiers": {
-    "_note": "Applied after cost-of-living. Set by the lifestyle wizard.",
+    "_note": "Applied after cost-of-living, using persona defaults and dimensions learned by Help me out.",
     "foodie": {
       "low":      { "Dining out": 0.72, "Groceries": 0.92 },
       "moderate": { "Dining out": 1.0, "Groceries": 1.0 },
@@ -134,7 +133,7 @@ const PEER_BENCHMARKS =
     "_check": "275 * 1.34 * 1.0 = 368.5, rounds to 370",
     "userActual": 429,
     "gapPercent": 16,
-    "_note_gap": "The seeded observation states 34% over. That figure compares against the user's own BUDGET of 320, not the peer value. Both framings appear in the UI and must be labelled distinctly — see 04-budget-benchmarks.md."
+    "_note_gap": "The seeded observation states 34% over. That figure compares against the user's own BUDGET of 320, not the peer value. Both framings appear in the UI and must be labelled distinctly."
   }
 }
 ;

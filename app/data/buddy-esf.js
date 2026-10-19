@@ -2,8 +2,7 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const BUDDY_ESF =
 {
   "_note": "Buddy's ESF panel — what he says, per screen and per row. Companion to data/buddy-responses.json, NOT part of it: that file is the keyword matcher's response library (message in, one response out), and this is a per-screen question tree the user navigates by tapping. Same dog, two different shapes, and folding this into that file would have meant one of the two shapes pretending to be the other. The keyword matcher is untouched by this feature and still owns the Home chat.",

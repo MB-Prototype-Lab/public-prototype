@@ -1,7 +1,8 @@
 // ─── Usability tracking (Useberry) ───────────────────────────────────────────
-// v4 only, off by default. USEBERRY_TRACKING in js/config.js is the switch and
-// the only switch — see the note there about why this is the one sanctioned
-// exception to D02, and why it has to stay narrow.
+// Off in development. A snapshot's tracking is chosen when it is prepared
+// (`publish.py prepare --tracking`, app/docs/useberry.md) and frozen in
+// release-config.js, which js/config.js reads into USEBERRY_TRACKING. It is the
+// one sanctioned exception to D02, and it has to stay narrow.
 //
 // ── WHY A SNIPPET RATHER THAN THEIR PROXY ───────────────────────────────────
 // Useberry can serve a site two ways: through their proxy (nothing to install)
@@ -33,7 +34,7 @@ const USEBERRY_SRC =
 
 let useberryLoaded = false;
 
-/** Would this build load the tracker? Exposed so admin and the sweep can ask. */
+/** Would this build load the tracker? Exposed so the sweep and tests can ask. */
 function useberryActive() {
   if (typeof USEBERRY_TRACKING === "undefined" || !USEBERRY_TRACKING) return false;
   // file:// cannot fetch it and has no test session behind it; attempting the

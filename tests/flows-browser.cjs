@@ -1,11 +1,11 @@
-// Optional real-browser verification; no dependency installation or CI requirement.
-// MB_PLAYWRIGHT_MODULE=/path/to/playwright node tests/flows-browser.cjs
+// Real-browser Flow verification; runs in CI's Browser journeys job (tests/browser).
+// node tests/flows-browser.cjs  (Playwright from tests/browser; MB_PLAYWRIGHT_MODULE=/path/to/playwright overrides)
 // Add MB_FLOW_BASE_URL=http://127.0.0.1:8765 for HTTP participant-link checks.
 // MB_CHROMIUM_ARGS is an optional JSON array; MB_CHROMIUM_EXECUTABLE selects a binary.
-const { chromium } = require(process.env.MB_PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { chromium } = require(process.env.MB_PLAYWRIGHT_MODULE || path.join(__dirname, 'browser', 'node_modules', 'playwright'));
 const os = require('node:os');
 const {execFileSync} = require('node:child_process');
 const { pathToFileURL } = require('node:url');
@@ -13,6 +13,24 @@ const http = require('node:http');
 const repo = process.cwd();
 const {checkExpandButton} = require('./flows-tools-browser.cjs');
 async function expectScreen(page, screen) { await page.waitForFunction(s => typeof state !== 'undefined' && state.screen === s, screen); }
+// Refresh without the pin returns to the selector; with Pin on refresh it
+// restarts the same Flow fresh (js/refresh-pin.js).
+async function reloadChecks(page) {
+ const here=page.url();
+ await openTools(page);
+ const pinned=page.getByLabel('Pin on refresh',{exact:true});
+ if(await pinned.isChecked()) await pinned.uncheck();
+ await page.getByRole('button',{name:'Close Tools',exact:true}).click();
+ await page.reload();
+ await page.waitForURL(u=>u.pathname.endsWith('/index.html')&&!u.pathname.includes('/flows/'));
+ await page.goto(here);
+ await expectScreen(page,'onboarding');
+ await openTools(page);
+ const pin=page.getByLabel('Pin on refresh',{exact:true});
+ if(!(await pin.isChecked())) await pin.check();
+ await page.reload();
+ await expectScreen(page,'onboarding');
+}
 async function openTools(page) {
  const toggle=page.locator('#adminExpandTab');
  if(await toggle.getAttribute('aria-expanded')==='false') await toggle.click();
@@ -58,8 +76,7 @@ async function checkTools(page) {
  assert.equal(await page.evaluate(()=>state.onboarding.zip),'90210');
  await page.getByRole('button',{name:'Copy State',exact:true}).click();
  await page.getByRole('button',{name:'Close Tools',exact:true}).click();
- await page.reload();
- await expectScreen(page,'onboarding');
+ await reloadChecks(page);
  assert.equal(await page.locator('#adminExpandTab').getAttribute('aria-expanded'),'false');
 }
 async function next(page) { await page.locator('#onbContinue').click(); }
@@ -236,8 +253,7 @@ async function purchaseBrowser(browser,temp,mode) {
  assert((await page.locator('#adminRoot').innerText()).includes('Scores'));
  assert.equal(await page.evaluate(()=>JSON.stringify(state.plan)),savedBudget);
  assert.equal(await page.evaluate(()=>__navLog.every(s=>MB_FLOW.allowed_screens.includes(s))),true);
- await page.reload();
- await expectScreen(page,'onboarding');
+ await reloadChecks(page);
  assert.equal(await page.evaluate(()=>state.bp),null);
  assert.equal(new URL(page.url()).searchParams.get('participant'),'car-123');
  assert.equal(errors.length,0,errors.join('\n'));
@@ -325,8 +341,7 @@ async function purchaseBrowser(browser,temp,mode) {
    await saveAndReopenFund(page);
    assert.equal(await page.evaluate(()=>Array.from(document.scripts).some(s=>/useberry.*(?:\.com|\.io)/i.test(s.src))),false);
    if(mode==='http')assert.equal(new URL(page.url()).searchParams.get('participant'),'review-123');
-   await page.reload();
-   await expectScreen(page,'onboarding');
+   await reloadChecks(page);
    assert.equal(await page.evaluate(()=>state.esf),null);
    assert.equal(await page.getByPlaceholder('ZIP code').inputValue(),'');
    await page.getByRole('button',{name:'Skip',exact:true}).click();

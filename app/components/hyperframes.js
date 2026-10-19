@@ -1,10 +1,8 @@
 // ─── Hyperframes — seekable, data-bound scene animation ──────────────────────
 // A reusable visual engine for "video" surfaces. Named for HeyGen's Hyperframes,
 // whose authoring model this borrows: animation described as code on a timeline
-// that can be advanced to any timestamp. Its MP4 exporter is not borrowed and is
-// not wanted here — the app is no-build and file:// (L1), the spec asks for
-// animated DOM rather than encoded video (A9), and the figures differ per user,
-// which a pre-rendered file cannot do.
+// that can be advanced to any timestamp. Runtime figures differ per user, so
+// these scenes use animated SVG rather than pre-rendered video (L1).
 //
 // ── THE CLOCK CONTRACT ───────────────────────────────────────────────────────
 // Every animated element gets ONE animation whose duration is the whole piece,
@@ -156,12 +154,8 @@ const HF_ANIMS = {
 
 // Entrances and exits are wall-clock SECONDS, not fractions of the runtime.
 //
-// The caps used to be fractions — min(0.09, span * 0.45) — and everything in
-// this engine is a fraction of the whole piece, so a 70-second lesson gave each
-// element a 6.3-second fade-in. The motion was correct and imperceptibly slow:
-// text drifted into view over six seconds while the narrator finished a
-// sentence and moved on. Expressed in seconds, a beat snaps in, holds for its
-// line, and snaps out, at any runtime.
+// Fixed seconds keep entrances quick regardless of total narration length;
+// fractions alone would make long lessons' fades imperceptibly slow.
 const HF_IN_SEC  = 0.42;
 const HF_OUT_SEC = 0.30;
 // The marker's slide from typical to their own rate carries the whole point of
@@ -181,8 +175,7 @@ function hfFrac(sec, totalSec, cap) {
  * stays on screen.
  *
  * `totalSec` is what converts the fixed second-durations above into the
- * percentages a @keyframes block needs. Without it the entrance is a share of
- * the runtime, which is how it ended up at six seconds.
+ * percentages a @keyframes block needs without scaling fades with runtime.
  */
 function hfKeyframes(name, from, to, anim, hold, totalSec) {
   const a = HF_ANIMS[anim] || HF_ANIMS.fade;
@@ -279,21 +272,12 @@ function hfScale(el, data, uid, n, beat, totalSec) {
   const shift = (xAvg - xUser).toFixed(3);   // marker starts on typical, slides to theirs
 
   // ── Label placement ───────────────────────────────────────────────────────
-  // These used to collide. "cards like yours" sat centred over the band at
-  // y-6.4, and the user's own rate sat at xUser, y-6.2 — for an Amex Platinum
-  // (25.5 in a 21.24-29.99 band) that is x 50.0 vs 49.36 and y 33.6 vs 33.8:
-  // 0.64 apart horizontally, 0.2 vertically, i.e. printed on top of each other.
-  // Neither offset was a function of the other, so they collided whenever the
-  // user's rate landed near the band's midpoint — the common case, not an edge.
-  //
-  // Now the two live in different registers entirely:
+  // Separate vertical registers prevent collisions when the user's rate is
+  // near the peer band's midpoint:
   //   · band caption   — top-left, anchored to the axis start, out of the way
   //   · user's rate    — ABOVE the line, bold, the one thing to read first
   //   · typical's rate — directly UNDER its own tick, inside the graph
   //   · band ends      — dropped to the bottom, where an axis scale belongs
-  // "typical" was at y+14.5 while its tick ended at y+4.4, stranded ten units
-  // below the thing it labelled and under the end labels, which is why it read
-  // as sitting outside the chart.
   const yUserLabel = y - 6.2;
   const yBandCap   = y - 13.5;
   const yAvgLabel  = y + 8.4;
@@ -451,12 +435,8 @@ function hyperframesSync(root, opts) {
     try {
       if (opts.playing) {
         // NOT `playState !== "running"`. A FINISHED animation is not running
-        // either, so that test played it -- and play() on a finished animation
-        // rewinds it to zero. Every element here is one animation spanning the
-        // whole runtime, so they all finish while the narrator is still on the
-        // last line, and the 100ms tick then flashed the entire scene back to
-        // its first beat ten times a second. Setting currentTime below is
-        // enough to un-finish one; it never needs play().
+        // either, but play() would rewind it to zero. Setting currentTime below
+        // is enough to un-finish one without flashing back to the first beat.
         if (a.playState === "paused" || a.playState === "idle") { a.play(); a.currentTime = ms; }
       } else if (a.playState !== "paused") {
         a.pause();

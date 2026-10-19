@@ -1,10 +1,5 @@
-// ─── Lesson Screen (Audiobook Player) ────────────────────────────────────────
-// Full-height, no-scroll, three-section layout. Nav hidden by render.js.
-//   Top:    staging area (accent bg, waveform, title, back button)
-//   Middle: subtitle strip (prev / current / next sentence)
-//   Bottom: audio controls (skip, play/pause/replay, speed, progress, Next)
-//
-// LP_SCRIPTS keyed by lesson ID — swap only the script to replace content.
+// Full-height player with no nav or scrolling. LP_SCRIPTS supplies fallback
+// content by lesson ID; framing can provide a selected script (D38).
 
 const LP_SCRIPTS = {
   "interest-builds": [
@@ -150,26 +145,10 @@ const LP_SCRIPTS = {
   ]
 };
 
-// ─── Playback state ───────────────────────────────────────────────────────────
-// All playback variables live in state.lessonPlayback (state.js).
-// Consolidated there so navigation resets them cleanly and render.js doesn't
-// need to read globals from lesson.js.
-
-// ─── Timing model ─────────────────────────────────────────────────────────────
-// Playback runs on a virtual elapsed-time clock (seconds) against a per-line
-// CUE map — cues[i] = the second at which subtitle line i starts — plus a
-// TOTAL track length. Lessons with real narration timing get an LP_TIMINGS
-// entry; every other lesson synthesizes an even LP_DEFAULT_LINE_SEC-per-line
-// cadence, so ONE engine drives them all and every lesson gets the continuous
-// bar. Lessons in LP_AUDIO additionally drive the clock off a real <audio>
-// element (elapsed ← currentTime, total ← duration, play/pause/seek/rate → the
-// element); the cue→line and elapsed→bar derivation below is unchanged.
-// Floor and inter-sentence beat for the synthesized cue map. A flat
-// seconds-per-line constant used to stand here (10s), which is roughly double
-// what a sentence takes to say — so every line ended with a long silence while
-// the visuals crawled through a fade sized as a fraction of that inflated
-// runtime. Cues come from word count now, at the same pace the narration
-// actually runs.
+// Keep playback in state.lessonPlayback so navigation can reset it cleanly.
+// Elapsed time and per-line cues drive captions, progress and animation.
+// Use measured timings when available; otherwise estimate from word count
+// with a floor and inter-sentence pause. Audio playback supplies its own clock.
 const LP_MIN_LINE_SEC   = 2.4;
 const LP_LINE_GAP_SEC   = 0.35;
 
@@ -181,21 +160,15 @@ const LP_TIMINGS = {
   "interest-builds": { cues: [0, 6, 11, 20, 26, 35, 41, 46], total: 51.2 }
 };
 
-// Lessons with a narration audio file. The src resolves relative to the app
-// document (versions/<name>/index.html). When present, playback is driven by
-// the real audio element instead of the virtual clock; absent → virtual clock.
+// Audio paths resolve relative to app/index.html. Available WAV lessons use
+// the media clock; other lessons use runtime speech or the silent clock (L10).
 const LP_AUDIO = {
   "interest-builds": "assets/audio/interest-builds.wav"
 };
 
-// Lessons with no storyboard of their own that play another lesson's
-// FIGURE-FREE beats (the ones with no {tokens}), cut to their own lines.
-// "How Interest Builds" was a plain green stage: the older lessons never had a
-// video. It narrates the same mechanics as the APR lesson's opening, so it
-// borrows those four beats -- no personal figures, since it asks for none.
-// `lines` are 0-based LP_SCRIPTS indexes, inclusive, in order; `as` renames a
-// reused beat. Timed from LP_TIMINGS (the measured narration) via lpTimingFor.
-// Recut when that lesson's lines change. Built by lessonBorrowedVisualPlan.
+// Borrow only figure-free storyboard beats for lessons without personal
+// figures. `lines` are inclusive, zero-based script indexes; recut these spans
+// when the script changes. lpTimingFor supplies measured or estimated timing.
 const LP_BORROWED_VISUALS = {
   "interest-builds": {
     from: "apr",
@@ -213,30 +186,11 @@ function lpHasAudio() {
   return !!LP_AUDIO[state.lessonPlayback.currentLessonId];
 }
 
-/**
- * Speak the sentence currently on screen.
- *
- * Only `interest-builds` has a generated .wav, so every other lesson — the new
- * APR video included — plays silently. This gives them a voice on any machine
- * (see js/narration.js for why runtime speech rather than L10's .wav).
- *
- * Deliberately does NOT drive advancement: the virtual clock and its cues stay
- * authoritative, and speech rides along beside them. Letting `onend` advance
- * would put the captions and the hyperframes animation on two different clocks
- * that drift apart, and the animation is choreographed against the cue times.
- */
-// ── THE SYNC CONTRACT (architecture §10) ─────────────────────────────────────
-// With a generated .wav the element IS the clock and everything already lines
-// up. Without one — which is every lesson but interest-builds — the clock was a
-// 165 wpm word-count estimate while the voice read at the browser's own pace.
-// The two separate within a few lines: the caption moves on mid-sentence and
-// the scrub bar agrees with neither.
-//
-// So when live speech is driving, SPEECH is the clock. The line index is pinned
-// on `onStart` and only advances on `onEnd`; lpTick still runs the bar smoothly
-// but is capped inside the current line's window (lpSpeechCap), so it can never
-// overtake the voice. The estimate survives as the total-length figure and as
-// the fallback where there is no speech engine at all.
+/* Speak lessons without WAV audio through runtime browser speech (L10).
+ * If no voice is available, keep captions moving on the word-count clock. */
+// While speech plays, onStart pins the line and onEnd advances it. Cap the
+// smooth progress clock within that line so the estimate cannot outrun the
+// voice. Keep estimated duration for the total and the silent fallback.
 function lpSpeakCurrent() {
   const lp = state.lessonPlayback;
   if (lpHasAudio() || !lp.playing) return;
@@ -249,11 +203,8 @@ function lpSpeakCurrent() {
       const l = state.lessonPlayback;
       if (!l || l.index !== idx) return;      // superseded by a seek
       l.speechDriven = true;
-      // The caption on screen is provably the line being spoken right now, so
-      // pin the clock to its cue -- but FORWARDS ONLY. lpSpeechCap lets the
-      // tick run to just short of the next cue, so elapsed is normally ahead of
-      // this line's start; snapping down would rewind the hyperframes and show
-      // as a flicker at every line boundary.
+      // Move to the voice's cue forwards only: elapsed may already be near the
+      // next cue, and a backward correction would visibly rewind the animation.
       l.elapsed = Math.max(l.elapsed, l.cues[idx] || 0);
       l.lastTick = Date.now();
       lpUpdateProgress();
@@ -292,15 +243,8 @@ function lpSpeechCap(lp) {
   return Math.max(lp.cues[lp.index] || 0, next - 0.05);
 }
 
-/**
- * Is the clock pinned at that cap, waiting for the voice?
- *
- * The hyperframes have to be held too. lpTick freezes `elapsed` at the cap, but
- * the animations are native CSS on wall clock and kept running -- so every tick
- * found them ahead of the frozen clock and hyperframesSync's drift check yanked
- * them backwards, over and over, for the length of the overrun. Same defect as
- * the onboarding film's (onbVideoHeld), same fix.
- */
+/* Hold hyperframes when speech holds elapsed time at its cap. Native CSS
+ * animation would otherwise run ahead and trigger repeated drift rewinds. */
 function lpHeld(lp) {
   return !!(lp && lp.speechDriven && lp.elapsed >= lpSpeechCap(lp) - 0.001);
 }
@@ -394,7 +338,7 @@ function lpHyperframesMarkup() {
   const plan = state.lessonVisualPlan;
   if (typeof hyperframesCanRender !== "function" || !hyperframesCanRender(plan)) return "";
   return hyperframesMarkup(plan.storyboard, plan, state.lessonPlayback.total,
-                           { staticFrame: v3PrefersReducedMotion() });
+                           { staticFrame: prefersReducedMotion() });
 }
 
 function lpSyncHyperframes() {
@@ -423,11 +367,9 @@ function lpScrubStart(e) {
   if (!track) return;
   lp.scrubWasPlaying = lp.playing;
   if (lp.playing) lpPause();
-  track.classList.add("scrubbing");   // drop the smoothing so the bar tracks the finger
-  // The track cannot move or resize mid-drag, so measure once. Reading it per
-  // pointermove forced a synchronous layout on every frame — and read it right
-  // after lpUpdateProgress had written bar.style.width, which is the classic
-  // read-after-write thrash.
+  track.classList.add("scrubbing");   // drop smoothing so the bar follows the finger
+  // Measure geometry once; reading after each progress-width write would
+  // force synchronous layout on every pointermove.
   lpScrubRect = track.getBoundingClientRect();
   try { track.setPointerCapture(e.pointerId); } catch (err) {}
   track.onpointermove   = lpScrubTo;
@@ -477,10 +419,8 @@ function lpApplyElapsed(sec) {
   const lp = state.lessonPlayback;
   lp.elapsed = Math.max(0, Math.min(lp.total, sec));
   if (lp.ended && lp.elapsed < lp.total) { lp.ended = false; lpLockNext(); }
-  // Only rewrite the captions when the sentence actually changes — lpTick has
-  // guarded this since it was written; a drag calls this on every pointermove
-  // and a 300px track over a ~51s lesson makes most moves land in the same
-  // sentence, so the rewrite was almost always redundant.
+  // Repaint captions only when the line changes; most pointer moves remain
+  // within one line and need only the progress update.
   const idx = lpIndexForElapsed(lp.elapsed, lp.cues);
   const idxChanged = idx !== lp.index;
   lp.index = idx;
@@ -640,15 +580,8 @@ function lpRestart() {
   lpPlay();
 }
 
-// ±1 line per skip: seek the clock to the prev/next line's cue time.
-// ±10 seconds, the transport control people already know from every other
-// player. It used to be ±1 script line labelled "◀ Back" / "Next ▶", which read
-// as leaving the lesson rather than seeking inside it — and a line is an
-// arbitrary unit the viewer can't see the length of.
-//
-// lpApplyElapsed already does the whole job: clamps, clears `ended`, moves the
-// audio playhead, repaints the caption only when the line actually changes, and
-// resyncs the hyperframes.
+// Seek by ten seconds through lpApplyElapsed so caption, audio and picture
+// share the same clamping, completion and synchronization rules.
 const LP_SEEK_SEC = 10;
 
 function lpSeekBy(seconds) {
@@ -703,19 +636,21 @@ function lpMountHook(wasPlaying) {
   else if (wasPlaying)    { lpPlay(); }
 }
 
+// Tools "Jump to sentence": seek to the line's cue the way a drag does, so the
+// voice restarts on that line instead of stalling on the old one.
 function lpSeekTo(index) {
   const lp = state.lessonPlayback;
-  lp.index   = Math.max(0, Math.min(lp.sentences.length - 1, parseInt(index) || 0));
-  lp.elapsed = lp.cues[lp.index] || 0;
-  lp.ended   = false;
-  const audio = lpHasAudio() ? lpAudioEl() : null;
-  if (audio) audio.currentTime = lp.elapsed;
+  const idx = Math.max(0, Math.min(lp.sentences.length - 1, parseInt(index) || 0));
+  lpApplyElapsed(lp.cues[idx] || 0);
   lpLockNext();
-  lpHighlight(lp.index);
-  lpUpdateProgress();
-  lpUpdatePlayBtn();
-  lpSyncHyperframes();
-  if (lp.playing) lp.lastTick = Date.now();
+}
+
+// Auto shows video only when hyperframesCanRender accepts the visual plan;
+// figure-free storyboards need no personal figure. Waveform is opt-in (L10).
+// Share this lookup with Tools so its readout describes the actual stage.
+function lpStageShown() {
+  if (state.lpStageStyle === "auto" && hyperframesCanRender(state.lessonVisualPlan)) return "video";
+  return state.lpStageStyle === "waveform" ? "waveform" : "clean";
 }
 
 // ─── Renderer ─────────────────────────────────────────────────────────────────
@@ -739,10 +674,8 @@ function renderLesson() {
   if (state.lessonPlayback.currentLessonId !== lesson.id) {
     const lp = state.lessonPlayback;
     lp.currentLessonId = lesson.id;
-    // v3 (D38): the player is NOT rewritten — the only hook is which sentence
-    // array it plays. state.lessonVariantScript is set by the framing tree
-    // (js/lessons-v3.js) from the variant the answers selected. v2's lessons
-    // still fall back to LP_SCRIPTS by lesson id.
+    // D38: framing supplies only the sentence array. Catalog lessons without a
+    // framed script keep their LP_SCRIPTS fallback.
     lp.sentences       = state.lessonVariantScript
                       || LP_SCRIPTS[lesson.id]
                       || [
@@ -762,15 +695,9 @@ function renderLesson() {
     if (lp.timer) { clearInterval(lp.timer); lp.timer = null; }
   }
 
-  // Video is the default stage. It needs a storyboard AND a personalized figure,
-  // so a lesson without either (or an "I don't know" path with nothing to plot)
-  // shows a clean stage rather than drawing a frame full of dashes.
-  //
-  // Waveform renders ONLY when an admin explicitly picks it (L10) — falling
-  // through to it meant every lesson but `apr` played the animation L10 rejected.
-  const videoOn     = (state.lpStageStyle === "auto" || state.lpStageStyle === "video")
-                      && hyperframesCanRender(state.lessonVisualPlan);
-  const isWaveform  = !videoOn && state.lpStageStyle === "waveform";
+  const stage       = lpStageShown();
+  const videoOn     = stage === "video";
+  const isWaveform  = stage === "waveform";
   const totalTime   = lpFmtTime(Math.round(state.lessonPlayback.total));
   const barPct      = (state.lessonPlayback.total > 0 ? state.lessonPlayback.elapsed / state.lessonPlayback.total * 100 : 0).toFixed(2);
   const elapsed     = lpFmtTime(Math.round(state.lessonPlayback.elapsed));
@@ -785,15 +712,12 @@ function renderLesson() {
 
       <!-- BANNER: back button + centered lesson title, above the stage -->
       <div class="lp-banner">
-        <!-- navBack POPS the stack. go('reward-preview') PUSHED a screen the
-             user may never have seen, and topbar.js's header calls out that
-             exact anti-pattern: a hardcoded forward-jump is wrong as soon as a
-             screen can be reached from more than one place — which this one can. -->
+        <!-- Pop the launching stack because this player has several entry points. -->
         <button class="lp-back-btn" type="button" onclick="navBack()">‹</button>
         <h1 class="lp-banner-title">${h(lesson.title)}</h1>
       </div>
 
-      <!-- TOP: staging area — the video, or the waveform when it is turned off -->
+      <!-- Stage: video when renderable, waveform only when selected in Tools. -->
       <div class="lp-stage ${videoOn ? "lp-stage-video" : ""}">
         ${videoOn ? `<div class="lp-hyperframes" id="lp-hyperframes">${lpHyperframesMarkup()}</div>` : ""}
         <div class="${waveClass}" id="lp-wave">
@@ -849,8 +773,9 @@ function renderLesson() {
 // things you need to tell "the animation is wrong" from "the data is wrong".
 function lpAdminVisualReadout() {
   const plan = state.lessonVisualPlan;
-  if (!plan) return `<p class="helper" style="font-size:10px;margin-top:6px;">No visual plan — this lesson has no storyboard, so the stage falls back to the waveform.</p>`;
-  const canRender = typeof hyperframesCanRender === "function" && hyperframesCanRender(plan);
+  const shown = lpStageShown() === "waveform" ? "the waveform" : "a clean stage";
+  if (!plan) return `<p class="helper" style="font-size:10px;margin-top:6px;">No visual plan — this lesson has no storyboard, so the player shows ${h(shown)}.</p>`;
+  const canRender = hyperframesCanRender(plan);
   const band = plan.band || {};
   const lp = state.lessonPlayback;
   const frac = lp.total > 0 ? lp.elapsed / lp.total : 0;
@@ -858,7 +783,7 @@ function lpAdminVisualReadout() {
   const beat = beats.find(b => frac >= b.from && frac < b.to) || beats[beats.length - 1];
   return `
     <p class="helper" style="font-size:10px;line-height:1.7;margin-top:6px;">
-      ${canRender ? "" : "<strong>not renderable</strong> (no figure) — waveform shown<br>"}
+      ${canRender ? "" : `<strong>not renderable</strong> (no figure) — ${h(shown)} shown<br>`}
       card ${h(plan.cardName || "—")} ·
       you ${plan.userFigure == null ? "—" : plan.userFigure + "%"} ·
       typical ${plan.marketAvg == null ? "—" : plan.marketAvg + "%"}<br>
@@ -877,7 +802,6 @@ function renderLessonAdmin() {
         <label>Stage style</label>
         <select onchange="state.lpStageStyle=this.value;render()">
           <option value="auto"     ${state.lpStageStyle === "auto"     ? "selected" : ""}>Auto — video if the lesson has one (default)</option>
-          <option value="video"    ${state.lpStageStyle === "video"    ? "selected" : ""}>Video — hyperframes (force)</option>
           <option value="waveform" ${state.lpStageStyle === "waveform" ? "selected" : ""}>Waveform (audio only)</option>
           <option value="clean"    ${state.lpStageStyle === "clean"    ? "selected" : ""}>Clean (nothing)</option>
         </select>
@@ -896,9 +820,8 @@ function renderLessonAdmin() {
 }
 
 
-// v3 (D38): the player's Next leads into the v3 quiz when a v3 lesson is
-// playing, and into v2's quiz otherwise. Keeps both paths alive rather than
-// repointing the button and stranding v2's lessons.
+// Framed lessons use lessonQuizStart; other catalog lessons use quiz.
+// Keep both completion routes so each awards through its own ledger.
 function lessonLeaveForQuiz() {
   if (state.lessonVariantId && typeof lessonQuizStart === "function") {
     lessonQuizStart();

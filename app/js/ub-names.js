@@ -1,6 +1,6 @@
 // ─── Naming what a tester clicked ────────────────────────────────────────────
-// v4 only. Phase 2 of the usability-tracking work; Phase 1 (js/screen-url.js)
-// made each SCREEN visible, this makes each CONTROL on it identifiable.
+// Stable control names let click reports and Useberry triggers survive the
+// DOM replacement performed by render().
 //
 // Without it a click report is a dot at x=140,y=612 on a screen, and a Useberry
 // "Trigger" task-completion criterion — click this element and the task counts
@@ -8,9 +8,7 @@
 // whole screen's innerHTML and every element is a new node each time.
 //
 // ── DERIVED, NOT HAND-WRITTEN ───────────────────────────────────────────────
-// There are ~270 interactive controls across 47 screen files. Typing a name
-// onto each is a diff nobody can review, and every one of them is a thing that
-// can go stale when the handler beneath it changes.
+// Hand-written names on every control would drift when handlers change.
 //
 // So the name is computed from the handler that is already on the element. It
 // cannot drift from the code, because it IS the code: rename bbToggleHelp and

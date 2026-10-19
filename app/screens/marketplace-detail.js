@@ -1,25 +1,5 @@
-// ─── Marketplace Detail ───────────────────────────────────────────────────────
-// TAB: Market (sub-screen) | NAV BAR: Visible — Market tab highlighted
-//
-// PURPOSE
-// Detail view for a single financial offer — category, match rationale, product
-// description, terms placeholder, and a "Visit Site" CTA that exits the app.
-//
-// NAVIGATION
-//   Entry: "View Details" button on a Marketplace offer card
-//   Exit:  ← Back → marketplace; "Visit Site" exits app to provider URL (external)
-//
-// STATES
-//   Driven by state.selectedOffer (a name string). currentOffer() resolves the
-//   full offer object from state.offers. If selectedOffer doesn't match any
-//   offer, currentOffer() returns a fallback.
-//
-// PRODUCTION NOTES
-//   Currently static seed objects from state.js. Production: live rates API,
-//   per-user match scoring, affiliate tracking on CTA click.
-//   Terms/fees section is a stub — needs a structured data model per offer type
-//   (credit card terms differ from loan terms differ from insurance terms).
-//   "Visit Site" is a leave-the-app flow — final CTA should carry affiliate params.
+// Resolve the seeded offer by selected name, with currentOffer's fallback.
+// Terms are placeholder text and Visit Site has no handler.
 
 function renderMarketplaceDetail() {
   const offer = currentOffer();

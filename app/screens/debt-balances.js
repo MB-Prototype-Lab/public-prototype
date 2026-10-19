@@ -1,24 +1,6 @@
-// ─── Debt Balances ─────────────────────────────────────────────────────────────
-// TAB: Budget (sub-screen) | NAV BAR: Visible — Budget tab highlighted
-//
-// PURPOSE
-// Records point-in-time debt balance snapshots with date stamps. Separate from
-// my-debts.js (which is the full debt catalog with APR/min payment/type details).
-// This screen is purely about logging current balances over time for trend tracking.
-//
-// NAVIGATION
-//   Entry: Budget → Debt Balances card; Account Balances → "Next" in monthly update flow
-//   Exit:  ← Budget; completing monthly update → net position check → optional budget prompt
-//
-// STATES
-//   Debt dropdown populated from state.budget.debts (the debt catalog).
-//   Shows existing balance entries as a timeline list.
-//
-// PRODUCTION NOTES
-//   After completing monthly update (account + debt balances), the app computes:
-//   net = sum(accountBalances) - sum(debtBalances)
-//   Expected net is derived from budget state.
-//   If gap > 10%, prompt user to revisit the 2 Minute Budget sliders.
+// Log dated debt balances separately from debt-catalog terms. Tools and the
+// account-balance continuation reach this screen. Monthly-update completion
+// compares state.mtd with state.plan; balance sums are retained as context.
 
 function renderDebtBalances() {
   const debts    = (state.budget && state.budget.debts) || [];
@@ -147,9 +129,9 @@ function checkMonthlyUpdateGap() {
     return;
   }
 
-  // Compare actual monthly spend (from 3-month balance trend) against plan total.
-  // Both are monthly figures — comparable units. Budget signal uses the same logic.
-  const actualMonthlySpend = catTotal(state.mtd);   // 2b: month-to-date across the 12
+  // Compare month-to-date spending with the monthly plan. Balance entries
+  // supply context but do not derive the spending figure.
+  const actualMonthlySpend = catTotal(state.mtd);   // month-to-date across the categories
   const planMonthlySpend   = catTotal(state.plan);
 
   const gap = planMonthlySpend > 0

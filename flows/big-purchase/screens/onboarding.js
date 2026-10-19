@@ -1150,8 +1150,8 @@ function onbColTeaser(typed) {
  * front door to that flow and now match it, rather than handing over a
  * different set of manners two screens in.
  *
- * Scoped to BP_ENTRY on purpose: the same renderer serves the emergency fund's
- * onboarding, where the steps sit in a longer run and keep their own pattern.
+ * Scoped to this Flow's income and miles steps on purpose: the full app and the
+ * Emergency fund Flow sit in a longer run and keep their own pattern.
  */
 function onbDocked(key) {
   return key === "income" || key === "miles";

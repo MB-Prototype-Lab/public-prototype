@@ -287,7 +287,7 @@ def build(catalog, revision, assets, repo=ROOT, previous=None, require_tags=True
         if previous and row['id'] in previous['snapshots']:
             require(hashes == previous['snapshots'][row['id']], 'published snapshot bytes changed')
         if row['state'] == 'retired':
-            files = {'index.html': ('<!doctype html><meta charset="utf-8"><title>Build retired</title><h1>This build has been retired</h1><p>' + html.escape(row['label']) + '</p><a href="../../index.html">Return to selector</a>').encode()}
+            files = {'index.html': ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Build retired</title></head><body><h1>This build has been retired</h1><p>' + html.escape(row['label']) + '</p><a href="../../index.html">Return to selector</a></body></html>').encode()}
         prefix = row['public_path'].rsplit('/', 1)[0] + '/'
         output.update({prefix + k: v for k, v in files.items()})
     validate_assets(output, [r['public_path'].rsplit('/', 1)[0] + '/' for r in catalog['snapshots'] if r['format'] in ('static-v1', 'flow-static-v1')])
@@ -315,10 +315,8 @@ def main():
     pack = sub.add_parser('build')
     pack.add_argument('--revision', default='HEAD')
     pack.add_argument('--output', required=True)
-    pack.add_argument('--previous', help='previous live publication manifest; required after bootstrap')
+    pack.add_argument('--previous', help='previous live publication manifest; required for deployment')
     pack.add_argument('--offline', action='store_true', help='local rehearsal only; permits missing source tags')
-    pack.add_argument('--bootstrap-baseline', help='owner-verified SHA for first deployment only')
-    pack.add_argument('--bootstrap-tag', help='administrator-approved initial publication tag')
     pack.add_argument('--main-ref', default='refs/remotes/origin/main')
     prepare = sub.add_parser('prepare')
     prepare.add_argument('--flow', help='committed standalone Flow ID')
@@ -326,14 +324,15 @@ def main():
     prepare.add_argument('--commit', required=True)
     prepare.add_argument('--label', required=True)
     prepare.add_argument('--tracking', choices=['on', 'off'], required=True)
+    prepare.add_argument('--main-ref', default='refs/remotes/origin/main', help='already-fetched main ref containing the source commit')
     args = parser.parse_args()
     if args.command == 'prepare':
-        row = dict(id=args.id, source_tag='snapshot/'+args.id, commit=git('rev-parse', args.commit+'^{commit}').decode().strip(), source_dir='app', public_path='versions/'+args.id+'/index.html', format='static-v1', tracking=args.tracking=='on', digest='0'*64, label=args.label, description='', order=0, state='active', ongoing_study=False)
+        row = dict(id=args.id, source_tag='snapshot/'+args.id, commit=git('rev-parse', args.commit+'^{commit}').decode().strip(), source_dir='app', public_path='versions/'+args.id+'/index.html', format='static-v1', tracking=args.tracking=='on', digest='0'*64, label=args.label, description='', order=0, state='active', ongoing_study=None)
         require(ID.fullmatch(args.id), 'invalid snapshot id')
         if args.flow is not None:
             require(FLOW_ID.fullmatch(args.flow), 'invalid Flow id')
             row.update(source_dir='flows/' + args.flow, format='flow-static-v1')
-        require(subprocess.run(['git', 'merge-base', '--is-ancestor', row['commit'], 'main'], capture_output=True).returncode == 0, 'snapshot source must be on local main')
+        require(subprocess.run(['git', '-C', str(ROOT), 'merge-base', '--is-ancestor', row['commit'], args.main_ref], capture_output=True).returncode == 0, 'snapshot source must be on main ref: ' + args.main_ref)
         row['digest'] = digest(package(row, require_tags=False))
         print(json.dumps(row, indent=2))
     elif args.command == 'check':
@@ -343,18 +342,16 @@ def main():
             try:
                 base = read_json(git('show', args.base+':publication/catalog.json'))
             except subprocess.CalledProcessError:
-                # Only the initial migration is allowed to lack a catalog.
-                require(git('rev-parse', args.base+'^{commit}').decode().strip() == catalog['migration_baseline'], 'base catalog unavailable')
+                raise ValueError('base catalog unavailable') from None
             else:
                 transition(catalog, base)
-        migration = read_json((ROOT/'publication/migration.json').read_bytes())
-        require(migration['baseline'] == catalog['migration_baseline'], 'migration baseline mismatch')
-        require(set(migration['snapshots']) == {'v1', 'v2', 'v3', 'v3.1', 'v4'}, 'incomplete migration inventory')
+                retained = {row['id'] for row in base['snapshots']}
+                for row in catalog['snapshots']:
+                    if row['id'] not in retained:
+                        require(subprocess.run(['git', '-C', str(ROOT), 'merge-base', '--is-ancestor', row['commit'], args.base], capture_output=True).returncode == 0,
+                                'new snapshot source must be on catalog base before merge: ' + row['id'])
         for row in catalog['snapshots']:
             require(digest(package(row, require_tags=False)) == row['digest'], 'snapshot digest mismatch')
-        for snapshot_id, record in migration['snapshots'].items():
-            row = next((r for r in catalog['snapshots'] if r['id'] == snapshot_id), None)
-            require(row and row['digest'] == record['digest'] and row['source_tag'] == record['source_tag'] and row['format'] == 'legacy-v1', 'required migration snapshot missing or changed')
         print('Catalog policy and committed snapshot digests verified (missing tags allowed offline).')
     else:
         revision = git('rev-parse', args.revision+'^{commit}').decode().strip()
@@ -364,8 +361,7 @@ def main():
             require(args.revision.startswith('refs/tags/publish/'), 'deployment requires publication tag ref')
             require(revision == git('rev-parse', args.main_ref+'^{commit}').decode().strip(), 'stale publication: tag must equal current main')
             require(all(r['ongoing_study'] is not None for r in catalog['snapshots']), 'owner must confirm study status before cutover')
-            if previous is None:
-                require(args.bootstrap_baseline == catalog['migration_baseline'] and args.bootstrap_tag == args.revision, 'previous manifest required unless exact first publication is approved')
+            require(previous is not None, 'previous manifest required for deployment')
             for row in catalog['snapshots']:
                 require(subprocess.run(['git', 'merge-base', '--is-ancestor', row['commit'], args.main_ref], capture_output=True).returncode == 0, 'source commit not on main')
         assets = {p: git('show', revision+':'+p) for p in ('index.html', 'gate/gate.js', 'gate/style.css')}

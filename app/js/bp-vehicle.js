@@ -4,8 +4,7 @@
 // Implements exactly the category interface the engine calls and nothing else.
 // Every figure is read from data/big-purchase.json → vehicle, and two are
 // borrowed from the emergency fund ON PURPOSE (§7.5): the state insurance
-// average and the pump price / per-mile upkeep. Reusing them is what keeps the
-// two tools from ever disagreeing about the same car.
+// average and pump price. Vehicle-specific factors and floors apply below.
 
 function bpVData() {
   return bpData().vehicle || {};
@@ -39,7 +38,7 @@ function bpVCentsPerKwh() {
 }
 
 /**
- * Miles a day. THIS FEATURE NEVER ASKS (spec §6.1, owner's ruling): it reads
+ * Miles a day. This feature reads
  * whatever the shared profile already holds and otherwise assumes a default.
  *
  * "I don't drive" is floored at `milesFloor` HERE and only here. Zero is the
@@ -105,12 +104,6 @@ function bpVAgeKey(inputs) {
   return inputs.condition === "used" ? (inputs.age || "1-3") : "new";
 }
 
-function bpVStartAge(inputs) {
-  if (inputs.condition !== "used") return 0;
-  const band = (bpVData().ages || []).find(a => a.id === inputs.age);
-  return band ? Number(band.startAge) || 0 : 2;
-}
-
 function bpVFactor(table, key, fallback) {
   const t = ((bpVData().factors || {})[table]) || {};
   const v = Number(t[key]);
@@ -163,11 +156,8 @@ function bpVFees() {
 /**
  * Insurance a month, on a FULL-COVERAGE policy.
  *
- * The ESF's state figure is the average premium written in that state, and most
- * of those policies are liability-only on a car that is already paid off. Every
- * car here is being bought, usually on a loan that requires comprehensive and
- * collision, so the base is scaled up before the type, tier and age factors run
- * (owner, 2026-09-27: "insurance seems way too low").
+ * Start with the ESF full-coverage state average, then apply this tool's
+ * insuranceFullCoverage, type, tier and condition factors.
  */
 function bpVInsurance(inputs) {
   const base = (typeof esfInsuranceStateMonthly === "function" ? esfInsuranceStateMonthly() : 140) *
@@ -191,12 +181,8 @@ function bpVCostPerMile(inputs) {
 }
 
 /**
- * THIS TOOL'S OWN PUMP PRICE (owner, 2026-09-27: "gas price is higher than $4
- * too"). The emergency fund prices a bill being paid this month, where the EIA
- * national average is the right figure; this prices five years of fuel from
- * whenever the car is bought. A state already dearer than the owner's figure
- * keeps its own — California does not get cheaper because a floor was put
- * under everywhere else.
+ * Use this tool's pump-price floor for the purchase horizon. A higher state
+ * price still wins; the floor must never reduce a local estimate.
  */
 function bpVPerGallon(inputs) {
   const d = bpVData();
@@ -217,10 +203,8 @@ function bpVFuel(inputs) {
 /**
  * Upkeep — a TIME base plus a MILEAGE rate, not cents per mile alone.
  *
- * The flat per-mile model this replaces ran about a third of the real figure
- * for an ordinary driver, and collapsed to almost nothing at low mileage, which
- * is false: oil degrades by date, tires age out, batteries and fluids run on a
- * calendar. Both the condition and tier factors are centred on 1.00 at the
+ * Oil degrades by date, tires age out, batteries and fluids run on a calendar,
+ * so low mileage must not erase upkeep. Condition and tier factors centre on 1.00 at the
  * baseline the $400 + 6¢ describes — a NEW STANDARD car, averaged over five
  * years of ownership.
  *
@@ -239,29 +223,8 @@ function bpVUpkeep(inputs) {
   return bpRound(perYear / 12, 5);
 }
 
-function bpVSubscriptions(inputs) {
-  return Number((bpVData().subscriptions || {})[inputs.tier]) || 0;
-}
-
 function bpVRenewal() {
   return bpRound(Number(bpVState().renewal) || 0, 5);
-}
-
-/**
- * Value kept after N years, walking the retention curve from the car's own age.
- * A used car starts at its age band, so it skips the steep first year — that is
- * the whole of why its value-lost row is smaller.
- */
-function bpVResale(inputs, years) {
-  const r = bpVData().retention || {};
-  const adj = Number((r.tierAdjust || {})[inputs.tier] || 0) + Number((r.fuelAdjust || {})[inputs.fuel] || 0);
-  let v = Number(inputs.price) || 0;
-  const start = bpVStartAge(inputs);
-  for (let y = start + 1; y <= start + years; y++) {
-    const base = y === 1 ? r.year1 : (y <= 5 ? r.years2to5 : r.year6plus);
-    v *= Math.min(0.98, Math.max(0.5, (Number(base) || 0.85) + adj));
-  }
-  return Math.round(v);
 }
 
 function bpVLoanRate(inputs, tier) {
@@ -301,7 +264,6 @@ const BP_VEHICLE_ROWS = [
         (inputs.condition === "used" ? "used " : "new ") + bpVNoun(inputs).toLowerCase() + ".";
     } },
   { id: "fuel", label: "Fuel", bucket: "monthly", scope: "car", estimate: bpVFuel,
-    labelFor: i => i.fuel === "electric" ? "Charging" : "Fuel",
     based: function (inputs) {
       if (inputs.fuel === "electric") return bpVMilesLine() + ", at your state's electricity rate.";
       const d = bpVData();
@@ -317,12 +279,7 @@ const BP_VEHICLE_ROWS = [
         (inputs.condition === "used" ? "a " + bpVAgeLabel(inputs.age).replace(" yrs", " year") + " old " : "a new ") +
         bpVTierLabel(inputs.tier).toLowerCase() + " " + bpVTypeLabel(inputs.type).toLowerCase() + ".";
     } },
-  // NO SUBSCRIPTIONS ROW (owner, 2026-09-27): "that is an add-on that I
-  // wouldn't consider for a car alone." Satellite radio and the connected-car
-  // app are things a person opts into, not a cost of owning the car, and a
-  // screen that claims to price the car should not price them. The figures
-  // stay in the data file and bpVSubscriptions() still reads them, so putting
-  // the row back is one entry in this array.
+  // Optional services such as satellite radio are not intrinsic ownership costs.
   { id: "other", label: "Parking, tolls, anything else", bucket: "monthly", scope: "about", typed: true, default: 0 },
 
   { id: "renewal", label: "Registration renewal", bucket: "yearly", scope: "car", estimate: bpVRenewal,
@@ -363,25 +320,15 @@ function bpVDescribe(inputs) {
   return bpVNoun(inputs) + " · " + bpVFuelLabel(inputs.fuel) + " · " + cond;
 }
 
-/** Only a financed NEW vehicle can qualify (§9.2). Used cars and leases can't. */
-function bpVTaxBreak(inputs) {
-  const tb = bpData().taxBreak || {};
-  if (tb.expires && todayISO() > tb.expires) return null;
-  if (tb.newOnly && inputs.condition !== "new") return null;
-  return tb.id || null;
-}
-
-// ── Screen 1's rows (§6) ─────────────────────────────────────────────────────
-// Declarative so the screen can render them and the Continue gate can count
-// them without either knowing about cars.
+// ── The setup rows (§6) ──────────────────────────────────────────────────────
+// Fields needed to price a car, exposed through the category interface.
 const BP_VEHICLE_SETUP = [
-  { id: "type",      label: "Type",      ask: "What kind of vehicle?", options: () => bpVData().types || [] },
-  { id: "tier",      label: "Brand",     ask: "What kind of brand?", options: () => (bpVData().tierOrder || []).map(t => ({ id: t, label: bpVTierLabel(t) })),
-    examples: i => ((bpVData().tierExamples || {})[i.type || "car"]) || {} },
-  { id: "fuel",      label: "Runs on",   ask: "What does it run on?", options: i => (bpVData().fuels || []).filter(f => !(f.hideFor || []).includes(i.type)) },
-  { id: "condition", label: "Condition", ask: "New or used?", options: () => [{ id: "new", label: "New" }, { id: "used", label: "Used" }] },
-  { id: "age",       label: "Age",       ask: "How old is it?", options: () => bpVData().ages || [], showIf: i => i.condition === "used" },
-  { id: "price",     label: "Price",     ask: "What's the sticker price?", typed: true }
+  { id: "type" },
+  { id: "tier" },
+  { id: "fuel" },
+  { id: "condition" },
+  { id: "age",   showIf: i => i.condition === "used" },
+  { id: "price", typed: true }
 ];
 
 bpRegisterCategory({
@@ -390,9 +337,7 @@ bpRegisterCategory({
   setupInputs: BP_VEHICLE_SETUP,
   costRows: BP_VEHICLE_ROWS,
   horizons: { primary: 5, secondary: 3 },
-  resaleValue: bpVResale,
   loanRate: bpVLoanRate,
-  taxBreak: bpVTaxBreak,
   alternatives: bpVAlternatives,
   describe: bpVDescribe,
   noun: bpVNoun

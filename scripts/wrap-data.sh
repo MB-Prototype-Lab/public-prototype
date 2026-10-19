@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
-if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
 # Generates app/data/*.js from the sibling *.json files.
 #
 # WHY THIS EXISTS (L13, architecture.md §1): the app is opened as a file:// page
 # with no dev server, and browsers block fetch()/XHR against local files. So the
-# spec's JSON cannot be loaded over the network — it ships wrapped in a plain
+# JSON cannot be loaded over the network — it ships wrapped in a plain
 # `const NAME = {...};` assignment and loads via a <script> tag like every other
 # file in the app.
 #
-# The .json files stay byte-identical to v3 Files/spec/data/ so drift from the
-# spec is always one `diff -rq` away. The .js files are GENERATED — never
-# hand-edit them; edit nothing, or edit the .json and re-run this.
+# The .js files are GENERATED — never hand-edit them; edit the .json and
+# re-run this.
 #
 #   bash scripts/wrap-data.sh
 #
@@ -33,7 +31,6 @@ global_for() {
     help-me-out)       echo "HELP_ME_OUT" ;;
     emergency-fund)    echo "EMERGENCY_FUND" ;;
     test-profiles)     echo "TEST_PROFILES" ;;
-    dog-breeds)        echo "DOG_BREEDS" ;;
     card-apr)          echo "CARD_APR" ;;
     onboarding-script) echo "ONBOARDING_SCRIPT" ;;
     peer-benchmarks)   echo "PEER_BENCHMARKS" ;;
@@ -43,7 +40,7 @@ global_for() {
     buddy-esf)         echo "BUDDY_ESF" ;;
     big-purchase)      echo "BIG_PURCHASE" ;;
     buddy-bp)          echo "BUDDY_BP" ;;
-    lessons)           echo "LESSONS_V3" ;;   # not LESSONS — v2's state.lessons still exists
+    lessons)           echo "FRAMED_LESSONS" ;;
     *)                 echo "" ;;
   esac
 }
@@ -62,8 +59,7 @@ for json in "$DIR"/*.json; do
     echo "// Regenerate: bash scripts/wrap-data.sh"
     echo "//"
     echo "// The app runs on file://, where fetch() is blocked and there is no dev"
-    echo "// server, so spec data ships as a script-loadable assignment (L13)."
-    echo "// The .json beside this file is the byte-identical spec copy."
+    echo "// server, so the data ships as a script-loadable assignment (L13)."
     echo "const $name ="
     cat "$json"
     echo ";"

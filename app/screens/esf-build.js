@@ -1,37 +1,13 @@
-// ─── Emergency fund — the three capture screens ──────────────────────────────
-// TAB: Goals (sub-screen) | NAV BAR: Hidden — full-bleed
-//
-// One screen id, three steps on state.esf.step, the same shape as the budget
-// builder next door: a screen costs five wiring points and each is a place to
-// forget, so three steps of one screen cost them once.
-//
-// ── TYPED FIGURES ONLY ───────────────────────────────────────────────────────
-// No sliders and no steppers. The builder next door is all sliders, deliberately
-// so; here it is deliberately the opposite. A slider gets you close and not
-// precise, and these are survival figures where the real number matters — and
-// with two fields sharing a box there is no room for a stepper pair anyway.
-//
-// Number entry rides the SIMULATED KEYBOARD that already exists
-// (components/keyboard.js): `inputmode="numeric"` is what selects its pad
-// layer, and that pad already carries a Done key which commits the field and
-// closes it. Nothing here needs to build a submit control.
-//
-// ── WATCH THE KEYBOARD LATCH ─────────────────────────────────────────────────
-// Closing the pad removes 250px of layout, which pulls a button out from under
-// a finger mid-press so no click is ever dispatched. kbdInit holds the close
-// while a press is in flight. Any new control below the fields inherits that
-// problem; do not work around it locally.
-
-// ── ONE HEADER, EVERY STEP ───────────────────────────────────────────────────
-// The per-step titles are gone on the owner's call. They named the step rather
-// than the feature, so a tester three screens in had been told what KIND of
-// number to expect but never what they were building or why. The progress pips
-// carry the position; the header carries the point.
+// One capture-screen ID holds the intro and three expense steps; the plan
+// completes the five-step progress indicator. Known amounts use typed fields;
+// estimated rows use range dropdowns. Numeric input opens the shared simulated
+// keypad, whose Done key commits and closes it.
+// Keypad closing changes layout during a press: kbdInit owns the close latch.
+// Do not add a local workaround for controls below the fields.
+// The shared title names the feature; progress pips carry position.
 const ESF_TITLE_MAIN = "Emergency Savings Fund";
 
-// Step 0 is an INTRO — no fields, no picture, just what this is and why. It
-// exists because a tester arriving from a task card was previously asked for
-// their rent before anything had explained what they were building.
+// Explain the fund before asking for housing figures.
 const ESF_STEPS = [
   { id: "intro" },
   { id: "fixed",     heading: "Housing and Car Payments" },
@@ -43,29 +19,16 @@ const ESF_STEPS = [
 // where the flow ends. It lives in its own file but counts in the progress.
 const ESF_TOTAL_STEPS = ESF_STEPS.length + 1;
 
-// ── Buddy, per step ──────────────────────────────────────────────────────────
-// Owner-supplied art (L22), one scene per step, matched to what that step asks
-// about: the house and cars where rent and a car payment are collected, the
-// living room where the phone and internet bills are.
-//
-// Not generated — D10 forbids that and it holds. A step with no entry here
-// simply shows no banner, which is the right degradation: a missing image must
-// never leave a gap where a picture was promised.
-// These two are WIDE (roughly 2.36:1), authored for this banner rather than
-// borrowed from elsewhere, so `cover` barely crops them — unlike the square-ish
-// yard illustration the Home screen uses.
-// `ratio` is the art's own aspect. The first two were drawn wide for this slot;
-// the living-expenses and safe illustrations are near-square, so a shared fixed
-// ratio would crop a third off one pair or letterbox the other. Each image
-// brings its own.
-// `maxH` is what keeps every screen off the scrollbar. The art's own aspect
-// decides the shape; this decides how much vertical budget that step can spare
-// for it, and it varies because the steps do not carry the same load. A 2.36
-// image at frame width is naturally ~136px and needs no cap; a 1.79 one is
-// ~180px and gets trimmed on the screens that cannot afford it.
-//
-// Measured, not guessed — every value here was set by checking
-// scrollHeight against clientHeight on the real screen.
+// How many budget categories the rows ask about. Saving carries the tester's
+// figures for these into the budget; the rest open on peer values
+// (esfToBaseline). Counted for the Tools text rather than written into it.
+function esfAskedCategoryCount() {
+  return new Set(ESF_ROWS.map(r => r.category)).size;
+}
+
+// Use owner-supplied art only (D10, L22). Each image brings its aspect ratio
+// to avoid cropping meaningful details. Step-specific maxH caps keep the
+// capture screens within their vertical budget; verify with actual scroll height.
 const ESF_STEP_IMAGE = {
   1: { src: "assets/img/buddy-home.jpg",            ratio: 2.36, maxH: 140 },
   2: { src: "assets/img/buddy-utilities.jpg",       ratio: 2.36, maxH: 112 },
@@ -77,15 +40,8 @@ const ESF_STEP_IMAGE = {
 const ESF_PLAN_IMAGE = { src: "assets/img/buddy-esf.jpg", ratio: 1.79, maxH: 150 };
 const ESF_INTRO_IMAGE_MAX = 176;
 
-/**
- * Wide art fills the width; near-square art is sized by HEIGHT instead and
- * centred at its natural width.
- *
- * A 1.03:1 illustration stretched across a 322px frame would be 322px tall and
- * eat the screen, and cropping it to a banner shape cuts exactly the part that
- * carries the meaning — the labelled drawers, the money in the case. Below this
- * threshold the picture is shown whole and small rather than partial and large.
- */
+// Keep near-square art whole and height-limited; stretching it across the
+// frame would consume the screen and cropping could remove meaningful details.
 const ESF_WIDE_RATIO = 1.6;
 
 function esfBannerClass(img) {
@@ -116,14 +72,6 @@ function esfSetRow(rowId, raw) {
   const n = Number(String(raw == null ? "" : raw).replace(/[^0-9.]/g, ""));
   s.rows[rowId] = isFinite(n) ? Math.max(0, Math.round(n)) : 0;
   s.touched[rowId] = true;
-  delete s.declined[rowId];
-  render();
-}
-
-/** Rent or own is an assumption with a one-tap correction, never a question. */
-function esfToggleOwns() {
-  const s = esfSession();
-  s.owns = !s.owns;
   render();
 }
 
@@ -136,48 +84,6 @@ function esfSetRange(rowId, mid) {
   render();
 }
 
-function esfToggleExplain(key) {
-  const s = esfSession();
-  if (!s.explain) s.explain = {};
-  s.explain[key] = !s.explain[key];
-  render();
-}
-
-/**
- * Hand one line to the Help-me-out trees.
- *
- * The trees are keyed on the taxonomy, and two ESF rows share a category with
- * another row — so a tree's answer lands on the row that OWNS the category's
- * estimate, never on the typed one. Transport's tree prices running costs; it
- * has nothing to say about a car loan.
- */
-const ESF_HELP_ROW_FOR_CATEGORY = {
-  "Groceries": "groceries",
-  "Debt payments": "debt",
-  "Transport": "carCosts",
-  "Health": "medical",
-  "Utilities": "power"
-};
-
-function esfRunHelp(category) {
-  const s = esfSession();
-  if (!isCategory(category) || !hmoHasTree(category)) return;
-  s.returnTo = "esf";
-  if (!s.help) s.help = {};
-  s.help[category] = true;
-  hmoStart(category, { target: "esf" });
-}
-
-/** The tree calls back with the figure it reached. */
-function esfApplyHelp(category, amount) {
-  const s = esfSession();
-  const rowId = ESF_HELP_ROW_FOR_CATEGORY[category];
-  if (!rowId) return;
-  s.rows[rowId] = Math.max(0, Math.round(Number(amount) || 0));
-  s.touched[rowId] = true;
-  if (s.help) delete s.help[category];
-}
-
 function esfNext() {
   const s = esfSession();
   if (s.step < ESF_STEPS.length - 1) { s.step++; render(); return; }
@@ -188,47 +94,9 @@ function esfNext() {
 function esfBack() {
   const s = esfSession();
   if (s.step > 0) { s.step--; render(); return; }
-  // A calculator detour returns to its caller; other entries use their own stack.
-  if (state.bp && state.bp.esfReturn) { navBack(); return; }
+  // Off the intro, Back pops the stack: a Big purchase detour returns to the
+  // calculator, and every other entry to the screen that opened the tool.
   navBack();
-}
-
-// ── Where a figure came from ─────────────────────────────────────────────────
-// A disclosure, never a question flow. Each line names the source rather than
-// describing it vaguely — "we estimated this" tells a tester nothing about
-// whether to trust it.
-
-function esfRowSource(rowId) {
-  const place = (benchColIndex(state.profile.zip) || {}).place;
-  const where = place ? " for " + place : " for your area";
-  if (rowId === "power") {
-    return "Typical power and water for a household your size, priced at your state's own electricity rate" + where + ".";
-  }
-  if (rowId === "connect") {
-    return "Published average broadband, plus a mobile line for each person in your household. Priced the same everywhere — a carrier doesn't charge more in one city than another.";
-  }
-  if (rowId === "groceries") {
-    return "USDA's cost of food at home for a household your size, adjusted" + where + ".";
-  }
-  if (rowId === "debt") {
-    return "The smallest payment a lender would accept on a typical balance — not what people usually pay.";
-  }
-  // `carCosts`, not `carRunning` — carRunning is the GROUP name and this
-  // function is passed a ROW id, so the branch never fired and the car row fell
-  // through to the generic "public spending data" line.
-  if (rowId === "carCosts") {
-    return "AAA's running costs — fuel, upkeep and insurance. Insurance is most of it before a wheel turns.";
-  }
-  if (rowId === "propertyTax") {
-    return "About 14% of what housing costs" + where + ", which is roughly what owners pay in tax on it.";
-  }
-  if (rowId === "hoa") {
-    return "The typical monthly fee where a building or neighborhood charges one" + where + ".";
-  }
-  if (rowId === "medical") {
-    return "Typical out-of-pocket costs for visits, prescriptions and dental" + where + ".";
-  }
-  return "Based on public spending data for households like yours" + where + ".";
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -237,19 +105,9 @@ function esfMoney(n) {
   return "$" + Math.round(Number(n) || 0).toLocaleString("en-US");
 }
 
-/**
- * One field. `inputmode="numeric"` is what opens the simulated number pad —
- * components/keyboard.js picks the layer off the input, and that pad already
- * carries its own Done key, which commits the field and puts the keyboard away.
- * No separate submit control is needed or wanted here.
- */
-/**
- * "Based on …" — what an estimate was built from, in one line.
- *
- * An auditable estimate earns an override; an unexplained one gets a shrug. The
- * drivers named here are the ones the tester actually answered, so the line
- * doubles as a receipt for the onboarding questions.
- */
+
+// Name the estimate's drivers so the tester can check it against the
+// onboarding answers and decide whether to override it.
 function esfBasedOn(rowId) {
   const hh = typeof esfHousehold === "function" ? esfHousehold() : null;
   const zip = (state.profile || {}).zip;
@@ -328,12 +186,8 @@ function esfRenderField(row, bare) {
   const annual = row.cadence === "annual";
   const note = esfFieldNote(row);
 
-  // `bare` drops the label: a choice group's segmented picker already names
-  // what the field is, and repeating it underneath reads as a second question.
-  //
-  // An ANNUAL row puts its monthly conversion beside the box rather than under
-  // it. "$5,160" and "$430 per month" are the same fact twice, and stacking
-  // them read as two separate figures.
+  // Drop a field label when its group already supplies it. Keep an annual
+  // figure's monthly conversion alongside it to show that they are the same amount.
   const inlineNote = annual && note;
 
   return `
@@ -355,23 +209,12 @@ function esfRenderField(row, bare) {
   `;
 }
 
-/**
- * The line under a field.
- *
- * Only where it earns its place. "a month" used to sit under every field and
- * said nothing — the header now states once that this is all monthly. What is
- * left either converts a figure the tester entered in another cadence, or reads
- * their number back in units they can actually check.
- */
+// Annual fields show their monthly conversion; the header already supplies
+// the monthly cadence for other rows.
 function esfFieldNote(row) {
   if (row.cadence === "annual") return esfMoney(esfRowMonthly(row.id)) + " per month";
 
-  // The car box is one combined figure now, so there is no per-component note
-  // to write — the "Based on" line above it names the drivers instead.
-  // Insurance and maintenance carry no note on purpose. Only the fuel figure
-  // converts into something a tester can check — miles. "Estimated from your
-  // area" under the other two says nothing they can act on and cost two lines
-  // on the one screen this step has to fit inside.
+
   return "";
 }
 
@@ -382,11 +225,6 @@ function esfFieldNote(row) {
 function esfRenderGroup(group) {
   const rows = group.rows;
   const lead = rows[0];
-  const help = rows.map(r => r.help).filter(Boolean)[0];
-  const qualifier = rows.map(r => {
-    const bill = r.bill && esfBills().find(b => b.id === r.bill);
-    return bill && bill.qualifier;
-  }).filter(Boolean)[0];
 
   // ── Opt-in: estimated, but worth nothing until added ──────────────────────
   if (lead.optIn) {
@@ -446,13 +284,11 @@ function esfRenderGroup(group) {
       ${rows.some(r => !r.prefill)
         ? `<div class="esf-fields">${rows.filter(r => !r.prefill).map(r => esfRenderField(r, bare)).join("")}</div>`
         : ""}
-      ${help ? `<p class="helper esf-row-help">${h(help)}</p>` : ""}
-      ${qualifier ? `<p class="helper esf-qualifier">${h(qualifier)}</p>` : ""}
     </div>
   `;
 }
 
-/** The intro — centred in the screen, no fields, no picture. */
+// Intro art and explanation precede the expense fields.
 function esfRenderIntro() {
   return `
     <div class="esf-intro">
@@ -476,17 +312,8 @@ function esfRenderIntro() {
   `;
 }
 
-/**
- * "I already have one" — done, and stop asking.
- *
- * NO FIGURE IS COLLECTED, deliberately. Plenty of people are comfortable with
- * what they have set aside and have no wish to track it here; for them the
- * useful outcome is not a goal, it is the tool never surfacing as a task again.
- * Asking for a number to create a goal nobody wanted would be charging them for
- * the privilege of opting out.
- *
- * So this marks the task complete and leaves the Goals tab alone.
- */
+// I already have one completes the task without collecting a figure.
+// Respect the opt-out instead of creating an unwanted tracked goal.
 function esfSkipToGoal() {
   state.esfSelfReported = { at: todayISO() };
   esfLog("already_have_one", {});
@@ -577,10 +404,10 @@ function renderEsfBuildAdmin() {
 
   return `
     <div class="admin-card">
-      <p class="admin-card-title">Emergency fund — step ${s.step + 1} of ${ESF_STEPS.length}</p>
+      <p class="admin-card-title">Emergency fund — step ${s.step + 1} of ${h(ESF_TOTAL_STEPS)}</p>
       <p class="helper">
-        Stated ${esfMoney(esfStatedMonthly())} (medical ${esfMoney(esfRowMonthly("medical"))},
-        priced as if work cover had stopped) · buffer
+        Stated ${esfMoney(esfStatedMonthly())} (medical ${esfMoney(esfRowMonthly("medical"))}${esfHasEmployerCoverage()
+          ? ", priced as if work cover had stopped" : ""}) · buffer
         ${Math.round((s.buffer || 0) * 100)}% → ${esfMoney(esfBufferedMonthly())} a month
       </p>
       <p class="helper">
@@ -588,8 +415,9 @@ function renderEsfBuildAdmin() {
         ${esfRowsRemaining()} of ${ESF_ROWS.length} rows still an estimate
       </p>
       <p class="helper">
-        Assuming they ${s.owns ? "own" : "rent"} and ${s.hasCar ? "have" : "have no"} car —
-        both are one-tap corrections on step 1, neither is collected by onboarding.
+        Treated as ${esfOwnsHome() ? "owning" : "renting"} (esfOwnsHome), so property
+        tax and home insurance ${esfOwnsHome() ? "are" : "are not"} offered on step 4.
+        No screen asks it directly.
       </p>
     </div>
 

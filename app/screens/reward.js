@@ -1,24 +1,8 @@
-// ─── Reward Screen ────────────────────────────────────────────────────────────
-// Shown after a lesson's quiz is completed. Data comes entirely from
-// state.rewardBadgeGains[] — nothing is hardcoded here.
-//
-// Animation intent: each ring animates through the full journey taken:
-//   - Simple gain (no level-up): fill from oldProgress → newProgress
-//   - N level-ups: fill to 100% → flash-reset → fill to 100% (×N-1) → fill to newProgress
-//   Each reset is accompanied by a label change (C7→C8 etc.) with a CSS pulse.
-//   Label changes are driven by inline <script> + setTimeout, one per level-up event.
-//
-// Duration is proportional to arc distance traveled (constant angular velocity):
-//   Fill speed: 100 arc-pct per 1500ms
-//   Reset pause: 500ms per level-up
-// This means a 200 XP bonus lesson visibly takes longer than a 40 XP base lesson.
-//
-// Level-up indicator: shown ABOVE the ring, fixed-height slot so all rings align.
-// No progress bars anywhere — the ring IS the progress meter.
-
-// Reuses RING_ARC, RING_CIRC, RING_ROTATION from badge-ring.js (loaded first).
-
-// Builds the animated ring and label-change script for one reward badge cell.
+// Render state.rewardBadgeGains with rings that show every crossed level.
+// Use constant angular velocity (100 arc-percent per 1500ms), a 500ms reset
+// pause per level-up and a fixed indicator slot to keep rings aligned.
+// initRewardAnimations schedules label changes after mounting because scripts
+// injected through innerHTML do not execute. Reuse badge-ring geometry.
 function renderRewardRing(gain, index) {
   const color       = tierColor(gain.newTier);
   const px          = 72; // md size
@@ -224,9 +208,7 @@ function renderReward() {
         <p class="subtitle">Lesson complete.</p>
       </div>
       <div class="flow-footer">
-        <!-- navGoTabRoot / navGoHome, never go(): both of these END a flow, and
-             go() PUSHES. "Return Home" used to push "home" on top of the home
-             stack, so Back replayed the reward you had just finished. -->
+        <!-- Finish at a root; pushing Home would let Back replay this reward. -->
         <button class="button secondary" type="button" onclick="navGoTabRoot('learn')">Back to Learn</button>
         <button class="button full" type="button" onclick="navGoHome()">Return Home</button>
       </div>
@@ -302,17 +284,9 @@ function renderReward() {
   `;
 }
 
-// ── Charity Points, under the experience reward ──────────────────────────────
-// This screen showed XP and badge rings and nothing else, while state.kibble
-// quietly went up by two separate awards — the lesson's own, and the bones the
-// home task card had promised. The tester saw neither, and the total was
-// roughly double the figure on the card that sent them here.
-//
-// Both are real, so both are listed, each named for what earned it. A single
-// merged number would read as the home card being wrong.
-//
-// Diamonds are the subscriber tier (L16). Off the trial nothing is credited,
-// but the line still shows — a tier whose value is invisible is not a tier.
+// Itemize lesson and Home-task bones separately so the payout can be checked
+// against the task card. Keep the subscriber diamond line visible even when
+// no diamonds were credited; Charity Points remain display-only (L16).
 function renderRewardPoints() {
   const p = state.rewardPoints;
   if (!p || !p.entries.length) return "";

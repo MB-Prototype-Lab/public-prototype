@@ -6,9 +6,9 @@
 // It is a separate model rather than a second caller of js/buddy-esf.js on
 // purpose. That file's state lives on the ESF session and its entries resolve
 // against ESF rows; pointing it at a car would mean teaching it about two tools
-// at once. The ESF build stays byte-for-byte what it was.
+// at once.
 //
-// v1 is EXPLAIN-ONLY (§11): pick an entry, Buddy answers, back to the list. No
+// Explain-only entries (§11): pick an entry, Buddy answers, back to the list. No
 // lifestyle multipliers — miles a day is already an input, so the ESF's car
 // questions would double-count it. The fixed three-button menu row is kept, and
 // "Help me calculate this" is always disabled here: a missing button would
@@ -21,8 +21,7 @@ function buddyBpData() {
   return (typeof BUDDY_BP !== "undefined" && BUDDY_BP) || {};
 }
 
-const BP_BUDDY_SCREENS = { bpLanding: "0", bpFinder: "pick", bpYourCar: "4", bpQuiz: "quiz", bpSetup: "1", bpCost: "2",
-                           bpOptions: "3", bpFinance: "4", bpCommit: "5" };
+const BP_BUDDY_SCREENS = { bpLanding: "0", bpFinder: "pick", bpYourCar: "4" };
 
 function bpBuddyAvailable() {
   return !!state.bp && BP_BUDDY_SCREENS.hasOwnProperty(state.screen);
@@ -35,7 +34,7 @@ function bpBuddy() {
 }
 
 function bpBuddyStepKey() {
-  return BP_BUDDY_SCREENS[state.screen] || "1";
+  return BP_BUDDY_SCREENS[state.screen] || "0";
 }
 
 function bpBuddyItems() {

@@ -2,8 +2,7 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const CARD_APR =
 {
   "_note": "Credit-card purchase-APR reference for the APR lesson's inference step and its hyperframes visual. Each entry carries a `typical` (used to infer the user's rate) and the card's real `low`/`high` variable-APR range (used as the peer band in the video). Figures are representative and prototype-grade (D19) — editable, not a live feed, not advice. Sources (WebSearch, Aug 2026): Forbes Advisor / Federal Reserve for the national average; WalletHub, FinanceBuzz, NerdWallet for per-card ranges — Chase Freedom Unlimited 18.24-27.74%, Sapphire Preferred 19.24-27.49%, Amex Blue Cash Everyday 19.49-28.49%, Amex Pay Over Time ~21.24-29.99%, Capital One Quicksilver/Venture 18.49-28.49%, Citi Double Cash 17.49-27.49%, Discover it ~18.24-27.24%, Wells Fargo Active Cash ~19.24-29.24%, BofA Customized Cash up to 29.99%. Store/retail and credit-union entries represent those segments rather than one product.",

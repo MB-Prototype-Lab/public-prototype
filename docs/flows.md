@@ -3,8 +3,11 @@
 `app/` is the approved full product. `flows/<id>/` holds independently editable,
 contained proposals for PM iteration, ticket references and studies. Merging a Flow
 makes it available to the team; product approval and integration into `app/` are
-separate work. Publication is also separate. Repository cutover is complete;
-preserve historical snapshots, source/publication tags, `demo` and PM/HoffDemo branches.
+separate work. Publication is also separate.
+
+For implementation edits, read [Edit and check](#edit-and-check), the package's
+`docs/flow.md` and relevant [code-health sections](code-health.md). Creation,
+integration and publication each have their own sections below.
 
 ## Preview and review
 
@@ -33,7 +36,7 @@ Reviewer controls live outside the phone in the initially collapsed **Tools**
 panel, including in snapshots. Open the **›** button (accessible name **Tools**) for Pin on refresh, Restart Flow, Exit Flow, themes,
 Copy State and controls for the current initialized screen. The page around the
 phone matches Local Prototype exactly: the panel sits alongside the phone on desktop
-and below it at medium widths, and phone-width windows (768px and below) offer no Tools.
+and below it at 769–900px, and phone-width windows (768px and below) offer no Tools.
 The button appears only while collapsed; **‹** (Close Tools) restores it and returns focus to it. Setup steps stay within each Flow's policy, and
 no unrestricted product screen picker is available. The phone retains the source
 participant headers, footers and contextual Back controls.
@@ -46,7 +49,7 @@ it does not open or depend on the standalone Emergency Fund Flow.
 ## Create a committed baseline
 
 Use [start-work](../.claude/skills/start-work/SKILL.md) and the shared
-[workflow](workflow.md). Record the task base and intended Flow before editing.
+[workflow](workflow.md). Record the intended Flow before editing.
 Choose a full committed app revision, preserving unrelated dirty work. If intended
 app changes are uncommitted, selectively checkpoint them first; creation exports
 committed bytes only and never silently copies dirty or untracked app files.
@@ -75,11 +78,11 @@ this configuration inside the package, never a switch in `app/` (see
 [create-flow](../.claude/skills/create-flow/SKILL.md) skill routes such requests here.
 `flows/emergency-fund` (setup, then one feature) and `flows/big-purchase` (shortened
 setup, then a feature with detours) are the references;
-[runtime interfaces](flows-contract.md#runtime-interfaces) lists the invariants.
+[Edit and check](#edit-and-check) lists the runtime invariants.
 
 1. **Policy (`flow.json`).** Set `entry` and `completion`, the exact
-   `allowed_screens` (screen IDs declared in `js/state.js`), and `setup_steps` as an
-   ordered subset of the source `ONB_STEPS` (`[]` for no setup). Describe
+   `allowed_screens` (IDs from the `destinations` registry in `js/state.js`), and
+   `setup_steps` as an ordered subset of the source `ONB_STEPS` (`[]` for no setup). Describe
    `profile_behavior` and PM-readable `proposed_differences`, then run
    `python3 scripts/flows.py catalog`. Never hand-edit generated files.
 2. **Containment (`js/flow.js`).** Replace the generic starter runtime.
@@ -96,7 +99,9 @@ setup, then a feature with detours) are the references;
    `window.MB_FLOW.setup_steps`. Have `onbFinish()` set `state.mbFlowSetupComplete`
    and call the feature's existing start function (Emergency fund: `esfStart()`; Big
    purchase: `bpStart("vehicle")`, then its landing). Have Skip apply the default
-   profile and finish setup.
+   profile and finish setup. Docked tap-to-advance setup now exists only in
+   `flows/big-purchase` (`onbDocked()` in its `screens/onboarding.js`); `app/` keeps
+   Continue on every step.
 4. **Unreachable surfaces.** In the package's copies, remove or replace product
    controls the Flow does not offer (topbar Home and Menu, unrelated Goals entries,
    queues) instead of leaving buttons that lead nowhere.
@@ -117,39 +122,59 @@ Common requests: “only show X” is a narrow allowlist with product tabs hidde
 ## Edit and check
 
 Work only in the selected package and explicitly scoped tooling/docs. Each package
-owns all runtime code, data, styles and assets; copy required assets rather than
+owns its runtime code, data, styles and assets; copy required assets rather than
 importing from `app/`, another Flow or mutable shared directories.
+
+The shell around the phone is the exception ([parity rule](app-contracts.md#hard-rules)):
+`css/components.css`, `js/refresh-pin.js` and the `index.html` head and Tools header
+stay byte-identical to the full app's (the head and header as `scripts/flows.py`
+adapts them). A change to them in `app/` goes into every Flow in the same commit, and
+a Flow cannot change them alone. Put Flow-only styles in `css/flow-tools.css`; a Flow
+cannot add stylesheet links. `python3 -m unittest tests.test_flows` checks this.
 
 `flow.json` is authoritative for provenance and policy: stable ID, label/purpose,
 optional reference, original `source_app_commit`, `task_base`, entry/completion,
 allowed screens, ordered setup steps, profile behavior and proposed differences.
 Keep original source provenance when iterating; document later proposals separately.
+`task_base` is the HEAD the package was created on: provenance only, never a scope base.
 `flow-config.js` is generated policy and `flows/catalog.*` is local discovery,
 including newly created uncommitted packages. Neither is publication identity or
-product signoff. Combine catalog entries carefully when resolving merges.
+product signoff. In a merge conflict, resolve `flow.json`, then run
+`python3 scripts/flows.py catalog`.
 
 ```sh
 python3 scripts/flows.py catalog
 python3 scripts/flows.py check --id my-flow
 python3 scripts/flows.py check
-python3 scripts/flows.py scope --base FULL_TASK_BASE_SHA --scope flow
+python3 scripts/flows.py scope --scope flow
 bash scripts/check-syntax.sh flows
+python3 -m unittest tests.test_flows
 node tests/flows-selector.cjs
 node tests/flows-runtime.cjs
 ```
 
-Regenerate after metadata changes; do not hand-edit wrappers. Scope checks compare
-committed, staged, unstaged and untracked app changes with the recorded full task
-base. Ordinary Flow tasks must leave app bytes unchanged. All packages receive
-metadata, entry, syntax and boundary checks; run affected behavior tests plus the
-complete commands in [testing](testing.md) before shipping.
+Regenerate after metadata changes; do not hand-edit wrappers. The scope check
+compares committed, staged, unstaged and untracked app changes with the merge base of
+`origin/main` (`main` without a remote) and HEAD, and prints that base, so app changes
+merged in from main pass; no base is recorded by hand. If the branch merged a
+different main, such as a local main ahead of `origin/main`, name it with
+`--against REF`; never revert main's work to pass. Ordinary Flow tasks must leave app
+bytes unchanged. All packages receive metadata, entry, syntax and boundary checks;
+run affected behavior tests plus the complete commands in [testing](testing.md)
+before shipping.
 
-Runtime policy must exist before setup/navigation seed. Guard navigation, tab/admin
-jumps, restored history and final rendering; reject forbidden destinations before
-stack writes. Allowed screens also need valid feature state: start through the
-existing feature initializer, or restart an unsupported cold link safely. Back at
-the entry stays within the Flow. Retained disabled controls must have no effects.
-Keep screen slugs and control identifiers useful for studies.
+Runtime policy must exist before setup/navigation seed. In `index.html`,
+`release-config.js` and `flow-config.js` load before `js/config.js`, with
+`js/refresh-pin.js` between `release-config.js` and `js/config.js`, and `js/flow.js`
+loads before `js/navigation.js`; `flows.py check` enforces this. `js/refresh-pin.js`
+decides whether a refresh returns to the selector or restarts the Flow in place. A
+URL `profile` parameter is applied once at boot, on file URLs too, and never again
+during navigation. Guard navigation, tab/admin jumps, restored history and final
+rendering; reject forbidden destinations before stack writes. Allowed screens also
+need valid feature state: start through the existing feature initializer, or restart
+an unsupported cold link safely. Back at the entry stays within the Flow. Retained
+disabled controls must have no effects. Keep screen slugs and control identifiers
+useful for studies.
 
 The static dependency checker covers literal HTML/CSS paths and app conventions for
 JavaScript/data asset strings, including dynamic directory prefixes. It rejects
@@ -164,13 +189,14 @@ fallback remains. Verify selected images, audio, films and generated URLs at run
 1. Record PM's chosen behavior and reviewed Flow revision. Start an app-integration
    task from current main; preserve the Flow as the reference and retain provenance.
 2. Review the Flow/app diff and selectively implement the chosen changes in `app/`.
+   Port the chosen behavior, never a Flow's containment as a switch in `app/`.
    Do not bulk-copy or merge the whole Flow directory into the product. Keep full
    onboarding, product tabs and established BP/ESF budget/save behavior unless the
    PM explicitly approves changing them.
 3. Run affected full-app and Flow regression checks. Declare the scope explicitly:
 
    ```sh
-   python3 scripts/flows.py scope --base FULL_TASK_BASE_SHA --scope app-integration
+   python3 scripts/flows.py scope --scope app-integration
    ```
 
    This scope permits app changes; it is not product signoff or a substitute for
@@ -179,24 +205,12 @@ fallback remains. Verify selected images, audio, films and generated URLs at run
    Record the checked commit, results and limitations; repeat affected checks after
    material changes. Then follow [ship](../.claude/skills/ship/SKILL.md).
 
-Routine PM Flow work does not require subagents. Current authorization permits
-branch pushes, PR creation and CI verification; merge, repository settings and
-publication require separate authorization. Report each outcome separately.
+Routine PM Flow work does not require subagents. Remote actions follow the
+[authorization boundary](../CLAUDE.md#collaboration); report each outcome separately.
 
 ## Publish a specific revision
 
-Select a tested committed package on verified current main, a new permanent snapshot
-ID, label and tracking choice. Preparation can be rehearsed locally:
-
-```sh
-python3 scripts/publish.py prepare --flow my-flow --id my-flow-study-01 --commit FULL_MAIN_SHA --label 'My Flow study' --tracking on
-```
-
-This prints a proposed catalog row; it does not publish or create tags. The
-`flow-static-v1` format uses `source_dir=flows/my-flow` and the stable hosted path
-`versions/my-flow-study-01/index.html`. The working Flow ID identifies the experience;
-the snapshot ID identifies one immutable revision. Full-app preparation omits
-`--flow` and excludes Flows. Follow [publishing](publishing.md) for catalog review,
-source tags, previous-manifest checks, artifact size and explicit deployment.
-Published tracking and selector destination are frozen. Archive/hidden/retired rules
-and study protections apply equally; retiring a Flow covers every packaged HTML entry.
+Follow [Prepare a Flow snapshot](publishing.md#prepare-a-flow-snapshot) for selecting
+a tested revision, preparing its immutable catalog identity, study/tracking decisions,
+review, tags and explicit publication. Working Flow IDs and permanent snapshot IDs
+remain separate; merging a Flow neither publishes it nor approves product integration.

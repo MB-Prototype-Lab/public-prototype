@@ -30,11 +30,11 @@ assert.equal(row.children[1].textContent, valid.description);
 // A blank description leaves no empty blurb beside the name.
 assert.equal(boot({schema: 1, flows: [{...valid, description: ' '}]}).localFlowsList.children[0].children.length, 1);
 const html = fs.readFileSync('index.html', 'utf8');
-for (const retained of ['id="passcodeScreen"', 'id="localAlternatives"', 'gate/local-variants.js', 'app/index.html']) assert.ok(html.includes(retained));
+for (const retained of ['id="passcodeScreen"', 'id="localVariants"', 'gate/local-variants.js', 'app/index.html']) assert.ok(html.includes(retained));
 // Variants start under the Prototype tab; local Flows sit only in the Flows tab.
 const at = id => html.indexOf('id="' + id + '"');
 assert.ok(at('selectorScreen') < at('gatePanelPrototype'));
-assert.ok(at('gatePanelPrototype') < at('localPreview') && at('localAlternatives') < at('gatePanelFlows'));
+assert.ok(at('gatePanelPrototype') < at('localPreview') && at('localVariants') < at('gatePanelFlows'));
 assert.ok(at('gatePanelFlows') < at('localFlows'));
 // A Flow comparison moves its variants below the Flows list, inside the stripped block.
 const flowsPanel = html.slice(at('gatePanelFlows'));

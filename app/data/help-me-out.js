@@ -2,8 +2,7 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const HELP_ME_OUT =
 {
   "_note": "Help-me-out estimation trees. FIGURES live here with the source they came from; the ARITHMETIC lives in HMO_MODELS (js/help-me-out.js), because a rate table is data and multiplying it by a slider is logic. Questions ask about HABITS and never about dollars — people know how far they drive, not what they spend on petrol. Every figure is NATIONAL; hmoCompute applies the category's own cost-of-living multiplier on the way out, except where a tree is anchored on a peer figure that already carries it (col: included). Widen freely — this is data.",

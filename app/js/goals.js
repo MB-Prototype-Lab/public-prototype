@@ -1,8 +1,4 @@
-// ─── Goals engine (05-goals, L3) ─────────────────────────────────────────────
-// Rebuilt to the v3 model. v2's Goals V2 module — frozen baselines, derived
-// sprints, a seeded cohort, medals — is not carried over; it stays in
-// versions/v2/ and remains testable from the gate.
-//
+// ─── Goals engine ────────────────────────────────────────────────────────────
 // ── TWO TYPES WITH INVERTED MATH ─────────────────────────────────────────────
 // This is the thing to get right, because the same card UI shows both:
 //
@@ -29,8 +25,8 @@ function goalType(goal) {
 /**
  * A spend-limit goal tracks a live category rather than a stored number, so a
  * journal entry moves it (L17). The seed carries no category field, so it is
- * matched from the label once at boot — the same shaping the L11 observation
- * reframe does, and for the same reason: data/*.json stays verbatim.
+ * matched from the label once at boot, the same shaping the L11 observation
+ * reframe does.
  */
 function goalInferCategory(goal) {
   if (goal.category) return goal.category;
@@ -67,7 +63,7 @@ function goalPace(goal) {
   return Math.round((progress / elapsed) * 100);
 }
 
-/** 0–1 through the goal's window. Falls back to the seeded pace when undatable. */
+/** 0–1 through the goal's window, or null when it cannot be dated. */
 function goalElapsedFraction(goal) {
   if (!goal.targetDate) return null;
   const end = new Date(goal.targetDate).getTime();
@@ -99,7 +95,7 @@ function goalStatusIsPoor(goal) {
 }
 
 /**
- * Pace matters more than the raw figure (05-goals): "$620 of $3,000 means
+ * Pace matters more than the raw figure: "$620 of $3,000 means
  * little; 41% of the pace you set means something."
  */
 function goalPaceLine(goal) {
@@ -116,7 +112,7 @@ function goalPaceLine(goal) {
   return pace + "% of the pace you set";
 }
 
-// ── Event-based progress (05-goals) ──────────────────────────────────────────
+// ── Event-based progress ─────────────────────────────────────────────────────
 // "Never ask someone to update a number directly. Ask something they actually
 // know." The journal's q_balance emits a checking_balance event; savings goals
 // consume it. The number moves as a CONSEQUENCE of an answer.
@@ -141,7 +137,7 @@ function goalsConsumeEvents() {
   return applied;
 }
 
-// ── Contextual suggestions (05-goals) ────────────────────────────────────────
+// ── Contextual suggestions ───────────────────────────────────────────────────
 // "Goals mostly happen elsewhere. After a meaningful action the app offers one
 // to three suggestions drawn from whatever is on screen. The last option is
 // always create your own."

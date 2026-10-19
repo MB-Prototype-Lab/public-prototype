@@ -1,20 +1,7 @@
-// ─── Who are you, then? ──────────────────────────────────────────────────────
-// TAB: none | NAV BAR: Hidden — full-bleed
-//
-// Shown when a tester chooses "Skip all setup". Two questions, the second
-// revealing once the first is answered, in the same grammar as Help me out.
-//
-// It exists because skipping used to be silent: every write in onbFinish() is
-// guarded, so a skipped field fell through to the persona and the tester spent
-// the rest of the session as Sam from Los Angeles without being told. Two taps
-// is a small price for knowing which figures you are looking at.
-//
-// TEMPORARY SCAFFOLDING. PROFILE_PICKER (js/config.js) is one line and takes
-// this out of the flow entirely — skip then applies profileDefault() silently
-// and nothing else changes. That is the flag's whole promise; keep it true.
+// Skip-all setup explicitly selects one of nine starting profiles (L26),
+// so testers know whose figures they see. These profiles also form the sweep matrix.
 
 function ppStart() {
-  const d = profileDefaults();
   state.profilePick = { tier: null, level: null, from: state.screen };
   go("profilePicker");
 }
@@ -44,15 +31,8 @@ function ppConfirm() {
   ppFinishOnboarding();
 }
 
-/**
- * Complete the skip.
- *
- * onbFinish() does much more than set a profile — the strategic goal, the
- * streak, the buddy, clearing state.onboarding, committing the nav stack — and
- * duplicating any of that here would be a second definition of "setup is done"
- * that drifts. So the profile is applied first and onbFinish runs on top;
- * its writes are all guarded, so they leave the profile alone.
- */
+// Apply the profile before onbFinish so setup completion has one definition:
+// strategic goal, streak, buddy and navigation all use the same seam.
 function ppFinishOnboarding() {
   if (state.onboarding && typeof onbFinish === "function") { onbFinish(); return; }
   state.nav.stacks.home = ["home"];
@@ -167,19 +147,9 @@ function renderProfilePickerAdmin() {
     </div>`;
 }
 
-/**
- * The active profile, and a way to change it without restarting.
- *
- * Shared, because it belongs on more than one admin card — the onboarding one
- * and this screen's — and two copies would drift.
- *
- * The BAND is on screen next to the income for a reason. peer-benchmarks.json
- * has five income bands and the +/-25% steps do not always cross one: Santa
- * Clara "at" and "+25%" are both b5, Little Rock "at" and "+25%" are both b3.
- * Those pairs produce identical peer figures. That is the model's own
- * granularity working correctly, but with only the dollar figure visible it
- * reads as the app ignoring a 25% raise.
- */
+// Share the profile switcher across Tools cards to prevent drift. Show the
+// peer band beside income: a 25% income change can stay in the same coarse
+// band and legitimately leave peer figures unchanged.
 function renderProfileAdminSwitcher() {
   const active = profileActive();
   return `

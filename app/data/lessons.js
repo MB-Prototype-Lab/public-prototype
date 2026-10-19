@@ -2,9 +2,8 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
-const LESSONS_V3 =
+// server, so the data ships as a script-loadable assignment (L13).
+const FRAMED_LESSONS =
 {
   "_note": "Fills the gap v2 does not cover: pre-lesson framing questions and answer-driven script selection (D38). v2's lesson player and audio pipeline are inherited unchanged.",
 
@@ -102,7 +101,7 @@ const LESSONS_V3 =
           }
         ],
         "figureFree": {
-          "_note": "The cut played when there is no card APR to plot (no card, rather-not-say, Skip) -- the apr_default script. Only the four education beats, which use no tokens, so nothing on screen claims a figure the viewer never gave. Timed at runtime from apr_default's OWN line cues (js/lessons-v3.js lessonFigureFreeStoryboard), so the fractions are not written here. `lines` are 0-based indexes into apr_default, inclusive; the closing entry replays `what` and holds. Recut when apr_default's lines change.",
+          "_note": "The cut played when there is no card APR to plot (no card, rather-not-say, Skip) -- the apr_default script. Only the four education beats, which use no tokens, so nothing on screen claims a figure the viewer never gave. Timed at runtime from apr_default's OWN line cues (js/framed-lessons.js lessonFigureFreeStoryboard), so the fractions are not written here. `lines` are 0-based indexes into apr_default, inclusive; the closing entry replays `what` and holds. Recut when apr_default's lines change.",
           "script": "apr_default",
           "beats": [
             { "beat": "what",        "lines": [0, 1] },

@@ -268,12 +268,14 @@ class VariantsTest(unittest.TestCase):
     def test_readable_names_and_retained_branch_collision(self):
         state = self.create()
         self.assertEqual([v['id'] for v in state['variants']], ['variant-A', 'variant-B'])
+        self.assertEqual([v['branch'] for v in state['variants']], ['variant/test-A', 'variant/test-B'])
         manifest = (self.root / '.local-preview/variants.js').read_text()
         self.assertIn('.worktrees/variant-A/app/index.html', manifest)
         self.cli('close')
         self.cli('cleanup', *[v['id'] for v in state['variants']])
         next_state = self.create()
         self.assertEqual([v['id'] for v in next_state['variants']], ['variant-A-2', 'variant-B-2'])
+        self.assertEqual([v['branch'] for v in next_state['variants']], ['variant/test-A-2', 'variant/test-B-2'])
         self.cli('--session', state['id'], 'cleanup', 'variant-A')
         self.assertTrue(self.path(next_state['variants'][0]).exists())
         self.assertEqual(module.option_letter(26), 'Z')
@@ -281,19 +283,60 @@ class VariantsTest(unittest.TestCase):
         self.assertEqual(module.option_letter(52), 'AZ')
         self.assertEqual(module.option_letter(53), 'BA')
 
+    def test_task_branch_names_are_deterministic(self):
+        for task, expected in [('work/nested/task', 'nested/task'), ('design-task', 'design-task')]:
+            with self.subTest(task=task):
+                self.git('branch', '-m', task)
+                state = self.create()
+                self.assertEqual([v['branch'] for v in state['variants']],
+                                 ['variant/' + expected + '-A', 'variant/' + expected + '-B'])
+                for variant in state['variants']:
+                    self.assertEqual(self.git('symbolic-ref', '--short', 'HEAD', root=self.path(variant)),
+                                     variant['branch'])
+                self.cli('close')
+                self.cli('cleanup', *[v['id'] for v in state['variants']])
+
+    def test_branch_collision_aligns_all_option_suffixes(self):
+        self.git('branch', 'variant/Test-B')
+        state = self.create()
+        self.assertEqual([v['branch'] for v in state['variants']], ['variant/test-A-2', 'variant/test-B-2'])
+        self.assertEqual([v['id'] for v in state['variants']], ['variant-A-2', 'variant-B-2'])
+        self.git('rev-parse', 'variant/Test-B')
+
+    def test_branch_namespace_collision_leaves_no_creation(self):
+        self.git('branch', '-m', 'work/nested/task')
+        self.git('branch', 'variant/nested')
+        head = self.git('rev-parse', 'HEAD')
+        result = self.cli('create', '--option', 'A', 'first', ok=False)
+        self.assertIn('namespace is occupied', result.stderr)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), head)
+        self.assertFalse((self.root / '.local-preview/current').exists())
+
     def test_legacy_session_cleanup(self):
         state = self.create()
         self.cli('close')
         self.cli('cleanup', *[v['id'] for v in state['variants']])
-        legacy = {'id': state['id'] + '-1', 'branch': 'variant/' + state['id'] + '-1',
-                  'label': 'Legacy', 'description': 'Existing comparison'}
-        self.git('worktree', 'add', '-b', legacy['branch'], str(self.path(legacy)), state['checkpoint'])
+        for ident in [state['id'] + '-1', 'variant-A']:
+            with self.subTest(ident=ident):
+                legacy = {'id': ident, 'branch': 'variant/' + ident,
+                          'label': 'Legacy', 'description': 'Existing comparison'}
+                self.git('worktree', 'add', '-b', legacy['branch'], str(self.path(legacy)), state['checkpoint'])
+                state['status'] = 'closed'
+                state['variants'] = [legacy]
+                module.save(self.root, state)
+                self.cli('cleanup', legacy['id'])
+                self.assertFalse(self.path(legacy).exists())
+                self.git('rev-parse', legacy['branch'])
+
+    def test_wrong_task_branch_mapping_is_refused(self):
+        state = self.create()
+        self.cli('close')
         state['status'] = 'closed'
-        state['variants'] = [legacy]
+        state['variants'][0]['branch'] = 'variant/another-task-A'
         module.save(self.root, state)
-        self.cli('cleanup', legacy['id'])
-        self.assertFalse(self.path(legacy).exists())
-        self.git('rev-parse', legacy['branch'])
+        result = self.cli('cleanup', state['variants'][0]['id'], ok=False)
+        self.assertIn('Managed path or branch identity changed', result.stderr)
+        self.assertTrue(self.path(state['variants'][0]).exists())
 
     def test_literal_files_and_managed_path_collision(self):
         self.write('task*', 'literal star')

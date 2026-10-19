@@ -157,8 +157,8 @@
     var manifest = window.MB_LOCAL_VARIANTS;
     if (!manifest || manifest.active !== true || !Array.isArray(manifest.variants)) return;
     var target = comparisonTarget(manifest);
-    var section = document.getElementById("localAlternatives");
-    var list = document.getElementById("localAlternativesList");
+    var section = document.getElementById("localVariants");
+    var list = document.getElementById("localVariantsList");
     if (!target || !section || !list) return;
 
     var seen = Object.create(null);
@@ -175,7 +175,7 @@
     });
     if (!choices.length) return;
     var tab = placeVariants(target, section);
-    var title = document.getElementById("localAlternativesTitle");
+    var title = document.getElementById("localVariantsTitle");
     if (title) title.textContent = target.label + " variants";
     markTab(tab, choices.length);
     suggestTab(tab);
@@ -206,7 +206,7 @@
       return -1;
     }
 
-    // Alternatives that left the manifest drop out; the defaults fill the gaps.
+    // Variants that left the manifest drop out; the defaults fill the gaps.
     function restore(layoutRecord) {
       var slots = [];
       (Array.isArray(layoutRecord.slots) ? layoutRecord.slots : []).forEach(function (href) {

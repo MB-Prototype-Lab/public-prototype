@@ -235,8 +235,8 @@ function esfBuddyEntry(id) {
 //
 // Medical is the case that forced this. It is priced as if the job stopped —
 // an unsubsidized benchmark premium — but ONLY for somebody whose cover comes
-// through work. For everybody else esfReplacementPremium() is 0 and the row is
-// ordinary out-of-pocket costs. "This looks high on purpose" over $165 reads as
+// through work. For everybody else the row uses the peer Health figure.
+// "This looks high on purpose" over $165 reads as
 // a tool that does not know what it is showing you.
 //
 // A resolver returns a key into the entry's `sayIf` / `chipsIf`. Adding a
@@ -450,12 +450,11 @@ function esfBuddyChip(chipId) {
 // return a figure wildly apart from the dropdown beside it and leave the user
 // with two numbers and no way to choose.
 //
-// So this is a new lightweight mode, NOT an extension of help-me-out, which
+// This is separate from help-me-out, which
 // stays where it is serving the budget builder.
 //
 // THE USER NEVER TYPES A FIGURE. They answer questions about how they live and
-// the estimate moves. They can still type one into the row itself if they want
-// to — the point is that they never have to.
+// the estimate moves. The row's own range dropdown remains available.
 
 function esfLifestyleSet(rowId) {
   return ((esfData().lifestyleModifiers || {})[rowId]) || null;
@@ -578,8 +577,8 @@ function esfLifestyleSummary(rowId, answers, amount) {
       // `short` is the option worded as a sentence fragment. The label itself
       // is written to be recognised in a dropdown — "Higher-end stores (Whole
       // Foods)" — and the brand in brackets is what makes it land there, but it
-      // reads badly mid-sentence. Lowercasing the label instead was worse: it
-      // turned Whole Foods into whole foods.
+      // reads badly mid-sentence. Do not lowercase labels: brand names need
+      // their original casing.
       return opt.short || opt.label;
     })
     .filter(Boolean);

@@ -1,22 +1,5 @@
-// ─── My Progress (07-progress-bills, A3) ─────────────────────────────────────
-// TAB: My Progress | NAV BAR: Visible
-//
-// The review surface. Mostly views over data other phases produce, which is why
-// it is built late.
-//
-// REWRITTEN IN 5b. v2's section order (Profile → Budget Results → Assumptions →
-// Comparisons → Goals → Commitments) was its own; A3 fixes a different one, so
-// this file is deliberately a list of six calls in that order:
-//
-//   1 spend trend chart, with month-to-date above it
-//   2 three-layer comparison — plan, journal, peers
-//   3 bills calendar
-//   4 subscription usage flags
-//   5 badge and buddy level
-//   6 kibble balance
-//
-// D19 binds hardest here: "the chart must never render empty or near-empty.
-// Where six days is too thin to show a trend, show the month."
+// D19: show fabricated monthly depth alongside the six days of journal detail
+// so a short history still provides context.
 
 function renderMyProgress() {
   return `
@@ -92,15 +75,8 @@ function mpShortLabel(label) {
   return m ? m[1] + "d" : label;
 }
 
-// ── 1b. Update your spending ─────────────────────────────────────────────────
-// The chart above says what has been recorded; this is how anything gets added
-// to it. Without it, My Progress is read-only — you can see the gap and have no
-// way to close it from the screen showing it to you.
-//
-// It opens a Money Journal entry rather than a form. journalSelectQuestions
-// already ranks by priority and applies cooldowns, so a plain journalStart({})
-// IS "the most important things to answer today" — there is no second selection
-// rule to keep in step with the first.
+// Reuse journal selection priorities and cooldowns for spending updates;
+// do not introduce a second question-selection rule.
 
 function renderMPUpdate() {
   const logged = mpDailyTotals().filter(d => d.total > 0).length;
@@ -123,12 +99,8 @@ function renderMPUpdate() {
 // than to Home — the same screen reached from a Home task backs to Home,
 // because the stack decides, not the screen (architecture §7).
 function mpStartUpdate() {
-  // Clear the task claim first. state.activeTaskId names the task whose flow you
-  // are currently inside, and a bookmark task that was opened and abandoned
-  // ("Set up your budget", then you wander off) leaves it set. journalSubmit
-  // completes whatever activeTaskId names — so without this, updating your
-  // spending from My Progress would tick off the budget task and pay out its
-  // bones. This entry point is not inside any task.
+  // Clear the task claim: this entry point belongs to no task. Otherwise
+  // journalSubmit could complete an abandoned task and award its bones.
   state.activeTaskId = null;
   journalStart({});
   go("journalEntry");
@@ -152,10 +124,7 @@ function renderMPComparison() {
     </div>`;
 }
 
-// ── 3. Bills calendar ────────────────────────────────────────────────────────
-// "A bill outside the budget is flagged." The seeded car insurance — $187, due
-// in four days, not budgeted — is one of the four observations and must be
-// reachable here as well as from home.
+// Keep the unbudgeted-bill observation reachable here and on Home (D18).
 
 function renderMPBills() {
   const bills = (state.bills || []).slice().sort((a, b) => a.dueInDays - b.dueInDays);
@@ -224,9 +193,7 @@ function renderMPSubscriptions() {
   `;
 }
 
-// ── 5. Badge and buddy level ─────────────────────────────────────────────────
-// The badge is vanity — it unlocks nothing, and that is the point
-// (06-education). The 5-tier model from lessons.json lands in 5c.
+// Badges unlock nothing (D31).
 
 function renderMPBadges() {
   const badges = (state.badges || []).slice(0, 4);
@@ -249,8 +216,7 @@ function renderMPBadges() {
   `;
 }
 
-// ── 6. Kibble balance ────────────────────────────────────────────────────────
-// Display-only (L16). Every sink is on the spec's deferred list.
+// Kibble is display-only; no spending surface consumes it (L16).
 
 function renderMPKibble() {
   return `
@@ -272,7 +238,7 @@ function renderMyProgressAdmin() {
     <div class="admin-card">
       <p class="admin-card-title">My Progress</p>
       <p class="helper" style="margin-bottom:10px;">
-        Six sections in A3's order: trend · comparison · bills · subscriptions ·
+        Six sections, in order: trend · comparison · bills · subscriptions ·
         badges · kibble.
       </p>
       <div class="input-group">

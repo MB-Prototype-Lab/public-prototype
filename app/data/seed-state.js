@@ -2,14 +2,13 @@
 // Regenerate: bash scripts/wrap-data.sh
 //
 // The app runs on file://, where fetch() is blocked and there is no dev
-// server, so spec data ships as a script-loadable assignment (L13).
-// The .json beside this file is the byte-identical spec copy.
+// server, so the data ships as a script-loadable assignment (L13).
 const SEED_STATE =
 {
   "_note": "Six days of fabricated history (D16). Loaded into memory on mount, discarded on refresh (D03). Day 6 is 'yesterday' relative to the session.",
 
   "budget": {
-    "_note": "The plan layer. Produced by the lifestyle wizard; these are the persona defaults.",
+    "_note": "Persona defaults for the plan layer. Budget-builder and emergency-fund saves replace the plan through the baseline seam.",
     "monthly": {
       "Housing": 2150,
       "Groceries": 420,
@@ -152,7 +151,7 @@ const SEED_STATE =
   },
 
   "dailyTasks": {
-    "_note": "Precomputed order (A7). Scoring engine specified in 03-home-daily-loop.md but not run at runtime.",
+    "_note": "Precomputed order. The scoring engine is not run at runtime.",
     "today": [
       { "id": "t_journal", "label": "Do your money journal", "route": "money_journal", "kibble": 20, "priority": 1 },
       { "id": "t_esf", "label": "Saving for an emergency", "route": "emergency_fund", "kibble": 15, "priority": 2 },

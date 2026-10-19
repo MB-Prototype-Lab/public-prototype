@@ -92,7 +92,12 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(output['versions/v1/index.html'], self.build()['versions/v1/index.html'])
         self.row['state'] = 'retired'
         retired = self.build(previous=original)
-        self.assertIn(b'This build has been retired', retired['versions/v1/index.html'])
+        notice = retired['versions/v1/index.html']
+        self.assertIn(b'This build has been retired', notice)
+        self.assertIn(b'<html lang="en">', notice)
+        self.assertIn(b'<meta name="viewport" content="width=device-width, initial-scale=1">', notice)
+        self.assertIn(b'&lt;script&gt;alert(1)&lt;/script&gt;', notice)
+        self.assertIn(b'href="../../index.html"', notice)
         self.assertNotIn('versions/v1/assets/a.png', retired)
         self.row['state'] = 'active'
         restored = self.build(previous=json.loads(retired['publication-manifest.json']))
@@ -170,11 +175,11 @@ class PublicationTests(unittest.TestCase):
 
     def test_published_selector_has_no_local_comparison(self):
         page = self.build()['index.html'].decode()
-        for local_text in ('localPreview', 'localAlternatives', '.local-preview/',
+        for local_text in ('localPreview', 'localVariants', '.local-preview/',
                            'local-variants.js', 'local-compare.css', 'localCompare', 'Compare side by side', '.worktrees/', 'Current local app',
                            'Live historical builds', 'LOCAL PREVIEW', 'LOCAL SCRIPTS', 'localFlows', 'Local Prototype',
                            'Historical versions', 'flows/catalog.js', 'gate/flows.js', 'mb-prototype-lab.github.io',
-                           'CATALOG -->', 'localFlowVariantsSlot', 'localAlternativesTitle', 'Prototype variants',
+                           'CATALOG -->', 'localFlowVariantsSlot', 'localVariantsTitle', 'Prototype variants',
                            'local-tab-count', 'data-default-tab'):
             with self.subTest(local_text=local_text):
                 self.assertNotIn(local_text, page)
@@ -208,7 +213,38 @@ class PublicationTests(unittest.TestCase):
             pub.validate_assets({'index.html': b'<img src="missing.png">'}, [])
         pub.validate_assets({'index.html': b'<img src="asset.png">', 'asset.png': b'png'}, [])
 
-    def test_cli_bootstrap_and_atomic_output(self):
+    def test_check_new_source_must_already_be_on_base(self):
+        scripts = self.repo/'scripts'; scripts.mkdir()
+        (scripts/'publish.py').write_bytes(Path(pub.__file__).read_bytes())
+        (self.repo/'publication').mkdir()
+        catalog_path = self.repo/'publication/catalog.json'
+        catalog_path.write_text(json.dumps(self.catalog))
+        self.git('add', 'scripts', 'publication')
+        self.git('commit', '-m', 'base catalog')
+        base = self.git('rev-parse', 'HEAD')
+        (self.repo/'app/new.js').write_text('// new snapshot source')
+        self.git('add', 'app/new.js')
+        self.git('commit', '-m', 'source not yet in base')
+        source = self.git('rev-parse', 'HEAD')
+        row = dict(self.row, id='new', source_tag='snapshot/new', commit=source,
+                   source_dir='app', public_path='versions/new/index.html', format='static-v1')
+        row['digest'] = pub.digest(pub.package(row, self.repo, False))
+        self.catalog['snapshots'].append(row)
+        catalog_path.write_text(json.dumps(self.catalog))
+        # The fixture retains its legacy source tree; check forbids editable versions.
+        import shutil
+        shutil.rmtree(self.repo/'versions')
+        def check(ref):
+            return subprocess.run(['python3', str(scripts/'publish.py'), 'check', '--base', ref],
+                                  cwd=self.repo.parent, capture_output=True, text=True)
+        result = check(base)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('new snapshot source must be on catalog base before merge: new', result.stderr)
+        # The same catalog is safe once the base includes its source commit.
+        result = check(source)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_cli_previous_manifest_and_atomic_output(self):
         scripts = self.repo/'scripts'; scripts.mkdir()
         (scripts/'publish.py').write_bytes(Path(pub.__file__).read_bytes())
         (self.repo/'publication').mkdir()
@@ -223,15 +259,19 @@ class PublicationTests(unittest.TestCase):
             return subprocess.run(['python3', str(scripts/'publish.py'), 'build', '--revision', 'refs/tags/publish/first', '--output', str(self.repo/'out'), *extra], cwd=self.repo, capture_output=True, text=True)
         self.assertNotEqual(run().returncode, 0)
         self.assertFalse((self.repo/'out').exists())
-        self.assertNotEqual(run('--bootstrap-baseline', self.sha, '--bootstrap-tag', 'refs/tags/publish/wrong').returncode, 0)
-        result = run('--bootstrap-baseline', self.sha, '--bootstrap-tag', 'refs/tags/publish/first')
+        self.assertIn('previous manifest required', run().stderr)
+        previous = self.repo/'previous.json'
+        previous.write_text('{}')
+        self.assertNotEqual(run('--previous', str(previous)).returncode, 0)
+        self.assertFalse((self.repo/'out').exists())
+        previous.write_text(json.dumps(self.previous()))
+        result = run('--previous', str(previous))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((self.repo/'out/publication-manifest.json').is_file())
         self.assertNotEqual(run('--offline').returncode, 0)  # Never overwrite an output tree.
-        # Missing live manifest on subsequent publications still cannot bootstrap.
         self.git('commit', '--allow-empty', '-m', 'later')
         self.git('update-ref', 'refs/remotes/origin/main', 'HEAD')
-        result = run('--bootstrap-baseline', self.sha, '--bootstrap-tag', 'refs/tags/publish/first')
+        result = run('--previous', str(previous))
         self.assertIn('stale publication', result.stderr)
 
 

@@ -1,7 +1,6 @@
 // ─── Shared Top Bar ───────────────────────────────────────────────────────────
-// NEW IN v3 — v2 had no shared top bar; every screen rendered its own header.
-// 03-home-daily-loop puts kibble, streak and buddy level up here, and L5 puts
-// the home/back control in the top-left, so one component owns the strip.
+// Kibble, streak and buddy level live up here, and L5 puts the home/back
+// control in the top-left, so one component owns the strip.
 //
 //   ┌────────────────────────────────────────────┐
 //   │ [◄ or ⌂]   🦴 240 · 🔥 6 · Lv 3        [☰] │
@@ -15,10 +14,8 @@
 //   full-bleed / nav hidden  → Back only, home suppressed
 //   on Home itself           → nothing
 //
-// The back button is the SINGLE source of back navigation. v2's per-screen
-// "← Budget" buttons were hardcoded forward-jumps to a fixed destination, which
-// is wrong once the same screen can be reached from two places — that is the
-// whole point of the per-stack model in architecture §7.
+// Back follows the active stack, not a hardcoded destination: the same screen
+// can be entered from different callers (L5).
 
 // streak: full-bleed splash owns the viewport.
 // chat: it has its own header + Back (top-right); a top-bar back too would be a
@@ -27,8 +24,8 @@
 // back would stack a second chevron over it (and reads low-contrast on the sage
 // stage in the dark themes). Hide the bar so the boxed icon is the only back.
 // onboarding: it has Back pinned in its own footer and Skip in its own header,
-// so the bare bar's chevron was a THIRD escape doing what the first already
-// does. Hiding it also hands back the 52px it was reserving -- but only with
+// so another chevron would duplicate its controls. Hiding it also releases
+// its reserved height -- but only with
 // the paired rule in css/layout.css; see there, the offset does not follow the
 // bar on its own.
 const TOPBAR_HIDDEN_SCREENS = ["streak", "chat", "lesson", "onboarding"];
@@ -76,8 +73,7 @@ function renderTopBar() {
   `;
 }
 
-// Half-screen overlay for system information (03-home-daily-loop). Contents are
-// Phase 3's job; the shell and the dismiss behaviour live here.
+// System information and off-path links share a dismissible overlay.
 function renderTopBarMenu() {
   return `
     <div class="topbar-menu-scrim" onclick="topbarToggleMenu()"></div>

@@ -6,9 +6,8 @@
 // WHAT THIS IS NOT: AI, an LLM, or NLP. It is a deliberately dumb word matcher.
 // Do not "upgrade" it — if real AI ever lands it replaces chatRoute() wholesale.
 //
-// PORTED IN PHASE 3b — v2 hand-wrote CHAT_ROUTES with ordering rules. v3 drives
-// everything from data/buddy-responses.json, so adding a response is a data
-// edit. Two behaviours are NOT plain scoring and must not be flattened into it:
+// Responses live in data/buddy-responses.json. Two behaviours are NOT plain
+// scoring and must not be flattened into it:
 //
 //   1. advice_deflect carries "priority": "override" and its own note says
 //      "any advice-shaped input lands here REGARDLESS of keyword score". That
@@ -25,8 +24,7 @@
 // "what would you do" and nine other natural phrasings all slip past it and
 // would be answered by whichever topic happened to share a noun.
 //
-// So advice detection is keywords OR these shapes. This layer lives in code
-// rather than in data/*.json, which stays a byte-identical copy of the spec.
+// So advice detection is keywords OR these shapes.
 //
 // Tuned against the eleven real bubble labels — none of them matches. Being
 // over-eager here is the safer failure: a wrongly-deflected question costs the
@@ -163,7 +161,7 @@ function chatFollowAction(action) {
   if (route === "budget_comparison") { go("comparison"); return; }
   if (route === "progress")          { navGoTab("myProgress"); return; }
   if (route === "goals")             { navGoTab("goals"); return; }
-  if (route === "share_preview")     { go("comparison"); return; }   // Phase 4 builds share
+  if (route === "share_preview")     { go("comparison"); return; }
   navRouteTask(route);
 }
 

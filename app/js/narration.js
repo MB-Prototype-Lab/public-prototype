@@ -1,17 +1,6 @@
 // ─── Narration seam — one place that decides how a line gets spoken ──────────
 //
-// L10 says Web Speech is a BUILD-TIME generator and runtime plays .wav. That
-// holds for the full build and is still the preferred path: when a generated
-// .wav exists, callers play it and never come here.
-//
-// But scripts/gen-audio.sh needs macOS `say`, and the prototype is being built
-// and demoed on a PC where no TTS exists at all — so on that machine every
-// narrated surface is silent, and "is there a voice in the video" cannot be
-// prototyped at all. Owner's call: fall back to runtime speech so the voice is
-// there on any machine. The .wav still wins wherever it has been generated, so
-// nothing regresses on the Mac and the production pipeline is unchanged.
-//
-// Order of preference, per surface:
+// L10 order of preference, per surface:
 //   1. generated .wav   (L10, best quality, measured timings)
 //   2. runtime speech   (this file — any machine, no build step)
 //   3. word-count clock (silent, captions still advance)
@@ -27,10 +16,9 @@
 // ── THE LOST onend ───────────────────────────────────────────────────────────
 // The opposite failure: the line finishes and onend NEVER arrives. Chrome and
 // Safari drop the events of an utterance that has been garbage-collected (it
-// was only ever a local here), and Chrome stops some voices after ~15s without
-// firing anything. Every voice-clocked player waits for onEnd before the next
-// line, so a lost one froze the onboarding film at the end of a sentence until
-// the tester dragged the scrub bar. Two guards: the utterance is held in a
+// is only held locally), and Chrome stops some voices after ~15s without
+// firing anything. Voice-clocked players wait for onEnd before the next line,
+// so a lost callback would freeze playback. Two guards: the utterance is held in a
 // module variable until it is done, and a watchdog polls the synth -- once the
 // line has started and the synth has been silent for two polls, it delivers
 // onEnd itself. A line that never starts at all is reported as onError, which
@@ -77,8 +65,7 @@ function narrationVoice() {
     if (hit) return hit;
   }
   // Prefer a LOCAL voice. The app runs on file:// with no network at runtime
-  // (D02/D03), so a cloud voice is the one thing guaranteed not to speak —
-  // this previously preferred exactly that.
+  // (D02/D03), so prefer a voice that needs no cloud service.
   return pool.find(v => v.localService) || pool[0];
 }
 

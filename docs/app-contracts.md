@@ -1,25 +1,37 @@
 # Current app contracts
 
-Read alongside app/docs/architecture.md. docs/workflow.md governs operations; progress logs are historical. Tracking is now frozen by release configuration; see docs/publishing.md.
+Read the sections relevant to the implementation being changed alongside the
+[architecture](../app/docs/architecture.md). Start with Hard rules and the affected
+behavior; use [code health](code-health.md) for maintenance and removal review.
+[Workflow](workflow.md) governs operations; [publishing](publishing.md) owns frozen
+release tracking. Decision IDs (L##, D##) are in [decisions](decisions.md).
 
 ## Combined prototype behavior
 
-The single editable `app/` combines blue `b9e0332` with HoffDemo-Chat `ddee54e`
-(including HoffDemo/ESF `8c7a252`). Full onboarding ends at Home,
-all tabs remain available, and emergency savings is reached from tasks and Goals.
+The single editable `app/` starts at full onboarding by default and finishes at
+Home, with all tabs available. Supported HTTP(S) study links can enter at an
+allowlisted `?screen=` destination after boot; they do not remove the full-product
+journey. Emergency savings is reached from tasks and Goals.
 Onboarding combines ZIP/income refinement, household ages/kids, housing type,
 coverage and driving questions with the single Buddy picture and name/pronouns.
 
 `BUDGET_PAYWALL = true`: the Budget tab shows $14.99 monthly / $124.99 annual.
 Both checkout buttons are placeholders. This is a tab-only gate; task, builder,
 category and supported deep-link routes can still reach budget features.
-`BUDDY_SINGLE_ART = true`; `LESSON_REUSE_FRAMING = false` asks framing questions
-on every lesson entry. Missing film looks retain the supplied SVG fallback.
+Every Buddy stage draws the one illustration whatever the appearance attributes
+say; the description card shows only when the image fails to load.
+Framing questions are asked on every lesson entry, even when the session
+already answered them. A theme with no onboarding film render of its own plays
+another look's render; a film rendered in no look falls back to the SVG engine.
+The budget band compares spend to date with whole-month budget and peer
+figures; it never scales them to the date. "Skip all setup" always opens the
+picker of nine starting profiles (L26).
 
 ### ESF budget exception (user approved)
 
 Ordinary builders use `submitBudgetBaseline()` and confirm replacement of an
-existing budget. **Creating or editing the ESF goal immediately replaces the
+existing budget; they never write `state.budget` directly.
+**Creating or editing the ESF goal immediately replaces the
 budget through `applyBudgetBaseline()` and returns to Goals, without a replacement
 confirmation.** This also discards an older pending builder proposal. Repeated
 saves leave exactly one emergency-fund goal; reopening keeps the session's figures.
@@ -34,8 +46,7 @@ is added. Development tracking remains off; releases control tracking.
 
 ### Big Purchase Calculator
 
-Ported from blue `HoffDemo-BigPurchase` (`f84f142`, `b4abe14`); see
-docs/big-purchase-spec.md and docs/history/big-purchase-notes.md. The calculator
+See [Big Purchase](big-purchase-spec.md). The calculator
 opens from the Goals tab's "Estimate a big purchase" card (`bpOpen()`) and the
 full-app admin jump list. Full onboarding and all product tabs remain available.
 Calculator-first setup and contained presentation belong to the standalone Big
@@ -44,7 +55,7 @@ Purchase Flow (see One product: no journey switches).
 The calculator writes `state.bp` (in-flight run, reset by `bpStart()`),
 `state.bigPurchase` (the saved plan) and `state.bpEvents` (session log). Commit
 creates at most one `purchaseSaving` goal and replaces it on repeat; it never writes
-the budget. "Start mine first" opens the ESF with `state.bp.esfReturn`, so Back from
+the budget. "Start One Now" opens the ESF with `state.bp.esfReturn`, so Back from
 the fund returns to the calculator rather than onboarding. The `bp`/`bpf` prefix
 belongs to the calculator; the Budget paywall uses `paywall*` names. Figures marked
 `_prototype` in data/big-purchase.json are estimates, not quotes.
@@ -55,10 +66,7 @@ belongs to the calculator; the Budget paywall uses `paywall*` names. Figures mar
 setting at its recorded value. A focused, shortened or reordered journey for a
 study, demo or feature review is a Flow, made with the
 [create-flow](../.claude/skills/create-flow/SKILL.md) skill
-([Flows](flows.md#configure-the-journey)), never a switch in `app/`. The retired
-`ESF_ONLY` and `BP_ENTRY` forked the product into journeys that were never exercised
-together, nested inside each other, and left dormant branches behind. What matters
-is the structure, not the name.
+([Flows](flows.md#configure-the-journey)), never a switch in `app/`. Judge a switch by the journey it changes, whatever its name.
 
 **A journey switch** is a value decided before or outside the tester's session (a
 constant, config entry, build step, script inclusion, URL or storage value, or an
@@ -95,21 +103,10 @@ Telltales:
   rule in `js/screen-url.js`: open a screen that stands on its own through the
   product's own start function, inside the full journey, without hand-off or return
   state. A study that needs a contained or shortened journey uses a Flow.
-- Recorded product settings, each kept at its recorded value; changing one is a
-  product decision, never a study: `BUDGET_PAYWALL = true` (plan.md §0 L27),
-  `PROFILE_PICKER = true` (L26), `LESSON_REUSE_FRAMING = false` (above). The
-  presentation and calculation settings `BUDDY_SINGLE_ART`, `ONB_FILM_ANY_LOOK` and
-  `BAND_PRORATE` do not change the journey. A new journey-affecting setting needs a
-  PM decision recorded in plan.md §0.
-- Dormant code that nothing turns on, such as unused onboarding steps. The ban
-  applies to whatever would turn it on.
-
-**Deprecated:** `SKIP_ONBOARDING` (spec D07) is a build-time entry switch. When true,
-every session starts at the returning-user login with a six-day streak instead of
-onboarding. It is kept, off, pending a decision on its replacement. Do not extend
-it, flip it for a study or copy its pattern; a shortened or returning-user start
-belongs in a Flow. Older comments suggesting a flip for a session are superseded.
-It is not the onboarding Skip button, which is session state.
+- The recorded product setting `BUDGET_PAYWALL = true` (L27), kept at its
+  recorded value; changing it is a product decision, never a study. A new
+  journey-affecting setting needs a recorded PM decision; see
+  [decisions](decisions.md).
 
 **Review questions** for any `app/` change, at intake and before a PR:
 
@@ -118,185 +115,84 @@ It is not the onboarding Skip button, which is session state.
 3. If unsure: can a tester reach every branch by using the app or Tools?
 
 A yes to the first two (or a no to the third) means a journey switch. Move the
-behavior into a Flow, or record an approved product decision first.
+behavior into a Flow, or record an approved product decision in
+[decisions](decisions.md) first.
 
 ## Traps that fail silently
 
-Each of these produces a plausible-looking wrong result rather than an error.
-All verified against the raw JSON on 2026-08-07.
+Each of these can produce a plausible-looking wrong result rather than an error.
 
-- **`base[cat][band]` is a 4-element ARRAY indexed by `householdSize − 1`.**
-  Household 2 → index **1**. `4+` clamps to index 3. Reading `[householdSize]`
-  returns the next household's figure.
-- **Cost of living is BEA Regional Price Parities, not the tier table.**
-  `benchColMultipliers(zip)` is the only chokepoint: ZIP → county → BEA
-  geography → four price buckets, then a **per-category** local modifier
-  (housing from county rents, utilities from state electricity prices, nothing
-  else — see architecture §5). `peer-benchmarks.json`'s `colTiers` survives only
-  as a guard; **never read it directly.** Its four tiers gave Manhattan, Palo
-  Alto, Santa Clara and LA all the same number and capped housing at 1.85.
-- **`benchSelfTest` no longer asserts the spec's 370.** That figure carried the
-  old `very_high` tier's 1.34; BEA prices LA restaurant meals at 1.071, so the
-  peer value is 295. The test now checks base, lifestyle and cost-of-living
-  separately — stronger than the single assertion it replaced.
-- **Lifestyle is a product across six dimensions**, not one lookup.
-- **`paysRent` data keys are the strings `"true"` / `"false"` / `"shared"`**,
-  not booleans. The wizard's option values map onto them via `benchLifestyleKey`:
-  rent/mortgage → `"true"` (×1.0), family → `"false"` (×0.22, rent-free),
-  other → `"shared"` (×0.6, the middle housing tier).
-  **`commute`'s key for "mostly walk" is `none`.** A missed key silently
-  contributes 1.0.
-- **`_note` keys sit alongside real data** in `monthToDateActuals`,
-  `PEER_BENCHMARKS.base`, `zipPrefixes`, and `lifestyleModifiers`.
-  **Always iterate `CATEGORIES`, never `Object.keys(data)`.**
-- **Lesson framing options key on `tag`, singular.** A `.tags` lookup collects
-  nothing and plays the fallback variant every time.
-- **The self-reported layer is `monthToDateActuals`** ($429 dining), *not* the
-  sum of `journalHistory` (~$168). Getting it backwards breaks every observation.
-- **`state.monthlyIncome` is not a take-home figure**, despite the seed JSON key
-  still reading `monthlyIncomeNet`. It is `profile.incomeAnnual / 12` — what the
-  tester said, no tax factor. Separate from `state.userProfile.monthlyIncome`,
-  an unrelated v2 form field.
-- **`travelFrequency`'s middle option is a ×1.0 no-op**, and the dimension moves
-  only `Other`. Picking "Now and then" was mathematically identical to never
-  answering, which is why its figure looked broken. Travel is now an explicit
-  trips × cost ÷ 12 line inside Other and is exempt from the wizard's slider
-  bands, because its figure is composed rather than `base × multipliers`.
-- **Closing the simulated keyboard moves the layout by 250px**
-  (`.screen-scroll.kbd-open`), so anything that closes it mid-gesture pulls the
-  button out from under the finger and no `click` is ever dispatched. That is
-  why `kbdInit` holds the close while a button press is in flight, and why
-  `render()` calls `kbdSyncAfterRender()`.
-  **BOTH focus handlers have to respect that latch, not just `focusout`.**
-  Chrome and Edge focus a `<button>` on mousedown, so pressing Continue fires
-  `focusin` with the BUTTON as target — and that path closed the keyboard
-  synchronously, defeating the latch entirely. Safari and Firefox on macOS do
-  not focus buttons this way, so the bug is invisible on half the machines you
-  might check it on. Any test for this must fire the **whole** sequence:
+- **`base[cat][band]` is a four-element array indexed by household size − 1.**
+  Household 2 uses index 1; 4+ clamps to 3. An off-by-one still returns a number.
+- **Price a place only through `benchColMultipliers(zip)`.** It resolves ZIP,
+  county and BEA geography, then local category modifiers: county rents for Housing
+  and state electricity for Utilities. `colTiers` is only a last-resort guard;
+  reading it directly omits the local model. Never apply a local modifier twice.
+  Utilities applies its multiplier to power and water, not nationally priced
+  broadband or mobile plans.
+- **Lifestyle is a product across six dimensions**, not one lookup. Travel is a
+  named line inside Other: `travelFrequency` moves only Other and its middle
+  option is ×1.0 (Help me out: “A normal holiday” → `moderate`).
+- **`paysRent` keys are strings `"true"`, `"false"`, `"shared"`, not booleans.**
+  `benchLifestyleKey` maps rent/mortgage → `"true"` (×1.0), family → `"false"`
+  (×0.22) and other → `"shared"` (×0.6). Commute's “mostly walk” maps to `none`.
+  A missed key silently contributes 1.0.
+- **Always iterate `CATEGORIES`, never `Object.keys(data)`.** `_note` sits beside
+  real entries in month-to-date data, peer base, ZIP prefixes and lifestyle modifiers.
+- **Lesson framing options use `tag`, singular.** A `.tags` lookup collects nothing
+  and silently selects the fallback script.
+- **The self-reported layer is `monthToDateActuals`** ($429 dining), not the sum
+  of `journalHistory` (~$168). Substituting journal detail changes every observation.
+- **`state.monthlyIncome` is annual income / 12, without a tax factor.** The seed's
+  `monthlyIncomeNet` key describes its seeded figure; `state.userProfile.monthlyIncome`
+  belongs to a separate form.
+- **Hold keyboard closing during a button press.** Removing 250px of padding
+  mid-gesture moves the button before click dispatch. Both `focusin` and `focusout`
+  must respect the latch; Chrome/Edge focus buttons on mousedown. `render()` calls
+  `kbdSyncAfterRender()` to close after the field disappears. Test the whole sequence:
   `pointerdown → focusout(field) → focusin(button) → pointerup → click`.
-- **Both narrated players snap the clock forwards only.** `elapsed` is normally
-  ahead of the current cue (the speech cap lets the tick run to just short of
-  the next one), so an unconditional snap rewinds it — and the hyperframes
-  faithfully rewind with it, which reads as a flicker at every line boundary.
-  There are THREE snap sites: live speech in the lesson player, live speech in
-  the onboarding player, and the onboarding `.wav` `onplay`.
-- **A capped clock has to hold the PICTURE too.** When speech drives playback,
-  the tick freezes `elapsed` at the speech cap and waits for `onEnd` — but the
-  hyperframes are native CSS animations running on wall clock, so they carried
-  on. Every 100ms tick then found them ahead of the frozen clock and
-  `hyperframesSync`'s 120ms drift check yanked `currentTime` backwards, roughly
-  eight times a second for the length of the overrun. That is a visible,
-  erratic stutter and it fires on any line the narrator takes longer over than
-  165 wpm predicts — two- and three-sentence lines, because sentence-final
-  pauses are not in the word-count estimate. Both players now pass
-  `playing: false` while held (`onbVideoHeld`, `lpHeld`), which pins the
-  animation instead of fighting it.
-- **A skipped onboarding field falls back to a PROFILE, never to the persona.**
-  Every write in `onbFinish()` is guarded (`if (o.zip) …`), which is correct — an
-  unanswered field must not clobber an answered one. What was wrong was what sat
-  behind the guard: `bootV3`'s persona seed, so skipping quietly made the tester
-  Sam from Los Angeles on $68,000 and nothing on screen said so. Every figure
-  downstream was anchored on a profile nobody chose. `profileDefault()` is the
-  fallback now. Related: `o.name || "Buddy"` made the **tester** "Buddy", the
-  same as the dog — the person is "Me".
-- **An unnamed buddy had three different fallbacks.** `"Buddy"` on Home and in
-  Chat, `"Your buddy"` in the character frame. `onbFinish()` now names it once at
-  the source so every surface agrees; the display-time fallbacks stay as
-  belt-and-braces.
-- **A BUDGET IS A MONTH. Never pro-rate one.** The Help-me-out questions first
-  shipped on `estimatorCompute()`, which multiplies every option by
-  `estimatorMonthFraction()` — right for "what have you spent so far this
-  month", catastrophic for a budget. On the 4th of a 30-day month every answer
-  came out at 13% of itself: "light local driving" became **$10** of transport,
-  "a regular ongoing cost" became **$20** of healthcare, and picking the most
-  expensive option still *lowered* the category, because the peer default it
-  replaced was eight times larger than anything the sum could return. Nothing
-  in `js/help-me-out.js` reads a clock, and `sweep.js` §7 stubs
-  `estimatorMonthFraction` and asserts no tree's figure moves.
-- **Never reach past `benchColMultipliers()` to price a place.** The Utilities
-  model looked up `state.utilitiesRatio` itself to price local electricity —
-  but `benchColLocalModifier` already returns exactly that ratio for Utilities,
-  so the category multiplier carried it and the model squared it: Los Angeles
-  at 1.353 x 1.648 x 1.648, a 65% overstatement, every figure still looking
-  like a plausible power bill. Same shape as the retired `colTiers` trap.
-  Utilities now applies the multiplier itself, to **power and water only** —
-  broadband and a mobile plan are priced nationally, and a blanket multiplier
-  overstated them by more than the double-count did.
-- **`.screen input` outranks a bare component class, and it sets a background.**
-  `.screen input, .screen select, .screen textarea` is (0,1,1) and applies
-  `background: var(--card)` plus a card radius. A component class like
-  `.band-range` is (0,1,0) and **loses**. This is invisible for every slider
-  that keeps its native track — the element's own background is never painted —
-  and lethal for the one with `-webkit-appearance: none`, which strips the
-  track and lets that card background through as a full-width, 44px, rounded
-  box drawn straight over the rail with the thumb floating in the middle of it.
-  Any input styling that must win has to carry `.screen` itself. `sweep.js` §1b
-  asserts every `.band-range` rule does, and `components.css` is injected into
-  the sweep for exactly this class of check.
-- **`--progress-bg` is a FILL, not an EDGE.** Against `--card` it is
-  1.02–1.20:1 in all four themes — invisible. Anything whose *outline* carries
-  meaning (a slider rail, where the thumb's position along it is the whole
-  reading) needs `--rail` instead, which is gated at 2.0:1 by `sweep.js` §1b.
-  The failure looks like a rendering bug — a thumb with no track — and no text
-  contrast check will ever catch it.
-- **`overflow-y: auto` is not a one-axis declaration.** When one axis is not
-  `visible`, the other's `visible` **computes to `auto`** — so a rule meant to
-  let a column scroll silently makes the element a scroll container
-  *horizontally* too. Two things then break with no error and no scrollbar to
-  hint at it: the `:focus-visible` ring (2px outline + 2px offset = 4px outside
-  an input that is `width: 100%` of the content box) is clipped at both ends,
-  and when a vertical scrollbar does appear it narrows the content so it stops
-  lining up with anything outside the scroller. An outline is *ink* overflow,
-  not scrollable overflow, which is why it clips without ever producing a
-  horizontal scrollbar to explain itself. Fix: negative side margin plus equal
-  padding, so the ring has room inside the scroller and the content box stays
-  put. See `.journal-shell.onb-pinned .journal-body`.
-- **A correction to a playing animation must GLIDE, not cut.** There is one at
-  every segment boundary — the cue map is a word-count estimate and the narrator
-  is not — and writing `currentTime` skips the outgoing beat's fade-out and
-  starts the incoming one part-way through its fade-in. `hyperframesSync` nudges
-  `playbackRate` for anything under `HF_SNAP_MS` and only snaps past it, so a
-  scrub or a ±10s skip still lands instantly. Paused animations are always
-  pinned exactly, because the hold depends on it.
-- **`play()` on a FINISHED animation rewinds it to zero.** `hyperframesSync`
-  knew this and still guarded on `playState !== "running"` — and a finished
-  animation is not running either. Every element is one animation spanning the
-  whole runtime, so they all finish while the narrator is still on the last
-  line, and the tick flashed the entire scene back to its first beat ten times
-  a second. Only `paused` and `idle` get `play()`; setting `currentTime` is
-  enough to un-finish one.
-- **The wizard composes answers from the BASELINE, never from the preview.**
-  `preview = implied x drift`, where implied is the neutral peer figure times
-  every applied modifier and drift is the tester's drag as a *ratio*. Scaling
-  the live preview instead — which is what it used to do — compounds through
-  rounding when someone toggles between options, and produced $10 groceries for
-  "Very into it". Re-answering the same question clears that dimension's drift;
-  answering a different one keeps it.
-- **Paying a card in full costs nothing.** `lrSimBalance` returns 1 month and $0
-  interest when the payment covers the balance, because that is the grace period
-  the APR lesson teaches in its own script. It used to charge a month first.
-- **There are TWO quiz screens.** `quiz` (`screens/quiz.js`) serves the v2
-  catalog; `lessonQuiz` (`screens/lesson-outcome.js`) serves v3, and every v3
-  lesson including APR goes through that one. Fixing the wrong one changes
-  nothing a tester sees. `render.js` says which is which on its own subtitle
-  lines.
-- **HTML comments inside a template literal are rendered into the DOM.** Naming
-  a function or a class in one puts that identifier in the markup and in any
-  grep over it — which is how a deleted button appeared to still exist. Describe
-  the thing, don't name it.
-- **Onboarding's option lists must test `lifestyleAnswered`, not the value.**
-  `state.onboarding.lifestyle` is seeded from the persona so the four dimensions
-  onboarding never asks still reach `state.lifestyle`. Comparing that seeded
-  value against an option renders it pre-picked — which is what put "Car" under
-  the tester's thumb before they touched anything. `paysRent` only looked fine
-  because its persona value is the boolean `true` and the option values are
-  strings, so it never matched. Use `onbLifestylePicked()`.
+- **Narrated clocks snap forwards only.** Use `Math.max(elapsed, cue)` at all three
+  sites: lesson speech, onboarding speech and onboarding WAV `onplay`. Elapsed can
+  already be ahead of the current cue; snapping back rewinds hyperframes.
+- **A capped clock must hold the picture too.** While speech waits for `onEnd`,
+  `lpHeld` and `onbVideoHeld` pass `playing: false` to hyperframes. Otherwise CSS
+  animation advances independently and each sync tick yanks it backwards.
+- **Skipped onboarding fields use a starting profile.** Guarded writes preserve
+  answered fields; `profileDefault()` supplies unanswered ones (L26). The tester's
+  fallback name is “Me”, distinct from Buddy.
+- **Default a blank Buddy name at the source.** Leaving the Buddy step forward
+  defaults to “Buddy”; finishing setup preserves a profile-supplied name or defaults
+  to “Buddy”. Back keeps the draft, and all surfaces receive the same saved name.
+- **A budget is a whole month; never pro-rate it.** Help me out must not depend on
+  today's date. The spend estimator's month-to-date semantics do not apply to budgets;
+  the sweep checks the budget trees under two dates.
+- **Input styling that must win carries `.screen`.** `.screen input` has specificity
+  (0,1,1), so a bare (0,1,0) component class loses its background/radius override.
+  Custom slider rails can disappear under the inherited card background. The sweep
+  asserts that every `.band-range` rule has the required scope.
+- **`--progress-bg` is fill; meaningful rails use `--rail`.** The fill has too little
+  contrast with `--card` to carry an outline. The sweep gates rail contrast at 2.0:1.
+- **`overflow-y: auto` also makes horizontal `visible` compute to `auto`.** A focus
+  ring outside a full-width field then clips, and scrollbars narrow the content.
+  Use negative side margins with matching padding to keep space inside the scroller;
+  see `.journal-shell.onb-pinned .journal-body`.
+- **Small animation corrections glide; seeks snap.** `hyperframesSync` adjusts
+  playback rate below `HF_SNAP_MS`, preserving fade boundaries. Paused frames pin
+  exactly because the speech hold depends on it.
+- **Only paused/idle animations get `play()`.** Playing a finished animation rewinds
+  it; assigning `currentTime` is enough to un-finish it.
+- **Paying a card in full costs no interest.** `lrSimBalance` returns one month and
+  $0 interest when the payment covers the balance, matching the lesson's grace period.
+- **There are two quiz screens.** `quiz` serves the standard catalog; `lessonQuiz`
+  serves framed lessons, including APR. Check the owning path before changing a quiz.
+- **HTML comments inside template literals enter the DOM.** Do not name deleted
+  functions/classes in them: markup searches then report a false reference.
 
-Self-test for the benchmark model (`benchSelfTest`): Dining out, b3, household
-2, ZIP 90066, foodie moderate + cooks sometimes. Base **275** and lifestyle
-**1.0** are still exactly the spec's; the cost-of-living factor is now BEA's
-1.071 rather than the retired tier's 1.34, so the result is **295**, not 370.
-The three factors are asserted separately — see architecture §5.
+The benchmark self-test (`benchSelfTest`) lives in `scripts/sweep.js`. It asserts
+base **275**, lifestyle **1.0** and BEA cost-of-living **1.071** separately for
+Dining out, b3, household 2, ZIP 90066, foodie moderate + cooks sometimes. The result
+is **295**; the worked example's tier-based 370 is not the BEA expectation. Separate
+assertions catch wrong factor wiring even when a total happens to match.
 
 ## Hard rules
 
@@ -317,13 +213,14 @@ The three factors are asserted separately — see architecture §5.
 
 **Code**
 - Vanilla JS, everything global, plain `<script>` tags. Keep names unique and
-  feature-prefixed. Load order in `index.html` matters.
+  feature-prefixed and modules separate. Load order in `index.html` matters.
 - One global `state`; mutate it then call `render()`. No partial updates.
 - **Always `h()`-escape** anything interpolated into an HTML template literal.
 - **Inputs use `onchange`, not `oninput`** — a full re-render mid-keystroke
   destroys focus. Sliders are the exception, paired with `debouncedRender()`.
 - **A `type="range"` slider on `oninput` must use `debouncedRender()`, never
-  `render()`** — product sliders as much as admin ones.
+  `render()`** — product sliders as much as admin ones. Keep slider maxima stable
+  during dragging.
   `render()` reassigns `.screen`'s innerHTML, destroying the element being
   dragged — the browser's pointer capture dies with the old node and the thumb
   stops tracking. State still updates immediately; only the repaint waits.
@@ -345,15 +242,21 @@ The three factors are asserted separately — see architecture §5.
   admin panel, page and bezel, which live outside `.screen` where theme classes
   are applied — the override is inert, and the frame is meant to hold still.
 - **Surgical edits.** Change only what you're fixing. Never collapse files.
-- **Do not delete unused code.** This is a prototype under iteration; something
-  dropped today is something rewritten next week. `sweep.sh` §7b inventories
-  unreferenced functions against a baseline and **warns only on new ones** —
-  a function that was referenced and now isn't was likely orphaned by accident.
-  Deliberately-unused code goes in `DEAD_BASELINE`, it does not get removed.
+- **Remove genuinely dead code when it is in scope and verified.** `app/` is the
+  source of truth and Git keeps history, so nothing is kept in case it comes back.
+  Never keep dormant branches for alternate journeys (see One product: no journey
+  switches). `sweep.sh` §7b **fails when any function in `app/` has no
+  reference**: wire it back or delete it, along with what only it used.
 - **Never judge "is this used?" by grepping for `name(`.** Functions here are
   reached four ways: ordinary calls, `onclick` in screen template literals,
   `onclick` in `index.html`, and bare identifiers in dispatch tables. Only the
   first looks like a call. Use `sweep.sh` §7b — grep gets this wrong.
+- **Flow shell parity.** `app/css/components.css`, `app/js/refresh-pin.js` and the
+  `app/index.html` head and Tools header are mirrored in every Flow (`flows/<id>/`),
+  byte for byte (the head and header after `scripts/flows.py` adapts them for a Flow).
+  Change every copy in the same commit, or `python3 -m unittest tests.test_flows`
+  fails. A Flow cannot change them alone: its own styles go in `css/flow-tools.css`,
+  and it cannot add stylesheet links.
 
 **Copy** — applies to every surface
 - **No financial advice. Ever. Anywhere** (D26). Surface the number and the gap;
@@ -387,10 +290,10 @@ silently degrades to its generic fallback:
 
 1. `screens/<name>.js` → `render<Name>()` (+ optional `render<Name>Admin()`)
 2. `<script>` tag in `index.html`, screens block
-3. `js/render.js` → `renderScreen()` · `adminSubtitle()` · `renderAdmin()` · jump list
+3. `js/render.js` → `renderScreen()` · `adminSubtitle()` · `renderAdmin()`
 4. `js/utils.js` → `activeTabFor` (the nav stack is the real source of truth —
    see architecture §7; keep this as the admin-jump fallback)
-5. `js/state.js` → `destinations[]`
+5. `js/state.js` → `destinations[]` (the Tools jump list and the page title)
 
 Plus a **full-bleed mode class** if the screen hides the nav, zeroing *both* the
 top-bar and nav offsets.
@@ -398,7 +301,7 @@ top-bar and nav offsets.
 ## Verifying
 
 Follow [testing](testing.md): syntax, app sweep, path checks, publication tests, and
-applicable PM checks. Node/JavaScriptCore availability must be checked, not assumed.
+applicable PM checks. Node 22 availability must be checked, not assumed.
 Keep useful regression tests. Data wrappers must match sibling JSON. Publication
 tracking is independent of the untracked development sweep.
 
@@ -412,7 +315,7 @@ save semantics, and requires PM verification of the integrated app before the PR
 
 - Don't build sprite-sheet `background-position` cropping. **L22 allows
   owner-supplied buddy illustrations, but they are separate files chosen by
-  buddy state — not sheets addressed by offset.** D39's cropping machinery stays
+  buddy state — not sheets addressed by offset.** The cropping machinery stays
   unbuilt.
 - Don't delete the descriptive buddy frame now that art exists. It is the
   **fallback** (L22): no image set covers every breed x coat x pattern x eyes x

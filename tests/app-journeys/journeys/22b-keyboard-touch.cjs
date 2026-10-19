@@ -1,0 +1,47 @@
+'use strict';
+const { tap, type, choose, wait, expect } = require('../dsl.cjs');
+
+// A touch phone has its own keyboard, so the simulated one never opens
+// (components/keyboard.js kbdIsSimulated) and every field is typed into directly.
+module.exports = {
+  id: 'keyboard-touch',
+  title: 'A touch phone, with no simulated keyboard: type a name, a ZIP, an income, the buddy\'s name and a journal note',
+  boot: { coarsePointer: true },
+  browser: true,
+  steps: [
+    type('Your name', 'Riley Q'),
+    tap('Continue'),
+    tap('Build up some savings'),
+    tap('Continue'),
+    type('ZIP code', '37203'),
+    tap('Continue'),
+    tap('Just me'),
+    choose('Your age', '26–34'),
+    tap('Continue'),
+    tap('Condo or townhome'),
+    tap('Continue'),
+    tap('$60,000 – $90,000'),
+    type('Annual income, typed', '82500', { clear: true }),
+    tap('Continue'),
+    tap('Through my job'),
+    tap('Continue'),
+    tap('5–15 miles'),
+    tap('Continue'),
+    type('Name', 'Scout'),
+    choose('Pronouns', /^She/),
+    tap('Continue'),
+    tap('▶'),
+    wait(50000),
+    tap('Continue'),
+    expect({ screen: 'home' }),
+    tap({ name: 'Open', near: 'Do your money journal' }),
+    tap('Coffee out about $6'),
+    tap('Next'),
+    tap('Skip'),
+    tap('Skip'),
+    tap('Skip'),
+    type('Write as much or as little as you like', 'Long day'),
+    tap('Review'),
+    expect({ screen: 'journalConfirm' }),
+  ],
+};

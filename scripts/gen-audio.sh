@@ -1,41 +1,18 @@
 #!/usr/bin/env bash
-if [ "${MB_VERSION+x}" = x ]; then echo "error: MB_VERSION is retired; tooling uses app/" >&2; exit 2; fi
-# Generates narration audio for the daily update, and extracts its timings.
+# Generate daily-update and onboarding narration WAVs with offline macOS say
+# (D04, L10). Recorded audio has no speech boundary events, so daily segment
+# durations are measured here and written separately from the script (D29).
 #
-# WHY THIS EXISTS (L10): the spec assumes live Web Speech playback, where
-# `boundary` events populate timings at runtime. We play a pre-generated .wav
-# instead, and boundary events do not fire for recorded audio — so timings must
-# be extracted here, once, and written back. That is exactly the production
-# pipeline D29 describes:
+# Output: app/assets/audio/daily/<scriptId>/<segmentId>.wav,
+# app/data/daily-timings.js, and
+# app/assets/audio/onboarding/<scriptId>/<segmentId>.wav.
 #
-#     script text → TTS → timing extraction → timings written back → visuals resync
+# One file per segment lets a single segment be recut independently.
+# Onboarding advances on ended events and needs no generated timing table.
+# Daily playback prefers generated timings, then static timings, then a word clock.
+# L10 playback falls back from WAVs to runtime speech, then a silent word clock.
 #
-# macOS `say` is offline, keyless, and the same voice family Safari's Web Speech
-# exposes, so D04's intent (browser-native, no third-party keys, no ElevenLabs)
-# holds even though its "no build-time audio assets" clause does not.
-#
-# ONE FILE PER SEGMENT. Each file's duration IS that segment's timing, and a
-# single segment can be re-cut without redoing the whole script.
-#
-# OUTPUT
-#   app/assets/audio/daily/<scriptId>/<segmentId>.wav
-#   app/data/daily-timings.js     generated, loaded by the player
-#   app/assets/audio/onboarding/onboarding_intro/<segmentId>.wav
-#
-# The onboarding intro is generated the same way but needs no timings: its
-# player advances on the audio element's `ended` event rather than a timing
-# table. Until this script has been run on a Mac those .wav files are absent,
-# and the onboarding player falls back to a word-count clock — captions still
-# advance, there is just no voice.
-#
-# The timings are written to a SEPARATE generated file, not back into
-# daily-scripts.json — that stays a byte-identical copy of the spec so drift is
-# always one `diff -rq` away (L13). The player prefers the generated timings,
-# falls back to the spec's static block, then to a 165 wpm estimate.
-#
-#   bash scripts/gen-audio.sh
-#
-# Re-running is safe and idempotent.
+# Run from the repo root: bash scripts/gen-audio.sh
 
 set -euo pipefail
 
@@ -146,7 +123,7 @@ with open(sys.argv[2], "w") as f:
     f.write("// shifts everything after it and the visuals follow automatically.\n")
     f.write("//\n")
     f.write("// Takes precedence over the static block in daily-scripts.json, which\n")
-    f.write("// remains the byte-identical spec copy and the fallback.\n")
+    f.write("// remains the fallback.\n")
     f.write("const DAILY_TIMINGS =\n")
     f.write(json.dumps(out, indent=2))
     f.write(";\n")

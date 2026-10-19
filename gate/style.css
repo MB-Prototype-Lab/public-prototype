@@ -1,8 +1,5 @@
-/* ─── Version Gate styling ───────────────────────────────────────────────────
-   Self-contained on purpose — not coupled to any version's css/variables.css,
-   since each version's theme is independent and will drift over time. Mobile-
-   first: this page is meant to be opened standalone on a phone from a shared
-   link, not inside the desktop .phone frame the app itself uses. */
+/* Selector styling stays independent of app themes. This standalone page
+   opens from shared links on phones, so it does not use the app's .phone frame. */
 
 :root {
   --gate-bg: #eef1f7;
@@ -328,16 +325,16 @@ a.gate-btn { display: block; text-decoration: none; }
   .gate-older > summary::before { transition: none; }
 }
 
-/* ─── Local alternatives (local selector only) ───────────────────────────── */
+/* ─── Local variants (local selector only) ───────────────────────────── */
 
-.local-alternatives {
+.local-variants {
   border-top: 1px solid var(--gate-line);
   margin-top: 8px;
   padding-top: 12px;
   text-align: left;
 }
 
-.local-alternatives h2 { font-size: 16px; margin: 0 0 12px; }
+.local-variants h2 { font-size: 16px; margin: 0 0 12px; }
 
 /* Mobile-style scroll indicators (thin rounded thumb, no track/arrows) */
 ::-webkit-scrollbar { width: 5px; height: 5px; }

@@ -1,28 +1,8 @@
-// --- Debt Analyzer Screen ----------------------------------------------------
-// Full payoff planner comparing snowball, avalanche, equal distribution,
-// and minimum-only (baseline) strategies across all included debt instruments.
-//
-// -- V2 SCREEN, PARKED OFF THE MAIN PATH (L14) --------------------------------
-// Same standing as screens/my-debts.js: kept, reachable only from the admin jump
-// list, and routed to by nothing in the five tabs or the daily tasks.
-//
-// -- IT COMPARES STRATEGIES, WHICH IS NOT THE SAME AS RECOMMENDING ONE ---------
-// The simulation is arithmetic and the output is a table. If this screen is ever
-// brought onto the main path, the copy has to be read against D26 first: naming
-// which strategy clears a balance soonest is a fact, and telling someone to pick
-// it is advice. The v3 surfaces that do something similar -- the lesson
-// calculator's three scenarios -- label the arithmetic and stop there.
-//
-// Simulation: month-by-month, synchronous, capped at 360 months.
-//   1. Accrue interest on all active debts.
-//   2. Apply minimum payments.
-//   3. Apply extra payment according to strategy order.
-//   4. Record total remaining balance for the timeline graph.
-//
-// All four strategies run on every render. With ≤10 debts at 360 months cap
-// this takes <2ms — no debounce needed.
-
-// ─── Handlers ─────────────────────────────────────────────────────────────────
+// L14 keeps this inherited planner off the main paths; Tools and My Debts
+// can reach it. It compares payoff strategies over at most 360 months.
+// Clone input debts so simulation cannot change their balances. Accrue
+// interest, pay minimums, apply strategy extras, then record the timeline.
+// Keep arithmetic distinct from advice (D26).
 
 function toggleDebtInclusion(debtId) {
   state.debtAnalyzerIncluded[debtId] = !state.debtAnalyzerIncluded[debtId];
@@ -261,7 +241,7 @@ function _renderBalanceTimeline(analyses) {
   var lines = keys.map(function(k) {
     var r    = analyses[k];
     var meta = STRATEGY_META[k];
-    // Sample at most 120 points for performance (thin out long timelines)
+    // Thin long timelines to keep chart rendering inexpensive.
     var step = Math.max(1, Math.floor(r.timeline.length / 120));
     var pts  = [];
     for (var i = 0; i < r.timeline.length; i += step) {

@@ -1,13 +1,5 @@
-// ─── Phase 6 correctness sweep ────────────────────────────────────────────────
-// Run:  bash scripts/sweep.sh
-//
-// PROGRESS.md's Phase 6 says "verified by actually clicking through, not by
-// inspection". There is no browser here, so this automates everything that CAN
-// be checked mechanically and prints an explicit list of what cannot — rather
-// than letting the un-checkable items quietly pass.
-//
-// This is a committed script, not a throwaway harness, because Phase 6 is the
-// check you want to re-run whenever scope shifts.
+// Correctness sweep. Run: bash scripts/sweep.sh
+// Mechanical checks run without a browser; the final section lists manual checks.
 
 var FAIL = 0, WARN = 0, CHECKS = 0;
 function ok(label, extra)  { CHECKS++; print("  ok    " + label + (extra ? "  " + extra : "")); }
@@ -16,20 +8,9 @@ function warn(label, detail){ CHECKS++; WARN++; print("  warn  " + label + (deta
 function chk(cond, label, detail) { cond ? ok(label) : bad(label, detail); }
 function section(t) { print(""); print("── " + t + " " + Array(Math.max(2, 66 - t.length)).join("─")); }
 
-// Every routable screen. Kept here rather than derived, so a screen that loses
-// its route is a visible diff rather than silently dropping out of the sweep.
-// Injected by sweep.sh from the swept version's own js/render.js — every id the
-// router knows about. Hardcoding this list meant it was wrong for whichever
-// version it was not written for; v3 and v3.1 do not have the same screens.
-// The literal below is only a fallback for running sweep.js by hand.
-var SCREENS = (typeof ROUTED_SCREENS !== "undefined" && ROUTED_SCREENS.length)
-  ? ROUTED_SCREENS
-  : ["streak","onboarding","login","dailyUpdate","dailySummary","dailyShare","home",
-     "journalEntry","journalConfirm","journalDone","aboutMe","lifestyleWizard",
-     "budgetDone","budgetUpdateConfirm","comparison","myProgress","accountBalances","debtBalances",
-     "postResult","nextAction","commitment","finish","goals","learn","topic","reward-preview",
-     "lessonFraming","lesson","lessonQuiz","lessonSimulation","lessonReward","quiz","simulation",
-     "marketplace","marketplaceDetail","reward","settings","chat","myDebts","debtAnalyzer"];
+// Every routable screen: sweep.sh injects every id js/render.js routes, so a new
+// screen is swept and a retired one drops out without an edit here.
+var SCREENS = ROUTED_SCREENS;
 
 /**
  * A canonical set of answers for one tree — first option everywhere, sliders at
@@ -53,22 +34,15 @@ function hmoBaselineAnswers(category) {
  * Greedy, one question at a time. It exists because the inert-question gate
  * below has to test a question with its PRECONDITIONS OPEN: "what kind of
  * coffee" cannot move a figure when the answer above it is "I make it at
- * home", and every Debt question is behind "nothing right now". Testing
- * against a first-option baseline reported five perfectly good questions as
- * broken. Maximising opens every gate by construction, because an open gate is
- * what costs money.
+ * home", and every Debt question is behind "nothing right now".
+ * Maximising opens the gates before measuring each question.
  */
 function hmoMaxAnswers(category) {
   var t = hmoTree(category);
   var a = hmoSeedAnswers(category);
   if (!t) return a;
 
-  // SEED FROM THE LAST OPTION, not the first. Options are authored cheapest to
-  // priciest, so this opens every gate before anything is measured — and a
-  // gate has to be open for the greedy pass below to see what is behind it.
-  // Seeding from the first option deadlocked: "how often do you get coffee"
-  // looked inert because coffeeTier was unset, so every frequency multiplied
-  // by an undefined price and came out at zero.
+  // Seed priciest options to open preconditions before measuring each question.
   t.questions.forEach(function (q) {
     if (q.type === "choice" && q.options && q.options.length) {
       a[q.id] = q.options[q.options.length - 1].id;
@@ -114,6 +88,9 @@ function renderSafe(sc) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("1. Every screen renders, in all four themes");
+// An empty list would pass every per-screen check below without rendering one.
+chk(SCREENS.length > 0, SCREENS.length + " screens routed in js/render.js",
+    "sweep.sh found no `state.screen === \"...\"` in js/render.js");
 var renderFails = [];
 THEMES.forEach(function (t) {
   state.settings.colorMode = t.id;
@@ -128,10 +105,7 @@ state.settings.colorMode = THEME_DEFAULT;
 chk(renderFails.length === 0, SCREENS.length + " screens x " + THEMES.length + " themes",
     renderFails.slice(0, 6).join("\n          "));
 
-// An unknown id must resolve to the default rather than leaving .screen
-// unclassed. Both render Natural Light now that it is the default, so this
-// check is load-bearing in a way it was not before: it is what distinguishes a
-// resolved theme from no theme at all.
+// An unknown id must resolve to the default rather than leave .screen unclassed.
 chk(themeById("nonsense").id === THEME_DEFAULT, "unknown theme id falls back to " + THEME_DEFAULT);
 chk(state.settings.colorMode === "naturalLight", "Natural Light is the default theme (L21, revised)");
 
@@ -179,14 +153,12 @@ var THEME_FREE = ["--on-dark","--tier-copper","--radius-card","--radius-button",
   "--shadow-soft","--ease","--dur","--font-display","--font-body","--phone","--bg",
   "--chrome-card","--chrome-text","--chrome-muted","--chrome-line","--chrome-accent","--chrome-danger",
   "--streak-bg","--streak-burst","--streak-pill","--streak-text","--streak-accent","--streak-on","--streak-off",
-  "--space-xs","--space-sm","--space-md","--space-lg","--space-xl","--topbar-h","--nav-h"];
+  "--topbar-h","--nav-h"];
 
 var CONTRACT = Object.keys(CSS[":root"]).filter(function (k) { return THEME_FREE.indexOf(k) === -1; });
-// --rail is v3.1 only (the band chart needs a rail edge; v3 has no band), so
-// the expected count differs by side. Stated rather than loosened to ">= 40" —
-// the point of this check is that a token cannot be added or dropped without
-// somebody noticing.
-var EXPECTED_TOKENS = 43; // Includes ESF strong-ink/text tokens in every theme.
+// Stated exactly rather than loosened to a minimum — the point of this check
+// is that a token cannot be added or dropped without somebody noticing.
+var EXPECTED_TOKENS = 41; // Includes ESF strong-ink/text tokens in every theme.
 chk(CONTRACT.length === EXPECTED_TOKENS,
     "contract is " + EXPECTED_TOKENS + " colour tokens", "got " + CONTRACT.length);
 
@@ -237,29 +209,53 @@ function ratio(a, b) {
   var la = lum(a), lb = lum(b); if (la === null || lb === null) return null;
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
+// Text token, background token, and where the app draws the pair when that is
+// not obvious from the names.
 var PAIRS = [["--text","--card"],["--text","--screen"],["--muted","--card"],["--accent","--card"],
   ["--accent-fill-text","--accent-fill"],["--on-accent","--accent"],
   ["--good","--good-bg"],["--warn","--warn-bg"],["--info","--info-bg"],
   ["--good-pill-text","--good-pill-bg"],["--warn-pill-text","--warn-pill-bg"],
-  ["--warn-pill-strong-text","--warn-pill-strong-bg"]];
-var lowContrast = [];
+  ["--warn-pill-strong-text","--warn-pill-strong-bg"],
+  ["--muted","--screen","inactive tab labels"],["--accent","--accent-soft","the active tab label, accent pills"],
+  ["--muted","--soft","muted text on item cards and soft panels"],["--accent","--soft","accent text on soft panels"]];
+// Pairs that measure under 4.5:1 today, left for the PMs' palette decision
+// (D36): reported as warnings so the sweep stays green and still says so. Each
+// keeps its measured ratio, so a pair that gets darker fails like any other.
+var KNOWN_LOW = [
+  ["naturalLight", "--muted",  "--screen",      4.38],
+  ["naturalLight", "--accent", "--accent-soft", 4.27],
+  ["naturalLight", "--muted",  "--soft",        4.05],
+  ["naturalLight", "--accent", "--soft",        4.17]
+];
+var lowContrast = [], knownLow = [], lowSeen = [];
 THEMES.forEach(function (t) {
   PAIRS.forEach(function (p) {
     var fg = resolve(t.cls, p[0]), bg = resolve(t.cls, p[1]), r = ratio(fg, bg);
-    if (r !== null && r < 4.5) lowContrast.push(t.id + " " + p[0] + " on " + p[1] +
-      " = " + r.toFixed(2) + ":1 (" + fg + " / " + bg + ")");
+    if (r === null || r >= 4.5) return;
+    var line = t.label + " " + p[0] + " on " + p[1] + " = " + r.toFixed(2) + ":1 (" + fg + " / " + bg + ")" +
+               (p[2] ? ", " + p[2] : "");
+    var known = KNOWN_LOW.filter(function (k) { return k[0] === t.id && k[1] === p[0] && k[2] === p[1]; })[0];
+    if (known) lowSeen.push(known);
+    if (known && Number(r.toFixed(2)) >= known[3]) knownLow.push(line);
+    else lowContrast.push(line + (known ? ", below its recorded " + known[3].toFixed(2) + ":1" : ""));
   });
 });
-chk(lowContrast.length === 0, THEMES.length + " themes x " + PAIRS.length + " pairs clear 4.5:1",
+chk(lowContrast.length === 0,
+    THEMES.length + " themes x " + PAIRS.length + " text pairs clear 4.5:1, apart from the known low ones",
     lowContrast.join("\n          "));
+if (knownLow.length) {
+  warn(knownLow.length + " known low text pair" + (knownLow.length === 1 ? "" : "s") +
+       " under 4.5:1 (palette is the PMs' decision)", knownLow.join("\n          "));
+}
+var lowCleared = KNOWN_LOW.filter(function (k) { return lowSeen.indexOf(k) === -1; });
+if (lowCleared.length) {
+  warn(lowCleared.length + " known low pair" + (lowCleared.length === 1 ? " now clears" : "s now clear") + " 4.5:1",
+       "drop from KNOWN_LOW in scripts/sweep.js: " +
+       lowCleared.map(function (k) { return k.slice(0, 3).join(" "); }).join(", "));
+}
 
-// ── The one NON-TEXT boundary that carries meaning ──────────────────────────
-// A budget slider's rail IS the scale — where the thumb sits along it is the
-// whole reading — so it has to be perceptible, and 4.5:1 is the wrong bar for a
-// hairline. It was drawn in --progress-bg, which is a FILL: 1.02-1.20:1 against
-// --card in every theme. Nothing rendered but a peer band and a thumb floating
-// in white space, and no check here would have caught it, because every text
-// pair was fine.
+// A budget slider's rail is its scale, so it must remain perceptible against
+// the card. A non-text boundary needs a different contrast bar from text.
 if (CSS[":root"]["--rail"]) {
 var railLow = [];
 THEMES.forEach(function (t) {
@@ -271,15 +267,9 @@ chk(railLow.length === 0, "the slider rail clears 2.0:1 against the card in all 
     railLow.join("\n          "));
 }
 
-// ── The one place CSS specificity is load-bearing ───────────────────────────
-// `.screen input` (0,1,1) sets background: var(--card) and a card radius, and
-// it beats a bare `.band-range` (0,1,0). Harmless for every other slider,
-// because they keep their native track and the element's own background is
-// never painted. .band-range is the only one with -webkit-appearance: none,
-// which strips that track — so the card background came through as a 44px
-// rounded box drawn straight over the rail, with the thumb floating in it.
-// Nothing else here could catch that: it renders, it validates, it just hides
-// the thing it is supposed to sit behind.
+// `.screen input` (0,1,1) outranks `.band-range` (0,1,0). With native
+// appearance removed, its card background would cover the rail unless the
+// slider rule also carries .screen. Rendering alone cannot detect this.
 if (typeof __COMPONENTS_CSS === "string") {
   var unscoped = [];
   __COMPONENTS_CSS.replace(/\/\*[\s\S]*?\*\//g, "")
@@ -302,10 +292,7 @@ if (typeof __COMPONENTS_CSS === "string") {
 // ─────────────────────────────────────────────────────────────────────────────
 if (typeof TEST_PROFILES !== "undefined") {
 section("1c. The nine starting profiles — every feature, every profile");
-// Everything the app computes is anchored on a ZIP and an income, and until now
-// there was exactly ONE of each to test against: the persona's Los Angeles and
-// $68,000. That is why "$10 of transport" had to be found by hand. Peer spend
-// across these nine runs from about $2,500 a month to about $12,000.
+// ZIP and income vary independently across these nine starting profiles.
 
 var __profileBefore = state.activeProfileId;
 var profiles = profileList();
@@ -325,7 +312,7 @@ chk(Math.min.apply(null, totalsByTier.below) < Math.min.apply(null, totalsByTier
     }).join(" · "));
 
 // Every screen, every profile. The §1 loop covers four themes on one profile;
-// this covers nine profiles on one theme, which is the axis that was untested.
+// this covers nine profiles on one theme.
 var profileFails = [], peerBad = [], treeBad = [], nanSeen = [], planBad = [];
 profiles.forEach(function (p) {
   profileApply(p.id);
@@ -351,8 +338,7 @@ profiles.forEach(function (p) {
     }
   });
 
-  // The builder has to complete from any starting point, not just LA.
-  // v3.1 only — v3 is the control and has the six-question wizard instead.
+  // The builder has to complete from any starting profile.
   if (typeof bbStart === "function" && typeof bbAdvanceStep === "function") {
     state.planStatus = "empty";
     state.budgetBuild = null;
@@ -401,7 +387,7 @@ chk(d && d.name === "Me" && d.buddyName === "Buddy",
 
 state.activeProfileId = __profileBefore;
 state.planStatus = "complete";
-bootV3();
+bootApp();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -419,22 +405,8 @@ var STATES = {
 };
 var MIN_CHARS = 40;
 
-// KNOWN, ACCEPTED thin renders — screen id to its EXACT text.
-//
-// Not a way to silence D19. The text has to match character for character, so
-// any other thin render still fails and this one starts failing again the
-// moment it changes. It downgrades to a warning so the exception stays visible
-// rather than disappearing.
-//
-// spendEstimator with no session: a real D19 violation, found when the sweep
-// started deriving its screen list from the router instead of a hardcoded array
-// that had omitted this screen entirely. FIXED IN v3.1. Left in v3 by owner
-// decision — v3 is the A/B control and stays frozen — so this only fires there.
-var D19_ACCEPTED = { spendEstimator: "Nothing to estimate." };
-
-var acceptedThin = [];
 Object.keys(STATES).forEach(function (name) {
-  bootV3();                       // fresh seed
+  bootApp();                       // fresh seed
   STATES[name]();
   var thin = [];
   SCREENS.forEach(function (sc) {
@@ -442,51 +414,53 @@ Object.keys(STATES).forEach(function (name) {
     if (html && html.__error) { thin.push(sc + " THREW: " + html.__error); return; }
     var text = textOf(html).trim().replace(/\s+/g, " ");
     if (text.length >= MIN_CHARS) return;
-    if (D19_ACCEPTED[sc] === text) {
-      if (acceptedThin.indexOf(sc) === -1) acceptedThin.push(sc);
-      return;
-    }
     thin.push(sc + " (" + text.length + " chars)");
   });
   chk(thin.length === 0, "state: " + name, thin.slice(0, 5).join("\n          "));
 });
-if (acceptedThin.length) {
-  warn(acceptedThin.length + " known thin render(s), accepted",
-       acceptedThin.join(", ") + " — see D19_ACCEPTED in scripts/sweep.js");
-}
-bootV3();
+bootApp();
 
 // ─────────────────────────────────────────────────────────────────────────────
-section("3. D18 — every observation reachable from >= 2 surfaces, and rendered");
-var SURFACES = ["home_tip","home_task","budget_comparison","progress","progress_bills","goals","daily_update"];
-var reach = {};
-SURFACES.forEach(function (su) {
-  observationsFor(su).forEach(function (o) { reach[o.id] = (reach[o.id] || 0) + 1; });
-});
-var ids = (state.observations || []).map(function (o) { return o.id; });
+section("3. D18 — every observation renders on >= 2 screens");
+// The screens that show observations, each in the state that shows them. Only
+// a headline found in the rendered text counts, never the seed's `surfaces`
+// tags: journalDone is the one screen that picks its cards by those tags.
+var D18_SCREENS = {
+  journalDone:  function () { return renderSafe("journalDone"); },
+  dailySummary: function () { return renderSafe("dailySummary"); },
+  myProgress:   function () { return renderSafe("myProgress"); },
+  dailyShare:   function () {                 // with the post preview open
+    var share = state.share;
+    state.share = Object.assign({}, share, { previewOpen: true });
+    try { return renderSafe("dailyShare"); } finally { state.share = share; }
+  },
+  dailyUpdate:  function () {                 // paused on its summary_stack cue
+    var du = state.du, script = duScript();
+    var cue = script.segments.map(function (seg) { return seg.cue; }).indexOf("summary_stack");
+    state.du = { scriptId: script.id, index: cue, playing: false, timer: null, finished: false };
+    try { return cue === -1 ? "" : renderSafe("dailyUpdate"); } finally { state.du = du; }
+  }
+};
+var seededObs = state.observations || [];
+var ids = seededObs.map(function (o) { return o.id; });
 chk(ids.length === 4, "four seeded observations", ids.join(", "));
-ids.forEach(function (id) {
-  chk((reach[id] || 0) >= 2, "  " + id + " on " + (reach[id] || 0) + " surfaces");
-});
-// Registry membership is not the same as appearing on screen — check the text.
-var appears = {};
-["home", "aboutMe", "comparison", "myProgress", "dailySummary", "goals"].forEach(function (sc) {
-  var t = textOf(renderSafe(sc));
-  ids.forEach(function (id) {
-    var o = observationById(id);
-    var head = observationHeadline(o);
-    if (head && t.indexOf(head.slice(0, 24)) !== -1) appears[id] = (appears[id] || 0) + 1;
+var shownOn = {};
+Object.keys(D18_SCREENS).forEach(function (sc) {
+  var t = textOf(D18_SCREENS[sc]());
+  seededObs.forEach(function (o) {
+    var head = textOf(observationHeadline(o));
+    if (head && t.indexOf(head) !== -1) (shownOn[o.id] = shownOn[o.id] || []).push(sc);
   });
 });
 ids.forEach(function (id) {
-  var n = appears[id] || 0;
-  n >= 1 ? ok("  " + id + " actually renders on " + n + " screen(s)")
-         : warn("  " + id + " is registered but its headline renders nowhere",
-                "registry says " + (reach[id] || 0) + " surfaces");
+  var on = shownOn[id] || [];
+  chk(on.length >= 2, "  " + id + " renders on " + on.length + " screen" + (on.length === 1 ? "" : "s") +
+      (on.length ? ": " + on.join(", ") : ""),
+      "needs at least 2 of " + Object.keys(D18_SCREENS).join(", "));
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section("4. D26 / L20 — no financial advice anywhere");
+section("4. D26 / L20 — advice wording in screens, scripts, lessons and chat");
 var ADVICE = [/\byou should\b/i, /\bwe recommend\b/i, /\byou ought to\b/i, /\bcancel your\b/i,
               /\bswitch to\b/i, /\byou must\b/i, /\bbest option\b/i, /\bwe suggest\b/i,
               /\bI recommend\b/i, /\byou need to\b/i];
@@ -495,13 +469,14 @@ SCREENS.forEach(function (sc) {
   var t = textOf(renderSafe(sc));
   ADVICE.forEach(function (re) { var m = t.match(re); if (m) adviceHits.push(sc + ': "' + m[0] + '"'); });
 });
-chk(adviceHits.length === 0, "no advice-shaped copy on any screen", adviceHits.slice(0, 6).join("\n          "));
+chk(adviceHits.length === 0, "no advice phrase on any screen in its seeded state",
+    adviceHits.slice(0, 6).join("\n          "));
 
 var libHits = [];
 (BUDDY_RESPONSES.responses || []).forEach(function (r) {
   ADVICE.forEach(function (re) { if (re.test(r.text)) libHits.push(r.id); });
 });
-chk(libHits.length === 0, "no advice in the buddy response library", libHits.join(", "));
+chk(libHits.length === 0, "no advice phrase in the buddy response library", libHits.join(", "));
 
 var scriptHits = [];
 Object.keys(LESSON_SCRIPTS).forEach(function (k) {
@@ -509,7 +484,7 @@ Object.keys(LESSON_SCRIPTS).forEach(function (k) {
     ADVICE.forEach(function (re) { if (re.test(line)) scriptHits.push(k); });
   });
 });
-chk(scriptHits.length === 0, "no advice in the 15 lesson scripts", scriptHits.join(", "));
+chk(scriptHits.length === 0, "no advice phrase in the 15 framed lesson scripts", scriptHits.join(", "));
 
 var duHits = [];
 (DAILY_SCRIPTS.scripts || []).forEach(function (s) {
@@ -517,7 +492,127 @@ var duHits = [];
     ADVICE.forEach(function (re) { if (re.test(seg.text)) duHits.push(s.id + "/" + seg.id); });
   });
 });
-chk(duHits.length === 0, "no advice in the daily-update scripts", duHits.join(", "));
+chk(duHits.length === 0, "no advice phrase in the daily-update scripts", duHits.join(", "));
+
+// ── The older lessons: warnings until the PMs rewrite them ──────────────────
+// The lessons that predate the framed player narrate and quiz in imperatives
+// ("Avoid investing your emergency fund", "the smartest first move"), which the
+// phrase list above mostly misses, and the screen walk above opens one topic
+// page and no older lesson. The copy is the PMs' to change (D26: the number and
+// the gap, never what to do), so these warn; once it is rewritten they can fail.
+var ADVICE_PHRASES = ADVICE.concat([
+  /\b(always|never) (take|pay|choose|pick|buy|sell|invest|keep|put|use|start|skip|cancel|borrow)\b/i,
+  /\b(smartest|wisest|best) (first )?(move|choice|step)\b/i,
+  /\bmost appropriate\b/i,
+  /\bshould you\b/i,
+  /\bshould your\b/i,
+  /\byour (\w+ ){1,2}should\b/i,
+  /\b(bad|good) idea\b/i
+]);
+// A sentence opening on one of these verbs tells the reader what to do, and so
+// does a clause after a colon, semicolon or dash ("A common rule: spend no more
+// than 28%"), where the verb is lower case and spend, budget and list join it
+// (capitalised they would flag the title "Budget Basics"). Read in authored
+// sentences only: rendered text runs a button label into the prose before it
+// ("... ahead of it. Start"), and a quiz choice is an answer fragment ("Keep
+// everything in cash" is a wrong answer, not an instruction).
+var ADVICE_IMPERATIVE = /(?:^|[.!?] )(Avoid|Exhaust|Start|Review|Match|Always|Never|Don't|Make sure|Consider|Try|Stop|Choose|Pick|Cancel|Switch|Invest|Keep|Put|Take|Buy|Sell|Pay|Save|Contribute|Use|Get)\b/;
+var ADVICE_CLAUSE = /(?:[:;] | ?[\u2014\u2013] ?)(avoid|exhaust|start|review|match|always|never|don't|make sure|consider|try|stop|choose|pick|cancel|switch|invest|keep|put|take|buy|sell|pay|save|contribute|use|get|spend|budget|list)\b/;
+// Exact authored text that matches a pattern without telling anyone what to
+// do. It is cut out of rendered pages too, so one entry covers both.
+var ADVICE_ALLOWED = [
+  "The exact home you should buy",                               // q20: a wrong answer
+  "What type of health plan do you need to qualify for an HSA?"   // q41: eligibility
+];
+/** Each advice-shaped phrase in `text` that no earlier one overlaps, with the text around it. */
+function adviceIn(text, sentence) {
+  text = String(text || "");
+  ADVICE_ALLOWED.forEach(function (a) { text = text.split(a).join(" "); });
+  var found = [];
+  (sentence ? ADVICE_PHRASES.concat([ADVICE_IMPERATIVE, ADVICE_CLAUSE]) : ADVICE_PHRASES).forEach(function (re) {
+    var m = re.exec(text);
+    if (!m) return;
+    var phrase = m[0].replace(/^(?:[.!?:;] | ?[\u2014\u2013] ?)/, ""), at = m.index + m[0].length - phrase.length;
+    if (found.some(function (f) { return at < f.at + f.phrase.length && f.at < at + phrase.length; })) return;
+    found.push({ phrase: phrase, at: at,
+                 around: text.slice(Math.max(0, at - 40), at + phrase.length + 20).trim() });
+  });
+  return found;
+}
+function advicePhrases(found) {
+  return found.map(function (f) { return '"' + f.phrase + '"'; }).join(", ");
+}
+/** Lines that read as advice; `pages` counts pages instead, for page scans. */
+function adviceReport(hits, where, pages) {
+  var paged = typeof pages === "number", n = paged ? pages : hits.length;
+  if (!n) { ok((paged ? "none of " : "no line in ") + where + " reads as advice"); return; }
+  warn((paged ? n + " of " : n + " line" + (n === 1 ? "" : "s") + " in ") + where +
+       (n === 1 ? " reads" : " read") + " as advice (D26; copy for the PMs to rewrite)",
+       hits.join("\n          "));
+}
+
+var lpHits = [];
+Object.keys(LP_SCRIPTS).forEach(function (id) {
+  LP_SCRIPTS[id].forEach(function (line, i) {
+    var f = adviceIn(line, true);
+    if (f.length) lpHits.push(id + " #" + (i + 1) + " " + advicePhrases(f) + ": " + line);
+  });
+});
+adviceReport(lpHits, "the " + Object.keys(LP_SCRIPTS).length + " older lesson scripts");
+
+var quizHits = [];
+state.quizQuestions.forEach(function (q) {
+  [q.question].concat(q.choices).forEach(function (text, i) {
+    var f = adviceIn(text, i === 0);
+    if (f.length) quizHits.push(q.id + " (" + q.lessonId + ") " + advicePhrases(f) + ": " + text);
+  });
+});
+adviceReport(quizHits, "the " + state.quizQuestions.length + "-question quiz pool");
+
+var lessonHits = [];
+state.lessons.forEach(function (l) {
+  [l.title, l.description].forEach(function (text) {
+    var f = adviceIn(text, true);
+    if (f.length) lessonHits.push(l.id + " " + advicePhrases(f) + ": " + text);
+  });
+});
+adviceReport(lessonHits, "the " + state.lessons.length + " lessons' titles and descriptions");
+
+// Every badge's page, not just the seeded Credit Cards one the walk above sees.
+// A lesson's title and description read the same on every page that lists the
+// lesson, so each is reported once with its pages; what is left of the page is
+// topic.js's own text, the same template on every page, so its hits group by
+// phrase.
+var topicHits = [], topicPages = 0, badgeBefore = state.selectedBadge;
+function topicHit(key, line, page) {
+  var same = topicHits.filter(function (t) { return t.key === key; })[0];
+  if (same) same.pages.push(page); else topicHits.push({ key: key, line: line, pages: [page] });
+}
+state.badges.forEach(function (b) {
+  state.selectedBadge = b.name;
+  var html = renderSafe("topic");
+  if (html && html.__error) { bad(b.name + "'s topic page renders", html.__error); return; }
+  var rest = textOf(html), flagged = false;
+  state.lessons.forEach(function (l) {
+    if (l.badges.indexOf(b.name) === -1) return;
+    [l.title, l.description].forEach(function (s) {
+      if (rest.indexOf(s) === -1) return;
+      rest = rest.split(s).join(" ");
+      var f = adviceIn(s, false);
+      if (!f.length) return;
+      flagged = true;
+      topicHit(l.id + "\n" + s, l.id + " " + advicePhrases(f) + ": " + s, b.name);
+    });
+  });
+  adviceIn(rest.replace(/\s+/g, " "), false).forEach(function (f) {
+    flagged = true;
+    topicHit("page\n" + f.phrase, '"' + f.phrase + '" in the page itself: ...' + f.around + "...", b.name);
+  });
+  if (flagged) topicPages++;
+});
+state.selectedBadge = badgeBefore;
+adviceReport(topicHits.map(function (t) { return t.line + "  (on " + t.pages.join(", ") + ")"; }),
+             "the " + state.badges.length + " badges' topic pages", topicPages);
 
 // The guardrail itself, both directions.
 var ADVICE_Q = ["should i invest","what should i do","is it a good idea to cancel hulu",
@@ -532,13 +627,9 @@ var LEGIT_Q = (BUDDY_RESPONSES.responses || []).filter(function (r) { return r.b
 var overzealous = LEGIT_Q.filter(function (q) { return chatRoute(q).id === "advice_deflect"; });
 chk(overzealous.length === 0, LEGIT_Q.length + " real questions NOT wrongly deflected", overzealous.join(" | "));
 
-// Reset must restore the OPENING bubbles, not leave the last reply's follow-ups
-// behind. Two copies of chatResetConversation() once existed and the shadowing
-// one skipped the bubbles, so a reset left chips pointing at a deleted thread.
-// renderChat only falls back to openingBubbles when bubbles is EMPTY, so a
-// stale non-empty array is invisible without checking it directly.
-// Driven through chatRespond(), not chatSend(): chatSend reads a DOM input the
-// stub returns empty, which would make this pass without ever moving bubbles.
+// Reset must restore the opening bubbles. renderChat falls back to them only
+// when bubbles is empty, so a stale non-empty array needs a direct check.
+// Drive chatRespond: chatSend reads a DOM input that the stub returns empty.
 var opening = (BUDDY_RESPONSES.openingBubbles || []).join(",");
 var moved = false;
 (BUDDY_RESPONSES.responses || []).forEach(function (r) {
@@ -556,7 +647,7 @@ chk(state.chat.messages.length === 0 && (state.chat.bubbles || []).join(",") ===
     "mid-chat: " + midChat + "\n          after reset: " + (state.chat.bubbles || []).join(","));
 
 // ─────────────────────────────────────────────────────────────────────────────
-section("5. A13 — tone");
+section("5. Tone");
 var exclam = [];
 SCREENS.forEach(function (sc) {
   var t = textOf(renderSafe(sc));
@@ -590,12 +681,11 @@ SCREENS.forEach(function (sc) {
 var jumpList = (typeof destinations !== "undefined" ? destinations : []).map(function (d) { return d[0]; });
 SCREENS.forEach(function (sc) { if (jumpList.indexOf(sc) === -1) noJump.push(sc); });
 
-noSubtitle.length === 0
-  ? ok("every screen has an admin subtitle")
-  : warn(noSubtitle.length + " screens fall back to the generic subtitle", noSubtitle.join(", "));
-noJump.length === 0
-  ? ok("every screen is in the admin jump list")
-  : warn(noJump.length + " screens are not in destinations[]", noJump.join(", "));
+// Failures, not warnings: nothing else enforces a new screen's Tools wiring.
+chk(noSubtitle.length === 0, "every screen has an admin subtitle",
+    noSubtitle.length + " screens fall back to the generic subtitle: " + noSubtitle.join(", "));
+chk(noJump.length === 0, "every screen is in destinations[], the Tools jump list",
+    noJump.length + " screens are not in destinations[]: " + noJump.join(", "));
 
 var noTab = SCREENS.filter(function (sc) {
   var t = activeTabFor(sc);
@@ -603,16 +693,14 @@ var noTab = SCREENS.filter(function (sc) {
 });
 chk(noTab.length === 0, "every screen maps to a real nav stack", noTab.join(", "));
 
-// The admin buttons are reachable only from onclick in index.html, so nothing
-// else here exercises them. copyAppState() in particular reads a dozen state
-// keys and used to name two that no longer exist.
+// The admin buttons are reached through onclick in index.html; exercise the
+// snapshot action directly because the screen walk does not click them.
 var adminActionErr = null;
 try { copyAppState(); } catch (e) { adminActionErr = String(e); }
 chk(adminActionErr === null, "copyAppState() runs without throwing", adminActionErr);
 
-// Assert on what appStateSnapshot() ACTUALLY emits. The first version of this
-// check built its own object from `state` and tested that — a tautology over
-// bootV3() that stayed green no matter what the snapshot contained.
+// Assert on appStateSnapshot() output; building a separate object from state
+// would not test the snapshot contract.
 var snap = {};
 try { snap = JSON.parse(JSON.stringify(appStateSnapshot())); } catch (e) { adminActionErr = String(e); }
 var WANT = ["plan","mtd","nav","theme","journal","journalEntries","observations",
@@ -623,29 +711,18 @@ var missing = WANT.filter(function (k) {
 chk(missing.length === 0, "snapshot carries the three layers, goals, tasks and nav",
     "missing/null: " + missing.join(", "));
 
-// The v2 names are parked and vestigial (boot.js). Reporting them as if they
-// were v3's is the defect this snapshot was rewritten to fix, and it shipped
-// once doing exactly that — so pin the spelling.
+// Parked goals/tasks belong under legacy, never among the active layers.
 chk(snap.goals === undefined && snap.tasks === undefined,
     "snapshot does not report v2's parked goals/tasks as v3's",
     "found top-level: " + ["goals","tasks"].filter(function (k) { return snap[k] !== undefined; }).join(", "));
 chk(!!(snap.legacy && "goals" in snap.legacy && "tasks" in snap.legacy),
     "v2's parked arrays are still captured, under legacy");
 
-// ── Slider handlers ─────────────────────────────────────────────────────────
-// These had zero coverage: the DOM stub's setTimeout used to discard its
-// callback, so debouncedRender() was a no-op and no test ever called them.
-// A misspelled debouncedRender would have passed the sweep and thrown in a
-// browser on the first pointer move.
-// Checked PER HANDLER, not in aggregate: an "any of them queued" assertion
-// stays green while three handlers debounce and the fourth calls render()
-// directly, which is precisely the regression worth catching.
+// Check each slider handler queues a render: an aggregate assertion could
+// hide one handler that renders immediately and destroys the dragged element.
 state.screen = "aboutMe";
 var SLIDERS = [
   ["budgetSetPlan",      function () { budgetSetPlan("Dining out", 250, true); }],
-  ["lwAdjust",           function () {
-      state.lifestyleWizard = { preview: { "Dining out": 200 } };
-      lwAdjust("Dining out", 240); }],
   ["journalAdjustEntry", function () {
       state.journalSession = { entries: [{ id: "e1", label: "x", category: "Dining out",
                                            amount: 20, baseAmount: 20 }] };
@@ -693,9 +770,7 @@ if (typeof BB_STEPS !== "undefined") {
       "the builder's " + BB_STEPS.length + " steps cover all 12 exactly once",
       (bbMissing.length ? "never asked: " + bbMissing.join(", ") + ". " : "") +
       (bbTwice.length ? "asked twice: " + bbTwice.join(", ") : ""));
-  // Every line is a slider — the steps group categories by how well a tester
-  // knows them, not by how the figure is entered. That was misread once and
-  // built as a number field on step 1.
+  // Every line is a slider; steps group categories by how well a tester knows them.
   state.budgetBuild = null;
   bbStart();
   var bbSliders = 0, bbFields = 0;
@@ -709,9 +784,7 @@ if (typeof BB_STEPS !== "undefined") {
       "all 12 lines render a slider, none a number field",
       bbSliders + " sliders, " + bbFields + " number fields");
 
-  // The thumb opens on the peer figure, so it starts dead centre of the band
-  // drawn behind it. Opening on the no-lifestyle national figure instead left
-  // it visibly off its own band.
+  // The thumb opens on its own peer figure, centred in the band behind it.
   state.budgetBuild = null;
   bbStart();
   var bbOffBand = CATEGORIES.filter(function (c) {
@@ -732,13 +805,7 @@ if (typeof BB_STEPS !== "undefined") {
       "the header total is cumulative (2 -> 7 -> 12)", bbCounts.join(" -> "));
   state.budgetBuild = null;
 
-// ── "Worth a look" surfaces OVER peers, never under ─────────────────────────
-// cmpWorthNoticing and cmpImpact both used Math.abs, so being far BELOW peers
-// scored identically to being far above — and the seeded persona is under peers
-// almost everywhere, so the section listed the biggest under-spends. Nothing
-// errored; the list was simply the wrong list. v3 still carries the Math.abs
-// version — it is the A/B control and does not get the fix — so this stays
-// inside the v3.1 guard with everything else.
+  // Flag over-peer spending only; under-spending must never qualify.
   var flagged = cmpAllRows().filter(cmpWorthNoticing)
                             .sort(function (a, b) { return cmpImpact(b) - cmpImpact(a); });
   var under = flagged.filter(function (r) { return r.user <= r.peer; });
@@ -754,11 +821,8 @@ if (typeof BB_STEPS !== "undefined") {
         return r.category + " +" + Math.round(r.user - r.peer);
       }).join(" · ") || "nothing flagged at all");
 
-  // ── Scroll identity ──────────────────────────────────────────────────────
-  // render() holds the scroll offset while scrollKey() is unchanged. Screens
-  // that are one id with several steps have to say so, or Continue lands the
-  // tester at the bottom of the next step — which is what happened when the
-  // key was just state.screen.
+  // render() holds the offset while scrollKey() is unchanged, so each builder
+  // step needs its own key to open at the top.
   state.budgetBuild = null; bbStart();
   var keys = BB_STEPS.map(function (_, i) { state.budgetBuild.step = i; return scrollKey(); });
   chk(keys[0] !== keys[1] && keys[1] !== keys[2],
@@ -787,18 +851,39 @@ if (typeof BB_STEPS !== "undefined") {
     });
     chk(noSource.length === 0, "every tree cites where its figures came from", noSource.join(", "));
 
-    // A BUDGET IS A MONTH. The engine this replaced multiplied every figure by
-    // how far into the month we were, so on the 4th of a 30-day month "light
-    // local driving" came out at $10 of transport and picking the priciest
-    // option still LOWERED the category. Nothing in the model may read a clock.
-    var realFrac = estimatorMonthFraction;
-    var baseline = {}, drifted = {};
+    // Each tree's figure on its first-option answers, for the magnitude check below.
+    var baseline = {};
     CATEGORIES.forEach(function (c) { baseline[c] = hmoCompute(c, hmoBaselineAnswers(c)); });
-    estimatorMonthFraction = function () { return 0.05; };
-    CATEGORIES.forEach(function (c) { drifted[c] = hmoCompute(c, hmoBaselineAnswers(c)); });
-    estimatorMonthFraction = realFrac;
-    var dated = CATEGORIES.filter(function (c) { return baseline[c] !== drifted[c]; });
-    chk(dated.length === 0, "no tree's figure depends on the date", dated.join(", "));
+
+    // A budget is monthly: no tree may prorate by the current date. Test both
+    // cheapest and priciest answers so closed preconditions cannot hide a rate.
+    var clockAnswers = CATEGORIES.map(function (c) { return [hmoBaselineAnswers(c), hmoMaxAnswers(c)]; });
+    function figuresOnDay(day) {
+      var RealDate = Date, at = new RealDate(2026, 3, day, 12).getTime();
+      // A Date subclass whose "now" is `at`; Date() without `new` reads it too.
+      function PinnedDate() {
+        if (!new.target) return new RealDate(at).toString();
+        return Reflect.construct(RealDate, arguments.length ? Array.prototype.slice.call(arguments) : [at],
+                                 new.target);
+      }
+      PinnedDate.prototype = Object.create(RealDate.prototype, { constructor: { value: PinnedDate } });
+      Object.setPrototypeOf(PinnedDate, RealDate);
+      PinnedDate.now = function () { return at; };
+      Date = PinnedDate;
+      try {
+        return CATEGORIES.map(function (c, i) {
+          return clockAnswers[i].map(function (a) {
+            try { return hmoCompute(c, a); } catch (e) { return "threw " + e.message; }
+          }).join(" / ");
+        });
+      } finally { Date = RealDate; }
+    }
+    var on4th = figuresOnDay(4), on28th = figuresOnDay(28);
+    var dated = [];
+    CATEGORIES.forEach(function (c, i) {
+      if (on4th[i] !== on28th[i]) dated.push(c + ": " + on4th[i] + " on the 4th, " + on28th[i] + " on the 28th");
+    });
+    chk(dated.length === 0, "no tree's figure depends on the date", dated.join("\n          "));
 
     // A mistyped rate key returns undefined, becomes 0, and every option then
     // produces the same number — a question that looks like it works and does
@@ -850,11 +935,8 @@ if (typeof BB_STEPS !== "undefined") {
         wild.join(" · "));
   }
 
-  // ASSERT THE VALUE, NOT JUST THE ORDER. Once the filter keeps only over-peers
-  // rows, Math.abs(user - peer) equals user - peer for every row that survives,
-  // so an ordering check passes under the buggy implementation too and proves
-  // nothing. The two only diverge when a plan gap exceeds a peer gap — which
-  // the seeded persona happens not to produce. This catches it on any data.
+  // Check the signed gap directly: after filtering over-peer rows, Math.abs
+  // preserves ordering and could hide a wrongly included plan term.
   var impactWrong = cmpAllRows().filter(function (r) {
     if (r.peer == null) return cmpImpact(r) !== 0;
     return cmpImpact(r) !== (r.user - r.peer);
@@ -879,9 +961,57 @@ if (typeof BB_STEPS !== "undefined") {
       "every renamed label points at a real taxonomy member",
       Object.keys(CATEGORY_LABELS).filter(function (k) { return !isCategory(k); }).join(", "));
 }
-// benchSelfTest checks three factors separately now — base lookup, lifestyle
-// product, cost of living — because the col factor moved when the tier table
-// was replaced by BEA. Report which one failed, not just that something did.
+// Check base, lifestyle and BEA cost-of-living factors separately: neutral
+// lifestyle inputs can hide a broken multiplier in an end-to-end assertion.
+// The worked example's stored result is reported, not asserted; current BEA
+// category prices determine the cost-of-living factor.
+function benchSelfTest() {
+  var w = PEER_BENCHMARKS.worked_example;
+  var checks = [];
+
+  // 1. Base lookup — the array-index-off-by-one trap.
+  var base = PEER_BENCHMARKS.base[w.category].b3[benchHouseholdIndex(2)];
+  checks.push({ name: "base b3 household 2", expected: w.base_b3_hh2, actual: base });
+
+  // 2. Lifestyle product across six dimensions.
+  var life = benchLifestyleMultiplier(w.category, PERSONA.lifestyle);
+  checks.push({ name: "lifestyle multiplier", expected: w.lifestyleMultiplier, actual: life });
+
+  // 3. Cost of living must match the BEA category source.
+  var col = benchColMultipliers(PERSONA.identity.zip);
+  var bucket = ((ZIP_COST_OF_LIVING.method || {}).categoryBucket || {})[w.category];
+  var expectedCol = col.geo ? Number(col.geo[bucket]) / 100 : null;
+  var actualCol = Number(col.multipliers[w.category]);
+  checks.push({
+    name: "cost of living (BEA " + bucket + ")",
+    expected: expectedCol == null ? null : Math.round(expectedCol * 1000) / 1000,
+    actual: Math.round(actualCol * 1000) / 1000
+  });
+
+  // 4. End to end — the three factors actually multiply. The persona's own
+  //    inputs are what the worked example describes.
+  var step = PEER_BENCHMARKS.method.roundTo || 5;
+  var composed = Math.round((base * actualCol * life) / step) * step;
+  var actual = benchPeerValue(w.category, {
+    annualIncome:  PERSONA.identity.incomeAnnual,   // 68000 → b3
+    householdSize: PERSONA.identity.householdSize,  // 2 → index 1
+    zip:           PERSONA.identity.zip,            // 90066 → Los Angeles County
+    lifestyle:     PERSONA.lifestyle                // foodie moderate, cooks sometimes
+  });
+  checks.push({ name: "base x col x lifestyle", expected: composed, actual: actual });
+
+  var failed = checks.filter(function (c) {
+    return c.expected == null || c.actual == null || Math.abs(c.expected - c.actual) > 1e-6;
+  });
+  return {
+    pass: failed.length === 0,
+    checks: checks,
+    failed: failed,
+    // Stored worked-example result alongside the computed figure.
+    specResult: w.result,
+    actual: actual
+  };
+}
 var selfTest = benchSelfTest();
 chk(selfTest.pass, "benchmark self-test -> " + selfTest.actual +
     " (spec's retired figure was " + selfTest.specResult + ")",
@@ -895,107 +1025,35 @@ var d = cmpRow("Dining out");
 chk(d.vsPlan !== d.vsPeer, "the two dining gaps stay distinct",
     "plan " + d.vsPlan + "% vs peers " + d.vsPeer + "%");
 var missingScripts = [];
-(LESSONS_V3.lessons || []).forEach(function (l) {
+(FRAMED_LESSONS.lessons || []).forEach(function (l) {
   (l.scriptVariants || []).forEach(function (v) { if (!lessonScriptFor(v.id)) missingScripts.push(v.id); });
 });
 chk(missingScripts.length === 0, "all 15 lesson variants have a script body", missingScripts.join(", "));
 
 // ─────────────────────────────────────────────────────────────────────────────
-section("7b. Unreferenced functions — inventory, not a verdict");
+section("7b. Unreferenced functions");
 
-// POLICY: unused code is KEPT, not deleted. This is a prototype under active
-// iteration, and something dropped today is something rewritten next week. Git
-// history technically preserves a deletion, but retrieving it means knowing
-// which commit to dig into — friction that is not worth the tidiness.
-//
-// So this does not fail on dead code. What it watches for is MOVEMENT: a
-// function that used to be referenced and now is not was probably orphaned by
-// accident — a handler left behind when its button moved, a cue dropped from a
-// dispatch table. That is a refactor bug, and it looks identical to deliberate
-// dead code unless you know which ones were already here.
-//
-// Hence the baseline. Everything below was unreferenced as of the L21 change
-// and is kept on purpose. Anything NOT on this list is new, and warns.
-var DEAD_BASELINE = [
-  "benchSelfTest",              // documents the benchmark formula by example
-  // The emergency fund's rent-or-own correction. The owner cut the card that
-  // called it, so state.esf.owns is now derived from the persona and never
-  // corrected by the tester — which still GATES the three owner-only bills on
-  // step 4. Kept because putting the correction back (most naturally on step 4,
-  // beside the rows it controls) is a markup change, not a rewrite.
-  "esfToggleOwns",
-  // Retained from the pinned PM prototype. Its band/dropdown and Buddy flows
-  // replaced these earlier bill, typed-buffer, explanation and help surfaces.
-  "esfBillsTotal", "esfMaintenanceEstimate", "esfPickChoice", "esfRowSource",
-  "esfRunHelp", "esfSetBufferRaw", "esfToggleExplain", "esfUtilitiesSplit",
-  "onbColHousingLine",
-  // The ZIP-only entry point to the cost-of-living predicate. benchColIndex
-  // already holds a resolved lookup and uses benchColSupported, so calling this
-  // instead would repeat the lookup. Kept as the module's public
-  // "is this area modeled?".
-  "benchZipSupported",
-  "buddyDescription",           // buddy plumbing, used once art lands (L22)
-  // v3.1 inverted the budget flow, so these two lost their callers THERE.
-  // Both are still live in v3, which is why they are not deleted: the two
-  // versions are an A/B pair and the files stay readable side by side.
-  "lwBuildPreview",             // v3: lazily rebuilt the review preview
-  "lwSubmit",                   // v3: the single save path, now split in v3.1
-  "budgetDelta",
-  "catRows",                    // taxonomy helper, pairs with catTotal/catValue
-  "completeAndReward",
-  "dailySummaryDone",
-  "journalDiscard",             // journal seam
-  "observationPeerCounterpart",
-  "planToBaseline",             // budget-baseline seam (L6)
-  // Both orphaned deliberately when the Budget tab became the review surface:
-  // the twelve slider rows moved to the per-category screen, and "Worth a look"
-  // replaced the observation cards. Kept because a future edit mode wants them.
-  "renderBudgetCategoryRow",
-  "renderBudgetObservationCards",
-  // Orphaned when the three stacked Budget/Peers/You bars became one band
-  // track (components/budget-band.js). Kept, not deleted: it is the only
-  // implementation of the old per-flag bar scaling, and v3 still renders that
-  // layout — the two versions stay diffable.
-  "cmpFlagBar",
-  "themeIsDark"                 // L21, for a screen that wants to branch on theme
-];
+// Every function must be referenced by calls, inline handlers or dispatch
+// tables, ignoring comments. Unreferenced declarations must be wired or removed.
+chk(__UNREFERENCED.length === 0, "every function is referenced",
+    __UNREFERENCED.map(function (d) { return d.name + "  " + d.file; }).join("\n          "));
 
-// Everything shares one global namespace, so a name declared in two files is
-// not an error — the later <script> wins and the earlier becomes unreachable.
-// This is invisible to the count above: a shadowed function is still
-// referenced, it just never runs. It is how chatResetConversation() sat dead in
-// chat-router.js while a second copy in screens/chat.js quietly did less.
+// Scripts share globals: duplicate declarations can shadow a referenced
+// function, which a reference count alone cannot detect.
 chk(__DUPLICATE_DECLS.length === 0, "no name declared twice",
     __DUPLICATE_DECLS.map(function (d) {
       return d.name + "  →  " + d.files.join(" , ") + "   (" + d.scope +
              "; last one wins for function/var, SyntaxError for const/let)";
     }).join("\n          "));
 
-var deadNames = __UNREFERENCED.map(function (d) { return d.name; });
-var appeared = __UNREFERENCED.filter(function (d) { return DEAD_BASELINE.indexOf(d.name) === -1; });
-var resolved = DEAD_BASELINE.filter(function (n) { return deadNames.indexOf(n) === -1; });
-
-ok(deadNames.length + " unreferenced, " + DEAD_BASELINE.length + " expected (kept on purpose)");
-if (appeared.length) {
-  warn("newly unreferenced since the baseline — orphaned by a refactor?",
-       appeared.map(function (d) { return d.name + "  " + d.file; }).join("\n          "));
-} else {
-  ok("nothing newly orphaned");
-}
-if (resolved.length) {
-  ok(resolved.length + " baseline entr" + (resolved.length === 1 ? "y is" : "ies are") +
-     " now referenced", "prune from DEAD_BASELINE: " + resolved.join(", "));
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 section("7c. The rendered films agree with the app's clock");
-// The onboarding film is rendered SILENT and narrated live, so the film's
-// timeline and the app's caption clock are two independent computations of the
-// same per-segment durations. When they disagree the picture and the words come
-// apart and NOTHING else reports it — no error, no failed load, just a film that
-// feels wrong. This is the only guard.
+// The silent film and live caption clock compute per-segment durations
+// independently; disagreement separates the words from the picture.
 if (!__FILM_MANIFEST) {
-  ok("no rendered films in this version — nothing to compare");
+  bad("the rendered films' manifest is present",
+      "assets/video/onboarding/manifest.json is missing, so nothing below can compare the films" +
+      "\n          → re-run tools/film/build-films.mjs --render");
 } else {
   var mf = __FILM_MANIFEST;
   chk(mf.wpm === (typeof DU_WPM !== "undefined" ? DU_WPM : 165),
@@ -1023,37 +1081,35 @@ if (!__FILM_MANIFEST) {
       drift.slice(0, 4).join("\n          ") +
       (drift.length ? "\n          → re-run tools/film/build-films.mjs --render" : ""));
 
-  // Every look x script the app can ASK for must have been rendered, or that
-  // combination silently drops to the SVG fallback and reads as "broken video".
-  // The FULL set the app can ask for, from the script data — not from what has
-  // already been rendered. Deriving it from the manifest made the coverage check
-  // vacuous: it could only ever compare the renders against themselves.
+  // Derive film coverage from authored scripts, not the manifest being checked.
+  // A missing look can play another render; a script with no render uses SVG.
   var scripts = [];
   try {
     scripts = ONBOARDING_SCRIPT.scripts.map(function (x) { return x.id; });
   } catch (e) {}
-  // A look with NO films is simply not rendered yet, and its themes fall back to
-  // the live SVG engine — that is a normal state while a look is being iterated
-  // on. A look with SOME films is the actual defect: the app lists those themes
-  // and then finds nothing for the scripts that are missing.
-  var started = (mf.looks || []).filter(function (l) {
-    return Object.keys(mf.films).some(function (id) { return mf.films[id].look === l; });
-  });
-  // Coverage is a WARNING, not a failure. A film that has not been rendered
-  // cannot break anything: data/onboarding-films.js is generated from what
-  // actually exists, so the app only ever asks for a file that is there and
-  // everything else falls back to the live SVG engine by design. What this is
-  // for is telling you what is still outstanding.
+  // A look with no render of its own is a normal state while it is being
+  // iterated on: its themes play another look's render (onbFilmAnyLook). A
+  // missing film cannot break anything either: data/onboarding-films.js is
+  // generated from what actually exists, so the app only ever asks for a file
+  // that is there. Only a script rendered in NO look falls back to the live SVG
+  // engine, and with no film at all every theme does.
   var want = (mf.looks || []).length * scripts.length;
   var absent = [];
   (mf.looks || []).forEach(function (l) {
     scripts.forEach(function (s) { if (!mf.films[l + "__" + s]) absent.push(l + "__" + s); });
   });
-  if (absent.length) {
-    warn((want - absent.length) + " of " + want + " films rendered — the rest use the SVG fallback",
-         absent.slice(0, 6).join(", ") +
-         (absent.length > 6 ? " …+" + (absent.length - 6) : "") +
-         "\n          cd tools && node film/build-films.mjs --render");
+  var svgOnly = scripts.filter(function (s) {
+    return !(mf.looks || []).some(function (l) { return mf.films[l + "__" + s]; });
+  });
+  var have = want - absent.length;
+  var renderHint = "\n          cd tools && node film/build-films.mjs --render";
+  if (!have) {
+    bad("at least one film is rendered", "every theme falls back to the SVG engine" + renderHint);
+  } else if (svgOnly.length) {
+    warn(have + " of " + want + " films rendered — " + svgOnly.length +
+         " script(s) rendered in no look use the SVG fallback", svgOnly.join(", ") + renderHint);
+  } else if (absent.length) {
+    ok(have + " of " + want + " films rendered — the other themes play a rendered look");
   } else {
     ok("all " + want + " films rendered");
   }
@@ -1072,11 +1128,8 @@ if (!__FILM_MANIFEST) {
   chk(listed.length === 0, "the app's film index matches what was rendered",
       "listed but absent: " + listed.slice(0, 6).join(", "));
 
-  // ── the film ends on its last frame, it does not replay ───────────────
-  // A film that runs out a few ms before the clock is `paused` AND `ended`,
-  // and play() on an ended element restarts it from 0 (HTML standard). A
-  // tester saw the intro replay itself at the finish. Driven for real: a stub
-  // element in exactly that state, and a control that still gets play().
+  // play() on an ended video restarts it. Exercise ended and merely paused
+  // elements separately so clock drift cannot replay the film at the finish.
   if (typeof onbFilmSync === "function") {
     var fsSaved = { video: state.onboarding.video, el: __e["onb-film"] };
     var fsCalls = 0;
@@ -1101,12 +1154,7 @@ if (!__FILM_MANIFEST) {
     if (fsSaved.el) __e["onb-film"] = fsSaved.el; else delete __e["onb-film"];
   }
 
-  // ── the stage is the picture's shape, and the picture's colour ────────────
-  // Both tiers draw at 100:72 and the stage used to be free to be taller, so up
-  // to 85px of it could only ever be accent green around a cream film.
-  // v4 only -- onbFilmGroundStyle is the marker. v3 and v3.1 still have the
-  // fixed-height stage this replaced, and it is correct for them: they never
-  // paint it, so a box taller than the picture is just accent green by design.
+  // Match the stage to both picture canvases so it cannot expose coloured bars.
   if (typeof onbFilmGroundStyle === "function" &&
       typeof __COMPONENTS_CSS === "string" && typeof __HF_VIEW === "object") {
     var stageRule = /\.onb-video-stage\s*\{([\s\S]*?)\n\}/.exec(__COMPONENTS_CSS);
@@ -1164,9 +1212,7 @@ if (!__FILM_MANIFEST) {
         "it draws in --on-dark and would be invisible on a light one\n          got: " +
         withoutFilm);
 
-    // AND THE MARKUP HAS TO CALL IT. Checking the helper alone missed a
-    // mutation that simply dropped it from the template -- a correct colour
-    // nobody interpolates is the same green stage with extra steps.
+    // Test the rendered markup too: a correct helper does nothing unless called.
     var _ob3 = state.onboarding;
     onbStart();
     state.onboarding.improveAreas = [];
@@ -1182,13 +1228,7 @@ if (!__FILM_MANIFEST) {
         stageHtml.slice(0, 160));
   }
 
-  // ── the render tool writes into the version being swept ───────────────────
-  // Six tools read MB_VERSION and this one was missed when v4 was created, so
-  // `--render` encoded four films into v3.1 -- the A/B CONTROL -- while v4's
-  // sweep kept reporting "1 of 10 rendered". Every log line said "rendered";
-  // they were simply in another version. Nothing else would ever have said so.
-  // Against the DEFAULT version, not the one being swept -- sweeping the control
-  // must not fail because the tool points at where work happens.
+  // The film tool must target the editable app, matching the tooling default.
   if (typeof __FILM_TOOL_VERSION === "string" && typeof __DEFAULT_VERSION === "string") {
     chk(__FILM_TOOL_VERSION === __DEFAULT_VERSION,
         "tools/film/build-films.mjs renders into the version work happens in",
@@ -1197,17 +1237,16 @@ if (!__FILM_MANIFEST) {
         "and every log line would still say \"rendered\"");
   }
 
-  // ── ONB_FILM_ANY_LOOK: one render serves every theme ──────────────────────
-  // v4 only. While a look is unrendered its themes used to drop to the SVG
-  // engine, so the same onboarding step showed two different pieces of work
-  // depending on a colour setting. The fallback plays whatever WAS rendered.
+  // ── one render serves every theme ─────────────────────────────────────────
+  // A theme whose look is unrendered plays whatever WAS rendered
+  // (onbFilmAnyLook), so the same onboarding step does not show two different
+  // pieces of work depending on a colour setting.
   //
   // Two things to hold, and the second is the one that rots quietly: a theme
   // with its own render must still get its OWN look. If the fallback ever wins
   // over an exact match, rendering the dark film would change nothing a dark
   // tester sees and nothing here would say so.
-  if (typeof ONB_FILM_ANY_LOOK !== "undefined" && ONB_FILM_ANY_LOOK &&
-      typeof THEMES !== "undefined" && Object.keys(mf.films).length) {
+  if (typeof THEMES !== "undefined" && Object.keys(mf.films).length) {
     // Restore unconditionally. Reading it into a local and putting it back only
     // "if it was set" leaves colorMode pinned to the last theme walked when the
     // app had none, which quietly re-themes every check that runs after this.
@@ -1239,16 +1278,11 @@ if (!__FILM_MANIFEST) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — guarded so v3 and v3.1 skip the whole block.
 if (typeof screenSlug !== "undefined") {
 section("7d. One URL per screen — what a usability tracker can see");
 
-// A Useberry round recorded the gate, the first onboarding screen, and nothing
-// else: their tracker compares document.location.href on each DOM change, and
-// pushState(snapshot, '') never moves it. These gates exist so that cannot come
-// back silently — the failure mode is a study that runs, completes, and reports
-// one screen.
+// Trackers compare the page URL on DOM changes, so rendering a new view must
+// move its URL as well as compute a slug.
 
 // ── the slug is well-formed for every routed screen ────────────────────────
 var badSlug = [];
@@ -1259,10 +1293,7 @@ SCREENS.forEach(function (id) {
 chk(badSlug.length === 0, "every routed screen yields a URL-safe slug",
     badSlug.slice(0, 6).join(", "));
 
-// ── a stepped screen is several views, and they must not collide ───────────
-// This is the whole point: onboarding is ONE screen id and seven pages to a
-// tester. If these collapse, the flow report shows "onboarding" once and the
-// six steps after it vanish — which is exactly the reported defect, one level in.
+// Stepped screens need a distinct URL for every page a tester sees.
 var views = [], savedScreen = state.screen;
 state.screen = "onboarding";
 state.onboarding = state.onboarding || {};
@@ -1291,10 +1322,7 @@ chk(dupes.length === 0,
     "every step of a stepped screen is its own URL (" + views.length + " views)",
     "collapsed: " + dupes.join(", "));
 
-// ── render() actually writes it ────────────────────────────────────────────
-// The gates above test the module. THIS tests the wiring, and the wiring is
-// what broke: a module that computes a perfect slug nobody calls is the same
-// defect with extra steps.
+// Exercise render() as well as the slug helper to verify the URL is written.
 if (typeof URL !== "undefined") {
   var _loc = location, _hist = history, _painted = lastPaintedScreen, _scr = state.screen;
   var _href = "https://example.github.io/versions/v4/index.html?PROLIFIC_PID=abc123";
@@ -1362,32 +1390,31 @@ chk(emptyTitle.length === 0,
     emptyTitle.join(", ") + "\n          Useberry sends the title beside the URL — it is what a " +
     "researcher reads in the report");
 
-// ── tracking is off unless somebody turned it on ───────────────────────────
-// A WARNING, NOT A FAILURE. It started as a failure -- the point was that
-// tracking must never land on by ACCIDENT -- but turning it on deliberately is
-// a thing the owner does, and a build that cannot go green while a study is
-// running is a check people learn to ignore. Loud every run, blocking never.
-if (typeof USEBERRY_TRACKING !== "undefined" && USEBERRY_TRACKING) {
-  warn("USEBERRY_TRACKING is ON \u2014 this build is being observed",
-       "a third-party script loads on http/https; the one sanctioned exception\n" +
-       "          to D02. Set it false in js/config.js AND gate/gate.js when the\n" +
-       "          round is over. No app logic may depend on it.");
-} else {
-  ok("USEBERRY_TRACKING is off");
-}
-// Whatever the flag says, the tracker must stay inert on file:// -- there is no
-// session behind it there and the fetch buys a console error and nothing else.
-chk(typeof useberryActive === "function" && useberryActive() === false,
-    "the tracker stays inert off http/https");
+// ── tracking is off in development ─────────────────────────────────────────
+// Execute the real guard with independent inputs. Its development const cannot
+// be reassigned; isolated bindings keep both it and location unchanged.
+(function () {
+  var probe = typeof useberryActive === "function" ?
+    new Function("USEBERRY_TRACKING", "location", "return (" + useberryActive.toString() + ")();") : null;
+  var supported = ["http:", "https:"], unsupported = ["file:", "ftp:"];
+  chk(!!probe && unsupported.every(function (protocol) { return probe(true, { protocol: protocol }) === false; }),
+      "the tracker stays inert off http/https");
+  chk(!!probe && supported.every(function (protocol) { return probe(true, { protocol: protocol }) === true; }),
+      "the tracker is active on http/https when enabled");
+  chk(!!probe && supported.concat(unsupported).every(function (protocol) {
+    return probe(false, { protocol: protocol }) === false;
+  }) && useberryActive() === false,
+      "disabled tracking stays inert on every tested protocol");
+})();
 
 // Development defaults and published settings are tested independently.
 chk(window.MB_RELEASE.tracking === false && USEBERRY_TRACKING === false,
-    "development tracking is off");
+    "development tracking is off",
+    "app/release-config.js must keep tracking: false; a study's tracking is chosen when its " +
+    "snapshot is prepared (docs/publishing.md)");
 chk(window.MB_RELEASE.selector === "../index.html", "local refresh returns to root");
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — Phase 2 of the tracking work.
 if (typeof ubActionName !== "undefined") {
 section("7e. What a tester clicked, and what they set");
 
@@ -1423,9 +1450,7 @@ var leaked = valueShapes.filter(function (h) { return /this[-.]?value|this[-.]?c
 chk(leaked.length === 0, "a tester's input never enters a control's name",
     leaked.map(function (h) { return h + " -> " + ubActionName(h); }).join("\n          "));
 
-// ── the stamping pass is actually wired into render() ───────────────────────
-// The parser above can be perfect and the reports still empty if nothing calls
-// it. That is the failure Phase 1 was, repeated one layer in.
+// A correct parser still needs render() to stamp the controls it paints.
 var stamped = 0, _origStamp = ubStampControls;
 try {
   ubStampControls = function () { stamped++; return 0; };
@@ -1494,172 +1519,34 @@ if (typeof ubTrailRecord === "function") {
 }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — the buddy creator's body-type step and its breed search.
-if (typeof BUDDY_BODY_TYPES !== "undefined" && typeof breedMatch === "function") {
-section("7f. Body type and breed search");
+// The buddy step combines art, greeting, name and pronouns.
+if (typeof BUDDY_PRONOUNS !== "undefined" && typeof onbSetStep === "function") {
+section("7h. Meet your buddy — one screen");
+
+var _o7 = state.onboarding, _b7 = state.buddy, _s7 = state.screen;
+var buddyStep = ONB_STEPS.indexOf("buddy");
+
+/** Paint the onboarding screen for real and hand back its markup. */
+function paintOnb() {
+  state.screen = "onboarding";
+  return renderOnboarding();
+}
 
 var bodyIds = BUDDY_BODY_TYPES.map(function (t) { return t.id; });
 chk(BUDDY_BODY_TYPES.length === 9 &&
     Object.keys(bodyIds.reduce(function (a, i) { a[i] = 1; return a; }, {})).length === 9,
     "nine body types with distinct ids", bodyIds.join(", "));
 
-// The eight unbuilt types are told apart by circle size ALONE. Two the same is
-// two tiles a tester cannot choose between for any reason they can see.
-var dots = BUDDY_BODY_TYPES.map(function (t) { return t.dot; });
-chk(Object.keys(dots.reduce(function (a, d) { a[d] = 1; return a; }, {})).length === dots.length,
-    "every placeholder circle is a different size", dots.join(", "));
-
-// The creator is one screen now (meet). The grid below is DORMANT, not
-// gone -- its branch still renders, and these gates keep it working for the day
-// "bodyType" goes back into the list.
-chk(ONB_BUDDY_STEPS.join(",") === "meet",
+// Continue from the buddy step goes straight on to the next step.
+onbStart();
+onbSetStep(state.onboarding, buddyStep);
+state.onboarding.buddy.pronouns = "they";
+onbNext();
+chk(state.onboarding.step === buddyStep + 1,
     "the buddy step is one screen",
-    ONB_BUDDY_STEPS.join(", "));
+    "Continue from it landed on step " + (state.onboarding.step + 1));
 
-// ── ⚠ `breed` MUST NEVER HOLD A BODY-TYPE ID ─────────────────────────────
-// Not because the portrait would blank -- buddyIsPrototype() is an indexOf, so
-// it stays true while any other attribute is prototype, and an earlier version
-// of this gate asserted that consequence and caught nothing. The real damage is
-// quieter: renderBuddyDescription() prints `breed` as the breed name, the admin
-// dropdown offers BUDDY_BREEDS which contains no body-type id, and onbSetBuddy's
-// cascade fires on `breed` and would fill in five attributes nobody picked.
-var _ob = state.onboarding, _b = state.buddy;
-if (typeof onbStart === "function") onbStart();
-var protoBefore = buddyIsPrototype();
-onbSetBuddy("bodyType", "mastiff");
-var stillProto = buddyIsPrototype();
-var breedKept = state.buddy.bodyType === "mastiff" && state.buddy.breed === BUDDY_PROTOTYPE;
-// PAINT IT TOO. Checking only the setter missed a write added at render time --
-// the step drew itself and the portrait went with it, with every assertion
-// above still green.
-var _scr = state.screen, _step = state.onboarding.step;
-var stageAfterPaint = "", breedAfterPaint = "";
-try {
-  state.screen = "onboarding";
-  state.onboarding.step = ONB_STEPS.indexOf("buddy");
-  state.onboarding.buddyIndex = 0;
-  renderScreen();
-  stageAfterPaint = renderBuddyInner();
-  breedAfterPaint = state.buddy.breed;
-} catch (e) { stageAfterPaint = "threw: " + e.message; breedAfterPaint = "threw"; }
-state.screen = _scr; state.onboarding.step = _step;
-state.onboarding = _ob; state.buddy = _b;
-// `prototype` is legitimately BOTH a body type and a breed value, so the
-// forbidden set is the other eight.
-var bodyOnlyIds = bodyIds.filter(function (i) { return i !== BUDDY_PROTOTYPE; });
-chk(protoBefore && stillProto && breedKept &&
-    bodyOnlyIds.indexOf(breedAfterPaint) === -1 &&
-    stageAfterPaint.indexOf("buddy-img") !== -1,
-    "a body-type pick never reaches `breed`, through a repaint",
-    "breed after painting the step: " + breedAfterPaint);
-
-// ── the data ──────────────────────────────────────────────────────────────
-var rows = breedRows();
-var noBody = rows.filter(function (r) { return breedBodies(r).length === 0; });
-chk(noBody.length === 0, rows.length + " breeds all resolve to a body type",
-    noBody.slice(0, 5).map(function (r) { return r.name; }).join(", "));
-
-var badBody = rows.filter(function (r) {
-  return breedBodies(r).some(function (b) { return bodyIds.indexOf(b) === -1; });
-});
-chk(badBody.length === 0, "every breed maps onto a real body type",
-    badBody.slice(0, 5).map(function (r) { return r.name + " -> " + breedBodies(r); }).join(", "));
-
-// Two breeds claiming one alias is a silent wrong answer: the tester types it,
-// gets a filter, and never learns it was the other dog's.
-var termSeen = {}, termDupe = [];
-rows.forEach(function (r) {
-  [r.name].concat(r.aliases || []).forEach(function (t) {
-    var k = breedNormalize(t);
-    if (termSeen[k] && termSeen[k] !== r.name) termDupe.push(k + ": " + termSeen[k] + " / " + r.name);
-    termSeen[k] = r.name;
-  });
-});
-chk(termDupe.length === 0,
-    Object.keys(termSeen).length + " search terms across " + rows.length + " breeds, none shared",
-    termDupe.slice(0, 4).join("\n          "));
-
-// The crosses table is written by hand in the JSON and is the one place a GROUP
-// name can be typed where a body-type id belongs. It happened once already.
-var crossBad = [];
-var crosses = (DOG_BREEDS && DOG_BREEDS.crosses) || {};
-Object.keys(crosses).forEach(function (k) {
-  k.split("+").concat(crosses[k]).forEach(function (x) {
-    if (bodyIds.indexOf(x) === -1) crossBad.push(k + " -> " + x);
-  });
-});
-chk(crossBad.length === 0, "the crosses table names only real body types",
-    crossBad.join(", "));
-
-// ── matching ──────────────────────────────────────────────────────────────
-var searchCases = [
-  ["yorkshire terrier",            ["toy"]],
-  ["half husky half corgi",        ["spitz", "low_set"]],
-  ["husky x corgi",                ["spitz", "low_set"]],
-  ["pitbull golden retriever mix", ["mastiff", "sporting"]],
-  ["labradoodle",                  ["sporting"]],
-  ["blue heeler",                  ["herding"]],
-  ["bernese mountain dog puppy",   ["mastiff"]]
-];
-var searchBad = [];
-searchCases.forEach(function (c) {
-  var got = breedMatch(c[0]).bodies.slice().sort().join(",");
-  var want = c[1].slice().sort().join(",");
-  if (got !== want) searchBad.push(c[0] + " -> [" + got + "] want [" + want + "]");
-});
-chk(searchBad.length === 0, "the worked breed queries resolve",
-    searchBad.join("\n          "));
-
-// COMPARING BODY TYPES ALONE CANNOT SEE OVER-MATCHING. "blue heeler" naming both
-// the Cattle Dog and the Blue Lacy looks identical in the filter -- they are
-// both herding -- while the match line under the search box lists a breed the
-// tester did not type. These assert the BREEDS, which is the half that shows.
-var exact = [
-  ["blue heeler", 1],                 // not also the Blue Lacy, on the word "blue"
-  ["german shepard", 1],              // not also the Boxer, on the word "german"
-  ["bernese mountain dog puppy", 1],  // not also the Mountain Cur, on "mountain"
-  ["half husky half corgi", 2],
-  ["pitbull golden retriever mix", 2]
-];
-var exactBad = [];
-exact.forEach(function (c) {
-  var names = breedMatch(c[0]).breeds;
-  if (names.length !== c[1]) exactBad.push(c[0] + " -> " + names.length + " (" + names.join(", ") + "), want " + c[1]);
-});
-chk(exactBad.length === 0, "a query names the breeds it says and no others",
-    exactBad.join("\n          "));
-
-// Nonsense must not match. A bare substring test let "asdfgh" hit the
-// Australian Shepherd, because the alias "asd" sits inside it -- with ~1,100
-// terms, three-letter aliases turn any typo into a confident wrong answer.
-var junkBad = ["asdfgh", "zzzzz", "qqqq", "12345"].filter(function (q) {
-  return breedMatch(q).breeds.length > 0;
-});
-chk(junkBad.length === 0, "nonsense matches nothing",
-    junkBad.map(function (q) { return q + " -> " + breedMatch(q).breeds.join(", "); }).join(", "));
-
-// D19 -- and the failure is worse than a blank screen here: a tester whose
-// breed is not listed would conclude the app has no shape for their dog.
-var emptyGrid = ["", "asdfgh", "mutt", "no idea"].filter(function (q) {
-  return breedVisibleBodies(q).length !== 9;
-});
-chk(emptyGrid.length === 0, "an empty, generic or unmatched search shows all nine",
-    emptyGrid.join(", "));
-
-// The prototype is the only tile with art behind it, so a filter must never
-// take it away -- a tester has to be able to pick the buddy that exists.
-var lostProto = ["yorkshire terrier", "great dane", "labradoodle"].filter(function (q) {
-  return breedVisibleBodies(q).indexOf(BUDDY_PROTOTYPE) === -1;
-});
-chk(lostProto.length === 0, "the prototype survives every filter", lostProto.join(", "));
-
-// ── the top bar, and the 52px it was sitting on ───────────────────────────
-// Onboarding has Back in its own footer and Skip in its own header, so the bare
-// bar's chevron was a third escape. Hiding it is half the fix; the other half is
-// that `.screen-scroll.journal-mode` re-reserved the bar's height, and both it
-// and `.no-topbar` are (0,2,0) so the later declaration won -- leaving a 52px
-// empty strip where the bar had been.
+// Onboarding supplies Back and Skip, so it needs no top bar or reserved strip.
 if (typeof TOPBAR_HIDDEN_SCREENS !== "undefined") {
   var _s0 = state.screen;
   state.screen = "onboarding";
@@ -1694,83 +1581,6 @@ if (typeof TOPBAR_HIDDEN_SCREENS !== "undefined") {
   }
 }
 
-// ── search mode ───────────────────────────────────────────────────────────
-if (typeof onbBodySearchOpen === "function") {
-  var _o3 = state.onboarding;
-  if (typeof onbStart === "function") onbStart();
-  var ctl2 = onbBodyTypeControl(state.onboarding);
-  chk(ctl2.indexOf('onfocus="onbBodySearchOpen()"') !== -1 &&
-      ctl2.indexOf('onkeydown="onbBodySearchKey(') !== -1,
-      "focusing the search opens search mode, and Enter closes it");
-
-  // ⚠ NEITHER TRANSITION MAY RE-RENDER. render() reassigns the screen's
-  // innerHTML: it would destroy the focused input, drop the caret and close the
-  // keyboard -- a focus handler that re-rendered would shut the mode it opened.
-  var renders = 0, _origRender = render;
-  try {
-    render = function () { renders++; };
-    onbBodySearchOpen();
-    onbBodySearchKey({ key: "Enter", preventDefault: function () {} });
-  } catch (e) {
-  } finally { render = _origRender; }
-  chk(renders === 0, "entering and leaving search mode never calls render()",
-      "called it " + renders + " time(s)");
-
-  // The filter is state and must survive the repaint a tile pick causes -- a
-  // grid that silently refilled would undo the tester's work behind their back.
-  state.onboarding.bodySearch = "husky corgi";
-  onbSetBuddy("bodyType", "spitz");
-  chk(state.onboarding && state.onboarding.bodySearch === "husky corgi",
-      "the filter survives picking a tile",
-      "bodySearch after: " + (state.onboarding && state.onboarding.bodySearch));
-  state.onboarding = _o3;
-}
-
-// ── the grid's row maths ──────────────────────────────────────────────────
-// "2.5 rows" was measured off the tile's WIDTH and forgot the label under it,
-// so it was really 2.3 and the third row's labels were sliced mid-word.
-if (typeof __COMPONENTS_CSS === "string") {
-  var gridRule = /\.buddy-body-grid\s*\{([\s\S]*?)\}/.exec(__COMPONENTS_CSS);
-  var body = gridRule ? gridRule[1] : "";
-  var rowDecl = /--tile-row:([^;]*);/.exec(body);
-  var rowVal = rowDecl ? rowDecl[1] : "";
-  chk(rowVal.indexOf("--tile-w") !== -1 && rowVal.indexOf("--tile-label") !== -1 &&
-      /max-height:\s*calc\(var\(--tile-row\)/.test(body),
-      "a grid row is measured as square + gap + label, not the square alone",
-      "so 2.5 rows means 2.5 rows");
-}
-
-// ── the search box must not re-render ─────────────────────────────────────
-// render() reassigns the screen's innerHTML and takes the caret with it. The
-// filter patches its two fragments instead (uiPatchHTML). An onchange here
-// would mean the grid only moved on blur.
-if (typeof onbBodyTypeControl === "function") {
-  var _o2 = state.onboarding;
-  if (typeof onbStart === "function") onbStart();
-  var ctl = onbBodyTypeControl(state.onboarding);
-  state.onboarding = _o2;
-  chk(ctl.indexOf('oninput="onbBodySearch') !== -1 && ctl.indexOf("onchange=") === -1,
-      "the search filters on input, never on a full re-render");
-  chk(ctl.indexOf('id="onbBodyGrid"') !== -1 && ctl.indexOf('id="onbBodyMatch"') !== -1,
-      "both patch targets carry their ids",
-      "uiPatchHTML looks them up by id -- rename one and typing silently stops filtering");
-}
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — the buddy step is one screen: art, greeting, name, pronouns.
-if (typeof BUDDY_PRONOUNS !== "undefined" && typeof onbSetStep === "function") {
-section("7h. Meet your buddy — one screen");
-
-var _o7 = state.onboarding, _b7 = state.buddy, _s7 = state.screen;
-var buddyStep = ONB_STEPS.indexOf("buddy");
-
-/** Paint the onboarding screen for real and hand back its markup. */
-function paintOnb() {
-  state.screen = "onboarding";
-  return renderOnboarding();
-}
-
 onbStart();
 onbSetStep(state.onboarding, buddyStep);
 var meetHtml = paintOnb();
@@ -1794,10 +1604,10 @@ chk(nameLbl !== -1 && proLbl !== -1 && nameLbl < nameAt && nameAt < proLbl && pr
     "\"Name\" labels the name box and \"Pronouns\" the dropdown, each above its field",
     "Name label " + nameLbl + ", Pronouns label " + proLbl);
 
-// Every step says Continue -- the buddy step included (owner's call).
+// Every step says Continue, including Buddy setup.
 var notContinue = [];
 ONB_STEPS.forEach(function (k, i) {
-  var o = state.onboarding; o.step = i; o.buddyIndex = 0;
+  var o = state.onboarding; o.step = i;
   if (onbContinueLabel(k, o) !== "Continue") notContinue.push(k);
 });
 onbSetStep(state.onboarding, buddyStep);
@@ -1827,9 +1637,7 @@ chk(!!sel && opts.length === 1 + BUDDY_PRONOUNS.length &&
 chk(/id="onbContinue"[^>]*disabled/.test(html7),
     "Continue is disabled until pronouns are picked");
 
-// ── "Buddy" is a placeholder on arrival, and a name on leaving ───────────
-// Arriving must NOT write it -- a real value in the box is what read as
-// pre-filled. Five ways in; every one must show the faded placeholder.
+// Arrival must leave the name blank so Buddy appears only as a placeholder.
 function arrive(how) {
   onbStart();
   var o = state.onboarding;
@@ -1939,11 +1747,8 @@ if (snap7 && typeof onbFinish === "function") {
   warn("the pronoun trail not checked — state would not snapshot");
 }
 
-// ── the boxes: the app's tokens, no native chrome ─────────────────────────
-// The owner saw these two boxes as harsher than the Name/ZIP boxes. Computed
-// colours were identical, so the difference is what the browser draws on its
-// own -- the native <select>. appearance:none removes it; the colours must stay
-// the shared tokens, never a hardcoded hex.
+// Native select chrome can differ despite identical computed colours. Disable
+// it while keeping the shared theme tokens.
 if (typeof __COMPONENTS_CSS === "string") {
   var fieldRules = __COMPONENTS_CSS.match(/[^{}]*\.onb-buddy-fields[^{}]*\{[^}]*\}/g) || [];
   var selRule = fieldRules.filter(function (r) { return /select\s*\{/.test(r); })
@@ -1959,10 +1764,8 @@ if (typeof __COMPONENTS_CSS === "string") {
       hex.length ? "hardcoded colour in: " + hex[0].trim().split("{")[0] : "");
 }
 
-// ── the OPEN pronoun list is centred too ──────────────────────────────────
-// Chrome's native popup ignores text-align on <option>, so the choices hugged
-// the left edge. base-select draws the list in the page where CSS reaches it;
-// it lives inside @supports so other browsers keep the native list untouched.
+// base-select lets CSS centre the popup; @supports preserves native lists
+// in browsers that cannot style it.
 if (typeof __COMPONENTS_CSS === "string") {
   var cssNoCmt = __COMPONENTS_CSS.replace(/\/\*[\s\S]*?\*\//g, "");
   var supM = /@supports\s*\(appearance:\s*base-select\)\s*\{([\s\S]*?)\n\}/.exec(cssNoCmt);
@@ -1986,41 +1789,31 @@ if (typeof __COMPONENTS_CSS === "string") {
 }
 
 // ── one buddy, one picture ────────────────────────────────────────────────
-// Home drew a text card ("golden retriever · cream fur") for any buddy that was
-// not in prototype mode -- the persona, a profile, SKIP_ONBOARDING.
-if (typeof BUDDY_SINGLE_ART !== "undefined") {
-  state.buddy = Object.assign({}, PERSONA.buddy, { breed: "golden_retriever",
-    furColor: "cream", furPattern: "solid", eyeColor: "brown", noseColor: "black", size: "medium" });
-  var nonProto = !buddyIsPrototype();
-  var homeStage = "";
-  try { state.screen = "home"; homeStage = renderScreen() || ""; } catch (e) { homeStage = "threw: " + e.message; }
-  var inner = renderBuddyInner();
-  chk(nonProto && (BUDDY_SINGLE_ART
-        ? /buddy-img/.test(inner) && /buddy-img/.test(homeStage) && !/buddy-desc/.test(homeStage)
-        : /buddy-desc/.test(inner)),
-      BUDDY_SINGLE_ART
-        ? "a non-prototype buddy still gets the one illustration, on Home too"
-        : "BUDDY_SINGLE_ART is off and the attribute-driven stage is back",
-      "stage: " + inner.replace(/\s+/g, " ").slice(0, 90));
+// Every stage draws the one illustration, also for a buddy whose attributes
+// name a real breed and coat -- the persona's, a profile's.
+state.buddy = Object.assign({}, PERSONA.buddy, { breed: "golden_retriever",
+  furColor: "cream", furPattern: "solid", eyeColor: "brown", noseColor: "black", size: "medium" });
+var homeStage = "";
+try { state.screen = "home"; homeStage = renderScreen() || ""; } catch (e) { homeStage = "threw: " + e.message; }
+var inner = renderBuddyInner();
+chk(/buddy-img/.test(inner) && /buddy-img/.test(homeStage) && !/buddy-desc/.test(homeStage),
+    "a non-prototype buddy still gets the one illustration, on Home too",
+    "stage: " + inner.replace(/\s+/g, " ").slice(0, 90));
 
-  // The missing-file fallback must survive the flag: words, never a blank stage.
-  var broken = "";
-  try { buddyImgBroken = true; broken = renderBuddyInner(); }
-  finally { buddyResetArt(); }
-  chk(/buddy-desc/.test(broken) && !/buddy-img/.test(broken),
-      "a missing image still falls back to the description card");
-}
+// The missing-file fallback: words, never a blank stage.
+var broken = "";
+try { buddyImgBroken = true; broken = renderBuddyInner(); }
+finally { buddyResetArt(); }
+chk(/buddy-desc/.test(broken) && !/buddy-img/.test(broken),
+    "a missing image still falls back to the description card");
 
 state.onboarding = _o7; state.buddy = _b7; state.screen = _s7;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — Home's task cards are two lines, so the third task peeks above the nav.
-if (typeof renderHomeTask === "function" && typeof BUDDY_SINGLE_ART !== "undefined") {
+// Home task cards use two lines so the third task can peek above the nav.
+if (typeof renderHomeTask === "function") {
 section("7i. Home shows a hint of the third task");
-// The bones line used to be its own row under the title AND the button, so a
-// card was three lines tall for two lines of content and the third task sat
-// wholly below the fold. It belongs in the title's column, before the button.
+// Keep the bones line in the title column, before the button.
 var taskHtml = renderHomeTask({ id: "t", label: "A task", kibble: 5, completed: false });
 var kibAt = taskHtml.indexOf("home-task-kibble"), openAt = taskHtml.indexOf(">Open<");
 chk(kibAt !== -1 && openAt !== -1 && kibAt < openAt,
@@ -2028,14 +1821,13 @@ chk(kibAt !== -1 && openAt !== -1 && kibAt < openAt,
     "kibble at " + kibAt + ", button at " + openAt);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// v4 only — the Budget tab is a paywall (plan.md §0 L27, overriding D31).
+// The Budget tab paywall follows L27.
 if (typeof BUDGET_PAYWALL !== "undefined") {
 section("7g. The Budget tab is walled");
 
 var _sc = state.screen, _ps = state.planStatus, _ta = state.trialAccepted;
 state.planStatus = "complete";          // the hardest case: a budget EXISTS
-var walled = renderBudgetV3();
+var walled = renderBudgetTab();
 
 // BOTH WAYS, because the flag's whole promise is that flipping it unwinds
 // nothing. Asserting it is on would make the escape hatch fail the build, which
@@ -2066,10 +1858,8 @@ chk(leakedFigs.length === 0, "no planned figure reaches it either",
 chk(!BUDGET_PAYWALL || !/Planned|Left over|Built with/.test(walled),
     "and none of the plan-vs-actual readout");
 
-// ── the CTA records a tap and changes nothing ─────────────────────────────
-// Strict, by owner's call: there is no route through. So it must not quietly
-// become one -- state.trialAccepted still means diamonds and the reward
-// screen's subscriber tier, and this screen has no business touching it.
+// The paywall records taps only (L27); it must not navigate or change the
+// subscriber tier used by rewards.
 if (typeof budgetPaywallTap === "function") {
   var beforeTap = JSON.stringify([state.trialAccepted, state.screen, state.planStatus]);
   try { budgetPaywallTap("monthly"); budgetPaywallTap("annual"); } catch (e) {}
@@ -2115,11 +1905,8 @@ if (typeof BUDGET_PAYWALL_ANNUAL !== "undefined" && typeof renderBudgetPaywall =
   }
 }
 
-// ── no rendered copy still promises the opposite ──────────────────────────
-// D31's old line -- "Nothing is locked either way, this prototype has no paid
-// features" -- was copy a TESTER READS. Checked against rendered markup rather
-// than source, so a comment explaining why the line was removed does not trip
-// it.
+// Check rendered copy for promises that contradict the paywall; comments
+// explaining the contract must not trigger this check.
 var promises = [];
 destinations.forEach(function (d) {
   state.screen = d[0];
@@ -2127,26 +1914,10 @@ destinations.forEach(function (d) {
   try { html = renderScreen(); } catch (e) { return; }
   if (/no paid features|[Nn]othing is locked|no paywalls/.test(html)) promises.push(d[0]);
 });
-// THE TRIAL STEP IS DORMANT, NOT GONE. "trial" came out of ONB_STEPS in v3.1
-// and putting it back is a one-word edit, so renderScreen() never reaches it
-// and walking the screens cannot see its copy. Render the step directly, or the
-// sentence that contradicts the whole paywall sits there waiting to return.
-if (typeof onbStepBody === "function") {
-  var _ob4 = state.onboarding;
-  try {
-    if (typeof onbStart === "function") onbStart();
-    var trialHtml = onbStepBody("trial", state.onboarding);
-    if (/no paid features|[Nn]othing is locked/.test(trialHtml)) promises.push("onboarding/trial");
-  } catch (e) {}
-  state.onboarding = _ob4;
-}
-
 state.screen = _sc; state.planStatus = _ps; state.trialAccepted = _ta;
 chk(promises.length === 0,
     "no screen still tells a tester nothing is locked",
-    "contradicted on: " + promises.join(", ") +
-    "\n          the trial step is dormant, not deleted -- putting \"trial\" back " +
-    "into ONB_STEPS is a one-word edit");
+    "contradicted on: " + promises.join(", "));
 
 // The flag is the only switch, and the admin says which way it is set --
 // a walled build that looks identical to an open one in the panel is a tester
@@ -2161,12 +1932,9 @@ chk(!BUDGET_PAYWALL || /PAYWALL/i.test((function () {
 // ─────────────────────────────────────────────────────────────────────────────
 section("7j. A value with an apostrophe still clicks");
 
-// An inline handler's argument must be escaped for JS FIRST, then for HTML.
-// The other way round, h() turns ' into &#039;, the JS escape finds nothing,
-// and the browser decodes it straight back: onbToggleGoal('... don't use') is
-// a syntax error, so "Cancel what I don't use" could not be picked and the
-// keyboard's ' and \ keys did nothing. Decoded here exactly as a browser does,
-// then compiled and run.
+// Escape inline arguments for JS before HTML: the browser decodes entities
+// before compiling the handler. Compile and run the decoded apostrophe and
+// backslash cases to verify both syntax and the dispatched value.
 function attrDecode(s) {
   return String(s).replace(/&#0*39;/g, "'").replace(/&quot;/g, '"')
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
@@ -2184,11 +1952,6 @@ function brokenHandlers(list) {
     try { new Function("event", src); return false; } catch (e) { return true; }
   });
 }
-// The control keeps the defect by the owner's choice (fixed in v4 + v3.1 only).
-var aposReport = /\/v3$/.test(typeof __APP_DIR === "string" ? __APP_DIR : "")
-  ? function (c, l, d) { c ? ok(l) : warn(l + " -- left unfixed in the v3 control", d); }
-  : chk;
-
 (function () {
   var so = state.onboarding, ss = state.screen;
   onbStart();
@@ -2203,7 +1966,7 @@ var aposReport = /\/v3$/.test(typeof __APP_DIR === "string" ? __APP_DIR : "")
     runHandler(cancel, {});
     picked = state.onboarding.improveAreas.indexOf("Cancel what I don't use") !== -1;
   }
-  aposReport(goalClicks.length === ONB_GOALS.length && bad.length === 0 && picked,
+  chk(goalClicks.length === ONB_GOALS.length && bad.length === 0 && picked,
       "every goal can be picked, \"Cancel what I don't use\" included",
       bad.length ? "does not compile: " + bad[0] : (cancel ? "clicked, not picked" : "button not found"));
   state.onboarding = so; state.screen = ss;
@@ -2224,7 +1987,7 @@ if (typeof kbdMarkup === "function" && typeof KBD_LAYERS === "object") {
   });
   kbdKey = kReal;
   state.kbd = JSON.parse(kSaved);
-  aposReport(kBad.length === 0 && kSent.indexOf("'") !== -1 && kSent.indexOf("\\") !== -1,
+  chk(kBad.length === 0 && kSent.indexOf("'") !== -1 && kSent.indexOf("\\") !== -1,
       "every simulated-keyboard key works, ' and \\ included",
       kBad.length ? "does not compile: " + kBad[0] : "sent: " + JSON.stringify(kSent));
 }
@@ -2232,12 +1995,9 @@ if (typeof kbdMarkup === "function" && typeof KBD_LAYERS === "object") {
 // ─────────────────────────────────────────────────────────────────────────────
 section("7k. APR lesson: questions every time, a picture with no card");
 
-// A tester who once answered "no card" re-opened APR from Learn: the stored
-// answers skipped the questions, and a run with no card APR drew a blank green
-// stage -- the storyboard needs their rate, and the waveform stand-in is gone
-// (L10). Now Begin always asks, and a no-figure run plays the figure-free cut.
-if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "undefined") {
-  var aprL = LESSONS_V3.lessons.filter(function (l) { return l.id === "apr"; })[0];
+// Begin must ask again; a run with no card APR needs a figure-free storyboard.
+if (typeof lessonFigureFreeStoryboard === "function" && typeof FRAMED_LESSONS !== "undefined") {
+  var aprL = FRAMED_LESSONS.lessons.filter(function (l) { return l.id === "apr"; })[0];
   var ffMap = aprL && aprL.visualTemplate && aprL.visualTemplate.figureFree;
   var defScript = ffMap && lessonScriptFor(ffMap.script);
   var inRange = !!(ffMap && defScript) && ffMap.beats.every(function (e) {
@@ -2247,7 +2007,7 @@ if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "u
 
   var k7 = { screen: state.screen, prof: state.lessonProfile, fr: state.lessonFraming };
   // No card: the plan renders, one beat per map entry, timed to the no-card cues.
-  state.lessonProfile = { apr: { inputs: {}, figure: null, bucket: null, variantId: "apr_default" } };
+  state.lessonProfile = { apr: { inputs: {}, figure: null, bucket: null } };
   lessonOpenPlayer(aprL, "apr_default");
   var ffPlan = state.lessonVisualPlan;
   var ffSb = ffPlan && ffPlan.storyboard;
@@ -2265,28 +2025,26 @@ if (typeof lessonFigureFreeStoryboard === "function" && typeof LESSONS_V3 !== "u
       "the figure-free cut shows no unresolved figure, dash or \"your card\"");
 
   // A card: untouched -- the full spine, figures required.
-  state.lessonProfile = { apr: { inputs: { enteredApr: 24 }, figure: 24, bucket: "slightly_above", variantId: "apr_slightly_above" } };
+  state.lessonProfile = { apr: { inputs: { enteredApr: 24 }, figure: 24, bucket: "slightly_above" } };
   lessonOpenPlayer(aprL, "apr_slightly_above");
   chk(state.lessonVisualPlan.storyboard === aprL.visualTemplate,
       "a run with a card APR keeps the full storyboard");
 
   // Re-open with stored answers: the questions come back.
   state.lessonFraming = null;
-  lessonV3Start("apr");
+  framedLessonStart("apr");
   chk(state.screen === "lessonFraming" && !!state.lessonFraming,
       "re-opening APR with answers already stored asks the questions again");
 
   state.screen = k7.screen; state.lessonProfile = k7.prof; state.lessonFraming = k7.fr;
-  if (typeof lessonV3ClearSession === "function") lessonV3ClearSession();
+  if (typeof framedLessonClearSession === "function") framedLessonClearSession();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("7l. A lost onend cannot freeze the narration");
 
-// The film held at the end of every sentence until the tester scrubbed: the
-// player waits for the voice's onend, and browsers lose it (a collected
-// utterance; Chrome's ~15s cut-off). narrationSpeak's watchdog delivers it once
-// the synth falls silent. Driven with a fake synth on the sweep's queued timers.
+// Browsers can lose speech onend events. Exercise the watchdog with a fake
+// synth and queued timers so narration cannot freeze after the voice stops.
 if (typeof NARRATION_POLL_MS !== "undefined" && typeof window === "object") {
   var nSaved = { synth: window.speechSynthesis, U: typeof SpeechSynthesisUtterance === "undefined" ? undefined : SpeechSynthesisUtterance };
   var nSynth = { speaking: false, pending: false, last: null,
@@ -2324,9 +2082,7 @@ if (typeof NARRATION_POLL_MS !== "undefined" && typeof window === "object") {
 // ─────────────────────────────────────────────────────────────────────────────
 section("7m. Older lessons that borrow the APR beats");
 
-// "How Interest Builds" -- the one the owner opened as "the APR lesson" -- had
-// no storyboard, so its stage was plain green. It now plays the APR lesson's
-// figure-free beats, cut to its own lines and timed to its measured narration.
+// Borrowed APR beats must cover this lesson's own lines and measured narration.
 if (typeof lessonBorrowedVisualPlan === "function" && typeof LP_BORROWED_VISUALS === "object") {
   Object.keys(LP_BORROWED_VISUALS).forEach(function (id) {
     var map = LP_BORROWED_VISUALS[id], lines = LP_SCRIPTS[id] || [];
@@ -2350,25 +2106,22 @@ if (typeof lessonBorrowedVisualPlan === "function" && typeof LP_BORROWED_VISUALS
   });
   var ibSaved = { cur: state.currentLesson, screen: state.screen };
   state.currentLesson = state.lessons.filter(function (l) { return l.id === "interest-builds"; })[0];
-  lessonV3ClearSession();
+  framedLessonClearSession();
   startCurrentLesson();
   var ibPlan = state.lessonVisualPlan;
   state.currentLesson = state.lessons.filter(function (l) { return l.id === "interest-refresher"; })[0];
-  lessonV3ClearSession();
+  framedLessonClearSession();
   startCurrentLesson();
   chk(!!ibPlan && hyperframesCanRender(ibPlan) && state.lessonVisualPlan === null,
       "Begin on How Interest Builds sets its stage; a lesson with no map still gets none");
-  lessonV3ClearSession();
+  framedLessonClearSession();
   state.currentLesson = ibSaved.cur; state.screen = ibSaved.screen;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 section("7n. A finished lesson's reward screen stays finished");
 
-// Finish a lesson, Return Home, tap Learn: the reward screen came back, because
-// a tab tap resumes the top of that tab's stack. And its back arrow reopened
-// the lesson player. The reward now sits alone on the Learn root, and a tab
-// never resumes onto it.
+// A finished reward cannot resume from a tab or reopen the player through Back.
 if (typeof NAV_NO_RESUME !== "undefined") {
   var rwSaved = JSON.stringify(state.nav), rwScreen = state.screen, rwLessons = JSON.stringify(state.lessons), rwBadges = JSON.stringify(state.badges);
   function rwFinish() {
@@ -2391,20 +2144,37 @@ if (typeof NAV_NO_RESUME !== "undefined") {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cross-source regressions: run with the real ordered app scripts and DOM stub.
-section("7n. Full app integration: onboarding, ESF and Buddy");
+section("7o. Full app integration: onboarding, ESF and Buddy");
 (function () {
   var saved = JSON.parse(JSON.stringify(state));
   var oldConfirm = confirm;
   try {
     chk(typeof ESF_ONLY === "undefined" && typeof BP_ENTRY === "undefined",
         "contained entry flags are absent from the full app");
-    chk(BUDGET_PAYWALL === true && BUDDY_SINGLE_ART === true &&
-        LESSON_REUSE_FRAMING === false && USEBERRY_TRACKING === false,
+    chk(typeof onbDocked === "undefined" && typeof onbStepDock === "undefined",
+        "docked onboarding helpers are absent from the full app");
+    chk(BUDGET_PAYWALL === true && USEBERRY_TRACKING === false,
         "combined development flags retain the full app and disable tracking");
     onbStart();
     var o = state.onboarding;
     chk(ONB_STEPS.join(",") === "name,goal,zip,household,place,income,coverage,miles,buddy,video",
         "full onboarding contains both profile refinements and Buddy/film steps");
+    // Every choice step keeps Continue; a tile tap answers without advancing.
+    [["place", "placeType", ONB_PLACE_TYPES], ["coverage", "coverage", ONB_COVERAGE],
+     ["miles", "miles", ONB_MILES]].forEach(function (t) {
+      var at = ONB_STEPS.indexOf(t[0]);
+      onbSetStep(o, at);
+      onbPick(t[1], t[2][0].id);
+      chk(o.step === at && /id="onbContinue"/.test(renderOnboarding()),
+          "a tile pick stays on " + t[0] + " and Continue renders");
+    });
+    onbSetStep(o, ONB_STEPS.indexOf("income"));
+    onbSetIncomeBand(ONB_INCOME_BANDS[0].id);
+    var incomeHtml = renderOnboarding();
+    chk(o.step === ONB_STEPS.indexOf("income") && /id="onbContinue"/.test(incomeHtml) &&
+        /onbSetIncomeBand\('/.test(incomeHtml) && /type="range"/.test(incomeHtml),
+        "income keeps its range buttons, slider and Continue");
+    onbSetStep(o, 0);
     onbLiveInput("name", "Combined tester");
     onbLiveInput("zip", "37203");
     onbSetAdults(2); onbSetAdultAge(0, "26-34"); onbSetAdultAge(1, "35-44");
@@ -2432,6 +2202,17 @@ section("7n. Full app integration: onboarding, ESF and Buddy");
       navGoTabRoot(tab);
       chk(state.screen === tab && renderScreen().length > 100, "full app tab remains available: " + tab);
     });
+    navGoTabRoot("goals"); bpOpen(); bpLandingBack();
+    chk(state.screen === "goals", "Back from the Big purchase landing returns to Goals", state.screen);
+    navGoTabRoot("goals"); bpOpen(); bpEsfCheck("startFirst");
+    var bpFund = state.screen;
+    esfBack();
+    var bpBackTo = state.screen;
+    bpLandingBack();
+    chk(bpFund === "esfBuild" && bpBackTo === "bpLanding" && state.screen === "goals",
+        "Start the fund first, then Back, Back, returns through the landing to Goals",
+        bpFund + " → " + bpBackTo + " → " + state.screen);
+    state.bp = null; state.esf = null;
     chk(BUDGET_PAYWALL_MONTHLY === 14.99 && BUDGET_PAYWALL_ANNUAL === 124.99,
         "paywall retains the agreed monthly and annual prices");
     navRouteTask("budget");
@@ -2521,6 +2302,50 @@ section("7n. Full app integration: onboarding, ESF and Buddy");
     chk(state.esf === null && state.esfGoal === null && state.expenses === null &&
         state.esfEvents.length === 0 && state.esfSelfReported === null,
         "reset clears all ESF state and chat disclosures for the next tester");
+    // A reset is a fresh start: a chosen profile, a half-finished setup and a
+    // deep tab must not carry over, or a skip keeps the persona's figures
+    // instead of landing on the default profile (L26).
+    profileApply("above_at");
+    navGoTabRoot("learn"); go("topic");
+    onbStart(); onbLiveInput("zip", "90210");
+    resetUserData();
+    var resetTabs = Object.keys(state.nav.stacks).filter(function (k) {
+      return k !== "home" && state.nav.stacks[k].join() !== k;
+    });
+    var afterReset = state.onboarding || onbStart();
+    chk(state.activeProfileId === null && state.profilePick === null &&
+        afterReset.zip === "" && resetTabs.length === 0 && state.screen === "onboarding",
+        "reset forgets the chosen profile, the setup answers and every tab's history",
+        "profile " + state.activeProfileId + " · zip '" + afterReset.zip + "' · deep tabs " + resetTabs.join(", "));
+    onbLiveInput("name", "Next tester");
+    onbFinish();
+    chk(state.profile.zip === "37203" && state.profile.incomeAnnual === 75664 && state.monthlyIncome === 6305,
+        "after a reset, a name-only setup lands on the default profile",
+        state.profile.zip + " / " + state.profile.incomeAnnual + " / " + state.monthlyIncome);
+    // Restart after a full run with the trial declined, then skip every step:
+    // nothing from that run may survive, or the household reads 2 while the
+    // fund counts six people and the next tester loses the subscriber tier.
+    onbStart();
+    onbSetAdults(3); onbSetAdultAge(0, "26-34"); onbSetAdultAge(1, "35-44"); onbSetAdultAge(2, "45-54");
+    onbStepKids("under13", 1); onbStepKids("under13", 1); onbStepKids("teen", 1);
+    onbPick("placeType", "aptSmall"); onbPick("coverage", "employer"); onbPick("miles", "30plus");
+    state.trialAccepted = false; onbFinish();
+    profileApply("above_at");
+    onbRestart();
+    var restarted = state.activeProfileId === null && state.onboarding.zip === "" &&
+                    state.screen === "onboarding";
+    for (var skips = 0; state.screen === "onboarding" && skips < 40; skips++) {
+      if (ONB_STEPS[state.onboarding.step] === "name") { onbSkip(); onbSkipName(); } else onbSkip();
+    }
+    var rp = state.profile;
+    chk(restarted && state.screen === "home" && rp.placeType == null && rp.coverage == null &&
+        rp.milesRange == null && rp.milesPerDay == null && rp.adults == null && rp.kids == null &&
+        rp.householdSize === profileDefault().householdSize && rp.zip === profileDefault().zip &&
+        state.trialAccepted === true,
+        "Restart onboarding forgets the chosen profile and the last run's household and trial answers",
+        "hh " + rp.householdSize + " · place " + rp.placeType + " · cover " + rp.coverage +
+        " · miles " + rp.milesRange + " · adults " + (rp.adults ? rp.adults.length : rp.adults) +
+        " · trial " + state.trialAccepted);
   } catch (e) {
     bad("combined app flow runs without exceptions", e.stack || String(e));
   } finally {
@@ -2531,7 +2356,7 @@ section("7n. Full app integration: onboarding, ESF and Buddy");
 })();
 
 section("8. Cannot be checked here — needs the owner");
-print("  These are real Phase 6 items that no headless check can settle:");
+print("  These items need checks beyond the headless sweep:");
 print("");
 print("    · Mobile viewport at 390px — layout, wrapping, no horizontal scroll");
 print("    · Keyboard focus visibly moving through every interactive element");
@@ -2541,13 +2366,16 @@ print("    · prefers-reduced-motion actually stilling the buddy idle and the");
 print("      daily-update sequence");
 print("    · Narration audio lining up with the visuals it is cued to");
 print("    · Whether the repaint reads as 'not a bank'");
-print("    · The four themes side by side (L21). The contract and contrast are");
-print("      checked above, but not whether Light/Dark actually LOOK like v2,");
-print("      nor whether the frame and admin panel hold still while switching");
+print("    · The four themes side by side (L21). The token contract and the text");
+print("      pairs listed in §1b are checked above, but not every colour pairing");
+print("      on screen, nor whether Light/Dark actually LOOK like v2, nor whether");
+print("      the frame and admin panel hold still while switching");
 
 // ─────────────────────────────────────────────────────────────────────────────
 print("");
 print("═══════════════════════════════════════════════════════════════");
 print("  " + CHECKS + " checks · " + FAIL + " failed · " + WARN + " warnings");
 print("═══════════════════════════════════════════════════════════════");
+// sweep.sh fails a run without this line, so a bundle cut short cannot pass.
+print("SWEEP COMPLETE");
 if (FAIL) throw new Error(FAIL + " sweep checks failed");
