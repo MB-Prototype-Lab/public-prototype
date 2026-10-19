@@ -462,6 +462,42 @@ class PrePrReviewTest(unittest.TestCase):
         self.fx.write_evidence(path, good)
         self.fx.adopt(record, path)
 
+    def test_skill_validation_accepts_container_and_legacy_commands(self):
+        validator = Path('/opt/moneybuddy/validate-skill.py')
+        if not validator.exists():
+            validator = Path(__file__).resolve().parents[1] / 'container/validate-skill.py'
+        for legacy in (False, True):
+            with self.subTest(legacy=legacy):
+                fixture = ReviewFixture()
+                self.addCleanup(fixture.close)
+                skill = '.claude/skills/example'
+                fixture.write(skill + '/SKILL.md',
+                              '---\nname: example\ndescription: Validate an example skill.\n---\n# Example\n')
+                record = fixture.start('--file', skill + '/SKILL.md')
+                path, evidence = fixture.evidence(record)
+                executable = validator
+                if legacy:
+                    executable = fixture.parent / 'quick_validate.py'
+                    shutil.copyfile(validator, executable)
+                command = [sys.executable, str(executable), skill]
+                result = fixture.command(command, root=fixture.tree(record))
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                log = path.with_name('skill-validation.log')
+                log.write_text(result.stdout + result.stderr, encoding='utf-8')
+                check = {'id': 'skill-validation', 'stage': 'final', 'sha': record['finished'],
+                         'command': json.dumps(command), 'status': 'PASS', 'exit_code': 0,
+                         'report': log.name}
+                evidence['checks'].append(check)
+                check['command'] = 'python3 unrelated-check.py'
+                fixture.write_evidence(path, evidence)
+                refused = fixture.cli('adopt', record['id'], '--verification', str(path), '--json', ok=False)
+                self.assertIn('Required command was not recorded: skill-validation',
+                              refused.stdout + refused.stderr)
+                self.assertEqual(fixture.git('rev-parse', 'HEAD').strip(), record['finished'])
+                check['command'] = json.dumps(command)
+                fixture.write_evidence(path, evidence)
+                fixture.adopt(record, path)
+
     def test_evidence_reports_cannot_escape_or_traverse_a_symlink(self):
         record = self.fx.start()
         path, good = self.fx.evidence(record)

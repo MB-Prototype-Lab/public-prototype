@@ -46,6 +46,19 @@ def read_source(root, name):
     return path.read_bytes(), 'file'
 
 
+def verify_source(source, manifest, phase):
+    """Keep working-copy evidence tied to the source throughout the check run."""
+    for item in manifest['files']:
+        content, kind = read_source(source, item['path'])
+        mode = (source / item['path']).lstat().st_mode
+        if (kind != item['kind'] or mode != item['mode'] or
+                hashlib.sha256(content).hexdigest() != item['sha256']):
+            raise CaptureError('Source changed during ' + phase + ': ' + item['path'])
+    for name in manifest['deleted']:
+        if (source / name).exists() or (source / name).is_symlink():
+            raise CaptureError('Deleted source reappeared during ' + phase + ': ' + name)
+
+
 def capture(source, inputs, work):
     head = (inputs / 'head.txt').read_text().strip()
     if len(head) not in (40, 64) or any(c not in '0123456789abcdef' for c in head):
@@ -102,15 +115,11 @@ def capture(source, inputs, work):
             else:
                 dest.write_bytes(content)
                 dest.chmod(0o755 if index_modes.get(name) == b'100755' else 0o644)
-            manifest['files'].append({'path': name, 'kind': kind, 'sha256': hashlib.sha256(content).hexdigest()})
+            manifest['files'].append({'path': name, 'kind': kind,
+                                      'mode': (source / name).lstat().st_mode,
+                                      'sha256': hashlib.sha256(content).hexdigest()})
         # Re-read every selected input after the copy, so mixed captures cannot pass.
-        for item in manifest['files']:
-            content, kind = read_source(source, item['path'])
-            if kind != item['kind'] or hashlib.sha256(content).hexdigest() != item['sha256']:
-                raise CaptureError('Source changed during capture: ' + item['path'])
-        for name in deleted:
-            if (source / name).exists() or (source / name).is_symlink():
-                raise CaptureError('Deleted source reappeared during capture: ' + name)
+        verify_source(source, manifest, 'capture')
     return repo, manifest
 
 
@@ -232,6 +241,7 @@ def main(argv=None):
                 raise CaptureError('exec requires a command')
             result['commands'].append(run_command(command, repo, report, env, len(result['commands']) + 1))
             status_file.write_text(json.dumps(result, indent=2) + '\n')
+        verify_source(args.input_source, manifest, 'verification')
         codes = [item['exit_code'] for item in result['commands']]
         code = 1 if any(c not in (0, 2) for c in codes) else 2 if 2 in codes else 0
         result['status'] = {0: 'PASS', 1: 'FAIL', 2: 'BLOCKED'}[code]

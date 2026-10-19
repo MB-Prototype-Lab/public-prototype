@@ -3,6 +3,7 @@ import importlib.util
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -142,6 +143,56 @@ class ContainerCaptureTests(unittest.TestCase):
         self.assertEqual(result['commands'][0]['exit_code'], 9)
         self.assertIn('deliberate failure', (reports / '01.log').read_text())
         self.assertTrue((reports / 'source.json').exists())
+
+    def test_running_checks_reject_changed_working_copy_with_retained_evidence(self):
+        dirty = self.source / 'keep.txt'
+        untracked = self.source / 'new.txt'
+        deleted = self.source / 'delete.txt'
+        link = self.source / 'link.txt'
+        dirty.write_text('already dirty\n')
+        untracked.write_text('already untracked\n')
+        deleted.unlink()
+        link.symlink_to('keep.txt')
+        self.inventories()
+        mutations = {
+            'unchanged': 'pass',
+            'dirty-bytes': 'source.joinpath("keep.txt").write_text("new dirty bytes")',
+            'untracked-bytes': 'source.joinpath("new.txt").write_text("new untracked bytes")',
+            'mode': 'source.joinpath("keep.txt").chmod(0o700)',
+            'symlink': 'source.joinpath("link.txt").unlink(); source.joinpath("link.txt").symlink_to("new.txt")',
+            'deletion': 'source.joinpath("delete.txt").write_text("reappeared")',
+            'missing': 'source.joinpath("keep.txt").unlink()',
+        }
+        for name, mutation in mutations.items():
+            with self.subTest(mutation=name):
+                dirty.write_text('already dirty\n')
+                dirty.chmod(0o644)
+                untracked.write_text('already untracked\n')
+                deleted.unlink(missing_ok=True)
+                link.unlink()
+                link.symlink_to('keep.txt')
+                before = self.git('status', '--porcelain=v1', '-z')
+                reports = self.root / ('reports-' + name)
+                command = ('from pathlib import Path; source = Path(' + repr(str(self.source)) + '); ' +
+                           mutation + '; print("check command completed")')
+                result = subprocess.run([
+                    sys.executable, str(ROOT / 'container/runner.py'),
+                    '--input-source', str(self.source), '--input-git', str(self.inputs),
+                    '--work', str(self.root / ('work-' + name)), '--reports', str(reports),
+                    'exec', '--', sys.executable, '-c', command,
+                ], capture_output=True, text=True)
+                expected = 0 if name == 'unchanged' else 2
+                self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
+                evidence = json.loads((reports / 'result.json').read_text())
+                self.assertEqual(evidence['status'], 'PASS' if name == 'unchanged' else 'BLOCKED')
+                self.assertEqual(evidence['commands'][0]['exit_code'], 0)
+                self.assertIn('check command completed', (reports / '01.log').read_text())
+                self.assertTrue((reports / 'source.json').is_file())
+                if name != 'unchanged':
+                    self.assertTrue('during verification' in evidence['error'] or
+                                    'missing or not regular' in evidence['error'], evidence['error'])
+                if name in ('dirty-bytes', 'untracked-bytes', 'mode', 'symlink'):
+                    self.assertEqual(self.git('status', '--porcelain=v1', '-z'), before)
 
 
 if __name__ == '__main__':

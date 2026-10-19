@@ -1053,12 +1053,14 @@ def verification(store, record, path, reviewed):
     if missing_flows:
         raise Refusal('Task scope omitted affected Flows: ' + ', '.join(sorted(missing_flows)))
     if any('/skills/' in '/' + name and name.endswith('SKILL.md') for name in changed):
-        required.append({'id': 'skill-validation', 'stage': 'final', 'command_contains': 'quick_validate.py'})
+        required.append({'id': 'skill-validation', 'stage': 'final',
+                         'command_contains_any': ('validate-skill.py', 'quick_validate.py')})
     for requirement in required:
         item = indexed.get((requirement['id'], requirement['stage']))
         if not item:
             raise Refusal('Required check missing: ' + requirement['stage'] + '/' + requirement['id'])
-        if requirement['command_contains'] not in item['command']:
+        markers = requirement.get('command_contains_any', (requirement.get('command_contains'),))
+        if not any(marker in item['command'] for marker in markers):
             raise Refusal('Required command was not recorded: ' + requirement['id'])
         comparison = requirement.get('comparison')
         if requirement['id'] in ('journeys', 'browser', 'journeys-checkpoint', 'browser-checkpoint', 'journeys-main', 'browser-main'):
