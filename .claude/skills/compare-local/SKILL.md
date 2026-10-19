@@ -65,3 +65,7 @@ Keeping a Flow variant updates that Flow only. It is not app integration: read
 [Flows](../../../docs/flows.md) for creating/editing/checking a Flow or selectively
 integrating its proposal into `app/`. Do not treat “keep this Flow” as a
 whole-directory app adoption.
+
+Use the [container launcher](../../../docs/container-checks.md) for runtime
+commands: `helper local-variants` runs the Python helper against the working checkout;
+`exec` runs disposable targeted checks. No host Python/Node installation is needed.

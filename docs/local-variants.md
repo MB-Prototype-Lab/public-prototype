@@ -62,7 +62,7 @@ operations through the procedures below.
 
 ## Browser address
 
-When a PM asks for their browser URL, run `python3 scripts/local-variants.py url`
+When a PM asks for their browser URL, run `bash scripts/checks.sh helper local-variants url`
 from the primary checkout and paste the exact output URL into your response as a
 code block. This works before any comparison exists and writes no local metadata.
 Create, status, and refresh also print the selector, what is being compared, and each
@@ -77,7 +77,7 @@ and special characters. Nothing is stored in `.env` or tracked configuration.
 If WSL is detected but its distro cannot be discovered, the tool explains the
 problem instead of offering a Linux-only URL to a Windows PM. The agent can obtain
 the name from the user's WSL terminal or `wsl --list --quiet` in Windows and run
-`python3 scripts/local-variants.py url --wsl-distro <name>` as a one-time fallback.
+`bash scripts/checks.sh helper local-variants url --wsl-distro <name>` as a one-time fallback.
 The PM pastes the address into Brave or another browser, then enters `1337`.
 
 Remote actions follow the [authorization boundary](../CLAUDE.md#collaboration).
@@ -85,16 +85,18 @@ Remote actions follow the [authorization boundary](../CLAUDE.md#collaboration).
 ## Agent procedure
 
 Read the compare-local skill. Run commands below from the primary checkout using
-Python 3.11+ and Git. Inspect `git status --short`, staged and unstaged diffs, untracked
+the [container launcher](container-checks.md). The Bash examples below use
+`bash scripts/checks.sh`; on Windows use `scripts/checks.ps1` with the same arguments. Host prerequisites are
+Git and Docker; Python runs in the image. Inspect `git status --short`, staged and unstaged diffs, untracked
 files, branch history, and registered worktrees (`git worktree list --porcelain`).
 Select the current feature branch, never main, demo, or a HoffDemo branch. Preserve
 unrelated files; ask only when ownership is ambiguous. Never stage everything.
 
 ```sh
-python3 scripts/local-variants.py create --option 'A: Simple' 'One clear next step' --option 'B: Detailed' 'More context before choosing' --file app/screens/example.js
-python3 scripts/local-variants.py create --flow emergency-fund --option 'A: Simple' 'One clear next step' --option 'B: Detailed' 'More context before choosing'
-python3 scripts/local-variants.py status
-python3 scripts/local-variants.py refresh
+bash scripts/checks.sh helper local-variants create --option 'A: Simple' 'One clear next step' --option 'B: Detailed' 'More context before choosing' --file app/screens/example.js
+bash scripts/checks.sh helper local-variants create --flow emergency-fund --option 'A: Simple' 'One clear next step' --option 'B: Detailed' 'More context before choosing'
+bash scripts/checks.sh helper local-variants status
+bash scripts/checks.sh helper local-variants refresh
 ```
 
 Without `--flow` the comparison is of the full app. `--flow ID` compares that one
@@ -141,9 +143,9 @@ requires both the chosen worktree and original checkout clean and the original b
 checked out in the primary. Then use the recorded ID, not the display label:
 
 ```sh
-python3 scripts/local-variants.py adopt <variant-id> --file app/screens/example.js
+bash scripts/checks.sh helper local-variants adopt <variant-id> --file app/screens/example.js
 # Run affected checks on the merged primary checkout, then:
-python3 scripts/local-variants.py adopt <variant-id> --verified
+bash scripts/checks.sh helper local-variants adopt <variant-id> --verified
 ```
 
 The first step normally merges into the original feature branch, preserving its
@@ -167,9 +169,9 @@ integration (see [Flows](flows.md)).
 ## Close, cleanup, and recovery
 
 ```sh
-python3 scripts/local-variants.py close
-python3 scripts/local-variants.py cleanup <variant-id> <another-variant-id>
-python3 scripts/local-variants.py --session <old-session-id> cleanup <variant-id>
+bash scripts/checks.sh helper local-variants close
+bash scripts/checks.sh helper local-variants cleanup <variant-id> <another-variant-id>
+bash scripts/checks.sh helper local-variants --session <old-session-id> cleanup <variant-id>
 ```
 
 Cleanup requires a closed comparison and explicit managed IDs. It removes clean

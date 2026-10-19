@@ -37,8 +37,9 @@ branch. Name missing previews unavailable; do not substitute an unverified versi
 ## Preflight and workers
 
 Before checkpointing or starting expensive workers, inspect Git state and available
-fresh-context delegation, Git, Python 3.11+, Node 22, Bash and Playwright/Chromium
-in the operator's chosen environment. Native Windows and WSL/POSIX are alternatives;
+fresh-context delegation, Git and Docker
+in the operator's chosen environment. Run the [container doctor](container-checks.md)
+to verify the image supplies Python, Node and Chromium. Native Windows and WSL/POSIX are alternatives;
 do not require native Git/Git Bash or a second toolchain for a WSL operator.
 Use the [testing prerequisites](testing.md) and distinguish PASS, FAIL and BLOCKED.
 Discover saved records first. If delegation cannot run, record the limitation and
@@ -66,9 +67,18 @@ prior conclusions to the cold reviewer. Workers load [CLAUDE.md](../CLAUDE.md), 
 [code health](code-health.md), contracts/specifications and [testing](testing.md)
 sections, preserving protected data and package boundaries. The fixer receives
 verified actionable findings; the final verifier independently inspects the final
-diff and reports, never relying on the fixer's pass claims. Set `PYTHONDONTWRITEBYTECODE=1` for managed-tree Python/check-all runs, reuse
-installed Playwright through absolute `MB_PLAYWRIGHT_MODULE`, and direct every
-report/output into `artifact_dir`. Generated ignored/untracked caches otherwise
+diff and reports, never relying on the fixer's pass claims. For every baseline,
+final, comparison or targeted check run from a managed workspace, set
+`MB_CHECK_OUTPUT_ROOT` to the record's existing absolute `host_artifact_dir` before
+invoking the launcher. It stores captures under `inputs/<run>` and evidence under
+`reports/<run>` there. Do not use the default `.container-checks` directory inside
+finished/reviewed workspaces: even ignored output prevents safe cleanup. Put this
+setting and the exact host artifact path in each worker packet. Run `all --committed`
+and `compare --committed --base REF` from the intended linked workspace; the
+launcher builds from that workspace's container files and tests its selected HEAD.
+Lifecycle/helper commands stay in the primary checkout. The image sets Python's
+no-bytecode policy and supplies Playwright. Direct every other report/output into
+the existing evidence directory. Generated ignored/untracked caches otherwise
 block safe cleanup; retain them with a concrete reason unless the worker can
 identify and remove its own exact disposable output. Never remove arbitrary ignored
 data. Keep detailed logs in
@@ -77,15 +87,21 @@ blockers and evidence locations. Keep investigation follow-ups in worker context
 
 ## Persistent lifecycle
 
-Run `python3 scripts/pre-pr-review.py --help` and operation help from the original
-checkout. On native Windows use the verified Python executable. The helper owns
+Use the container launcher for lifecycle operations and automated checks. Direct
+runtime commands in evidence examples below identify the commands executed inside
+the image; record the actual launcher command too. See
+[container inputs and mounts](container-checks.md#inputs-mounts-and-reports) for
+portable records and legacy-review constraints.
+
+Run `bash scripts/checks.sh review --help` (PowerShell:
+`scripts/checks.ps1 review --help`) and operation help from the original checkout. The helper owns
 local state under `<git-common-dir>/pre-pr-review/<id>/record.json`; resolve the
 common directory with `git rev-parse --path-format=absolute --git-common-dir`.
 Records and evidence are untracked and survive new conversations and successful
 workspace cleanup. The coordinator selects IDs; PMs choose between descriptions
 only when more than one review matches.
 
-Schema version 1 records bind repository/common-directory identity, original
+Records bind repository/common-directory identity, original
 checkout and named branch, description/scopes, selected files and initial status,
 `main_tip`, `comparison_base`, `finished`, checkpoint/review refs, artifact and
 managed workspace paths, required checks, phase, workers, verification, adoption,
@@ -171,7 +187,8 @@ with stable IDs, severity, file/line and commit, reproducible evidence, product
 consequence and proposed action. Separate verified defects, questions and coverage
 limitations.
 
-The independent verifier runs `bash scripts/check-all.sh` and establishes actual
+The independent verifier runs `bash scripts/checks.sh all --committed` (or the
+PowerShell equivalent), with `MB_CHECK_OUTPUT_ROOT` set as above, and establishes actual
 journey/browser coverage in the detached finished workspace, retaining full baseline
 logs, statuses, warnings and named Flow coverage. Existing failures stay visible;
 a later pass cannot erase them. Investigation and safe fixes may continue on an
@@ -371,7 +388,7 @@ separate safely managed checkout when needed, never reset the PM's branch.
 ## Ship handoff
 
 A new conversation discovers records with
-`python3 scripts/pre-pr-review.py status --json`; it never depends on remembered
+`bash scripts/checks.sh review status --json`; it never depends on remembered
 IDs or chat logs. Resolve the current task's descriptions, findings and verification
 artifacts, report incomplete/stale evidence, and retry eligible completed cleanup.
 Carry fixes, checkpoint/ref, both comparisons, decisions and unresolved findings or

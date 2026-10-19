@@ -412,6 +412,23 @@ class BrowserUrlTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'Invalid WSL'):
                 module.browser_url(Path('/home/PM/index.html'), '../escape')
 
+    def test_container_on_wsl_kernel_keeps_internal_linux_urls(self):
+        environment = {'MB_CONTAINER': '1', 'WSL_DISTRO_NAME': 'Inherited host distro',
+                       'MB_WSL_DISTRO': 'Unmapped host distro'}
+        with patch.dict(module.os.environ, environment, clear=True), patch.object(module.platform, 'release', return_value='microsoft-standard-WSL2'), patch.object(module.subprocess, 'run') as run:
+            self.assertEqual(module.browser_url(Path('/tmp/fixture #1/index.html')),
+                             'file:///tmp/fixture%20%231/index.html')
+            run.assert_not_called()
+            self.assertEqual(module.browser_url(Path('/home/PM/index.html'), 'Explicit distro'),
+                             'file://wsl.localhost/Explicit%20distro/home/PM/index.html')
+
+    def test_container_mapped_wsl_host_url_uses_explicit_host_distro(self):
+        environment = {'MB_CONTAINER': '1', 'MB_HOST_ROOT': '/home/PM/project',
+                       'MB_CONTAINER_PARENT': '/workspace', 'MB_WSL_DISTRO': 'Ubuntu PM'}
+        with patch.dict(module.os.environ, environment, clear=True), patch.object(module.platform, 'release', return_value='microsoft-standard-WSL2'):
+            self.assertEqual(module.browser_url(Path('/workspace/project/index.html')),
+                             'file://wsl.localhost/Ubuntu%20PM/home/PM/project/index.html')
+
     def test_unknown_wsl_distro_does_not_print_linux_url(self):
         with patch.dict(module.os.environ, {}, clear=True), patch.object(module.platform, 'release', return_value='microsoft-standard-WSL2'), patch.object(module.subprocess, 'run', side_effect=FileNotFoundError):
             with self.assertRaisesRegex(RuntimeError, 'url --wsl-distro'):

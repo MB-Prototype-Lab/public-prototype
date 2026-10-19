@@ -49,17 +49,23 @@ async function main() {
       }
     } finally { await comparer.close(); }
     const [same, shorter, scrolled] = comparisons;
+    fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ captures, comparisons }, null, 2) + '\n');
+    const [pictureWidth, pictureHeight] = same.pixels.sizeA;
+    console.log('Geometry control tall pictures: ' + pictureWidth + '×' + pictureHeight + ' pixels');
+    // The app deliberately uses system font stacks, so total content height is
+    // environment-dependent. This control tests geometry hidden by equal pixels.
+    assert.equal(pictureWidth, 390);
+    assert.ok(pictureHeight > captures[0].geometry.height, 'full picture extends beyond the normal phone');
+    for (const comparison of comparisons) {
+      assert.equal(comparison.pixels.sameSize, true, comparison.name + ' keeps the same tall picture dimensions');
+      assert.equal(comparison.pixels.diffPixels, 0, comparison.name + ' keeps the identical tall picture');
+    }
     assert.equal(same.geometry.same, true);
-    assert.equal(same.pixels.diffPixels, 0);
-    assert.equal(shorter.pixels.sameSize, true);
-    assert.equal(shorter.pixels.diffPixels, 0, 'shorter normal phone still has the identical tall picture');
-    assert.deepEqual(shorter.pixels.sizeA, [390, 1324]);
     assert.deepEqual([captures[0].geometry.height, captures[2].geometry.height], [796, 676]);
     assert.equal(shorter.geometry.same, false);
     assert.equal(scrolled.geometry.same, false);
     assert.equal(captures[3].geometry.scrollTop, 1);
-    fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ captures, comparisons }, null, 2) + '\n');
-    console.log('PASS geometry: identical control; 796 → 676px phone with identical 390×1324 tall pictures; 1px scroll change');
+    console.log('PASS geometry: identical control; 796 → 676px phone with identical ' + pictureWidth + '×' + pictureHeight + ' tall pictures; 1px scroll change');
   } finally { await browser.close(); }
 }
 

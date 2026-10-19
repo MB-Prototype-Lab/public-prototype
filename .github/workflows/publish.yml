@@ -22,26 +22,18 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - run: bash scripts/check-syntax.sh
-      - run: bash scripts/sweep.sh
-      - run: python3 scripts/check-paths.py
-      - run: node tests/release-runtime.cjs
-      - run: node tests/local-variants.cjs
-      - run: python3 -m unittest discover -s tests -v
       - uses: actions/configure-pages@v5
-      - name: Validate and build against the live manifest
+      - name: Validate and build in the shared image against the live manifest
         env:
           PUBLICATION_REF: ${{ github.ref }}
-        run: python3 scripts/deploy-prepare.py
+          MB_CHECK_RUN_ID: publication
+        run: |
+          git fetch origin refs/heads/main:refs/remotes/origin/main --tags
+          export MB_FETCHED_MAIN="$(git rev-parse refs/remotes/origin/main)"
+          bash scripts/checks.sh ci-deploy
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: publication-output
+          path: .container-checks/reports/publication/publication-output
       - name: Reject a stale queued publication immediately before deployment
         run: |
           git fetch origin main --no-tags

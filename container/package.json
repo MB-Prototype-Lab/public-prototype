@@ -1,0 +1,8 @@
+{
+  "name": "moneybuddy-browser-checks",
+  "private": true,
+  "description": "Test-only: Playwright for the real-browser journey and Flow checks. Nothing here ships with the app.",
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

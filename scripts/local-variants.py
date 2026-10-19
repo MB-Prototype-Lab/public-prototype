@@ -3,7 +3,7 @@
 import argparse
 import json
 import os
-from pathlib import Path, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import platform
 from urllib.parse import quote
@@ -14,10 +14,26 @@ import uuid
 
 def browser_url(path, distro=None):
     """Return a pasteable URL for the host browser without storing machine settings."""
+    host_root = os.environ.get('MB_HOST_ROOT')
+    if host_root and not isinstance(path, PureWindowsPath):
+        parent = Path(os.environ.get('MB_CONTAINER_PARENT', '/workspace'))
+        try:
+            relative = path.relative_to(parent)
+        except ValueError:
+            pass  # The lifecycle caller may already have mapped its host path.
+        else:
+            host = PureWindowsPath(host_root) if PureWindowsPath(host_root).is_absolute() else PurePosixPath(host_root)
+            if not host.is_absolute() or not relative.parts or relative.parts[0] not in (host.name, host.name + '-reviews'):
+                raise RuntimeError('Preview path is outside the declared host mounts')
+            path = host.parent.joinpath(*relative.parts)
+    in_container = os.environ.get('MB_CONTAINER') == '1'
+    distro = distro or (os.environ.get('MB_WSL_DISTRO') if host_root else None)
     if isinstance(path, PureWindowsPath):
         return path.as_uri()
-    detected = os.environ.get('WSL_DISTRO_NAME')
-    in_wsl = bool(distro or detected or 'microsoft' in platform.release().lower())
+    # Docker Desktop shares the WSL kernel, but container paths belong to Linux.
+    # Only an explicit mapped host distro identifies a Windows browser target.
+    detected = None if in_container else os.environ.get('WSL_DISTRO_NAME')
+    in_wsl = bool(distro or detected or (not in_container and 'microsoft' in platform.release().lower()))
     if not in_wsl:
         return path.as_uri()
     if distro is None:
@@ -159,6 +175,15 @@ def git(root, *args):
     if result.returncode:
         raise RuntimeError(result.stderr.strip() or result.stdout.strip())
     return result.stdout.strip()
+
+
+def worktree_options(root):
+    if not os.environ.get('MB_HOST_ROOT'):
+        return []
+    result = subprocess.run(['git', '-C', str(root), 'worktree', 'add', '-h'], capture_output=True, text=True)
+    if 'relative-paths' not in result.stdout + result.stderr:
+        raise RuntimeError('Container comparisons require Git with worktree --relative-paths support; rebuild the checks image')
+    return ['--relative-paths']
 
 
 def atomic(path, value):
@@ -327,7 +352,7 @@ def run(root, args):
         atomic(active, ident)
         # Save the entire creation intent first so failures remain recoverable.
         for variant in state['variants']:
-            git(root, 'worktree', 'add', '-b', variant['branch'], str(location(root, variant, state['branch'])), state['checkpoint'])
+            git(root, 'worktree', 'add', *worktree_options(root), '-b', variant['branch'], str(location(root, variant, state['branch'])), state['checkpoint'])
         state['status'] = 'active'
     elif state is None:
         raise RuntimeError('No comparison registered')
@@ -345,9 +370,9 @@ def run(root, args):
                 if 'refs/heads/' + variant['branch'] in branches:
                     if git(root, 'rev-parse', variant['branch']) != state['checkpoint']:
                         raise RuntimeError('Interrupted variant branch advanced; preserve and inspect it')
-                    git(root, 'worktree', 'add', str(path), variant['branch'])
+                    git(root, 'worktree', 'add', *worktree_options(root), str(path), variant['branch'])
                 else:
-                    git(root, 'worktree', 'add', '-b', variant['branch'], str(path), state['checkpoint'])
+                    git(root, 'worktree', 'add', *worktree_options(root), '-b', variant['branch'], str(path), state['checkpoint'])
         if state['status'] == 'creating' and all(valid(root, v, state['branch']) for v in state['variants']):
             state['status'] = 'active'
     elif args.command == 'close':
@@ -431,6 +456,8 @@ def main():
             raise RuntimeError('--session is only for status or cleanup')
         if args.command == 'url':
             return 0 if show_browser_urls(root, distro=args.wsl_distro) else 1
+        if args.command == 'create' or (args.command == 'refresh' and args.resume):
+            worktree_options(root)  # Preflight before writing metadata or checkpointing.
         directory = root / '.local-preview'
         directory.mkdir(exist_ok=True)
         if directory.is_symlink():

@@ -27,9 +27,9 @@ below; you do not need WSL to use the Code tab in Claude Desktop on Windows.
 2. Send the agent this request:
 
    > Set up MoneyBuddy for me in Claude Desktop on Windows. I do not use a
-   > terminal or WSL. Install or verify Git for Windows, GitHub CLI, Python 3.11+
-   > and Node 22. Verify `python3 --version` and `node --version`. Make `python3`
-   > run the installed interpreter, not a Windows Store alias. Then start GitHub CLI's browser sign-in and let me complete it in my browser.
+   > terminal or WSL. Verify Git for Windows and Docker Desktop with Linux containers.
+   > Use Git's browser authentication or optional GitHub CLI browser sign-in.
+   > Build the project check image and run its doctor on my behalf.
    > Never ask me for a token in chat. Clone the repository from
    > `https://github.com/MB-Prototype-Lab/public-prototype.git` into this work
    > folder if it is not already here. Use the repository folder, not a Git
@@ -46,18 +46,10 @@ below; you do not need WSL to use the Code tab in Claude Desktop on Windows.
    repository settings yourself. [Claude Desktop's Code tab](https://code.claude.com/docs/en/desktop)
    works on Windows without selecting WSL, and [GitHub CLI supports browser sign-in](https://cli.github.com/manual/gh_auth_login).
 
-   For agents: verify Python 3.11+ with `python3 --version` and Node 22 with
-   `node --version`. On Windows, `python3` must launch the installed interpreter;
-   a Microsoft Store App Execution Alias is not sufficient. Install/configure Python
-   and its PATH or disable the conflicting alias, then verify `python3` again.
-   The project tools call `python3` directly. Run `gh auth login --hostname github.com --git-protocol https --web`
-   and let the operator finish the browser flow. Then run
-   `gh auth setup-git --hostname github.com` and verify access with
-   `gh repo view MB-Prototype-Lab/public-prototype`. Confirm GitHub CLI stores
-   credentials securely; if it cannot, explain the issue before proceeding. Do
-   not ask the operator to type commands, install WSL, create a personal token,
-   or enable auto-merge for this path. Select the cloned repository folder in a
-   new Code session before using the project skills.
+   For agents: use PowerShell and the [container launcher](docs/container-checks.md).
+   Git and Docker are the project prerequisites; GitHub CLI is optional. Keep
+   credentials out of chat and tool output. Preserve existing work, verify access,
+   and select the cloned repository folder in the next Code session.
 
 ### Terminal setup with a scoped token
 
@@ -84,9 +76,8 @@ chat, Discord, password managers, documents, and repository files.
 
 Send the agent this request:
 
-> Set up my MoneyBuddy checkout. Install or verify Git, GitHub CLI, Python 3.11+
-> and Node 22. Verify `python3 --version` and `node --version`. On Windows, make
-> `python3` run the installed interpreter, not a Store alias. Give me
+> Set up my MoneyBuddy checkout. Verify Git and Docker, build the project check
+> image, and run its doctor. For this optional GitHub CLI authentication route, give me
 > an OS-appropriate hidden prompt so I can paste my token directly into my own
 > terminal for `gh auth login`; do not receive or print it yourself. Configure
 > GitHub CLI as Git's HTTPS credential helper, then clone
@@ -95,10 +86,7 @@ Send the agent this request:
 > branch, uncommitted files, and current `main`. Preserve existing work. Read
 > `AGENTS.md`, `CLAUDE.md`, and `docs/workflow.md` before starting a task.
 
-For agents: verify Python 3.11+ with `python3 --version` and Node 22 with
-`node --version`. On Windows, ensure `python3` launches the installed interpreter,
-not a Microsoft Store App Execution Alias; configure Python/PATH or disable the
-conflicting alias, then verify again. The project tools call `python3` directly.
+For agents: use the [container launcher](docs/container-checks.md) for checks.
 Use a masked terminal prompt to pass the token on standard input to
 `gh auth login --hostname github.com --git-protocol https --with-token`. Keep it
 out of chat, shell history, temporary files, and tool output. Confirm a secure
@@ -126,7 +114,7 @@ For an exact address to paste into your browser, ask your agent:
 
 > Show me the browser URL for this checkout.
 
-The agent runs `python3 scripts/local-variants.py url`. It detects WSL and prints a
+The agent runs the container launcher's `helper local-variants url` command. It detects WSL and prints a
 Windows browser URL using your actual distro name, or a native file URL when working
 directly in Windows/macOS/Linux. Spaces and special characters are handled for you.
 No `.env` file or manual distro-name lookup is needed. Creating variants also
@@ -134,7 +122,7 @@ prints the selector URL and each option's URL.
 
 ## 4. Ask your agent to use the project skills
 
-The repository has seven skills in `.claude/skills/`. Name the relevant skill in
+The repository has eight skills in `.claude/skills/`. Name the relevant skill in
 your request; the agent reads its instructions and the linked project guides.
 
 | When you want to… | Ask for… | What the agent does |
@@ -143,6 +131,7 @@ your request; the agent reads its instructions and the linked project guides.
 | Compare local variants | [compare-local](.claude/skills/compare-local/SKILL.md) | Creates independent previews of the app or one Flow, keeps a chosen variant, and cleans up only selected work. |
 | Make or change a focused journey (a Flow) | [create-flow](.claude/skills/create-flow/SKILL.md) | Turns “only show…”, “skip onboarding…” or “start at…” into a contained Flow on the selector's Flows tab; the full app stays unchanged. |
 | Bring in changes from `main` | [sync](.claude/skills/sync/SKILL.md) | Fetches and merges current `main` into your task branch, then checks affected work. |
+| Set up or run automated checks | [run-checks](.claude/skills/run-checks/SKILL.md) | Builds the shared image and runs checks; host Git and Docker are sufficient. |
 | Review finished changes before a PR | [pre-pr-review](.claude/skills/pre-pr-review/SKILL.md) | Delegates a cold review, resumes saved reviews, shows the exact preview and applies verified behavior-preserving fixes locally; eligible completed workspaces are cleaned automatically. |
 | Get tested work into a pull request | [ship](.claude/skills/ship/SKILL.md) | Reviews changes, runs checks, prepares the PR, and records your testing. |
 | Update the live selector or add a snapshot | [publish](.claude/skills/publish/SKILL.md) | Follows the release procedure after an explicit publication request. |
@@ -152,7 +141,7 @@ PR.” You check the affected app flow and record your result in the PR; the age
 handles routine code changes and automated checks. See
 [Working together](docs/workflow.md), [Verification](docs/testing.md), and
 [Publishing](docs/publishing.md) for the full procedures. To run every automated
-check, ask your agent to “run all the checks”: it runs `bash scripts/check-all.sh`,
+check, ask your agent to “run all the checks”: it uses the [container launcher](docs/container-checks.md),
 and each line says PASS, FAIL or BLOCKED. BLOCKED means this computer cannot run
 that check; it is not a pass. Merging code does not update the live site.
 

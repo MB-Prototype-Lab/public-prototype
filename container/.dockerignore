@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!runner.py
+!ci.sh
+!package.json
+!package-lock.json
+!requirements.txt
+!validate-skill.py

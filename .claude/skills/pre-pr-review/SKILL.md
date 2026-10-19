@@ -11,9 +11,11 @@ models and bounded worker packets. If delegation is unavailable, stop the delega
 review and report it BLOCKED.
 
 Use the operator's chosen environment: native Windows or WSL/POSIX. Preflight
-tools there; do not require a second environment or native Git/Git Bash for a
-WSL operator. Follow [platform acceptance](../../../docs/pre-pr-review-platform-acceptance.md)
-for applicable evidence and the planned Docker test environment.
+Git and Docker there; run helpers with `checks.ps1 review` or
+`bash scripts/checks.sh review` and checks through the
+[container launcher](../../../docs/container-checks.md). Do not require host Python,
+Node, a second environment or native Git/Git Bash for a WSL operator. Follow [platform acceptance](../../../docs/pre-pr-review-platform-acceptance.md)
+for applicable evidence.
 
 The coordinator preserves the finished checkpoint, assigns a cold read-only
 reviewer, an independent verifier and one fixer at a time. Workers never delegate.
@@ -23,3 +25,9 @@ procedure's independent evidence and original-branch guards pass. Successful
 completion automatically cleans eligible managed workspaces while retaining refs
 and evidence. Report the outcome first, the exact version to test and the next
 action. Review stays local; [ship](../ship/SKILL.md) is a separate request.
+
+Before any check in a managed finished/reviewed workspace, set
+`MB_CHECK_OUTPUT_ROOT` to the record's existing absolute `host_artifact_dir`.
+Include that setting in verifier/fixer packets so captures and reports stay outside
+managed workspaces and eligible cleanup remains possible. See the procedure's
+[worker output rules](../../../docs/pre-pr-review.md#preflight-and-workers).

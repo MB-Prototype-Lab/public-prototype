@@ -27,9 +27,15 @@ fi
 # The node-based scripts below find node the same way; put it on PATH for them.
 [ -n "$NODE" ] && export PATH="$(dirname "$NODE"):$PATH"
 
-LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/mb-check-all.XXXXXX")"
+if [ -n "${MB_CHECK_LOG_DIR:-}" ]; then
+  LOG_DIR="$MB_CHECK_LOG_DIR"
+  mkdir -p "$LOG_DIR" || exit 2
+else
+  LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/mb-check-all.XXXXXX")"
+fi
 SERVER_PID=""
-trap '[ -n "$SERVER_PID" ] && kill "$SERVER_PID" 2>/dev/null; rm -rf "$LOG_DIR"' EXIT
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/mb-check-work.XXXXXX")"
+trap '[ -n "$SERVER_PID" ] && kill "$SERVER_PID" 2>/dev/null; rm -rf "$WORK_DIR"; if [ -z "${MB_CHECK_LOG_DIR:-}" ]; then rm -rf "$LOG_DIR"; fi' EXIT
 
 # One Playwright module for the probe below and every browser check.
 export MB_PLAYWRIGHT_MODULE="${MB_PLAYWRIGHT_MODULE:-$PWD/tests/browser/node_modules/playwright}"
@@ -111,7 +117,7 @@ run() {
 }
 
 publication_rehearsal() {
-  local out="$LOG_DIR/rehearsal"
+  local out="$WORK_DIR/rehearsal"
   "$PYTHON" scripts/publish.py build --offline --output "$out"
 }
 
@@ -140,7 +146,7 @@ flow_browser_tests() {
 
 # Works on a clone, so it checks the last commit, not uncommitted edits.
 snapshot_rehearsal() {
-  MB_SNAPSHOT_PORT="$(free_port)" bash tests/browser/snapshot-smoke.sh "$LOG_DIR/snapshot-smoke"
+  MB_SNAPSHOT_PORT="$(free_port)" bash tests/browser/snapshot-smoke.sh "$WORK_DIR/snapshot-smoke"
 }
 
 run "JS syntax (app, gate)"            node   bash scripts/check-syntax.sh
@@ -166,7 +172,11 @@ else
   printf 'BLOCKED  Catalog policy  (needs a merge base with origin/main or main)\n'
 fi
 run "Publication rehearsal"            python publication_rehearsal
-run "Browser journeys (one tree)"      browser "$NODE" tests/browser/app-journeys-browser.cjs
+if [ -n "${MB_CHECK_LOG_DIR:-}" ]; then
+  run "Browser journeys (one tree)" browser "$NODE" tests/browser/app-journeys-browser.cjs --out "$LOG_DIR/browser"
+else
+  run "Browser journeys (one tree)" browser "$NODE" tests/browser/app-journeys-browser.cjs
+fi
 run "Flow browser tests (file + HTTP)" browser flow_browser_tests
 run "Flow snapshot rehearsal (last commit)" browser snapshot_rehearsal
 

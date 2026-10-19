@@ -1,15 +1,30 @@
 #!/usr/bin/env python3
 """Actions-only preparation; stops on network or manifest failures."""
+import argparse
 import os
+import re
 from pathlib import Path
 import subprocess
 import urllib.error
 import urllib.request
 import publish
 
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--fetched-origin-main', metavar='SHA',
+                    help='Use origin/main already fetched by the authenticated CI host')
+args = parser.parse_args()
 ref = os.environ['PUBLICATION_REF']
 publish.require(ref.startswith('refs/tags/publish/'), 'not a publication ref')
-subprocess.run(['git', 'fetch', 'origin', 'main', '--tags'], check=True)
+if args.fetched_origin_main is None:
+    subprocess.run(['git', 'fetch', 'origin', 'main', '--tags'], check=True)
+else:
+    expected = args.fetched_origin_main
+    publish.require(re.fullmatch(r'[0-9a-f]{40}|[0-9a-f]{64}', expected) is not None,
+                    'fetched origin/main must be a full commit SHA')
+    publish.require(publish.git('rev-parse', 'refs/remotes/origin/main^{commit}').decode().strip() == expected,
+                    'bundled origin/main differs from the authenticated host fetch')
+    publish.require(publish.git('rev-parse', 'HEAD').decode().strip() == expected,
+                    'publication is not at the freshly fetched main')
 publish.require(publish.git('rev-parse', ref+'^{commit}') == publish.git('rev-parse', 'HEAD'), 'publication tag no longer matches checked-out revision')
 # This URL deliberately stays fixed: do not accept a manifest from an arbitrary input.
 url = 'https://mb-prototype-lab.github.io/public-prototype/publication-manifest.json'

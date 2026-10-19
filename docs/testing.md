@@ -3,12 +3,16 @@
 Run every automated check from the repository root with one command:
 
 ```sh
-bash scripts/check-all.sh
+bash scripts/checks.sh all
 ```
+
+On native Windows use `scripts/checks.ps1 all`. The
+[container guide](container-checks.md) owns setup, mounts and targeted commands.
+The commands below identify checks inside the image.
 
 Each check prints PASS, FAIL or BLOCKED. A check that passed with warnings says
 how many and lists them under its PASS line; they do not fail the run, so read
-them. Use Node 22 and Python 3.11+ (`node --version`, `python3 --version`).
+them. The image supplies pinned Node, Python, Playwright and Chromium.
 BLOCKED means this machine lacks a usable prerequisite (including a missing, old
 or broken `python3`, or Playwright and Chromium for browser checks) and says how to fix it; it is never a pass.
 The script exits 0 only when every check ran and passed. The Flow snapshot
@@ -67,8 +71,7 @@ commands, reusable fixture/generator entrypoints, agent prompts and applicable
 evidence. Run in the operator's chosen environment; native Windows and WSL/POSIX
 are alternatives. Missing tools in an unused second environment do not block
 acceptance. Actual failed or blocked checks in the chosen environment remain
-visible. Docker test prerequisites are the immediate follow-up, not implemented
-by this change.
+visible. Use the [container entrypoints](container-checks.md) for test prerequisites.
 
 ## Documentation links
 
@@ -134,7 +137,7 @@ of day, to catch month-end and leap-day dates; those runs are named like
 `bp-car@may31` and are part of this check only, not the browser check.
 
 Node 22 is required for JavaScript checks; Python 3.11+ for Python checks;
-Playwright with Chromium for browser checks. CI installs these prerequisites.
+Playwright with Chromium for browser checks. The shared image supplies these prerequisites.
 A missing prerequisite is a blocked check, never a pass.
 
 ## Browser check: does the phone look the same?
@@ -195,24 +198,16 @@ The same job also runs both Flows in Chromium from file:// (a folder with spaces
 and over HTTP, and rehearses exporting Flow snapshots in a throwaway copy of the
 repository.
 
-To run it on your machine, set it up once:
+Run Chromium checks through the shared image:
 
 ```sh
-(cd tests/browser && npm ci && npx playwright install --with-deps chromium)
+bash scripts/checks.sh compare --base main
+bash scripts/checks.sh exec node tests/browser/app-journeys-browser.cjs
 ```
 
-then, from the repository root:
-
-```sh
-node tests/browser/app-journeys-browser.cjs                    # every journey must finish; no pictures
-node tests/browser/app-journeys-browser.cjs --compare main --out DIR   # pictures and report against main
-node tests/browser/geometry-check.cjs DIR                    # short identical/height/scroll regression
-```
-
-The comparison takes a few minutes and prints a link to the report. Without the
-setup, check-all marks the three browser checks BLOCKED with the fix; BLOCKED is
-not a pass. Still manual: audio and video playback, real phones, and file:// on
-Windows and macOS (CI runs Chromium on Linux).
+The comparison takes a few minutes and retains its report on the host. No host
+browser installation is required. Still manual: audio and video playback, real
+phones, and native file:// browser behavior on Windows and macOS.
 
 The pictures leave some looks out on purpose, so that two runs of the same
 version give the same pictures:
@@ -274,7 +269,7 @@ requests. The shared `tests/flows-tools-browser.cjs` helper compares normal/hove
 button styles against the full app in all four themes, compares phone, **›** and
 panel positions with the full app at 1440, 1000, 900, 390 and 320px (collapsed and
 open; no Tools at phone widths), and checks Enter/Space, hidden-while-open behavior
-and Close focus. They need the Playwright setup above. Record these results
+and Close focus. They use the Playwright installation in the image. Record these results
 separately from PM and platform acceptance.
 
 ## PM checklist

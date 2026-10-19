@@ -56,7 +56,7 @@ Use **variants** in PM-facing descriptions of local alternatives, following
 [local variants](local-variants.md); retain exact command and internal identifiers
 where needed. Follow the [commit convention](workflow.md#ship). Validate local
 Markdown links with `python3 scripts/check-markdown-links.py`; validate edited
-skills with the skill-authoring validator.
+skills with the [containerized skill-authoring validator](container-checks.md#targeted-skill-validation).
 
 ## Changing verification
 

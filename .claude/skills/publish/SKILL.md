@@ -13,3 +13,7 @@ not assumed remote success.
 For a named Flow, follow [Prepare a Flow snapshot](../../../docs/publishing.md#prepare-a-flow-snapshot).
 Preserve every retained snapshot identity and the procedure's separate review,
 study/tracking decisions and publication authorization.
+
+Use the [container launcher](../../../docs/container-checks.md) for runtime
+commands: `helper publish` runs the Python helper against the working checkout;
+`exec` runs disposable targeted checks. No host Python/Node installation is needed.
