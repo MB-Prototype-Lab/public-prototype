@@ -9,18 +9,29 @@
 //   Exit:  ← Back → home
 //
 // STATES
-//   Coming Soon placeholder — no functional settings implemented yet.
+//   Color mode — the four themes in THEMES (js/theme.js, L21), one active.
+//   Writes state.settings.colorMode through themeSet(); the default stays
+//   THEME_DEFAULT. Moved here from the admin panel so testers can reach it
+//   while admin is hidden.
 //
 // PRODUCTION NOTES
-//   Intended for: notification preferences, theme picker (currently dev-only in
-//   the admin panel), linked accounts, data export, profile editing.
-//   The theme lives in state.settings.colorMode and the four options in THEMES
-//   (js/theme.js, L21) — the mechanism exists; it just needs a surface here
-//   instead of the admin panel. A user-facing version would likely expose only
-//   Natural Light / Natural Dark: the v2 pair is a comparison tool for testing,
-//   not a product choice.
-//   Note it survives Reset User Data on purpose — a viewing preference is not
-//   user data, and having the screen repaint on reset would be a jarring tell.
+//   Still to come: notification preferences, linked accounts, data export,
+//   profile editing.
+//   The v2 Light/Dark pair is offered alongside the Natural pair for now; a
+//   production version may expose only Natural Light / Natural Dark.
+//   Color mode survives Reset User Data on purpose — a viewing preference is
+//   not user data, and having the screen repaint on reset would be a jarring
+//   tell.
+
+/** One button per theme, the active one pressed. */
+function settingsColorModeButtons() {
+  const active = themeCurrent().id;
+  return THEMES.map(t => `
+    <button type="button"
+      class="settings-mode-btn${t.id === active ? " on" : ""}"
+      onclick="themeSet('${t.id}')"
+      aria-pressed="${t.id === active}">${h(t.label)}</button>`).join("");
+}
 
 function renderSettings() {
   return `
@@ -33,8 +44,10 @@ function renderSettings() {
     </div>
 
     <div class="card">
-      <div class="section-title">Coming Soon</div>
-      <p class="helper">Settings screen is a placeholder. Features will be added here as the app grows.</p>
+      <div class="section-title">Color mode</div>
+      <div class="settings-mode-grid" role="group" aria-label="Color mode">
+        ${settingsColorModeButtons()}
+      </div>
     </div>
   `;
 }

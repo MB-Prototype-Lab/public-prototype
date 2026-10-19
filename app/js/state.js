@@ -302,7 +302,7 @@ const state = {
     speechDriven:    false
   },
 
-  // Theme — picked from the admin panel, resets on page refresh (D03: no
+  // Theme — picked on the Settings screen, resets on page refresh (D03: no
   // persistence). Valid ids live in THEMES (js/theme.js). Default is Natural
   // Light — L21 as revised; it originally shipped Dark so the D36 cream had to
   // be chosen rather than defaulted into, and that call has been reversed.

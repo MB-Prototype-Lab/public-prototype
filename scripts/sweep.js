@@ -150,10 +150,9 @@ chk(fullRenderFails.length === 0, "full render() in all four themes",
 // The picker is the whole user-facing deliverable — assert it is populated with
 // one working button per theme and exactly one marked active, not just that
 // render() did not throw.
-render();
-var picker = String(document.getElementById("themePicker").innerHTML || "");
+var picker = String(renderSettings() || "");
 var wired = THEMES.filter(function (t) { return picker.indexOf("themeSet('" + t.id + "')") !== -1; });
-chk(wired.length === THEMES.length, "admin picker offers all " + THEMES.length + " themes",
+chk(wired.length === THEMES.length, "Settings picker offers all " + THEMES.length + " themes",
     "wired: " + wired.map(function (t) { return t.id; }).join(", "));
 chk((picker.match(/aria-pressed="true"/g) || []).length === 1,
     "exactly one theme shown as active");

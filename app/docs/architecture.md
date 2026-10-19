@@ -1389,7 +1389,8 @@ test. A flat colour swatch would test nothing.
 
 ## 14. Theming — four themes, one contract (L21)
 
-Four themes ship, switched from the Admin Tools panel. Two reproduce v2's
+Four themes ship, switched from the Settings screen (moved from the Admin
+Tools panel 2026-10-11 so testers can reach it while admin is hidden). Two reproduce v2's
 palette so the D36 repaint can be compared against what it replaced; two are the
 repaint itself. **Natural Light is the default** (`state.settings.colorMode`,
 and `THEME_DEFAULT` in `js/theme.js` — both carry it). L21 originally shipped

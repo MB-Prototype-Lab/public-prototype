@@ -1,5 +1,5 @@
 // ─── Theme selection (L21) ───────────────────────────────────────────────────
-// Four themes, picked from the Admin Tools panel. Two reproduce v2's palette,
+// Four themes, picked on the Settings screen (screens/settings.js). Two reproduce v2's palette,
 // two are the D36 repaint; each pair has a light and a dark. Dark is the
 // default — see plan.md L21 for why that overrides D36's cream-first intent.
 //

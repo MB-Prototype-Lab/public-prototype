@@ -350,24 +350,6 @@ function render() {
   document.getElementById("adminRoot").innerHTML         = renderAdmin();
   document.getElementById("adminSubtitle").textContent   = adminSubtitle();
 
-  // Theme picker — four options, active one highlighted (L21). Styled with
-  // --chrome-* because it is admin instrumentation, not the product.
-  const tp = document.getElementById("themePicker");
-  if (tp) {
-    const active = themeCurrent().id;
-    tp.innerHTML = THEMES.map(t => `
-      <button type="button"
-        onclick="themeSet('${t.id}')"
-        aria-pressed="${t.id === active}"
-        style="padding:5px 4px;font-size:10px;font-weight:700;cursor:pointer;
-               border-radius:6px;white-space:nowrap;
-               border:1px solid ${t.id === active ? "var(--chrome-accent)" : "var(--chrome-line)"};
-               background:${t.id === active ? "var(--chrome-accent)" : "var(--chrome-card)"};
-               color:${t.id === active ? "#FFFFFF" : "var(--chrome-muted)"};">
-        ${h(t.label)}
-      </button>`).join("");
-  }
-
   // Admin collapse — toggle class on page root, show/hide expand tab
   document.querySelector(".page").classList.toggle("admin-collapsed", !!state.adminCollapsed);
   const expandTab = document.getElementById("adminExpandTab");

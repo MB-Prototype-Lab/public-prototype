@@ -688,6 +688,31 @@
   cursor: pointer;
 }
 
+/* Settings: color mode picker — a 2x2 grid so "Natural Light" fits at phone
+   width. The pressed option takes the accent fill, like .esf-seg-btn.on. */
+.settings-mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.settings-mode-btn {
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.settings-mode-btn.on {
+  border-color: var(--accent-fill);
+  background: var(--accent-fill);
+  color: var(--accent-fill-text);
+}
+
 .task-list {
   display: flex;
   flex-direction: column;
