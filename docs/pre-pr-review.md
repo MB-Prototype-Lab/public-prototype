@@ -396,5 +396,4 @@ limitations into PR text. Do not automatically force this optional review on eve
 ship. [Ship](../.claude/skills/ship/SKILL.md) still performs normal sync, comparisons
 with current main, complete checks, CI and applicable PM verification. For changes
 to this workflow, follow [platform acceptance](pre-pr-review-platform-acceptance.md)
-in the operator's chosen environment. Docker test prerequisites are the immediate
-follow-up, not part of this implementation.
+in the operator's chosen environment using the [container launcher](container-checks.md).
